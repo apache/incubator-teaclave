@@ -1,0 +1,77 @@
+name = "Blackbox Tests"
+
+[endpoint.tms]
+ip = "127.0.0.1"
+port = 5554
+
+
+[endpoint.tdfs]
+ip = "127.0.0.1"
+port = 5065
+
+[endpoint.fns]
+ip = "127.0.0.1"
+port = 3444
+
+# Create a task in task manager
+[[step]]
+name = "tms_create_task"
+endpoint = "tms"
+payload = """
+{"type":"Create","function_name":"fake","collaborator_list":[],"files":[],"user_id":"fake","user_token":"token"}
+"""
+expected = """
+{"type":"Create","task_id":"*","task_token":"*","ip":"*","port":*}
+"""
+
+# Get fake task from task Manager
+[[step]]
+name = "tms_get_task_fake"
+endpoint = "tms"
+payload = """
+{"type":"Get","task_id":"fake","user_id":"fake","user_token":"token"}
+"""
+expected = """
+{"type":"Get","task_info":{"user_id":"fake","function_name":"echo","function_type":"Single","status":"Ready","ip":"0.0.0.0","port":0,"task_token":"fake","collaborator_list":[],"task_result_file_id":null,"user_private_result_file_id":[]}}
+"""
+
+
+[[step]]
+name = "tms_update_task_fake"
+endpoint = "tms"
+payload = """
+{"type":"Update","task_id":"fake_multi_task","files":["fake_file_record"],"user_id":"fake_file_owner","user_token":"token"}
+"""
+expected = """
+{"type":"Update","success":true,"status":"Ready","ip":"0.0.0.0","port":0,"task_token":"fake"}
+"""
+
+[[step]]
+name = "tdfs_create_file"
+endpoint = "tdfs"
+payload = """
+{"type":"Create","file_name":"file1","sha256":"this_is_a_hash","file_size":7,"user_id":"user1","user_token":"token1"}
+"""
+expected = """
+{"type":"Create","file_id":"*","access_path":"*","key_config":{"key":"*","nonce":"*","ad":"*"}}
+"""
+
+[[step]]
+name = "tdfs_get_file"
+endpoint = "tdfs"
+payload = """
+{"type":"Get","file_id":"fake_file_record","user_id":"fake_file_owner","user_token":"token"}
+"""
+expected = """
+{"type":"Get","file_info":{"user_id":"fake_file_owner","file_name":"fake_file","sha256":"aaa","file_size":100,"access_path":"/tmp/fake_file","task_id":null,"collaborator_list":[],"key_config":{"key":"QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE=","nonce":"QUFBQUFBQUFBQUFB","ad":"QUFBQUE="}}}
+"""
+
+[[step]]
+name = "fns_invoke_task"
+endpoint = "fns"
+payload = """
+{"task_id":"fake","function_name":"echo","task_token":"fake","payload":"abc"}
+"""
+expected = """
+{"result":"abc"}
+"""

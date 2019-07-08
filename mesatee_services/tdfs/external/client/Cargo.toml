@@ -1,0 +1,17 @@
+[package]
+name = "tdfs_external_client"
+version = "0.1.0"
+authors = ["MesaTEE Authors <developers@mesatee.org>"]
+description = "RPC client of TDFS."
+license = "Apache-2.0"
+edition = "2018"
+
+
+[features]
+default = []
+
+[dependencies]
+cfg-if       = { version = "0.1.9" }
+ring         = { version = "0.14.6" }
+mesatee_core = { version = "0.1.0" }
+tdfs_external_proto = { path = "../proto" }

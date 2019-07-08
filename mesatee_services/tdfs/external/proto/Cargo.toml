@@ -1,0 +1,26 @@
+[package]
+name = "tdfs_external_proto"
+version = "0.1.0"
+authors = ["MesaTEE Authors <developers@mesatee.org>"]
+description = "RPC protocol of TDFS."
+license = "Apache-2.0"
+edition = "2018"
+
+[features]
+default = []
+mesalock_sgx = ["sgx_tstd", "kms_proto/mesalock_sgx", "mesatee_core/mesalock_sgx"]
+cov = ["sgx_cov"]
+
+[dependencies]
+base64          = { version = "0.10.1"}
+cfg-if          = { version = "0.1.9" }
+serde           = { version = "1.0.39" }
+serde_json      = { version = "1.0.39" }
+serde_derive    = { version = "1.0.92" }
+
+kms_proto       = { path = "../../../kms/proto", optional = true}
+
+mesatee_core    = { version = "0.1.0" }
+
+sgx_cov         = { version = "0.1.0", optional = true }
+sgx_tstd        = { version = "1.0.8", optional = true }

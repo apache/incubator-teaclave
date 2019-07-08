@@ -1,0 +1,11 @@
+[package]
+name = "quickstart"
+version = "0.1.0"
+authors = ["MesaTEE Authors <developers@mesatee.org>"]
+description = "Quick-start example with MesaTEE."
+license = "Apache-2.0"
+edition = "2018"
+
+[dependencies]
+mesatee_sdk = { path = "../../mesatee_sdk" }
+lazy_static = { version = "1.1.0" }

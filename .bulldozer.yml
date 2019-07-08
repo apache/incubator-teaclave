@@ -1,0 +1,28 @@
+version: 1
+
+merge:
+  whitelist:
+    labels: ["merge when ready"]
+
+  blacklist:
+    labels: ["do not merge"]
+
+  method: squash
+
+  options:
+    squash:
+      title: "pull_request_title"
+      body: "summarize_commits"
+
+  required_statuses:
+    - "continuous-integration/drone/push"
+
+  delete_after_merge: true
+
+update:
+
+  whitelist:
+    labels: ["WIP"]
+
+  blacklist:
+    labels: ["Do Not Update"]

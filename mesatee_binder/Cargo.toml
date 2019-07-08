@@ -1,0 +1,26 @@
+[package]
+name = "mesatee_binder"
+version = "0.1.0"
+authors = ["MesaTEE Authors <developers@mesatee.org>"]
+description = "Abstract communication interfaces between TEE untrusted/trusted worlds."
+license = "Apache-2.0"
+edition = "2018"
+
+[lib]
+name = "mesatee_binder"
+path = "src/lib.rs"
+
+[features]
+default = ["mesatee_core/ipc"]
+
+[dependencies]
+sgx_types = "1.0.8"
+sgx_urts = "1.0.8"
+mesatee_core = { version = "0.1.0" }
+mesatee_config = { path = "../mesatee_config" }
+log = { version = "0.4.6" }
+env_logger = "0.6.1"
+
+serde        = "1.0.92"
+serde_derive = "1.0.92"
+serde_json   = "1.0.39"

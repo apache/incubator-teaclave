@@ -1,0 +1,30 @@
+[workspace]
+
+members = [
+  "mesatee_config/config_gen",
+  "tests/integration_test",
+  "examples/private_join_and_compute",
+  "examples/ml_predict",
+  "examples/quickstart",
+  "examples/image_resizing",
+  "examples/online_decrypt",
+  "examples/rsa_sign",
+  "examples/py_matrix_multiply",
+  "mesatee_sdk",
+  "mesatee_sdk/c_sdk",
+]
+
+exclude = [
+  "mesatee_core",
+]
+
+[patch.crates-io]
+# mesatee_core
+mesatee_core = { path = "./mesatee_core" }
+mesatee_config = { path = "./mesatee_config" }
+mesatee_sdk = { path = "./mesatee_sdk" }
+
+# We cannot remove these crates, because proto crates depend on them
+sgx_cov = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.8" }
+sgx_urts = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.8" }
+sgx_types = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.8" }

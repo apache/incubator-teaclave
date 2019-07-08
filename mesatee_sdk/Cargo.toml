@@ -1,0 +1,14 @@
+[package]
+name = "mesatee_sdk"
+version = "0.1.0"
+authors = ["MesaTEE Authors <developers@mesatee.org>"]
+description = "Client SDK, applications can utilize it to invoke MesaTEE services."
+license = "Apache-2.0"
+edition = "2018"
+
+[dependencies]
+tdfs_external_client = { path = "../mesatee_services/tdfs/external/client" }
+tms_external_client  = { path = "../mesatee_services/tms/external/client" }
+tms_external_proto   = { path = "../mesatee_services/tms/external/proto" }
+fns_client           = { path = "../mesatee_services/fns/client" }
+mesatee_core = { version = "0.1.0" }

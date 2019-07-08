@@ -1,0 +1,16 @@
+[package]
+name = "online_decrypt"
+version = "0.1.0"
+authors = ["MesaTEE Authors <developers@mesatee.org>"]
+description = "Online decryption with MesaTEE."
+license = "Apache-2.0"
+edition = "2018"
+
+[dependencies]
+mesatee_sdk = { path = "../../mesatee_sdk" }
+base64 = { version = "0.10.1" }
+serde_derive = { version = "1.0.92" }
+serde_json = { version = "1.0.39" }
+serde = { version = "1.0.92" }
+ring = { version = "0.14.6" }
+lazy_static = { version = "1.3.0" }

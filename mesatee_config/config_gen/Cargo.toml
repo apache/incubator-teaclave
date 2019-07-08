@@ -1,0 +1,17 @@
+[package]
+name = "config_gen"
+version = "0.1.0"
+authors = ["MesaTEE Authors <developers@mesatee.org>"]
+description = "Generating MesaTEE config."
+license = "Apache-2.0"
+edition = "2018"
+
+[dependencies]
+toml = "0.5.1"
+quicli = "0.4.0"
+serde_derive = "1.0.92"
+serde = "1.0.92"
+failure = "0.1.5"
+exitfailure = "0.5.1"
+base64 = "0.10.1"
+structopt = "0.2.16"

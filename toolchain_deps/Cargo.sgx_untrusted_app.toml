@@ -1,0 +1,25 @@
+[workspace]
+
+members = [
+  "mesatee_services/kms/sgx_app",
+  "mesatee_services/fns/sgx_app",
+  "mesatee_services/tdfs/sgx_app",
+  "mesatee_services/tms/sgx_app",
+  "tests/functional_test/sgx_app",
+]
+
+exclude = [
+  "mesatee_core",
+  "mesatee_config"
+]
+
+[patch.crates-io]
+# mesatee_core
+mesatee_core = { path = "./mesatee_core" }
+mesatee_config = { path = "./mesatee_config" }
+mesatee_binder = { path = "./mesatee_binder" }
+
+# We cannot remove these crates, because proto crates depend on them
+sgx_cov = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.8" }
+sgx_urts = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.8" }
+sgx_types = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.8" }

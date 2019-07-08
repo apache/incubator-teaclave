@@ -1,0 +1,18 @@
+# MesaTEE Security Constants
+
+# These security constants are loaded at build time
+# and hardcoded in the compiled MesaTEE binaries.
+
+[ra_config]
+mr_signer = { path = "cert/mr_signer" }
+root_ca = { path = "cert/ca.crt" }
+ias_report_ca = { path = "cert/AttestationReportSigningCACert.pem" }
+
+[client_config]
+client_cert = { path = "cert/client.crt" }
+client_private_key = { path = "cert/client.pkcs8" }
+
+[audited_enclave_config]
+pubkey_a = { path = "auditors/godzilla/godzilla.public.der" }
+pubkey_b = { path = "auditors/optimus_prime/optimus_prime.public.der" }
+pubkey_c = { path = "auditors/albus_dumbledore/albus_dumbledore.public.der" }

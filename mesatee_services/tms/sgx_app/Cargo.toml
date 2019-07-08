@@ -1,0 +1,21 @@
+[package]
+name = "tms"
+version = "0.1.0"
+authors = ["MesaTEE Authors <developers@mesatee.org>"]
+description = "Task management service."
+license = "Apache-2.0"
+build = "build.rs"
+edition = "2018"
+
+[features]
+default = []
+
+[dependencies]
+sgx_types       = { version = "1.0.8" }
+sgx_urts        = { version = "1.0.8" }
+mesatee_core    = { version = "0.1.0" }
+mesatee_binder  = { version = "0.1.0" }
+ctrlc           = { version = "3.1.2" }
+log             = { version = "0.4.6" }
+env_logger      = { version = "0.6.1" }
+threadpool      = { version = "1.0" }

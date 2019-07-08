@@ -1,0 +1,21 @@
+[package]
+name = "tms_external_client"
+version = "0.1.0"
+authors = ["MesaTEE Authors <developers@mesatee.org>"]
+description = "RPC client of TMS."
+license = "Apache-2.0"
+edition = "2018"
+
+[features]
+default = []
+
+[dependencies]
+cfg-if       = { version = "0.1.9" }
+serde        = { version = "1.0.92" }
+serde_derive = { version = "1.0.92" }
+serde_json   = { version = "1.0.39" }
+
+log          = { version = "0.4.6", features = ["max_level_trace"] }
+
+mesatee_core = { version = "0.1.0" }
+tms_external_proto = { path = "../proto" }

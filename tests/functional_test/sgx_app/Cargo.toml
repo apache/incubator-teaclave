@@ -1,0 +1,25 @@
+[package]
+name = "functional_test"
+version = "0.1.0"
+authors = ["MesaTEE Authors <developers@mesatee.org>"]
+description = "Functional tests of MesaTEE"
+license = "Apache-2.0"
+build = "build.rs"
+edition = "2018"
+
+[features]
+default = [] 
+
+[dependencies]
+sgx_types = "1.0.8"
+sgx_urts = "1.0.8"
+mesatee_core = { version = "0.1.0" }
+mesatee_config = { version = "0.1.0" }
+mesatee_binder = { version = "0.1.0" }
+ctrlc = "3.1.2"
+log = { version = "0.4.6" }
+env_logger = "0.6.1"
+tdfs_external_client = { path = "../../../mesatee_services/tdfs/external/client" }
+tms_external_client = { path = "../../../mesatee_services/tms/external/client" }
+tms_external_proto = { path = "../../../mesatee_services/tms/external/proto" }
+fns_client = { path = "../../../mesatee_services/fns/client" }

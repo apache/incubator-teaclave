@@ -1,0 +1,19 @@
+[package]
+name = "mesatee_sdk_c"
+version = "0.1.0"
+authors = ["MesaTEE Authors <developers@mesatee.org>"]
+description = "MesaTEE SDK C API."
+license = "Apache-2.0"
+edition = "2018"
+
+[lib]
+name = "mesatee_sdk_c"
+crate-type = ["cdylib"]
+
+[dependencies]
+mesatee_sdk = { version = "0.1.0" }
+mesatee_core = { version = "0.1.0" }
+log = { version = "0.4.6" }
+env_logger = { version = "0.6.1" }
+libc = { version = "0.2.58" }
+nix = { version = "0.14.1" }

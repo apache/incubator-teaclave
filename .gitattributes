@@ -1,0 +1,10 @@
+# Normalize endings to LF
+* text=auto
+
+# All known text filetypes
+*.md text
+*.rs text
+*.sh text eol=lf
+*.toml text
+*.txt text
+*.yml text

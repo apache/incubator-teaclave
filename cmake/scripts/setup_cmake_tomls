@@ -1,0 +1,58 @@
+#!/usr/bin/env python
+# Create cmake_tomls under Cmake PROJECT_BINARY_DIR
+# Create separate folders for unix_app|sgx_trusted|sgx_untrusted under PROJECT_BINARY_DIR/cmake_tomls
+# Create symlinks for Cargo.*.toml and folders so cargo build can run in separate folders
+
+import os, sys
+
+sym_folders = [
+'mesatee_core',
+'tests',
+'mesatee_config',
+'mesatee_binder',
+'third_party',
+'examples',
+'cert',
+'mesatee_sdk',
+'mesatee_services',
+'toolchain_deps',
+'auditors',
+#'docs',
+]
+
+# arg1 src_dir
+# arg2 bin_dir
+
+src_dir = sys.argv[1]
+bin_dir = sys.argv[2]
+third_party_dir = os.path.join(src_dir, 'third_party')
+
+categories = ['sgx_trusted_lib', 'sgx_untrusted_app', 'unix_app']
+
+
+def exec_cmd(cmd):
+    # print(cmd)
+    os.system(cmd)
+
+if os.path.exists('{bin_dir}/cmake_tomls'.format(bin_dir=bin_dir)):
+    print('cmake_tomls exists, skip creating symlinks')
+    exit(0)
+
+exec_cmd('mkdir -p {bin_dir}/cmake_tomls'.format(bin_dir=bin_dir))
+
+for c in categories:
+    cate_dir = '{bin_dir}/cmake_tomls/{c}'.format(bin_dir=bin_dir, c=c)
+    cmd = 'mkdir -p {cate_dir} && ln -s {src_dir}/toolchain_deps/Cargo.{c}.toml {cate_dir}/Cargo.toml'.format(
+        src_dir=src_dir, c=c, cate_dir=cate_dir)
+    exec_cmd(cmd)
+
+    for f in sym_folders:
+        cmd = 'ln -sn {src_dir}/{f} {cate_dir}/'.format(src_dir=src_dir, 
+            f=f, cate_dir=cate_dir)
+        exec_cmd(cmd)
+
+cmd = r'''mkdir -p {bin_dir}/cmake_tomls/sgx_trusted_lib/.cargo \
+&& cp -f {third_party_dir}/crates-sgx/Cargo.lock {bin_dir}/cmake_tomls/sgx_trusted_lib/Cargo.lock \
+&& cp -f {third_party_dir}/crates-sgx/config {bin_dir}/cmake_tomls/sgx_trusted_lib/.cargo/config \
+&& sed -i 's/directory = "vendor"/directory = "third_party\/crates-sgx\/vendor"/' {bin_dir}/cmake_tomls/sgx_trusted_lib/.cargo/config'''.format(bin_dir=bin_dir, third_party_dir=third_party_dir)
+exec_cmd(cmd)
