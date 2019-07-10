@@ -61,7 +61,7 @@ png               = { git = "https://github.com/mesalock-linux/image-png-sgx" }
 profiler_builtins = { git = "https://github.com/mesalock-linux/sgx-fake-profiler-builtins" }
 quick-error       = { git = "https://github.com/mesalock-linux/quick-error-sgx" }
 regex             = { git = "https://github.com/mesalock-linux/regex-sgx" }
-ring              = { git = "https://github.com/mesalock-linux/ring-sgx" }
+ring              = { git = "https://github.com/mesalock-linux/ring-sgx", tag = "v0.14.6" }
 rustls            = { git = "https://github.com/mesalock-linux/rustls", branch = "mesalock_sgx" }
 sct               = { git = "https://github.com/mesalock-linux/sct.rs", branch = "mesalock_sgx" }
 serde             = { git = "https://github.com/mesalock-linux/serde-sgx" }
