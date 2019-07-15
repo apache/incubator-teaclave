@@ -15,7 +15,7 @@ merge:
       body: "summarize_commits"
 
   required_statuses:
-    - "continuous-integration/drone/push"
+    - "continuous-integration/drone/pr"
 
   delete_after_merge: true
 
