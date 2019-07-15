@@ -12,6 +12,9 @@ The ``api_endpoints`` and ``internal_endpoints``  of
 [config.toml](../config.toml) specify the listening IPs and ports of MesaTEE
 services. Please configure them accordingly.
 
+Then, please set SPID and key (either primary or secondary) from Intel Trusted
+Service API portal by ``cat YOUR_SPID > ./bin/ias_spid.txt && cat YOUR_KEY > ./bin/ias_key.txt``.
+
 Afterwards, you can launch MesaTEE services as background daemons by running:
 ``./service.sh {start|stop|restart}``
 
