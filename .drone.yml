@@ -25,24 +25,6 @@ steps:
   - . /root/.cargo/env
   - export RUSTFLAGS="-D warnings"
   - make VERBOSE=1
-- name: doc
-  image: mesalocklinux/build-mesatee:0.1.3
-  commands:
-  - . ./environment
-  - . /root/.cargo/env
-  - make doc
-  - mkdir -p ~/.ssh && echo $DOC_KEY | base64 -d > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa
-  - tar czf doc.tar.gz -C target/ doc && ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no $DOC_USERNAME@$DOC_HOSTNAME "cd www/mesatee.org && tar -xz" < doc.tar.gz
-  environment:
-    DOC_KEY:
-      from_secret: DOC_KEY
-    DOC_USERNAME:
-      from_secret: DOC_USERNAME
-    DOC_HOSTNAME:
-      from_secret: DOC_HOSTNAME
-  when:
-    branch:
-      - master
 - name: sgx-test
   image: mesalocklinux/build-mesatee:0.1.3
   privileged: true
@@ -115,6 +97,37 @@ volumes:
 - name: aesmd
   host:
     path: /var/run/aesmd/aesm.socket
+
+node:
+  instance: mesatee-sgx
+
+---
+
+kind: pipeline
+name: doc
+
+steps:
+- name: doc
+  image: mesalocklinux/build-mesatee:0.1.3
+  commands:
+  - . ./environment
+  - . /root/.cargo/env
+  - make doc
+  - mkdir -p ~/.ssh && echo $DOC_KEY | base64 -d > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa
+  - tar czf doc.tar.gz -C target/ doc && ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no $DOC_USERNAME@$DOC_HOSTNAME "cd www/mesatee.org && tar -xz" < doc.tar.gz
+  environment:
+    DOC_KEY:
+      from_secret: DOC_KEY
+    DOC_USERNAME:
+      from_secret: DOC_USERNAME
+    DOC_HOSTNAME:
+      from_secret: DOC_HOSTNAME
+
+trigger:
+  branch:
+    - master
+  event:
+    - push
 
 node:
   instance: mesatee-sgx
