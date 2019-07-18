@@ -24,9 +24,7 @@ use env_logger;
 use std::backtrace::{self, PrintFormat};
 
 use crate::fns::FNSEnclave;
-
-mod executor;
-pub use executor::Executor;
+use crate::global::register_trusted_worker_statically;
 
 register_ecall_handler!(
     type ECallCommand,
@@ -46,6 +44,7 @@ fn handle_init_enclave(_args: &InitEnclaveInput) -> Result<InitEnclaveOutput> {
     );
 
     mesatee_core::rpc::sgx::prelude();
+    register_trusted_worker_statically();
     Ok(InitEnclaveOutput::default())
 }
 
