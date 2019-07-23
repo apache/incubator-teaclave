@@ -10,6 +10,7 @@ members = [
   "examples/online_decrypt",
   "examples/rsa_sign",
   "examples/py_matrix_multiply",
+  "examples/kmeans",
   "mesatee_sdk",
   "mesatee_sdk/c_sdk",
 ]

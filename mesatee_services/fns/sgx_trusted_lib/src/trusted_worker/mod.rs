@@ -23,6 +23,7 @@ use std::collections::HashMap;
 mod demo_func;
 mod gbdt;
 mod image_resize;
+mod kmeans;
 mod online_decrypt;
 mod private_join_and_compute;
 mod psi;
@@ -61,6 +62,7 @@ impl TrustedWorker {
         dispatcher.insert("image_resize".to_string(), image_resize::process);
         dispatcher.insert("decrypt".to_string(), online_decrypt::decrypt);
         dispatcher.insert("rsa_sign".to_string(), rsa::sign);
+        dispatcher.insert("kmeans_cluster".to_string(), kmeans::cluster);
 
         TrustedWorker { dispatcher }
     }
