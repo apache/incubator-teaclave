@@ -15,36 +15,75 @@ Example: mesatee_services/fns/sgx_trusted_lib/src/trusted_worker/private_join_an
 
 ## Worker Definition
 
+### Implement the `worker` trait for your worker.
+
 ```rust
-pub struct YourWorker {}
-pub struct YourWorkerWorkerInput {
-    field_one: field_type,
-    field_two: field_type
+trait Worker: Send + Sync {
+    fn function_name(&self) -> &str;  // return function name
+    fn function_type(&self) -> FunctionType; // return function type, Single/Multiparty
+    fn set_id(&mut self, worker_id: u32); //id is set by FNS
+    fn id(&self) -> u32;									//return id
+    fn prepare_input(&mut self, dynamic_input: Option<String>, file_ids: Vec<String>)
+        -> Result<()>;   //do some pre-processing for the input and save it to the structure
+    fn execute(&mut self, context: WorkerContext) -> Result<String>; //this is the function to do the computation
 }
-impl Worker for YourWorker {
-    type InputType = YourWorkerWorkerInput;
-    fn new(worker_info: &WorkerInfo) -> Self {
-        unimplemented!();
-    }
-    fn get_function_info() -> FunctionInfo {
-        FunctionInfo {
-            funtion_name: "function_name".to_string(),
-            function_type: FunctionType::Single, // or FunctionType::Multiparty
+```
+
+### Example 
+
+```rust
+pub struct EchoWorker {
+    worker_id: u32,
+    func_name: String,
+    func_type: FunctionType,
+    input: Option<EchoWorkerInput>,
+}
+impl EchoWorker {
+    pub fn new() -> Self {
+        EchoWorker {
+            worker_id: 0,
+            func_name: "echo".to_string(),
+            func_type: FunctionType::Single,
+            input: None,
         }
     }
-    fn prepare_input(
-        dynamic_input: Option<String>,
-        file_ids: Vec<String>,
-    ) -> Result<Self::InputType> {
-        unimplemented!();
+}
+struct EchoWorkerInput {
+    msg: String,
+}
+impl Worker for EchoWorker {
+    fn function_name(&self) -> &str {
+        self.func_name.as_str()
     }
-
-  	// this is the function to do the computation
-    fn execute(&mut self, input: Self::InputType, context: WorkerContext) -> Result<String> {
-        unimplemented!();    
+    fn function_type(&self) -> FunctionType {
+        self.func_type
+    }
+    fn set_id(&mut self, worker_id: u32) {
+        self.worker_id = worker_id;
+    }
+    fn id(&self) -> u32 {
+        self.worker_id
+    }
+    fn prepare_input(
+        &mut self,
+        dynamic_input: Option<String>,
+        _file_ids: Vec<String>,
+    ) -> Result<()> {
+        let msg = dynamic_input.ok_or_else(|| Error::from(ErrorKind::InvalidInputError))?;
+        self.input = Some(EchoWorkerInput { msg });
+        Ok(())
+    }
+    fn execute(&mut self, _context: WorkerContext) -> Result<String> {
+        let input = self
+            .input
+            .take()
+            .ok_or_else(|| Error::from(ErrorKind::InvalidInputError))?;
+        Ok(input.msg)
     }
 }
 ```
+
+
 
 ## Input
 
@@ -56,13 +95,13 @@ MesaTEE will provide the worker with two types of input:
 You can do some pre-processing and prepare your own input structure.
 
 ```rust
-impl Worker for YourWorker {  
-    type InputType = YourWorkerWorkerInput;
+impl Worker for MyWorker {  
     fn prepare_input(
         dynamic_input: Option<String>, // dynamic input
         file_ids: Vec<String>,         //input file ids; files are saved in the TDFS
-    ) -> Result<Self::InputType> {
+    ) -> Result<()> {
         unimplemented!();
+        // Save the input to the structure
     }
 }
 ```
@@ -75,8 +114,7 @@ Since some input are file ids, during task execution, the worker can read the da
 impl WorkerContext {
     fn read_file(&self, file_id: &str) -> Result<Vec<u8>>;
 }
-pub fn read_file(context_id: &str, context_token: &str, file_id: &str) -> Result<Vec<u8>> {
-}
+pub fn read_file(context_id: &str, context_token: &str, file_id: &str) -> Result<Vec<u8>>;
 // The above apis are equivalent
 ```
 
@@ -88,11 +126,11 @@ The function doesn't know who provides the payload/file. The file-id/dynamic-inp
 
 There are four types of output
 
-1. A String returned to the user who invokes the task. It's the return value of the ``execute`` function
+1. A String returned to the client who invokes the task. It's the return value of the ``execute`` function
 
    ```rust
-   impl Worker for YourWorker { 
-   	fn execute(&mut self, input: Self::InputType, context: WorkerContext) -> Result<String> 
+   impl Worker for MyWorker { 
+   	fn execute(&mut self, context: WorkerContext) -> Result<String> 
    }
    ```
    
@@ -102,7 +140,7 @@ There are four types of output
 
    ```rust
    impl WorkerContext {
-       pub fn save_file_for_task_creator(&self, data: &[u8]) -> Result<String> {
+       pub fn save_file_for_task_creator(&self, data: &[u8]) -> Result<String>;
    }
    pub fn save_file_for_task_creator(
        context_id: &str,
@@ -157,36 +195,13 @@ There are four types of output
 
 ```rust
 In mesatee_services/fns/sgx_trusted_lib/src/global.rs
-   You need to provide the *Worker Structure* and *max concurrent number* 
 pub fn register_trusted_worker_statically() {
-    let function_info = YourWorker::get_function_info();
-    let _ = register_trusted_worker(&function_info, MAX_CONCURRENT_NUMBER);
-}
-```
-
-#### Add dispatcher code 
-
-```rust
-In mesatee_services/fns/sgx_trusted_lib/src/fns.rs
-   You need to provide the *function name* and the *Worker Structure*
-fn invoke_worker(
-    worker_info: &WorkerInfo,
-    worker_context: WorkerContext,
-    function_name: &str,
-    dynamic_input: Option<String>,
-    file_list: Vec<String>,
-) -> Result<String> {
-    match function_name {
-      "your function name" => {
-            let mut worker = YourWorker::new(&worker_info);
-            let input = YourWorker::prepare_input(dynamic_input, file_list)?;
-            worker.execute(input, worker_context)
-      }
+  for _i in 0..number_of_worker_instances {
+      let worker = Box::new(MyWorker::new());
+      let _ = WorkerInfoQueue::register(worker);
   }
-}
+} 
 ```
-
-#### 
 
 ## Register in Task Management Service
 
@@ -194,6 +209,6 @@ If the function is a multiparty function, it needs to be marked in the Task Mana
 
 ```rust
 In mesatee_services/tms/sgx_trusted_lib/src/tms_external.rs
-	"psi" | "concat" | "swap_file" | "private_join_and_compute" | "your_function" => FunctionType::Multiparty
+	"psi" | "concat" | "swap_file" | "private_join_and_compute" | "my_function" => FunctionType::Multiparty
 ```
 

@@ -43,7 +43,6 @@ impl WorkerContext {
 }
 
 pub trait Worker: Send + Sync {
-    //fn new(worker_info: &WorkerInfo) -> Self;
     fn function_name(&self) -> &str;
     fn function_type(&self) -> FunctionType;
     fn set_id(&mut self, worker_id: u32);
