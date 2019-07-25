@@ -1,10 +1,9 @@
 [package]
 name = "kmeans"
 version = "0.1.0"
-authors = ["m3ngyang <yangm3ng@gmail.com>"]
+authors = ["MesaTEE Authors <developers@mesatee.org>"]
+description = "KMeans Cluster with MesaTEE"
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 mesatee_sdk = { path = "../../mesatee_sdk" }

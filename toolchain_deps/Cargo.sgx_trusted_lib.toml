@@ -77,4 +77,4 @@ wasmi             = { git = "https://github.com/mesalock-linux/wasmi-sgx" }
 webpki            = { git = "https://github.com/mesalock-linux/webpki", branch = "mesalock_sgx" }
 webpki-roots      = { git = "https://github.com/mesalock-linux/webpki-roots", branch = "mesalock_sgx" }
 yasna             = { git = "https://github.com/mesalock-linux/yasna.rs-sgx" }
-rusty_machine     = { git = "https://github.com/mesalock-linux/rusty-machine-sgx", package="rusty-machine"}
+rusty-machine     = { git = "https://github.com/mesalock-linux/rusty-machine-sgx" }
