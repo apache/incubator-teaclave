@@ -12,16 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 use crate::running_task::RunningTask;
-/*
 use crate::trusted_worker::{
     BytesPlusOneWorker, ConcatWorker, EchoFileWorker, EchoWorker, FileBytesPlusOneWorker,
-    GBDTPredictWorker, ImageResizeWorker, MesaPyWorker, OnlineDecryptWorker, PSIWorker,
-    PrivateJoinAndComputeWorker, RSASignWorker, SwapFileWorker, WASMWorker,
-};*/
-use crate::trusted_worker::{
-    BytesPlusOneWorker, ConcatWorker, EchoFileWorker, EchoWorker, FileBytesPlusOneWorker,
-    GBDTPredictWorker, ImageResizeWorker, MesaPyWorker, OnlineDecryptWorker, PSIWorker,
-    PrivateJoinAndComputeWorker, RSASignWorker, SwapFileWorker, WASMWorker,
+    GBDTPredictWorker, ImageResizeWorker, KmeansWorker, MesaPyWorker, OnlineDecryptWorker,
+    PSIWorker, PrivateJoinAndComputeWorker, RSASignWorker, SwapFileWorker, WASMWorker,
 };
 use crate::worker::WorkerInfoQueue;
 use mesatee_core::Result;
@@ -102,6 +96,9 @@ pub fn register_trusted_worker_statically() {
         let _ = WorkerInfoQueue::register(worker);
 
         let worker = Box::new(RSASignWorker::new());
+        let _ = WorkerInfoQueue::register(worker);
+
+        let worker = Box::new(KmeansWorker::new());
         let _ = WorkerInfoQueue::register(worker);
     }
 }
