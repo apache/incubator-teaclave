@@ -19,6 +19,7 @@ find . \( -name "*.gcda" -and \( ! -name "sgx_cov*" \
     -and ! -name "ml_predict*"\
     -and ! -name "online_decrypt*"\
     -and ! -name "image_resizing*"\
+    -and ! -name "kmeans*"\
     -and ! -name "mesatee_core*" -and ! -name "mesatee_config*" \) \) \
     -exec rm {} \;
 cd ${MESATEE_PROJECT_ROOT} && \
