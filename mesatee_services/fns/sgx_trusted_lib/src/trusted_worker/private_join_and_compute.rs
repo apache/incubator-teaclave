@@ -50,8 +50,6 @@ pub(crate) fn private_join_and_compute(
 ) -> Result<String> {
     // input identity: amount\n
     // output identity : sum_of_amount level_of_amount
-    // let mut counter_map: HashMap<String, usize> = HashMap::new();
-    // let mut add_map: HashMap<String, u32> = HashMap::new();
 
     let number = input.input_files.len();
 
@@ -64,14 +62,7 @@ pub(crate) fn private_join_and_compute(
             test_map.insert(indentity.to_owned(), (value.0 + amount, value.1 + 1));
         }
     }
-<<<<<<< HEAD
     
-=======
-
-<<<<<<< HEAD
->>>>>>> 50ce64fb032fa45dc6fbb4a015d402e0ed00f403
-=======
->>>>>>> 50ce64fb032fa45dc6fbb4a015d402e0ed00f403
     let mut output = String::new();
     for (identity, amount) in test_map.into_iter() {
         if amount.1 == number {
