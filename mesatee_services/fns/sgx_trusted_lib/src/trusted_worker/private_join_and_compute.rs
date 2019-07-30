@@ -50,34 +50,35 @@ pub(crate) fn private_join_and_compute(
 ) -> Result<String> {
     // input identity: amount\n
     // output identity : sum_of_amount level_of_amount
-    let mut counter_map: HashMap<String, usize> = HashMap::new();
-    let mut add_map: HashMap<String, u32> = HashMap::new();
+    // let mut counter_map: HashMap<String, usize> = HashMap::new();
+    // let mut add_map: HashMap<String, u32> = HashMap::new();
 
     let number = input.input_files.len();
 
+    let mut test_map: HashMap<String, (u32, usize)> = HashMap::new();
     for file_id in input.input_files.iter() {
         let plaintext = helper.read_file(file_id)?;
         let records = parse_input(plaintext)?;
         for (indentity, amount) in records.into_iter() {
-            let value = counter_map.get(&indentity).cloned().unwrap_or(0);
-            counter_map.insert(indentity.to_owned(), value + 1);
-            let value = add_map.get(&indentity).cloned().unwrap_or(0);
-            add_map.insert(indentity, value + amount);
+            let value = test_map.get(&indentity).cloned().unwrap_or((0, 0));
+            test_map.insert(indentity.to_owned(), (value.0 + amount, value.1 + 1));
         }
     }
+<<<<<<< HEAD
+    
+=======
 
-    // get intersection set;
-    counter_map.retain(|_, &mut v| v == number);
-
+<<<<<<< HEAD
+>>>>>>> 50ce64fb032fa45dc6fbb4a015d402e0ed00f403
+=======
+>>>>>>> 50ce64fb032fa45dc6fbb4a015d402e0ed00f403
     let mut output = String::new();
-
-    for (identity, amount) in add_map.into_iter() {
-        if counter_map.contains_key(&identity) {
-            writeln!(&mut output, "{} : {}", identity, amount)
+    for (identity, amount) in test_map.into_iter() {
+        if amount.1 == number {
+            writeln!(&mut output, "{} : {}", identity, amount.0)
                 .map_err(|_| Error::from(ErrorKind::OutputGenerationError))?;
         }
     }
-
     let output_bytes = output.as_bytes().to_vec();
 
     for file_id in input.input_files.iter() {
