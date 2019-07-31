@@ -27,7 +27,7 @@ pub trait HandleRequest {
     fn handle_request(&self) -> Result<InvokeTaskResponse>;
 }
 
-fn invoker_worker(worker: &mut Worker, request: &InvokeTaskRequest) -> Result<InvokeTaskResponse> {
+fn invoke_worker(worker: &mut Worker, request: &InvokeTaskRequest) -> Result<InvokeTaskResponse> {
     // Generate RunningTask
     let running_task = RunningTask::init(&request)?;
     let file_list = running_task.get_file_list();
@@ -52,7 +52,7 @@ fn invoker_worker(worker: &mut Worker, request: &InvokeTaskRequest) -> Result<In
 impl HandleRequest for InvokeTaskRequest {
     fn handle_request(&self) -> Result<InvokeTaskResponse> {
         let mut worker = WorkerInfoQueue::aquire_worker(&self.function_name)?;
-        let response = invoker_worker(worker.as_mut(), &self);
+        let response = invoke_worker(worker.as_mut(), &self);
         let _ = WorkerInfoQueue::release_worker(worker);
         response
     }
