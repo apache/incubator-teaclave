@@ -76,3 +76,6 @@ echo "[+] run py_matrix_multiply"
 echo "[+] run kmeans"
 ../examples/kmeans/kmeans_demo.sh 2>&1 | tee kmeans_demo.log
 [ ${PIPESTATUS[0]} -eq 0 ] || exit ${PIPESTATUS[0]}
+echo "[+] run logistic_reg"
+../examples/logistic_reg/logistic_reg_demo.sh 2>&1 | tee logistic_reg_demo.log
+[ ${PIPESTATUS[0]} -eq 0 ] || exit ${PIPESTATUS[0]}
