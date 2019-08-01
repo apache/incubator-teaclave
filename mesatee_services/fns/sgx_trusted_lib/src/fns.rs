@@ -16,26 +16,45 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
+use crate::running_task::RunningTask;
+use crate::worker::{Worker, WorkerInfoQueue};
+use fns_proto::{InvokeTaskRequest, InvokeTaskResponse};
 use mesatee_core::rpc::EnclaveService;
 use mesatee_core::Result;
 use std::marker::PhantomData;
-
-use fns_proto::{InvokeTaskRequest, InvokeTaskResponse};
-
-use crate::sgx::Executor;
-use crate::trait_defs::TaskExecutor;
 
 pub trait HandleRequest {
     fn handle_request(&self) -> Result<InvokeTaskResponse>;
 }
 
+fn invoke_worker(worker: &mut Worker, request: &InvokeTaskRequest) -> Result<InvokeTaskResponse> {
+    // Generate RunningTask
+    let running_task = RunningTask::init(&request)?;
+    let file_list = running_task.get_file_list();
+    // New worker context
+    let worker_context = running_task.get_worker_context();
+    let payload = request.payload.clone();
+    worker.prepare_input(payload, file_list)?;
+    let result = worker.execute(worker_context);
+    match result {
+        Ok(output) => {
+            let _ = running_task.save_dynamic_output(&output);
+            running_task.finish()?;
+            let response = InvokeTaskResponse::new(&output);
+            Ok(response)
+        }
+        Err(err) => {
+            let _ = running_task.finish();
+            Err(err)
+        }
+    }
+}
 impl HandleRequest for InvokeTaskRequest {
     fn handle_request(&self) -> Result<InvokeTaskResponse> {
-        let mut executor = Executor::init(&self)?;
-        let result = executor.execute()?;
-        executor.finalize()?;
-        let response = InvokeTaskResponse::new(&result);
-        Ok(response)
+        let mut worker = WorkerInfoQueue::aquire_worker(&self.function_name)?;
+        let response = invoke_worker(worker.as_mut(), &self);
+        let _ = WorkerInfoQueue::release_worker(worker);
+        response
     }
 }
 

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::trait_defs::{WorkerHelper, WorkerInput};
+use crate::worker::{FunctionType, Worker, WorkerContext};
 use mesatee_core::{Error, ErrorKind, Result};
 use ring::aead;
 use ring::aead::Aad;
@@ -23,7 +23,7 @@ use std::prelude::v1::*;
 
 // INPUT from file-id
 #[derive(Deserialize)]
-pub struct AEADKeyConfig {
+struct AEADKeyConfig {
     pub key: Vec<u8>,
     pub nonce: Vec<u8>,
     pub ad: Vec<u8>,
@@ -31,7 +31,85 @@ pub struct AEADKeyConfig {
 // INPUT: encrypted bytes encoded with base64
 // OUTPUT: decypted bytes encoded with base64
 
-pub fn decrypt_data(
+pub struct OnlineDecryptWorker {
+    worker_id: u32,
+    func_name: String,
+    func_type: FunctionType,
+    input: Option<OnlineDecryptWorkerInput>,
+}
+
+struct OnlineDecryptWorkerInput {
+    pub encrypted_bytes: Vec<u8>,
+    pub aead_file_id: String,
+}
+
+impl OnlineDecryptWorker {
+    pub fn new() -> Self {
+        OnlineDecryptWorker {
+            worker_id: 0,
+            func_name: "decrypt".to_string(),
+            func_type: FunctionType::Single,
+            input: None,
+        }
+    }
+}
+
+impl Worker for OnlineDecryptWorker {
+    fn function_name(&self) -> &str {
+        self.func_name.as_str()
+    }
+    fn function_type(&self) -> FunctionType {
+        self.func_type
+    }
+    fn set_id(&mut self, worker_id: u32) {
+        self.worker_id = worker_id;
+    }
+    fn id(&self) -> u32 {
+        self.worker_id
+    }
+    fn prepare_input(
+        &mut self,
+        dynamic_input: Option<String>,
+        file_ids: Vec<String>,
+    ) -> Result<()> {
+        let aead_file_id = match file_ids.get(0) {
+            Some(value) => value.to_string(),
+            None => return Err(Error::from(ErrorKind::InvalidInputError)),
+        };
+        let encrypted_base64 = match dynamic_input {
+            Some(value) => value,
+            None => return Err(Error::from(ErrorKind::InvalidInputError)),
+        };
+        let encrypted_bytes: Vec<u8> = base64::decode(&encrypted_base64)
+            .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
+        self.input = Some(OnlineDecryptWorkerInput {
+            encrypted_bytes,
+            aead_file_id,
+        });
+        Ok(())
+    }
+
+    fn execute(&mut self, context: WorkerContext) -> Result<String> {
+        let input = self
+            .input
+            .take()
+            .ok_or_else(|| Error::from(ErrorKind::InvalidInputError))?;
+        let key_bytes = context.read_file(&input.aead_file_id)?;
+        let key_config: AEADKeyConfig = serde_json::from_slice(&key_bytes)
+            .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
+
+        let decrypted_bytes = decrypt_data(
+            input.encrypted_bytes,
+            &key_config.key,
+            &key_config.nonce,
+            &key_config.ad,
+        )?;
+        let output_base64 = base64::encode(&decrypted_bytes);
+        Ok(output_base64)
+    }
+}
+
+fn decrypt_data(
     mut data: Vec<u8>,
     aes_key: &[u8],
     aes_nonce: &[u8],
@@ -47,30 +125,4 @@ pub fn decrypt_data(
     let decrypted_buffer =
         result.map_err(|_| mesatee_core::Error::from(mesatee_core::ErrorKind::CryptoError))?;
     Ok(decrypted_buffer.to_vec())
-}
-
-pub(crate) fn decrypt(helper: &mut WorkerHelper, input: WorkerInput) -> Result<String> {
-    let file_id = match input.input_files.get(0) {
-        Some(value) => value,
-        None => return Err(Error::from(ErrorKind::MissingValue)),
-    };
-    let key_bytes = helper.read_file(&file_id)?;
-    let key_config: AEADKeyConfig = serde_json::from_slice(&key_bytes)
-        .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
-
-    let encypted_base64 = match input.payload {
-        Some(value) => value,
-        None => return Err(Error::from(ErrorKind::MissingValue)),
-    };
-    let encypted_bytes: Vec<u8> =
-        base64::decode(&encypted_base64).map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
-
-    let decrypted_bytes = decrypt_data(
-        encypted_bytes,
-        &key_config.key,
-        &key_config.nonce,
-        &key_config.ad,
-    )?;
-    let output_base64 = base64::encode(&decrypted_bytes);
-    Ok(output_base64)
 }
