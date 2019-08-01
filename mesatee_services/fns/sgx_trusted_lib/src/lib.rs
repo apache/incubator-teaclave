@@ -20,8 +20,10 @@ extern crate sgx_tstd as std;
 extern crate log;
 
 mod fns;
-mod trait_defs;
+mod global;
+mod running_task;
 mod trusted_worker;
+mod worker;
 
 use cfg_if::cfg_if;
 cfg_if! {

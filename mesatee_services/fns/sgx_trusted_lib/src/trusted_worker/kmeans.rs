@@ -16,7 +16,7 @@ use std::fmt::Write;
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use crate::trait_defs::{WorkerHelper, WorkerInput};
+use crate::worker::{FunctionType, Worker, WorkerContext};
 use mesatee_core::{Error, ErrorKind, Result};
 
 use rusty_machine::learning::k_means::KMeansClassifier;
@@ -30,6 +30,85 @@ pub(crate) struct KmeansPayload {
     k: usize,
     feature_num: usize,
     data: String,
+}
+
+pub struct KmeansWorker {
+    worker_id: u32,
+    func_name: String,
+    func_type: FunctionType,
+    input: Option<KmeansWorkerInput>,
+}
+
+struct KmeansWorkerInput {
+    k: usize,
+    samples: Matrix<f64>,
+}
+
+impl KmeansWorker {
+    pub fn new() -> Self {
+        KmeansWorker {
+            worker_id: 0,
+            func_name: "kmeans_cluster".to_string(),
+            func_type: FunctionType::Single,
+            input: None,
+        }
+    }
+}
+
+impl Worker for KmeansWorker {
+    fn function_name(&self) -> &str {
+        self.func_name.as_str()
+    }
+    fn function_type(&self) -> FunctionType {
+        self.func_type
+    }
+    fn set_id(&mut self, worker_id: u32) {
+        self.worker_id = worker_id;
+    }
+    fn id(&self) -> u32 {
+        self.worker_id
+    }
+    fn prepare_input(
+        &mut self,
+        dynamic_input: Option<String>,
+        _file_ids: Vec<String>,
+    ) -> Result<()> {
+        let payload = dynamic_input.ok_or_else(|| Error::from(ErrorKind::MissingValue))?;
+
+        let kmeans_payload: KmeansPayload = serde_json::from_str(&payload)
+            .or_else(|_| Err(Error::from(ErrorKind::InvalidInputError)))?;
+
+        let samples = parse_input(&kmeans_payload.data, kmeans_payload.feature_num)?;
+        self.input = Some(KmeansWorkerInput {
+            k: kmeans_payload.k,
+            samples,
+        });
+        Ok(())
+    }
+
+    fn execute(&mut self, _context: WorkerContext) -> Result<String> {
+        let input = self
+            .input
+            .take()
+            .ok_or_else(|| Error::from(ErrorKind::InvalidInputError))?;
+        let mut model = KMeansClassifier::new(input.k);
+        model
+            .train(&input.samples)
+            .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
+
+        let mut output = String::new();
+        let classes = model
+            .predict(&input.samples)
+            .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
+        writeln!(&mut output, "labels:")
+            .map_err(|_| Error::from(ErrorKind::OutputGenerationError))?;
+        for c in classes.data().iter() {
+            writeln!(&mut output, "{}", c)
+                .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
+        }
+
+        Ok(output)
+    }
 }
 
 fn parse_input(input: &str, feature_num: usize) -> Result<Matrix<f64>> {
@@ -63,30 +142,4 @@ fn parse_input(input: &str, feature_num: usize) -> Result<Matrix<f64>> {
 
     let samples = Matrix::new(sample_num, feature_num, raw_cluster_data);
     Ok(samples)
-}
-
-pub(crate) fn cluster(_helper: &mut WorkerHelper, input: WorkerInput) -> Result<String> {
-    let payload = input
-        .payload
-        .ok_or_else(|| Error::from(ErrorKind::MissingValue))?;
-
-    let kmeans_payload: KmeansPayload = serde_json::from_str(&payload)
-        .or_else(|_| Err(Error::from(ErrorKind::InvalidInputError)))?;
-
-    let samples = parse_input(&kmeans_payload.data, kmeans_payload.feature_num)?;
-    let mut model = KMeansClassifier::new(kmeans_payload.k);
-    model
-        .train(&samples)
-        .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
-
-    let mut output = String::new();
-    let classes = model
-        .predict(&samples)
-        .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
-    writeln!(&mut output, "labels:").map_err(|_| Error::from(ErrorKind::OutputGenerationError))?;
-    for c in classes.data().iter() {
-        writeln!(&mut output, "{}", c).map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
-    }
-
-    Ok(output)
 }

@@ -15,7 +15,7 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use crate::trait_defs::{WorkerHelper, WorkerInput};
+use crate::worker::{FunctionType, Worker, WorkerContext};
 use mesatee_core::{Error, ErrorKind, Result};
 
 use rusty_machine::learning::logistic_reg::LogisticRegressor;
@@ -32,6 +32,85 @@ pub(crate) struct LogisticRegPayload {
     input_mode_data: String,
     target_mode_data: String,
     test_data: String,
+}
+
+pub struct LogisticRegWorker {
+    worker_id: u32,
+    func_name: String,
+    func_type: FunctionType,
+    input: Option<LogisticRegInput>,
+}
+
+struct LogisticRegInput {
+    input_mode_data: Matrix<f64>,
+    target_mode_data: Vector<f64>,
+    test_data: Matrix<f64>,
+}
+
+impl LogisticRegWorker {
+    pub fn new() -> Self {
+        LogisticRegWorker {
+            worker_id: 0,
+            func_name: "logistic_reg".to_string(),
+            func_type: FunctionType::Single,
+            input: None,
+        }
+    }
+}
+
+impl Worker for LogisticRegWorker {
+    fn function_name(&self) -> &str {
+        self.func_name.as_str()
+    }
+    fn function_type(&self) -> FunctionType {
+        self.func_type
+    }
+    fn set_id(&mut self, worker_id: u32) {
+        self.worker_id = worker_id;
+    }
+    fn id(&self) -> u32 {
+        self.worker_id
+    }
+    fn prepare_input(
+        &mut self,
+        dynamic_input: Option<String>,
+        _file_ids: Vec<String>,
+    ) -> Result<()> {
+        let payload = dynamic_input.ok_or_else(|| Error::from(ErrorKind::MissingValue))?;
+
+        let logistic_reg_payload: LogisticRegPayload = serde_json::from_str(&payload)
+            .or_else(|_| Err(Error::from(ErrorKind::InvalidInputError)))?;
+
+        let input = parse_input_to_matrix(
+            &logistic_reg_payload.input_mode_data,
+            logistic_reg_payload.input_mode_columns,
+        )?;
+        let target = data_to_vector(&logistic_reg_payload.target_mode_data)?;
+        let test_data = parse_input_to_matrix(
+            &logistic_reg_payload.test_data,
+            logistic_reg_payload.input_mode_columns,
+        )?;
+        self.input = Some(LogisticRegInput {
+            input_mode_data: input,
+            target_mode_data: target,
+            test_data: test_data,
+        });
+        Ok(())
+    }
+    fn execute(&mut self, _context: WorkerContext) -> Result<String> {
+        let input = self
+            .input
+            .take()
+            .ok_or_else(|| Error::from(ErrorKind::InvalidInputError))?;
+
+        let mut logistic_mod = LogisticRegressor::default();
+        logistic_mod
+            .train(&input.input_mode_data, &input.target_mode_data)
+            .unwrap();
+        let output = logistic_mod.predict(&input.test_data).unwrap();
+
+        Ok(output[0].to_string())
+    }
 }
 
 fn data_to_vector(input: &str) -> Result<Vector<f64>> {
@@ -79,25 +158,25 @@ fn parse_input_to_matrix(input: &str, input_mode_data_columns: usize) -> Result<
     Ok(samples)
 }
 
-pub(crate) fn cluster(_helper: &mut WorkerHelper, input: WorkerInput) -> Result<String> {
-    let payload = input
-        .payload
-        .ok_or_else(|| Error::from(ErrorKind::MissingValue))?;
+//pub(crate) fn cluster(_helper: &mut WorkerHelper, input: WorkerInput) -> Result<String> {
+//    let payload = input
+//        .payload
+//        .ok_or_else(|| Error::from(ErrorKind::MissingValue))?;
 
-    let log_reg_payload: LogisticRegPayload = serde_json::from_str(&payload)?;
-    let inputs = parse_input_to_matrix(
-        &log_reg_payload.input_mode_data,
-        log_reg_payload.input_mode_columns,
-    )?;
-    let targets = data_to_vector(&log_reg_payload.target_mode_data)?;
-    let test_datas = parse_input_to_matrix(
-        &log_reg_payload.test_data,
-        log_reg_payload.input_mode_columns,
-    )?;
+//    let log_reg_payload: LogisticRegPayload = serde_json::from_str(&payload)?;
+//    let inputs = parse_input_to_matrix(
+//        &log_reg_payload.input_mode_data,
+//        log_reg_payload.input_mode_columns,
+//    )?;
+//    let targets = data_to_vector(&log_reg_payload.target_mode_data)?;
+//    let test_datas = parse_input_to_matrix(
+//        &log_reg_payload.test_data,
+//        log_reg_payload.input_mode_columns,
+//    )?;
 
-    let mut log_model = LogisticRegressor::default();
-    log_model.train(&inputs, &targets).unwrap();
-    let output = log_model.predict(&test_datas).unwrap();
+//    let mut log_model = LogisticRegressor::default();
+//    log_model.train(&inputs, &targets).unwrap();
+//    let output = log_model.predict(&test_datas).unwrap();
 
-    Ok(output[0].to_string())
-}
+//    Ok(output[0].to_string())
+//}

@@ -29,6 +29,7 @@ log                  = { version = "0.4.7", features = ["max_level_trace"] }
 env_logger           = { version = "0.6.1" }
 image                = { version = "0.21.0" }
 ring                 = { version = "0.14.6" }
+uuid                 = { version = "0.7.4", features = ["v4"] }
 
 mesatee_core         = { version = "0.1.0" }
 

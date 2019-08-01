@@ -113,6 +113,8 @@ pub enum ErrorKind {
     IPCError,
     /// IAS client key or cert not available
     IASClientKeyCertError,
+    /// No valid worker for the task,
+    NoValidWorkerError,
     /// Others.
     Unknown,
 }
@@ -183,6 +185,7 @@ impl ErrorKind {
             ErrorKind::IASClientKeyCertError => {
                 "intel attestation service client key/certificate unavailable error"
             }
+            ErrorKind::NoValidWorkerError => "no valid worker error",
             ErrorKind::Unknown => "unknown error",
         }
     }
@@ -232,6 +235,7 @@ impl From<u32> for Error {
             0x0000_100f => ErrorKind::OutputGenerationError,
             0x0000_1010 => ErrorKind::IPCError,
             0x0000_1011 => ErrorKind::IASClientKeyCertError,
+            0x0000_1012 => ErrorKind::NoValidWorkerError,
             _ => ErrorKind::Unknown,
         };
 
@@ -277,6 +281,7 @@ impl Into<u32> for Error {
             ErrorKind::OutputGenerationError => 0x0000_100f,
             ErrorKind::IPCError => 0x0000_1010,
             ErrorKind::IASClientKeyCertError => 0x0000_1011,
+            ErrorKind::NoValidWorkerError => 0x0000_1012,
             ErrorKind::Unknown => 0xffff_ffff,
         }
     }
