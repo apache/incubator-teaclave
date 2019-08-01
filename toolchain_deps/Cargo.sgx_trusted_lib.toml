@@ -15,6 +15,7 @@ exclude = [
   "examples/online_decrypt",
   "examples/kmeans",
   "examples/logistic_reg",
+  "examples/lin_reg",
   "mesatee_core",
 ]
 

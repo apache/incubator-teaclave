@@ -12,6 +12,7 @@ members = [
   "examples/py_matrix_multiply",
   "examples/kmeans",
   "examples/logistic_reg",
+  "examples/lin_reg",
   "mesatee_sdk",
   "mesatee_sdk/c_sdk",
 ]

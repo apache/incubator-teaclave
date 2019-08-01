@@ -1,7 +1,7 @@
 #!/bin/bash
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 BIN_DIR=$SCRIPT_DIR/../../bin
-BIN=./logistic_reg
+BIN=./lin_reg
 cd $BIN_DIR
 
 INPUT_MODE_DATA_COLUMNS=13

@@ -18,7 +18,7 @@ use std::prelude::v1::*;
 use crate::trait_defs::{WorkerHelper, WorkerInput};
 use mesatee_core::{Error, ErrorKind, Result};
 
-use rusty_machine::learning::logistic_reg::LogisticRegressor;
+use rusty_machine::learning::lin_reg::LinRegressor;
 use rusty_machine::learning::SupModel;
 use rusty_machine::linalg::Matrix;
 use rusty_machine::linalg::Vector;
@@ -27,7 +27,7 @@ use serde_derive::Deserialize;
 use serde_json;
 
 #[derive(Deserialize)]
-pub(crate) struct LogisticRegPayload {
+pub(crate) struct LinRegPayload {
     input_mode_columns: usize,
     input_mode_data: String,
     target_mode_data: String,
@@ -84,20 +84,20 @@ pub(crate) fn cluster(_helper: &mut WorkerHelper, input: WorkerInput) -> Result<
         .payload
         .ok_or_else(|| Error::from(ErrorKind::MissingValue))?;
 
-    let log_reg_payload: LogisticRegPayload = serde_json::from_str(&payload)?;
+    let lin_reg_payload: LinRegPayload = serde_json::from_str(&payload)?;
     let inputs = parse_input_to_matrix(
-        &log_reg_payload.input_mode_data,
-        log_reg_payload.input_mode_columns,
+        &lin_reg_payload.input_mode_data,
+        lin_reg_payload.input_mode_columns,
     )?;
-    let targets = data_to_vector(&log_reg_payload.target_mode_data)?;
+    let targets = data_to_vector(&lin_reg_payload.target_mode_data)?;
     let test_datas = parse_input_to_matrix(
-        &log_reg_payload.test_data,
-        log_reg_payload.input_mode_columns,
+        &lin_reg_payload.test_data,
+        lin_reg_payload.input_mode_columns,
     )?;
 
-    let mut log_model = LogisticRegressor::default();
-    log_model.train(&inputs, &targets).unwrap();
-    let output = log_model.predict(&test_datas).unwrap();
+    let mut lin_mod = LinRegressor::default();
+    lin_mod.train(&inputs, &targets).unwrap();
+    let output = lin_mod.predict(&test_datas).unwrap();
 
     Ok(output[0].to_string())
 }

@@ -24,6 +24,7 @@ mod demo_func;
 mod gbdt;
 mod image_resize;
 mod kmeans;
+mod lin_reg;
 mod logistic_reg;
 mod online_decrypt;
 mod private_join_and_compute;
@@ -65,6 +66,7 @@ impl TrustedWorker {
         dispatcher.insert("rsa_sign".to_string(), rsa::sign);
         dispatcher.insert("kmeans_cluster".to_string(), kmeans::cluster);
         dispatcher.insert("logistic_reg".to_string(), logistic_reg::cluster);
+        dispatcher.insert("lin_reg".to_string(), lin_reg::cluster);
 
         TrustedWorker { dispatcher }
     }

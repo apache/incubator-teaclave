@@ -25,7 +25,7 @@ lazy_static! {
 }
 
 #[derive(Serialize)]
-pub(crate) struct LogisticRegPayload {
+pub(crate) struct LinRegPayload {
     input_mode_columns: usize,
     input_mode_data: String,
     target_mode_data: String,
@@ -34,7 +34,7 @@ pub(crate) struct LogisticRegPayload {
 
 fn print_usage() {
     let msg = "
-    ./logistic input_mode_data_columns input_mode_data_path target_mode_data_path test_data_path 
+    ./lin_reg input_mode_data_columns input_mode_data_path target_mode_data_path test_data_path 
     input_model format:
         f32,f32,f32,f32 ...
         f32,f32,f32,f32 ...
@@ -91,7 +91,7 @@ fn main() {
     let test_data_bytes = fs::read(&test_date_path).unwrap();
     let test_data_str = String::from_utf8(test_data_bytes).unwrap();
 
-    let input_payload = LogisticRegPayload {
+    let input_payload = LinRegPayload {
         input_mode_columns: columns,
         input_mode_data: input_mode_data_str,
         target_mode_data: target_mode_data_str,
@@ -109,7 +109,7 @@ fn main() {
         *TDFS_ADDR,
     )
     .unwrap();
-    let task = mesatee.create_task("logistic_reg").unwrap();
+    let task = mesatee.create_task("lin_reg").unwrap();
     let result = task.invoke_with_payload(&input_string).unwrap();
 
     print!("result:{}\n", result)

@@ -62,7 +62,7 @@ pub(crate) fn private_join_and_compute(
             test_map.insert(indentity.to_owned(), (value.0 + amount, value.1 + 1));
         }
     }
-    
+
     let mut output = String::new();
     for (identity, amount) in test_map.into_iter() {
         if amount.1 == number {
