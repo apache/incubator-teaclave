@@ -16,34 +16,84 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use crate::trait_defs::{WorkerHelper, WorkerInput};
+use crate::worker::{FunctionType, Worker, WorkerContext};
 use mesatee_core::{Error, ErrorKind, Result};
 
 mod basic;
 mod compute;
 use compute::SetIntersection;
 
-pub fn psi(helper: &mut WorkerHelper, input: WorkerInput) -> Result<String> {
-    if input.input_files.len() != 2 {
-        return Err(Error::from(ErrorKind::InvalidInputError));
+pub struct PSIWorker {
+    worker_id: u32,
+    func_name: String,
+    func_type: FunctionType,
+    input: Option<PSIWorkerInput>,
+}
+impl PSIWorker {
+    pub fn new() -> Self {
+        PSIWorker {
+            worker_id: 0,
+            func_name: "psi".to_string(),
+            func_type: FunctionType::Multiparty,
+            input: None,
+        }
     }
+}
 
-    let file1 = &input.input_files[0];
-    let file2 = &input.input_files[1];
+struct PSIWorkerInput {
+    file1: String,
+    file2: String,
+}
 
-    let plaintext1 = helper.read_file(&file1)?;
-    let plaintext2 = helper.read_file(&file2)?;
-
-    let mut si = SetIntersection::new();
-    if !si.psi_add_hash_data(plaintext1, 0) {
-        return Err(Error::from(ErrorKind::InvalidInputError));
+impl Worker for PSIWorker {
+    fn function_name(&self) -> &str {
+        self.func_name.as_str()
     }
-    if !si.psi_add_hash_data(plaintext2, 1) {
-        return Err(Error::from(ErrorKind::InvalidInputError));
+    fn function_type(&self) -> FunctionType {
+        self.func_type
     }
-    si.compute();
-    let _result_file1 = helper.save_file_for_file_owner(&si.data[0].result, file1)?;
-    let _result_file2 = helper.save_file_for_file_owner(&si.data[1].result, file2)?;
+    fn set_id(&mut self, worker_id: u32) {
+        self.worker_id = worker_id;
+    }
+    fn id(&self) -> u32 {
+        self.worker_id
+    }
+    fn prepare_input(
+        &mut self,
+        _dynamic_input: Option<String>,
+        file_ids: Vec<String>,
+    ) -> Result<()> {
+        if file_ids.len() != 2 {
+            return Err(Error::from(ErrorKind::InvalidInputError));
+        }
+        self.input = Some(PSIWorkerInput {
+            file1: file_ids[0].to_string(),
+            file2: file_ids[1].to_string(),
+        });
+        Ok(())
+    }
+    fn execute(&mut self, context: WorkerContext) -> Result<String> {
+        let input = self
+            .input
+            .take()
+            .ok_or_else(|| Error::from(ErrorKind::InvalidInputError))?;
+        let file1 = &input.file1;
+        let file2 = &input.file2;
 
-    Ok("Finished".to_string())
+        let plaintext1 = context.read_file(&file1)?;
+        let plaintext2 = context.read_file(&file2)?;
+
+        let mut si = SetIntersection::new();
+        if !si.psi_add_hash_data(plaintext1, 0) {
+            return Err(Error::from(ErrorKind::InvalidInputError));
+        }
+        if !si.psi_add_hash_data(plaintext2, 1) {
+            return Err(Error::from(ErrorKind::InvalidInputError));
+        }
+        si.compute();
+        let _result_file1 = context.save_file_for_file_owner(&si.data[0].result, file1)?;
+        let _result_file2 = context.save_file_for_file_owner(&si.data[1].result, file2)?;
+
+        Ok("Finished".to_string())
+    }
 }
