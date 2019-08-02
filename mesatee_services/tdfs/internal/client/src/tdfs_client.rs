@@ -19,6 +19,7 @@ use kms_client::KMSClient;
 use mesatee_core::config::{self, OutboundDesc, TargetDesc};
 use mesatee_core::rpc::channel::SgxTrustedChannel;
 use mesatee_core::{self, Result};
+use std::io::{Read, Write};
 use std::untrusted::fs;
 use tdfs_internal_proto::{CreateFileResponse, DFSRequest, DFSResponse, FileInfo, GetFileResponse};
 
@@ -100,9 +101,10 @@ impl TDFSClient {
         let key_config = resp.key_config;
         let encrypted_data =
             file_util::encrypt_data(data, &key_config.key, &key_config.nonce, &key_config.ad)?;
-        fs::write(access_path, &encrypted_data)
-            .map_err(|_| mesatee_core::Error::from(mesatee_core::ErrorKind::IoError))?;
-
+        let mut f = fs::File::create(access_path)?;
+        for chunk in encrypted_data.chunks(1024 * 1024) {
+            f.write_all(chunk)?;
+        }
         Ok(file_id)
     }
 
@@ -140,8 +142,16 @@ impl TDFSClient {
         let key_resp = client.request_get_key(&file_info.key_id)?;
         let key_config = key_resp.config;
         let access_path = &file_info.access_path;
-        let ciphertxt = fs::read(access_path)
-            .map_err(|_| mesatee_core::Error::from(mesatee_core::ErrorKind::IoError))?;
+        let mut f = fs::File::open(access_path)?;
+        let mut ciphertxt: Vec<u8> = Vec::new();
+        let mut buffer = vec![0; 1024 * 1024];
+        while let Ok(bytes_len) = f.read(&mut buffer) {
+            if bytes_len > 0 {
+                ciphertxt.extend_from_slice(&buffer[0..bytes_len]);
+            } else {
+                break;
+            }
+        }
 
         let plaintxt = file_util::decrypt_data(
             ciphertxt,
