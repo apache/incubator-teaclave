@@ -28,9 +28,9 @@ use serde_json;
 
 #[derive(Deserialize)]
 pub(crate) struct LinRegPayload {
-    input_mode_columns: usize,
-    input_mode_data: String,
-    target_mode_data: String,
+    input_model_columns: usize,
+    input_model_data: String,
+    target_model_data: String,
     test_data: String,
 }
 
@@ -42,9 +42,9 @@ pub struct LinRegWorker {
 }
 
 struct LinRegInput {
-    input_mode_data: Matrix<f64>,
-    target_mode_data: Vector<f64>,
-    test_data: Matrix<f64>,
+    input_model_data: Matrix<f64>,  // sample model data
+    target_model_data: Vector<f64>, // the target(also called label or result) of the sample model data
+    test_data: Matrix<f64>,         // data to be tested
 }
 
 impl LinRegWorker {
@@ -82,17 +82,17 @@ impl Worker for LinRegWorker {
             .or_else(|_| Err(Error::from(ErrorKind::InvalidInputError)))?;
 
         let input = parse_input_to_matrix(
-            &lin_reg_payload.input_mode_data,
-            lin_reg_payload.input_mode_columns,
+            &lin_reg_payload.input_model_data,
+            lin_reg_payload.input_model_columns,
         )?;
-        let target = data_to_vector(&lin_reg_payload.target_mode_data)?;
+        let target = data_to_vector(&lin_reg_payload.target_model_data)?;
         let test_data = parse_input_to_matrix(
             &lin_reg_payload.test_data,
-            lin_reg_payload.input_mode_columns,
+            lin_reg_payload.input_model_columns,
         )?;
         self.input = Some(LinRegInput {
-            input_mode_data: input,
-            target_mode_data: target,
+            input_model_data: input,
+            target_model_data: target,
             test_data: test_data,
         });
         Ok(())
@@ -105,10 +105,14 @@ impl Worker for LinRegWorker {
             .ok_or_else(|| Error::from(ErrorKind::InvalidInputError))?;
 
         let mut lin_mod = LinRegressor::default();
+        // Train the model
         lin_mod
-            .train(&input.input_mode_data, &input.target_mode_data)
-            .unwrap();
-        let output = lin_mod.predict(&input.test_data).unwrap();
+            .train(&input.input_model_data, &input.target_model_data)
+            .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
+        // predict a new test data
+        let output = lin_mod
+            .predict(&input.test_data)
+            .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
 
         Ok(output[0].to_string())
     }
@@ -118,7 +122,9 @@ fn data_to_vector(input: &str) -> Result<Vector<f64>> {
     let mut raw_cluster_data = Vec::new();
 
     for c in input.lines() {
-        let value = c.parse::<f64>().unwrap();
+        let value = c
+            .parse::<f64>()
+            .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
         raw_cluster_data.push(value);
     }
 
@@ -126,7 +132,7 @@ fn data_to_vector(input: &str) -> Result<Vector<f64>> {
     Ok(target_data)
 }
 
-fn parse_input_to_matrix(input: &str, input_mode_data_columns: usize) -> Result<Matrix<f64>> {
+fn parse_input_to_matrix(input: &str, input_model_data_columns: usize) -> Result<Matrix<f64>> {
     let mut raw_cluster_data = Vec::new();
 
     let lines: Vec<&str> = input.split('\n').collect();
@@ -149,35 +155,12 @@ fn parse_input_to_matrix(input: &str, input_mode_data_columns: usize) -> Result<
                 .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
             point.push(feature);
         }
-        if point.len() == input_mode_data_columns {
+        if point.len() == input_model_data_columns {
             sample_num += 1;
             raw_cluster_data.extend(point);
         }
     }
 
-    let samples = Matrix::new(sample_num, input_mode_data_columns, raw_cluster_data);
+    let samples = Matrix::new(sample_num, input_model_data_columns, raw_cluster_data);
     Ok(samples)
 }
-
-//pub(crate) fn cluster(_helper: &mut WorkerHelper, input: WorkerInput) -> Result<String> {
-//    let payload = input
-//        .payload
-//        .ok_or_else(|| Error::from(ErrorKind::MissingValue))?;
-
-//   let lin_reg_payload: LinRegPayload = serde_json::from_str(&payload)?;
-//    let inputs = parse_input_to_matrix(
-//        &lin_reg_payload.input_mode_data,
-//        lin_reg_payload.input_mode_columns,
-//    )?;
-//    let targets = data_to_vector(&lin_reg_payload.target_mode_data)?;
-//    let test_datas = parse_input_to_matrix(
-//        &lin_reg_payload.test_data,
-//        lin_reg_payload.input_mode_columns,
-//    )?;
-
-//    let mut lin_mod = LinRegressor::default();
-//    lin_mod.train(&inputs, &targets).unwrap();
-//    let output = lin_mod.predict(&test_datas).unwrap();
-
-//    Ok(output[0].to_string())
-//}

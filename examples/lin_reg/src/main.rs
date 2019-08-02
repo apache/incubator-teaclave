@@ -26,29 +26,27 @@ lazy_static! {
 
 #[derive(Serialize)]
 pub(crate) struct LinRegPayload {
-    input_mode_columns: usize,
-    input_mode_data: String,
-    target_mode_data: String,
+    input_model_columns: usize,
+    input_model_data: String,
+    target_model_data: String,
     test_data: String,
 }
 
 fn print_usage() {
     let msg = "
-    ./lin_reg input_mode_data_columns input_mode_data_path target_mode_data_path test_data_path 
-    input_model format:
+    ./lin_reg input_model_data_columns input_model_data_path target_model_data_path test_data_path 
+    input_model_data format:
         f32,f32,f32,f32 ...
         f32,f32,f32,f32 ...
         ...
-
-    target_data format:
+    target_model_data format:
         1.
         0.
         1.
         0.
         0.
         1.
-        ....
-    
+        ....   
     test_data format:
         f32,f32,f32,f32 ...
     ";
@@ -78,23 +76,23 @@ fn main() {
     }
 
     let columns = args[1].parse().unwrap();
-    let input_mode_data_path = &args[2];
-    let target_mode_data_path = &args[3];
+    let input_model_data_path = &args[2];
+    let target_model_data_path = &args[3];
     let test_date_path = &args[4];
 
-    let input_mode_data_bytes = fs::read(&input_mode_data_path).unwrap();
-    let input_mode_data_str = String::from_utf8(input_mode_data_bytes).unwrap();
+    let input_model_data_bytes = fs::read(&input_model_data_path).unwrap();
+    let input_model_data_str = String::from_utf8(input_model_data_bytes).unwrap();
 
-    let target_mode_data_bytes = fs::read(&target_mode_data_path).unwrap();
-    let target_mode_data_str = String::from_utf8(target_mode_data_bytes).unwrap();
+    let target_model_data_bytes = fs::read(&target_model_data_path).unwrap();
+    let target_model_data_str = String::from_utf8(target_model_data_bytes).unwrap();
 
     let test_data_bytes = fs::read(&test_date_path).unwrap();
     let test_data_str = String::from_utf8(test_data_bytes).unwrap();
 
     let input_payload = LinRegPayload {
-        input_mode_columns: columns,
-        input_mode_data: input_mode_data_str,
-        target_mode_data: target_mode_data_str,
+        input_model_columns: columns,
+        input_model_data: input_model_data_str,
+        target_model_data: target_model_data_str,
         test_data: test_data_str,
     };
 
@@ -112,5 +110,5 @@ fn main() {
     let task = mesatee.create_task("lin_reg").unwrap();
     let result = task.invoke_with_payload(&input_string).unwrap();
 
-    print!("result:{}\n", result)
+    println!("result:{}", result)
 }
