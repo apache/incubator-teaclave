@@ -42,9 +42,12 @@ pub struct LinRegWorker {
 }
 
 struct LinRegInput {
-    input_model_data: Matrix<f64>,  // sample model data
-    target_model_data: Vector<f64>, // the target(also called label or result) of the sample model data
-    test_data: Matrix<f64>,         // data to be tested
+    /// Sample model data
+    input_model_data: Matrix<f64>,
+    /// The target(also called label or result) of the sample model data
+    target_model_data: Vector<f64>,
+    /// Data to be tested
+    test_data: Matrix<f64>,
 }
 
 impl LinRegWorker {
