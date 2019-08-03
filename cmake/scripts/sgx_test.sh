@@ -14,5 +14,7 @@ ias_spid.txt and ias_key.txt, and put in the bin";
         exit 1;
     fi
 fi
+
+cd ${MESATEE_PROJECT_ROOT}/tests && ./module_test.sh
 cd ${MESATEE_PROJECT_ROOT}/tests && ./functional_test.sh
 cd ${MESATEE_PROJECT_ROOT}/tests && ./integration_test.sh

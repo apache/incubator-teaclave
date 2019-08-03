@@ -13,6 +13,7 @@ members = [
   "examples/kmeans",
   "mesatee_sdk",
   "mesatee_sdk/c_sdk",
+  "mesatee_utils/protected_fs_rs",
 ]
 
 exclude = [

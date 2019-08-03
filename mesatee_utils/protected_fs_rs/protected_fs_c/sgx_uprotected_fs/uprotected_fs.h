@@ -12,8 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod common_setup;
-pub mod kms_test;
-pub mod protected_fs_test;
-pub mod tdfs_test;
-pub mod tms_test;
+#ifndef _UPROTECTED_FS_H_
+#define _UPROTECTED_FS_H_
+
+// this file should remain empty in release environment
+// validation environment will provide a different version of this file
+
+
+#endif	// _UPROTECTED_FS_H_

@@ -12,8 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod common_setup;
-pub mod kms_test;
-pub mod protected_fs_test;
-pub mod tdfs_test;
-pub mod tms_test;
+#![cfg_attr(feature = "mesalock_sgx", no_std)]
+#[cfg(feature = "mesalock_sgx")]
+#[macro_use]
+extern crate sgx_tstd as std;
+
+mod deps;
+mod protected_fs;
+mod sgx_fs_inner;
+mod sgx_tprotected_fs;
+pub use crate::protected_fs::*;
