@@ -96,7 +96,7 @@ impl Worker for LogisticRegWorker {
         self.input = Some(LogisticRegInput {
             input_model_data: input,
             target_model_data: target,
-            test_data: test_data,
+            test_data,
         });
         Ok(())
     }
