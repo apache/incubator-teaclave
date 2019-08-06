@@ -100,10 +100,10 @@ check-sgx-sdk:
 please adjust the SGX_SDK env or the Makefile"; exit 1; fi
 
 init-submodules:
-	#if git submodule status | egrep -q '^[-]|^[+]' ; then \
-	#	echo "INFO: Need to reinitialize git submodules"; \
-	#	git submodule update --init; \
-	#fi
+	if git submodule status | egrep -q '^[-]|^[+]' ; then \
+		echo "INFO: Need to reinitialize git submodules"; \
+		git submodule update --init; \
+	fi
 
 # "=" gurantees lazy evaluation until rust-sgx-sdk submodule is populated
 TOOLCHAIN = $(shell cat third_party/rust-sgx-sdk/rust-toolchain)
