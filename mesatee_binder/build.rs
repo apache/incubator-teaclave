@@ -27,6 +27,7 @@ fn choose_sgx_dylib(is_sim: bool) {
 fn main() {
     let sdk_dir = env::var("SGX_SDK").unwrap_or("/opt/intel/sgxsdk".into());
     println!("cargo:rustc-link-search=native={}/lib64", sdk_dir);
+    println!("cargo:rustc-link-lib=static=sgx_uprotected_fs");
 
     let is_sim = match env::var("SGX_MODE") {
         Ok(ref v) if v == "SW" => true,

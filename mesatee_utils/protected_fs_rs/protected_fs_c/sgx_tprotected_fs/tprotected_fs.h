@@ -12,8 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod common_setup;
-pub mod kms_test;
-pub mod protected_fs_test;
-pub mod tdfs_test;
-pub mod tms_test;
+#ifndef _TPROTECTED_FS_H_
+#define _TPROTECTED_FS_H_
+
+// this file should only contain following definition
+#define _RECOVERY_HOOK_(_x) (0)
+
+// this file should remain empty in release environment
+// validation environment will provide a different version of this file
+
+#endif	// _TPROTECTED_FS_H_

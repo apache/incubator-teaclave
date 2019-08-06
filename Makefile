@@ -76,7 +76,7 @@ SGX_MODULES := mesatee_services/kms mesatee_services/tdfs mesatee_services/tms \
 SGX_LIBS :=
 UNIX_MODULES := integration_test private_join_and_compute ml_predict quickstart \
 	image_resizing online_decrypt rsa_sign py_matrix_multiply kmeans
-UNIX_LIBS := mesatee_sdk
+UNIX_LIBS := mesatee_sdk protected_fs_rs
 LIBS := $(SGX_LIBS) $(UNIX_LIBS)
 
 LCOV := lcov
@@ -141,7 +141,7 @@ endef
 
 define sgx_build_prepare
 	mkdir -p $(MESATEE_PROJECT_ROOT)/.cargo
-	cp -f $(TOOLCHAIN_DEPS_DIR)/Cargo.sgx_trusted_lib.toml $(MODULES_DIR)/Cargo.toml
+	$(call cargo_toml_prepare, sgx_trusted_lib)
 	cp -f $(THIRD_PARTY_DIR)/crates-sgx/Cargo.lock $(MODULES_DIR)/Cargo.lock
 	cp -f $(THIRD_PARTY_DIR)/crates-sgx/config $(MESATEE_PROJECT_ROOT)/.cargo/config
 	sed -i 's/directory = "vendor"/directory = "third_party\/crates-sgx\/vendor"/' $(MESATEE_PROJECT_ROOT)/.cargo/config
@@ -152,7 +152,17 @@ sgx_build_prepare:
 	$(call sgx_build_prepare)
 
 define sgx_build_clean
-	rm -f $(MODULES_DIR)/Cargo.toml $(MODULES_DIR)/Cargo.lock $(MESATEE_PROJECT_ROOT)/.cargo/config
+	$(call cargo_toml_clean)
+	rm -f $(MODULES_DIR)/Cargo.lock
+	rm -f $(MESATEE_PROJECT_ROOT)/.cargo/config
+endef
+
+define cargo_toml_prepare
+	cp -f $(TOOLCHAIN_DEPS_DIR)/Cargo.$(strip $(1)).toml $(MODULES_DIR)/Cargo.toml
+endef
+
+define cargo_toml_clean
+	rm -f $(MODULES_DIR)/Cargo.toml 
 endef
 
 sgx_build_clean:
@@ -191,8 +201,9 @@ END_BOLD=\033[0m
 
 config_gen: prep
 	echo -e "$(BOLD)[*] Building $@$(END_BOLD)"
-	cp -f $(TOOLCHAIN_DEPS_DIR)/Cargo.unix_app.toml $(MODULES_DIR)/Cargo.toml
+	$(call cargo_toml_prepare, unix_app)
 	$(call cargo_build, $(MODULES_DIR), $(UNIX_TARGET_DIR), -p $@)
+	$(call cargo_toml_clean)
 	cp $(UNIX_TARGET_DIR)/$(TARGET)/$@ $(MESATEE_BIN_DIR)
 
 sgx_pregen: prep $(EDL_FILE) $(SGX_EDGER8R)
@@ -206,8 +217,9 @@ sgx_pregen: prep $(EDL_FILE) $(SGX_EDGER8R)
 
 $(SGX_MODULES): config_gen sgx_pregen
 	echo -e "$(BOLD)[*] Building $@$(END_BOLD)"
-	cp -f $(TOOLCHAIN_DEPS_DIR)/Cargo.sgx_untrusted_app.toml $(MODULES_DIR)/Cargo.toml
+	$(call cargo_toml_prepare, sgx_untrusted_app)
 	$(call cargo_build, $(MODULES_DIR), $(UNTRUSTED_TARGET_DIR), -p $(notdir $@))
+	$(call cargo_toml_clean)
 	cp $(UNTRUSTED_TARGET_DIR)/$(TARGET)/$(notdir $@) $(MESATEE_BIN_DIR)
 
 	echo -e "$(BOLD)[*] Building $@_enclave$(END_BOLD)"
@@ -218,8 +230,9 @@ $(SGX_MODULES): config_gen sgx_pregen
 
 sgx_untrusted: config_gen sgx_pregen
 	echo -e "$(BOLD)[*] Building $@$(END_BOLD)"
-	cp -f $(TOOLCHAIN_DEPS_DIR)/Cargo.sgx_untrusted_app.toml $(MODULES_DIR)/Cargo.toml
+	$(call cargo_toml_prepare, sgx_untrusted_app)
 	$(call cargo_build, $(MODULES_DIR), $(UNTRUSTED_TARGET_DIR), )
+	$(call cargo_toml_clean)
 	for m in $(SGX_MODULES); do cp $(UNTRUSTED_TARGET_DIR)/$(TARGET)/$${m##*/} $(MESATEE_BIN_DIR); done
 
 sgx_trusted: config_gen sgx_pregen sgx_untrusted
@@ -238,8 +251,9 @@ sgx_trusted: config_gen sgx_pregen sgx_untrusted
 
 $(UNIX_MODULES): prep config_gen
 	echo -e "$(BOLD)[*] Building $@$(END_BOLD)"
-	cp -f $(TOOLCHAIN_DEPS_DIR)/Cargo.unix_app.toml $(MODULES_DIR)/Cargo.toml
+	$(call cargo_toml_prepare, unix_app)
 	$(call cargo_build, $(MODULES_DIR), $(UNIX_TARGET_DIR), -p $@)
+	$(call cargo_toml_clean)
 	cp $(UNIX_TARGET_DIR)/$(TARGET)/$@ $(MESATEE_BIN_DIR)
 
 $(UNIX_LIBS): prep config_gen
@@ -249,8 +263,9 @@ $(UNIX_LIBS): prep config_gen
 
 mesatee_sdk_c: prep mesatee_sdk
 	echo -e "$(BOLD)[*] Building $@$(END_BOLD)"
-	cp -f $(TOOLCHAIN_DEPS_DIR)/Cargo.unix_app.toml $(MODULES_DIR)/Cargo.toml
+	$(call cargo_toml_prepare, unix_app)
 	$(call cargo_build, $(MODULES_DIR), $(UNIX_TARGET_DIR), -p $@)
+	$(call cargo_toml_clean)
 	cp $(UNIX_TARGET_DIR)/$(TARGET)/*.so $(MESATEE_BIN_DIR)
 	cp -r $(MODULES_DIR)/mesatee_sdk/c_sdk/include/mesatee $(MESATEE_BIN_DIR)
 
@@ -323,6 +338,7 @@ ifeq ($(SGX_MODE), HW)
         echo "Please follow \"How to Run (SGX)\" in README to obtain \
 ias_spid.txt and ias_key.txt, and put in the bin"; exit 1; fi
 endif
+	cd tests && ./module_test.sh
 	cd tests && ./functional_test.sh
 	cd tests && ./integration_test.sh
 

@@ -12,18 +12,20 @@ crate-type = ["staticlib"]
 
 [features]
 default = []
-mesalock_sgx = ["sgx_tstd", "sgx_tunittest", "mesatee_core/mesalock_sgx", "kms_client/mesalock_sgx", "tdfs_internal_client/mesalock_sgx", "tms_internal_client/mesalock_sgx", "tms_internal_proto/mesalock_sgx"]
+mesalock_sgx = ["sgx_tstd", "sgx_tunittest", "mesatee_core/mesalock_sgx", "kms_client/mesalock_sgx", "tdfs_internal_client/mesalock_sgx", "tms_internal_client/mesalock_sgx", "tms_internal_proto/mesalock_sgx", "protected_fs_rs/mesalock_sgx"]
 cov = ["sgx_cov"]
 
 [dependencies]
 cfg-if          = { version = "0.1.9" }
 log             = { version = "0.4.6" }
 env_logger      = { version = "0.6.1" }
+rand            = { version = "0.6.5" }
 
 kms_client      = { path = "../../../mesatee_services/kms/client", optional = true }
 tdfs_internal_client = { path = "../../../mesatee_services/tdfs/internal/client", optional = true }
 tms_internal_client = { path = "../../../mesatee_services/tms/internal/client", optional = true }
 tms_internal_proto = { path = "../../../mesatee_services/tms/internal/proto", optional = true }
+protected_fs_rs    = { path = "../../../mesatee_utils/protected_fs_rs", default-features = false, optional = true }
 
 mesatee_core           = { version = "0.1.0" }
 mesatee_config         = { version = "0.1.0" }

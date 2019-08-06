@@ -11,9 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#define STRFILEVER    "2.6.100.51363"
+#define COPYRIGHT      "Copyright (C) 2019 Intel Corporation"
 
-pub mod common_setup;
-pub mod kms_test;
-pub mod protected_fs_test;
-pub mod tdfs_test;
-pub mod tms_test;
+#define UAE_SERVICE_VERSION       "1.2.100.0"
+#define URTS_VERSION              "1.1.101.0"
+#define ENCLAVE_COMMON_VERSION    "1.0.104.0"
