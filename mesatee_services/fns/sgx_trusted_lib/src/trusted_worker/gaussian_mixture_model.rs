@@ -27,6 +27,8 @@ use serde_json;
 
 #[derive(Deserialize)]
 pub(crate) struct GmmPayload {
+    k: usize,
+    max_iter_num: usize,
     input_model_columns: usize,
     input_model_data: String,
     test_data: String,
@@ -40,6 +42,9 @@ pub struct GmmWorker {
 }
 
 struct GmmInput {
+    k: usize,
+    /// the max number of iterations for the EM algorithm.
+    max_iter_num: usize,
     /// Sample model data
     input_model_data: Matrix<f64>,
     /// Data to be tested
@@ -87,6 +92,8 @@ impl Worker for GmmWorker {
         let test_data =
             parse_input_to_matrix(&gmm_payload.test_data, gmm_payload.input_model_columns)?;
         self.input = Some(GmmInput {
+            k: gmm_payload.k,
+            max_iter_num: gmm_payload.max_iter_num,
             input_model_data: input,
             test_data,
         });
@@ -99,8 +106,8 @@ impl Worker for GmmWorker {
             .take()
             .ok_or_else(|| Error::from(ErrorKind::InvalidInputError))?;
         // Create gmm with k(=2) classes.
-        let mut gmm_mod = GaussianMixtureModel::new(2);
-        gmm_mod.set_max_iters(10);
+        let mut gmm_mod = GaussianMixtureModel::new(input.k);
+        gmm_mod.set_max_iters(input.max_iter_num);
         gmm_mod.cov_option = CovOption::Diagonal;
         // Train the model
         gmm_mod

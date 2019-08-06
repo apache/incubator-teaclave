@@ -26,6 +26,8 @@ lazy_static! {
 
 #[derive(Serialize)]
 pub(crate) struct GmmPayload {
+    k: usize,
+    max_iter_num: usize,
     input_model_columns: usize,
     input_model_data: String,
     test_data: String,
@@ -33,7 +35,7 @@ pub(crate) struct GmmPayload {
 
 fn print_usage() {
     let msg = "
-    ./gaussian_mixture_model input_model_data_columns input_model_data_path test_data_path 
+    ./gaussian_mixture_model k max_iter_num input_model_data_columns input_model_data_path test_data_path 
     input_model_data format:
         f32,f32,f32,f32 ...
         f32,f32,f32,f32 ...
@@ -61,14 +63,15 @@ fn main() {
     ];
 
     let args: Vec<String> = env::args().collect();
-    if args.len() != 4 {
+    if args.len() != 6 {
         print_usage();
         return;
     }
-
-    let columns = args[1].parse().unwrap();
-    let input_model_data_path = &args[2];
-    let test_date_path = &args[3];
+    let k_number = args[1].parse().unwrap();
+    let max_iter_number = args[2].parse().unwrap();
+    let columns = args[3].parse().unwrap();
+    let input_model_data_path = &args[4];
+    let test_date_path = &args[5];
 
     let input_model_data_bytes = fs::read(&input_model_data_path).unwrap();
     let input_model_data_str = String::from_utf8(input_model_data_bytes).unwrap();
@@ -77,6 +80,8 @@ fn main() {
     let test_data_str = String::from_utf8(test_data_bytes).unwrap();
 
     let input_payload = GmmPayload {
+        k: k_number,
+        max_iter_num: max_iter_number,
         input_model_columns: columns,
         input_model_data: input_model_data_str,
         test_data: test_data_str,
