@@ -29,5 +29,4 @@ assert_eq() {
   fi
 }
 
-
 assert_eq "`$BIN $INPUT_MODEL_DATA_COLUMNS $INPUT_PATH $TARGET_PATH $TEST_DATA_PATH | tail -n +1 2>&1`" "`cat $EXPECTED_RESULT`"

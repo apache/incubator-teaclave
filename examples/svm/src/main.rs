@@ -25,7 +25,7 @@ lazy_static! {
 }
 
 #[derive(Serialize)]
-pub(crate) struct LinRegPayload {
+pub(crate) struct SvmPayload {
     input_model_columns: usize,
     input_model_data: String,
     target_model_data: String,
@@ -89,7 +89,7 @@ fn main() {
     let test_data_bytes = fs::read(&test_date_path).unwrap();
     let test_data_str = String::from_utf8(test_data_bytes).unwrap();
 
-    let input_payload = LinRegPayload {
+    let input_payload = SvmPayload {
         input_model_columns: columns,
         input_model_data: input_model_data_str,
         target_model_data: target_model_data_str,
