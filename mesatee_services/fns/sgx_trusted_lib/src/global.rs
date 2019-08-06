@@ -14,9 +14,9 @@
 use crate::running_task::RunningTask;
 use crate::trusted_worker::{
     BytesPlusOneWorker, ConcatWorker, EchoFileWorker, EchoWorker, FileBytesPlusOneWorker,
-    GBDTPredictWorker, ImageResizeWorker, KmeansWorker, LinRegWorker, LogisticRegWorker,
-    MesaPyWorker, OnlineDecryptWorker, PSIWorker, PrivateJoinAndComputeWorker, RSASignWorker,
-    SvmWorker, SwapFileWorker, WASMWorker,
+    GBDTPredictWorker, GenLinearModelWorker, ImageResizeWorker, KmeansWorker, LinRegWorker,
+    LogisticRegWorker, MesaPyWorker, OnlineDecryptWorker, PSIWorker, PrivateJoinAndComputeWorker,
+    RSASignWorker, SvmWorker, SwapFileWorker, WASMWorker,
 };
 use crate::worker::WorkerInfoQueue;
 use mesatee_core::Result;
@@ -56,7 +56,7 @@ pub fn save_file_for_file_owner(
 }
 
 pub fn register_trusted_worker_statically() {
-    for _i in 0..17 {
+    for _i in 0..18 {
         let worker = Box::new(EchoWorker::new());
         let _ = WorkerInfoQueue::register(worker);
 
@@ -109,6 +109,9 @@ pub fn register_trusted_worker_statically() {
         let _ = WorkerInfoQueue::register(worker);
 
         let worker = Box::new(SvmWorker::new());
+        let _ = WorkerInfoQueue::register(worker);
+
+        let worker = Box::new(GenLinearModelWorker::new());
         let _ = WorkerInfoQueue::register(worker);
     }
 }

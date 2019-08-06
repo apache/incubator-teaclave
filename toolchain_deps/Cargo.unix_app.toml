@@ -14,6 +14,7 @@ members = [
   "examples/logistic_reg",
   "examples/lin_reg",
   "examples/svm",
+  "examples/gen_linear_model",
   "mesatee_sdk",
   "mesatee_sdk/c_sdk",
 ]
