@@ -13,6 +13,7 @@ members = [
   "examples/kmeans",
   "examples/logistic_reg",
   "examples/lin_reg",
+  "examples/svm",
   "mesatee_sdk",
   "mesatee_sdk/c_sdk",
 ]

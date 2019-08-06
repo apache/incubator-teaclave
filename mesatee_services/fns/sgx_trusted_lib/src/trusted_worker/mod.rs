@@ -37,3 +37,5 @@ mod lin_reg;
 pub use lin_reg::LinRegWorker;
 mod logistic_reg;
 pub use logistic_reg::LogisticRegWorker;
+mod svm;
+pub use svm::SvmWorker;

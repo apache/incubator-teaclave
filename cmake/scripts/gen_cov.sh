@@ -22,6 +22,7 @@ find . \( -name "*.gcda" -and \( ! -name "sgx_cov*" \
     -and ! -name "kmeans*"\
     -and ! -name "logistic_reg*"\
     -and ! -name "lin_reg*"\
+    -and ! -name "svm*"\
     -and ! -name "mesatee_core*" -and ! -name "mesatee_config*" \) \) \
     -exec rm {} \;
 cd ${MESATEE_PROJECT_ROOT} && \

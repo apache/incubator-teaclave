@@ -82,3 +82,6 @@ echo "[+] run logistic_reg"
 echo "[+] run lin_reg"
 ../examples/lin_reg/lin_reg_demo.sh 2>&1 | tee lin_reg_demo.log
 [ ${PIPESTATUS[0]} -eq 0 ] || exit ${PIPESTATUS[0]}
+echo "[+] run svm"
+../examples/svm/svm_demo.sh 2>&1 | tee svm_demo.log
+[ ${PIPESTATUS[0]} -eq 0 ] || exit ${PIPESTATUS[0]}
