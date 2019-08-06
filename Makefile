@@ -75,7 +75,7 @@ SGX_MODULES := mesatee_services/kms mesatee_services/tdfs mesatee_services/tms \
 	mesatee_services/fns tests/functional_test
 SGX_LIBS :=
 UNIX_MODULES := integration_test private_join_and_compute ml_predict quickstart \
-	image_resizing online_decrypt rsa_sign py_matrix_multiply kmeans logistic_reg lin_reg svm gen_linear_model
+	image_resizing online_decrypt rsa_sign py_matrix_multiply kmeans logistic_reg lin_reg svm gen_linear_model gaussian_mixture_model
 UNIX_LIBS := mesatee_sdk
 LIBS := $(SGX_LIBS) $(UNIX_LIBS)
 
@@ -99,10 +99,10 @@ check-sgx-sdk:
 please adjust the SGX_SDK env or the Makefile"; exit 1; fi
 
 init-submodules:
-	if git submodule status | egrep -q '^[-]|^[+]' ; then \
-		echo "INFO: Need to reinitialize git submodules"; \
-		git submodule update --init; \
-	fi
+	#if git submodule status | egrep -q '^[-]|^[+]' ; then \
+	#	echo "INFO: Need to reinitialize git submodules"; \
+	#	git submodule update --init; \
+	#fi
 
 # "=" gurantees lazy evaluation until rust-sgx-sdk submodule is populated
 TOOLCHAIN = $(shell cat third_party/rust-sgx-sdk/rust-toolchain)
@@ -288,6 +288,7 @@ cov:
 		-and ! -name "lin_reg*"\
 		-and ! -name "svm*"\
 		-and ! -name "gen_linear_model*"\
+		-and ! -name "gaussian_mixture_model*"\
 		-and ! -name "mesatee_core*" -and ! -name "mesatee_config*" \) \) \
 		-exec rm {} \;
 	cd $(MODULES_DIR) && \

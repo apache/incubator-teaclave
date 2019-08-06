@@ -41,3 +41,5 @@ mod svm;
 pub use svm::SvmWorker;
 mod gen_linear_model;
 pub use gen_linear_model::GenLinearModelWorker;
+mod gaussian_mixture_model;
+pub use gaussian_mixture_model::GmmWorker;

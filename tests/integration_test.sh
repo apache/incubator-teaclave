@@ -88,3 +88,6 @@ echo "[+] run svm"
 echo "[+] run gen_linear_model"
 ../examples/gen_linear_model/gen_linear_model_demo.sh 2>&1 | tee gen_linear_model_demo.log
 [ ${PIPESTATUS[0]} -eq 0 ] || exit ${PIPESTATUS[0]}
+echo "[+] run gaussian_mixture_model"
+../examples/gaussian_mixture_model/gaussian_mixture_model_demo.sh 2>&1 | tee gaussian_mixture_model_demo.log
+[ ${PIPESTATUS[0]} -eq 0 ] || exit ${PIPESTATUS[0]}
