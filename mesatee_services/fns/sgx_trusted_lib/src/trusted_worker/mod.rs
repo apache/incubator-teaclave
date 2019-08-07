@@ -47,3 +47,5 @@ mod gaussian_processes;
 pub use gaussian_processes::GPWorker;
 mod dbscan;
 pub use dbscan::DBSCANWorker;
+mod neural_net;
+pub use neural_net::NeuralNetWorker;

@@ -97,3 +97,6 @@ echo "[+] run gaussian_processes"
 echo "[+] run dbscan"
 ../examples/dbscan/dbscan_demo.sh 2>&1 | tee dbscan_demo.log
 [ ${PIPESTATUS[0]} -eq 0 ] || exit ${PIPESTATUS[0]}
+echo "[+] run neural_net"
+../examples/neural_net/neural_net_demo.sh 2>&1 | tee neural_net_demo.log
+[ ${PIPESTATUS[0]} -eq 0 ] || exit ${PIPESTATUS[0]}
