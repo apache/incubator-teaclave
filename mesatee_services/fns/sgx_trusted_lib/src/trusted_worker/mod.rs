@@ -45,3 +45,5 @@ mod gaussian_mixture_model;
 pub use gaussian_mixture_model::GmmWorker;
 mod gaussian_processes;
 pub use gaussian_processes::GPWorker;
+mod dbscan;
+pub use dbscan::DBSCANWorker;

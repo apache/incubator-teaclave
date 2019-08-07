@@ -94,3 +94,6 @@ echo "[+] run gaussian_mixture_model"
 echo "[+] run gaussian_processes"
 ../examples/gaussian_processes/gaussian_processes_demo.sh 2>&1 | tee gaussian_processes_demo.log
 [ ${PIPESTATUS[0]} -eq 0 ] || exit ${PIPESTATUS[0]}
+echo "[+] run dbscan"
+../examples/dbscan/dbscan_demo.sh 2>&1 | tee dbscan_demo.log
+[ ${PIPESTATUS[0]} -eq 0 ] || exit ${PIPESTATUS[0]}

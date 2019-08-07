@@ -20,6 +20,7 @@ exclude = [
   "examples/gen_linear_model",
   "examples/gaussian_mixture_model",
   "examples/gaussian_processes",
+  "examples/dbscan",
   "mesatee_core",
 ]
 
