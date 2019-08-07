@@ -39,3 +39,5 @@ improvements. Details are discussed
 	  dedicated project called
 [MesaPy](https://github.com/mesalock-linux/mesapy). In this specific example,
 we demonstrate how to invoke the MesaPy engine integrated into MesaTEE.
+* [lin_reg](lin_reg)
+	- Linear Regression module.Contains implemention of linear regression using OLS and gradient descent optimization.
