@@ -100,3 +100,6 @@ echo "[+] run dbscan"
 echo "[+] run neural_net"
 ../examples/neural_net/neural_net_demo.sh 2>&1 | tee neural_net_demo.log
 [ ${PIPESTATUS[0]} -eq 0 ] || exit ${PIPESTATUS[0]}
+echo "[+] run naive_bayes"
+../examples/naive_bayes/naive_bayes_demo.sh 2>&1 | tee naive_bayes_demo.log
+[ ${PIPESTATUS[0]} -eq 0 ] || exit ${PIPESTATUS[0]}

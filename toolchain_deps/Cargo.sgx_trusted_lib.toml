@@ -22,6 +22,7 @@ exclude = [
   "examples/gaussian_processes",
   "examples/dbscan",
   "examples/neural_net",
+  "examples/naive_bayes",
   "mesatee_core",
 ]
 

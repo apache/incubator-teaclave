@@ -19,7 +19,8 @@ option(COV OFF "Turn on coverage or not")
 # =============== VARIABLES FOR MANUAL CHANGE BEGIN ===============
 set(UNIX_APPS config_gen integration_test private_join_and_compute ml_predict quickstart
 image_resizing online_decrypt rsa_sign py_matrix_multiply kmeans
-logistic_reg lin_reg svm gen_linear_model gaussian_mixture_model gaussian_processes dbscan neural_net)
+logistic_reg lin_reg svm gen_linear_model gaussian_mixture_model gaussian_processes
+dbscan neural_net naive_bayes)
 set(UNIX_LIBS mesatee_sdk)
 # need relative path for SGX_MODULE_PATHS to find Enclave.config.xml
 set(SGX_MODULE_PATHS mesatee_services/kms mesatee_services/tdfs mesatee_services/tms

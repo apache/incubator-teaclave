@@ -49,3 +49,5 @@ mod dbscan;
 pub use dbscan::DBSCANWorker;
 mod neural_net;
 pub use neural_net::NeuralNetWorker;
+mod naive_bayes;
+pub use naive_bayes::NaiveBayesWorker;
