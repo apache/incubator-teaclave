@@ -12,8 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod common_setup;
-pub mod kms_test;
-pub mod protected_fs_test;
-pub mod tdfs_test;
-pub mod tms_test;
+#include "se_version.h"
+
+#define __CONCAT(x, y) x/**/y
+
+#define SGX_TPROTECTEDFS_VERSION_STR  __CONCAT("SGX_TPROTECTEDFS_VERSION_", STRFILEVER)
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+__attribute__((visibility("default")))
+char sgx_tprotectedfs_version[] = SGX_TPROTECTEDFS_VERSION_STR;
+#ifdef __cplusplus
+}
+#endif
