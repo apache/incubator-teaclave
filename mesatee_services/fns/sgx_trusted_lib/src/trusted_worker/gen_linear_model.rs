@@ -18,7 +18,7 @@ use std::prelude::v1::*;
 use crate::worker::{FunctionType, Worker, WorkerContext};
 use mesatee_core::{Error, ErrorKind, Result};
 
-use rusty_machine::learning::lin_reg::LinRegressor;
+use rusty_machine::learning::glm::{Bernoulli, GenLinearModel};
 use rusty_machine::learning::SupModel;
 use rusty_machine::linalg::Matrix;
 use rusty_machine::linalg::Vector;
@@ -27,21 +27,21 @@ use serde_derive::Deserialize;
 use serde_json;
 
 #[derive(Deserialize)]
-pub(crate) struct LinRegPayload {
+pub(crate) struct GenLinearModelPayload {
     input_model_columns: usize,
     input_model_data: String,
     target_model_data: String,
     test_data: String,
 }
 
-pub struct LinRegWorker {
+pub struct GenLinearModelWorker {
     worker_id: u32,
     func_name: String,
     func_type: FunctionType,
-    input: Option<LinRegInput>,
+    input: Option<GenLinearModelInput>,
 }
 
-struct LinRegInput {
+struct GenLinearModelInput {
     /// Sample model data
     input_model_data: Matrix<f64>,
     /// The target(also called label or result) of the sample model data
@@ -50,18 +50,18 @@ struct LinRegInput {
     test_data: Matrix<f64>,
 }
 
-impl LinRegWorker {
+impl GenLinearModelWorker {
     pub fn new() -> Self {
-        LinRegWorker {
+        GenLinearModelWorker {
             worker_id: 0,
-            func_name: "lin_reg".to_string(),
+            func_name: "gen_linear_model".to_string(),
             func_type: FunctionType::Single,
             input: None,
         }
     }
 }
 
-impl Worker for LinRegWorker {
+impl Worker for GenLinearModelWorker {
     fn function_name(&self) -> &str {
         self.func_name.as_str()
     }
@@ -81,19 +81,17 @@ impl Worker for LinRegWorker {
     ) -> Result<()> {
         let payload = dynamic_input.ok_or_else(|| Error::from(ErrorKind::MissingValue))?;
 
-        let lin_reg_payload: LinRegPayload = serde_json::from_str(&payload)
+        let glm_payload: GenLinearModelPayload = serde_json::from_str(&payload)
             .or_else(|_| Err(Error::from(ErrorKind::InvalidInputError)))?;
 
         let input = parse_input_to_matrix(
-            &lin_reg_payload.input_model_data,
-            lin_reg_payload.input_model_columns,
+            &glm_payload.input_model_data,
+            glm_payload.input_model_columns,
         )?;
-        let target = data_to_vector(&lin_reg_payload.target_model_data)?;
-        let test_data = parse_input_to_matrix(
-            &lin_reg_payload.test_data,
-            lin_reg_payload.input_model_columns,
-        )?;
-        self.input = Some(LinRegInput {
+        let target = data_to_vector(&glm_payload.target_model_data)?;
+        let test_data =
+            parse_input_to_matrix(&glm_payload.test_data, glm_payload.input_model_columns)?;
+        self.input = Some(GenLinearModelInput {
             input_model_data: input,
             target_model_data: target,
             test_data,
@@ -107,13 +105,13 @@ impl Worker for LinRegWorker {
             .take()
             .ok_or_else(|| Error::from(ErrorKind::InvalidInputError))?;
 
-        let mut lin_mod = LinRegressor::default();
+        let mut glm_mod = GenLinearModel::new(Bernoulli);
         // Train the model
-        lin_mod
+        glm_mod
             .train(&input.input_model_data, &input.target_model_data)
             .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
         // predict a new test data
-        let output = lin_mod
+        let output = glm_mod
             .predict(&input.test_data)
             .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
 

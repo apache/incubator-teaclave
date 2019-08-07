@@ -11,57 +11,58 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
+use std::fmt::Write;
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
 use crate::worker::{FunctionType, Worker, WorkerContext};
 use mesatee_core::{Error, ErrorKind, Result};
 
-use rusty_machine::learning::lin_reg::LinRegressor;
-use rusty_machine::learning::SupModel;
+use rusty_machine::learning::gmm::{CovOption, GaussianMixtureModel};
+use rusty_machine::learning::UnSupModel;
 use rusty_machine::linalg::Matrix;
-use rusty_machine::linalg::Vector;
 
 use serde_derive::Deserialize;
 use serde_json;
 
 #[derive(Deserialize)]
-pub(crate) struct LinRegPayload {
+pub(crate) struct GmmPayload {
+    k: usize,
+    max_iter_num: usize,
     input_model_columns: usize,
     input_model_data: String,
-    target_model_data: String,
     test_data: String,
 }
 
-pub struct LinRegWorker {
+pub struct GmmWorker {
     worker_id: u32,
     func_name: String,
     func_type: FunctionType,
-    input: Option<LinRegInput>,
+    input: Option<GmmInput>,
 }
 
-struct LinRegInput {
+struct GmmInput {
+    k: usize,
+    /// the max number of iterations for the EM algorithm.
+    max_iter_num: usize,
     /// Sample model data
     input_model_data: Matrix<f64>,
-    /// The target(also called label or result) of the sample model data
-    target_model_data: Vector<f64>,
     /// Data to be tested
     test_data: Matrix<f64>,
 }
 
-impl LinRegWorker {
+impl GmmWorker {
     pub fn new() -> Self {
-        LinRegWorker {
+        GmmWorker {
             worker_id: 0,
-            func_name: "lin_reg".to_string(),
+            func_name: "gaussian_mixture_model".to_string(),
             func_type: FunctionType::Single,
             input: None,
         }
     }
 }
 
-impl Worker for LinRegWorker {
+impl Worker for GmmWorker {
     fn function_name(&self) -> &str {
         self.func_name.as_str()
     }
@@ -81,21 +82,19 @@ impl Worker for LinRegWorker {
     ) -> Result<()> {
         let payload = dynamic_input.ok_or_else(|| Error::from(ErrorKind::MissingValue))?;
 
-        let lin_reg_payload: LinRegPayload = serde_json::from_str(&payload)
+        let gmm_payload: GmmPayload = serde_json::from_str(&payload)
             .or_else(|_| Err(Error::from(ErrorKind::InvalidInputError)))?;
 
         let input = parse_input_to_matrix(
-            &lin_reg_payload.input_model_data,
-            lin_reg_payload.input_model_columns,
+            &gmm_payload.input_model_data,
+            gmm_payload.input_model_columns,
         )?;
-        let target = data_to_vector(&lin_reg_payload.target_model_data)?;
-        let test_data = parse_input_to_matrix(
-            &lin_reg_payload.test_data,
-            lin_reg_payload.input_model_columns,
-        )?;
-        self.input = Some(LinRegInput {
+        let test_data =
+            parse_input_to_matrix(&gmm_payload.test_data, gmm_payload.input_model_columns)?;
+        self.input = Some(GmmInput {
+            k: gmm_payload.k,
+            max_iter_num: gmm_payload.max_iter_num,
             input_model_data: input,
-            target_model_data: target,
             test_data,
         });
         Ok(())
@@ -106,33 +105,27 @@ impl Worker for LinRegWorker {
             .input
             .take()
             .ok_or_else(|| Error::from(ErrorKind::InvalidInputError))?;
-
-        let mut lin_mod = LinRegressor::default();
+        // Create gmm with k(=2) classes.
+        let mut gmm_mod = GaussianMixtureModel::new(input.k);
+        gmm_mod.set_max_iters(input.max_iter_num);
+        gmm_mod.cov_option = CovOption::Diagonal;
         // Train the model
-        lin_mod
-            .train(&input.input_model_data, &input.target_model_data)
+        gmm_mod
+            .train(&input.input_model_data)
             .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
         // predict a new test data
-        let output = lin_mod
+        let classes = gmm_mod
             .predict(&input.test_data)
             .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
 
-        Ok(output[0].to_string())
+        let mut output = String::new();
+        for c in classes.data().iter() {
+            writeln!(&mut output, "{}", c)
+                .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
+        }
+
+        Ok(output)
     }
-}
-
-fn data_to_vector(input: &str) -> Result<Vector<f64>> {
-    let mut raw_cluster_data = Vec::new();
-
-    for c in input.lines() {
-        let value = c
-            .parse::<f64>()
-            .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
-        raw_cluster_data.push(value);
-    }
-
-    let target_data = Vector::new(raw_cluster_data);
-    Ok(target_data)
 }
 
 fn parse_input_to_matrix(input: &str, input_model_data_columns: usize) -> Result<Matrix<f64>> {

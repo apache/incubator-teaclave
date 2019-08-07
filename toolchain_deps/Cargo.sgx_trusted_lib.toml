@@ -16,6 +16,13 @@ exclude = [
   "examples/kmeans",
   "examples/logistic_reg",
   "examples/lin_reg",
+  "examples/svm",
+  "examples/gen_linear_model",
+  "examples/gaussian_mixture_model",
+  "examples/gaussian_processes",
+  "examples/dbscan",
+  "examples/neural_net",
+  "examples/naive_bayes",
   "mesatee_core",
 ]
 
