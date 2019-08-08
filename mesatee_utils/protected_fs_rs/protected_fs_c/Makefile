@@ -39,7 +39,7 @@ PROJECT_ROOT := $(PROTECTED_FS_PROJECT_ROOT)
 OUT_DIR := $(PROTECTED_FS_OUT_DIR)
 
 INCLUDE += -I$(PROJECT_ROOT) -I$(PROJECT_ROOT)/inc
-CXXFLAGS += -Werror -U__STRICT_ANSI__ -std=c++11 -lpthread
+CXXFLAGS += -Werror -U__STRICT_ANSI__ -std=c++11 -lpthread -fPIC
 CXXFLAGS += -Wno-unused-local-typedefs -Wno-shadow -Wno-missing-field-initializers -Wno-unused-parameter
 
 
