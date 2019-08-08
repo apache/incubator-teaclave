@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
+use std::fmt::Write;
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
@@ -112,11 +112,15 @@ impl Worker for LogisticRegWorker {
             .train(&input.input_model_data, &input.target_model_data)
             .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
         // predict a new test data
-        let output = logistic_mod
+        let classes = logistic_mod
             .predict(&input.test_data)
             .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
-
-        Ok(output[0].to_string())
+        let mut output = String::new();
+        for c in classes.data().iter() {
+            writeln!(&mut output, "{}", c)
+                .map_err(|_| Error::from(ErrorKind::OutputGenerationError))?;
+        }
+        Ok(output)
     }
 }
 

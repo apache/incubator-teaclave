@@ -42,19 +42,29 @@ we demonstrate how to invoke the MesaPy engine integrated into MesaTEE.
 * [DBSCAN](DBSCAN)
 	- Provides an implementaton of DBSCAN clustering.
 * [Generalized Linear Model](GeneralizedLinearModel)
-	- Contains implemention of generalized linear models using iteratively reweighted least squares.The model will automatically add the intercept term to the input data.
+	- Contains implemention of generalized linear models using iteratively
+	  reweighted least squares.The model will automatically add the intercept
+	  term to the input data.
 * [Gaussian Mixture Models](GaussianMixtureModels)
 	- Provides implementation of GMMs using the EM algorithm.
 * [Gaussian Processes](GaussianProcesses)
 	- Provides implementation of gaussian process regression.
 * [Linear Regression](LinearRegression)
-	- Contains implemention of linear regression using OLS and gradient descent optimization.
+	- Contains implemention of linear regression using OLS and gradient
+	  descent optimization.
 * [Logistic Regression](LogisticRegrerssion)
-	- Contains implemention of logistic regression using gradient descent optimization.
+	- Contains implemention of logistic regression using gradient descent
+	  optimization.
 * [Naive Bayes Classifiers](NaiveBayesClassifiers)
-	- The classifier supports Gaussian, Bernoulli and Multinomial distributions.A naive Bayes classifier works by treating the features of each input as independent observations. Under this assumption we utilize Bayes' rule to compute the probability that each input belongs to a given class.
+	- The classifier supports Gaussian, Bernoulli and 
+	  Multinomial distributions.A naive Bayes classifier works by treating the
+	  features of each input as independent observations. Under this 
+	  assumption we utilize Bayes' rule to compute the probability that each
+	  input belongs to a given class.
 * [Neural Network](NeuralNetWork)
 	- Contains implementation of simple feed forward neural network.
 * [Support Vector Machine](SupportVectorMachine)
-	- Contains implementation of Support Vector Machine using the Pegasos training algorithm.The SVM models currently only support binary classification. The model inputs should be a matrix and the training targets are in the form of a vector of -1s and 1s..
-
+	- Contains implementation of Support Vector Machine using the Pegasos
+	  training algorithm.The SVM models currently only support binary
+	  classification. The model inputs should be a matrix and the training
+	  targets are in the form of a vector of -1s and 1s..

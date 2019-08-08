@@ -129,8 +129,9 @@ impl Worker for NeuralNetWorker {
             .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
 
         let mut output = String::new();
-        writeln!(&mut output, "{:?}", predict)
-            .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
+        writeln!(&mut output, "{}", predict)
+            .map_err(|_| Error::from(ErrorKind::OutputGenerationError))?;
+
         Ok(output)
     }
 }

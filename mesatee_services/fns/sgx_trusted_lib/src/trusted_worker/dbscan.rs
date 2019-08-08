@@ -106,11 +106,22 @@ impl Worker for DBSCANWorker {
         model
             .train(&input.input_model_data)
             .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
-        let clustering = model.clusters();
+
+        let clustering = match model.clusters() {
+            Some(v) => v,
+            None => return Err(Error::from(ErrorKind::OutputGenerationError)),
+        };
 
         let mut output = String::new();
-        writeln!(&mut output, "{:?}", clustering)
-            .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
+        for c in clustering {
+            let value = match c {
+                Some(v) => v,
+                None => return Err(Error::from(ErrorKind::OutputGenerationError)),
+            };
+            writeln!(&mut output, "{}", value)
+                .map_err(|_| Error::from(ErrorKind::OutputGenerationError))?;
+        }
+
         Ok(output)
     }
 }

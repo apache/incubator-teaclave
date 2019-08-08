@@ -116,7 +116,7 @@ impl Worker for GPWorker {
         let mut output = String::new();
         for c in classes.data().iter() {
             writeln!(&mut output, "{}", c)
-                .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
+                .map_err(|_| Error::from(ErrorKind::OutputGenerationError))?;
         }
 
         Ok(output)

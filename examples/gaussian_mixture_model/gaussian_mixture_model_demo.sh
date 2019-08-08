@@ -20,4 +20,13 @@ for port in 5554 5555 3444 6016 5065 5066; do
     fi
 done
 
-$BIN $K $MAX_ITER $INPUT_MODEL_DATA_COLUMNS $INPUT_PATH $TEST_DATA_PATH 2>&1
+assert_eq() {
+  if [ "`echo $1`" != "`echo $2`" ]; then
+    echo "Result mismatch:"
+    diff <(echo "$1") <(echo $2)
+    exit 1
+  else
+    echo "$1"
+  fi
+}
+assert_eq "`$BIN $K $MAX_ITER $INPUT_MODEL_DATA_COLUMNS $INPUT_PATH $TEST_DATA_PATH | sort | tail -n +1 2>&1`" "`cat $EXPECTED_RESULT`"
