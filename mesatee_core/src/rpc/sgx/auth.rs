@@ -341,7 +341,20 @@ pub(crate) fn extract_sgx_quote_from_mra_cert(
     }
     .map_err(|_| CertVerificationError::BadAttnReport)?;
 
-    if pub_k.to_bytes().as_slice() == &quote_body.report_body.report_data[..] {
+    let raw_pub_k = pub_k.to_bytes();
+
+    // According to RFC 5480 `Elliptic Curve Cryptography Subject Public Key Information',
+    // SEC 2.2:
+    // ``The first octet of the OCTET STRING indicates whether the key is
+    // compressed or uncompressed.  The uncompressed form is indicated
+    // by 0x04 and the compressed form is indicated by either 0x02 or
+    // 0x03 (see 2.3.3 in [SEC1]).  The public key MUST be rejected if
+    // any other value is included in the first octet.''
+    //
+    // In the case of MesaTEE, we only allow the uncompressed form.
+    let is_uncompressed = raw_pub_k[0] == 4;
+    let pub_k = &raw_pub_k.as_slice()[1..];
+    if !is_uncompressed || pub_k != &quote_body.report_body.report_data[..] {
         return Err(CertVerificationError::BadAttnReport);
     }
 
