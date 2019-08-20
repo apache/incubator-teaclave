@@ -15,45 +15,24 @@
 use exitfailure::ExitFailure;
 use failure::ResultExt;
 use quicli::prelude::*;
-use serde_derive::Deserialize;
-use std::collections::BTreeMap;
 use structopt::StructOpt;
 
-use std::net::{SocketAddr, ToSocketAddrs};
+use std::collections::HashMap;
+use std::fs::File;
+use std::io::Read;
+use std::net::SocketAddr;
 use std::path::PathBuf;
 
-use mesatee_core;
-use mesatee_sdk;
+use mesatee_core::config::OutboundDesc;
+use mesatee_core::rpc::{self, sgx};
+use tms_external_proto::{TaskRequest, TaskResponse};
 
-#[derive(Debug)]
-enum EndpointType {
-    TMS,
-    TDFS,
-    FNS,
-}
-
-/*fn open_connection<A: ToSocketAddrs>(
-    addr: A,
-    endpoint_type: EndpointType,
-) -> Result<(), ExitFailure> {
-    let enclave_identities = mesatee_sdk::sgx::load_and_verify_enclave_info(
-        &enclave_info.enclave_info_file_path,
-        &enclave_signers,
-    );
-    let channel = mesatee_core::sgx::channel::SgxTrustedChannel::new(addr, enclave_attrs)?;
-
-    Ok(())
-}*/
+type VerifiedEnclaveInfo = HashMap<String, (sgx::SgxMeasure, sgx::SgxMeasure)>;
 
 #[derive(Debug, StructOpt)]
 /// MeasTEE client
 struct Cli {
-    #[structopt(
-        short = "o",
-        long,
-        name = "FILE",
-        parse(from_os_str)
-    )]
+    #[structopt(short = "o", long, name = "FILE", parse(from_os_str))]
     /// Write to FILE instead of stdout
     output: Option<PathBuf>,
 
@@ -69,34 +48,63 @@ struct Cli {
     /// Address and port of the MeasTEE endpoint
     address: SocketAddr,
 
-    #[structopt(long, required = true)]
-    /// Paths to MesaTEE auditor public keys
+    #[structopt(short = "k", long, required = true)]
+    /// SPACE seperated paths of MesaTEE auditor public keys
     auditor_keys: Vec<PathBuf>,
 
-    #[structopt(long, required = true)]
-    /// Paths to MesaTEE auditor endorsement signatures
+    #[structopt(short = "s", long, required = true)]
+    /// SPACE seperated paths of MesaTEE auditor endorsement signatures.
     auditor_sigs: Vec<PathBuf>,
 
-    #[structopt(long)]
+    #[structopt(short = "e", long)]
     /// Path to Enclave info file
     enclave_info: PathBuf,
 }
 
-use mesatee_sdk::MesateeEnclaveInfo;
-
 fn main() -> CliResult {
     let args = Cli::from_args();
-    println!("{:?}", args);
-
-    /*if args.auditor_keys.len() != args.auditor_sigs.len() {
+    if args.auditor_keys.len() != args.auditor_sigs.len() {
         return Err(
             failure::err_msg("auditor_keys auditor_sigs have different sizes".to_string()).into(),
         );
-    }*/
+    }
 
-    //let mut auditors = vec![];
+    let mut keys = vec![];
+    for key_path in args.auditor_keys.iter() {
+        let mut buf = vec![];
+        let mut f = File::open(key_path)?;
+        let _ = f.read_to_end(&mut buf)?;
+        keys.push(buf);
+    }
+    let mut enclave_signers = vec![];
+    for auditor in keys.iter().zip(args.auditor_sigs.iter()) {
+        let (key, sig_path) = auditor;
+        enclave_signers.push((key.as_slice(), sig_path.as_path()));
+    }
+    let verified_enclave_info =
+        sgx::load_and_verify_enclave_info(&args.enclave_info, enclave_signers.as_slice());
 
-    //let enclave_info = MesateeEnclaveInfo::load(auditors, enclave_info_path)?;
+    // Initialization done.
+
+    let tms_outbound_desc = OutboundDesc::new(*verified_enclave_info.get("tms").unwrap());
+    let tms_desc = mesatee_core::config::TargetDesc::new(
+        args.address.ip(),
+        args.address.port(),
+        tms_outbound_desc,
+    );
+
+    let message = r#"{"type":"Create","function_name":"fake","collaborator_list":[],"files":[],"user_id":"fake","user_token":"token"}"#;
+    let request: TaskRequest = serde_json::from_str(&message)?;
+
+    let mut channel = match &tms_desc.desc {
+        OutboundDesc::Sgx(enclave_attrs) => rpc::channel::SgxTrustedChannel::<
+            TaskRequest,
+            TaskResponse,
+        >::new(args.address, enclave_attrs.clone()),
+    }?;
+
+    let response = channel.invoke(request)?;
+    println!("{:?}", response);
 
     Ok(())
 }

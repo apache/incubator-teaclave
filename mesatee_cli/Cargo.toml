@@ -8,10 +8,13 @@ edition = "2018"
 
 [dependencies]
 mesatee_core = "0.1.0"
-mesatee_sdk = "0.1.0"
 quicli = "0.4.0"
 serde_derive = "1.0.92"
 serde = "1.0.92"
 failure = "0.1.5"
 exitfailure = "0.5"
 structopt = "0.2"
+serde_json = "1.0.39"
+tms_external_proto = { path = "../mesatee_services/tms/external/proto" }
+#tdfs_external_proto = { path = "mesatee_services/tdfs/external/proto"}
+
