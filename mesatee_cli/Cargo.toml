@@ -1,0 +1,17 @@
+[package]
+name = "mesatee_cli"
+version = "0.1.0"
+authors = ["MesaTEE Authors <developers@mesatee.org>"]
+description = "MesaTEE client as a comand line tool"
+license = "Apache-2.0"
+edition = "2018"
+
+[dependencies]
+mesatee_core = "0.1.0"
+mesatee_sdk = "0.1.0"
+quicli = "0.4.0"
+serde_derive = "1.0.92"
+serde = "1.0.92"
+failure = "0.1.5"
+exitfailure = "0.5"
+structopt = "0.2"
