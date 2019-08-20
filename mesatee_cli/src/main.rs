@@ -13,28 +13,49 @@
 // limitations under the License.
 
 use exitfailure::ExitFailure;
-use failure::ResultExt;
 use quicli::prelude::*;
 use structopt::StructOpt;
 
-use std::collections::HashMap;
-use std::fs::File;
-use std::io::Read;
-use std::net::SocketAddr;
-use std::path::PathBuf;
+use std::fs;
+use std::io::{self, Read, Write};
+use std::{net, path};
 
-use mesatee_core::config::OutboundDesc;
+use mesatee_core::config::{OutboundDesc, TargetDesc};
 use mesatee_core::rpc::{self, sgx};
 use tms_external_proto::{TaskRequest, TaskResponse};
 
-type VerifiedEnclaveInfo = HashMap<String, (sgx::SgxMeasure, sgx::SgxMeasure)>;
+type EnclaveInfo = std::collections::HashMap<String, (sgx::SgxMeasure, sgx::SgxMeasure)>;
+
+#[derive(Debug, PartialEq)]
+enum Endpoint {
+    TMS,
+    TDFS,
+    FNS,
+}
+
+impl std::str::FromStr for Endpoint {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Endpoint, String> {
+        match s {
+            "tms" => Ok(Endpoint::TMS),
+            "tdfs" => Ok(Endpoint::TDFS),
+            "fns" => Ok(Endpoint::FNS),
+            _ => Err("Invalid endpoint specified".into()),
+        }
+    }
+}
 
 #[derive(Debug, StructOpt)]
 /// MeasTEE client
 struct Cli {
-    #[structopt(short = "o", long, name = "FILE", parse(from_os_str))]
+    #[structopt(short = "o", long, name = "IN_FILE", parse(from_os_str))]
     /// Write to FILE instead of stdout
-    output: Option<PathBuf>,
+    output: Option<path::PathBuf>,
+
+    #[structopt(short = "i", long, name = "OUT_FILE", parse(from_os_str))]
+    /// Read from FILE instead of stdin
+    input: Option<path::PathBuf>,
 
     #[structopt(short = "v", long)]
     /// Make the operation more talkative
@@ -44,21 +65,25 @@ struct Cli {
     /// Show version number and quit
     version: bool,
 
+    #[structopt(short = "e", long, required = true)]
+    /// MesaTEE endpoint to connect to. Possible values are: tms, tdfs, fns.
+    endpoint: Endpoint,
+
     #[structopt(name = "SOCKET_ADDRESS", name = "IP_ADDRESS:PORT")]
     /// Address and port of the MeasTEE endpoint
-    address: SocketAddr,
+    address: net::SocketAddr,
 
     #[structopt(short = "k", long, required = true)]
     /// SPACE seperated paths of MesaTEE auditor public keys
-    auditor_keys: Vec<PathBuf>,
+    auditor_keys: Vec<path::PathBuf>,
 
     #[structopt(short = "s", long, required = true)]
     /// SPACE seperated paths of MesaTEE auditor endorsement signatures.
-    auditor_sigs: Vec<PathBuf>,
+    auditor_sigs: Vec<path::PathBuf>,
 
-    #[structopt(short = "e", long)]
+    #[structopt(short = "c", long)]
     /// Path to Enclave info file
-    enclave_info: PathBuf,
+    enclave_info: path::PathBuf,
 }
 
 fn main() -> CliResult {
@@ -72,7 +97,7 @@ fn main() -> CliResult {
     let mut keys = vec![];
     for key_path in args.auditor_keys.iter() {
         let mut buf = vec![];
-        let mut f = File::open(key_path)?;
+        let mut f = fs::File::open(key_path)?;
         let _ = f.read_to_end(&mut buf)?;
         keys.push(buf);
     }
@@ -81,30 +106,41 @@ fn main() -> CliResult {
         let (key, sig_path) = auditor;
         enclave_signers.push((key.as_slice(), sig_path.as_path()));
     }
-    let verified_enclave_info =
+    let enclave_info =
         sgx::load_and_verify_enclave_info(&args.enclave_info, enclave_signers.as_slice());
 
     // Initialization done.
 
-    let tms_outbound_desc = OutboundDesc::new(*verified_enclave_info.get("tms").unwrap());
-    let tms_desc = mesatee_core::config::TargetDesc::new(
-        args.address.ip(),
-        args.address.port(),
-        tms_outbound_desc,
-    );
+    let reader: Box<Read> = match args.input {
+        Some(i) => Box::new(io::BufReader::new(fs::File::open(i)?)),
+        None => Box::new(io::stdin()),
+    };
+    let writer: Box<Write> = match args.output {
+        Some(o) => Box::new(io::BufWriter::new(fs::File::create(o)?)),
+        None => Box::new(io::stdout()),
+    };
 
-    let message = r#"{"type":"Create","function_name":"fake","collaborator_list":[],"files":[],"user_id":"fake","user_token":"token"}"#;
-    let request: TaskRequest = serde_json::from_str(&message)?;
+    run(args.endpoint, args.address, &enclave_info, reader, writer)
+}
 
-    let mut channel = match &tms_desc.desc {
+fn run<R: Read, W: Write>(
+    endpoint: Endpoint,
+    addr: net::SocketAddr,
+    enclave_info: &EnclaveInfo,
+    reader: R,
+    writer: W,
+) -> Result<(), ExitFailure> {
+    let outbound_desc = OutboundDesc::new(*enclave_info.get("tms").unwrap());
+    let target_desc = TargetDesc::new(addr.ip(), addr.port(), outbound_desc);
+    let mut channel = match &target_desc.desc {
         OutboundDesc::Sgx(enclave_attrs) => rpc::channel::SgxTrustedChannel::<
             TaskRequest,
             TaskResponse,
-        >::new(args.address, enclave_attrs.clone()),
+        >::new(addr, enclave_attrs.clone()),
     }?;
 
+    let request = serde_json::from_reader(reader)?;
     let response = channel.invoke(request)?;
-    println!("{:?}", response);
-
+    serde_json::to_writer(writer, &response)?;
     Ok(())
 }
