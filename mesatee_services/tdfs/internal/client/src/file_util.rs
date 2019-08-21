@@ -21,9 +21,9 @@ use ring::aead::{self, Aad, BoundKey, Nonce, UnboundKey};
 use ring::digest;
 use std::fmt::Write;
 
-struct FileNonceSequence(Option<aead::Nonce>);
+struct OneNonceSequence(Option<aead::Nonce>);
 
-impl FileNonceSequence {
+impl OneNonceSequence {
     /// Constructs the sequence allowing `advance()` to be called
     /// `allowed_invocations` times.
     fn new(nonce: aead::Nonce) -> Self {
@@ -31,7 +31,7 @@ impl FileNonceSequence {
     }
 }
 
-impl aead::NonceSequence for FileNonceSequence {
+impl aead::NonceSequence for OneNonceSequence {
     fn advance(&mut self) -> core::result::Result<aead::Nonce, ring::error::Unspecified> {
         self.0.take().ok_or(ring::error::Unspecified)
     }
@@ -47,7 +47,7 @@ pub fn decrypt_data(
     let ub = UnboundKey::new(aead_alg, aes_key).map_err(|_| Error::from(ErrorKind::CryptoError))?;
     let nonce = Nonce::try_assume_unique_for_key(aes_nonce)
         .map_err(|_| Error::from(ErrorKind::CryptoError))?;
-    let filesequence = FileNonceSequence::new(nonce);
+    let filesequence = OneNonceSequence::new(nonce);
     let mut o_key = aead::OpeningKey::new(ub, filesequence);
     let ad = Aad::from(aes_ad);
     let result = o_key.open_in_place(ad, &mut data[..]);
@@ -70,7 +70,7 @@ pub fn encrypt_data(
     let ub = UnboundKey::new(aead_alg, aes_key).map_err(|_| Error::from(ErrorKind::CryptoError))?;
     let nonce = Nonce::try_assume_unique_for_key(aes_nonce)
         .map_err(|_| Error::from(ErrorKind::CryptoError))?;
-    let filesequence = FileNonceSequence::new(nonce);
+    let filesequence = OneNonceSequence::new(nonce);
     let mut s_key = aead::SealingKey::new(ub, filesequence);
     let ad = Aad::from(aes_ad);
 

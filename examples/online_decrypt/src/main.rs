@@ -67,9 +67,9 @@ impl AEADKeyConfig {
     }
 }
 
-struct FileNonceSequence(Option<aead::Nonce>);
+struct OneNonceSequence(Option<aead::Nonce>);
 
-impl FileNonceSequence {
+impl OneNonceSequence {
     /// Constructs the sequence allowing `advance()` to be called
     /// `allowed_invocations` times.
     fn new(nonce: aead::Nonce) -> Self {
@@ -77,7 +77,7 @@ impl FileNonceSequence {
     }
 }
 
-impl aead::NonceSequence for FileNonceSequence {
+impl aead::NonceSequence for OneNonceSequence {
     fn advance(&mut self) -> core::result::Result<aead::Nonce, ring::error::Unspecified> {
         self.0.take().ok_or(ring::error::Unspecified)
     }
@@ -91,7 +91,7 @@ fn encrypt_data(mut data: Vec<u8>, aes_key: &[u8], aes_nonce: &[u8], aes_ad: &[u
 
     let ub = UnboundKey::new(aead_alg, aes_key).unwrap();
     let nonce = Nonce::try_assume_unique_for_key(aes_nonce).unwrap();
-    let filesequence = FileNonceSequence::new(nonce);
+    let filesequence = OneNonceSequence::new(nonce);
 
     let mut s_key = aead::SealingKey::new(ub, filesequence);
     let ad = Aad::from(aes_ad);
