@@ -21,3 +21,10 @@ clap_flags = "0.2.0"
 tms_external_proto = { path = "../mesatee_services/tms/external/proto" }
 tdfs_external_proto = { path = "../mesatee_services/tdfs/external/proto" }
 fns_proto = { path = "../mesatee_services/fns/proto" }
+
+[profile.release]
+opt-level = 3
+debug = false
+lto = true
+debug-assertions = false
+codegen-units = 1
