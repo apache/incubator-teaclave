@@ -25,7 +25,6 @@ use serde_json::Value;
 use std::convert::TryFrom;
 use std::io::BufReader;
 use std::time::*;
-use untrusted;
 
 #[cfg(feature = "mesalock_sgx")]
 use std::untrusted::time::SystemTimeEx;
@@ -258,7 +257,7 @@ pub(crate) fn extract_sgx_quote_from_mra_cert(
     }
     .map_err(|_| CertVerificationError::InvalidCertFormat)?;
 
-    let sig_cert = webpki::EndEntityCert::from(untrusted::Input::from(&sig_cert_dec))
+    let sig_cert = webpki::EndEntityCert::from(&sig_cert_dec)
         .map_err(|_| CertVerificationError::InvalidCertFormat)?;
 
     // Verify if the signing cert is issued by Intel CA
@@ -271,7 +270,6 @@ pub(crate) fn extract_sgx_quote_from_mra_cert(
     let ias_ca_core: &[u8] = &ias_ca_stripped[head_len..full_len - tail_len];
     let ias_cert_dec = base64::decode_config(ias_ca_core, base64::STANDARD)
         .map_err(|_| CertVerificationError::InvalidCertFormat)?;
-    let ias_cert_input = untrusted::Input::from(&ias_cert_dec);
 
     let mut ca_reader = BufReader::new(&ias_report_ca[..]);
 
@@ -286,7 +284,7 @@ pub(crate) fn extract_sgx_quote_from_mra_cert(
         .map(|cert| cert.to_trust_anchor())
         .collect();
 
-    let chain: Vec<untrusted::Input> = vec![ias_cert_input];
+    let chain: Vec<&[u8]> = vec![&ias_cert_dec];
 
     let now_func = webpki::Time::try_from(SystemTime::now())
         .map_err(|_| CertVerificationError::WebpkiFailure)?;
@@ -302,11 +300,7 @@ pub(crate) fn extract_sgx_quote_from_mra_cert(
 
     // Verify the signature against the signing cert
     sig_cert
-        .verify_signature(
-            &webpki::RSA_PKCS1_2048_8192_SHA256,
-            untrusted::Input::from(&attn_report_raw),
-            untrusted::Input::from(&sig),
-        )
+        .verify_signature(&webpki::RSA_PKCS1_2048_8192_SHA256, &attn_report_raw, &sig)
         .map_err(|_| CertVerificationError::WebpkiFailure)?;
 
     // Verify attestation report

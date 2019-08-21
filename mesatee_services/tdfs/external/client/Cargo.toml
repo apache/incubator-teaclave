@@ -12,6 +12,6 @@ default = []
 
 [dependencies]
 cfg-if       = { version = "0.1.9" }
-ring         = { version = "0.14.6" }
+ring         = { version = "0.16.5" }
 mesatee_core = { version = "0.1.0" }
 tdfs_external_proto = { path = "../proto" }

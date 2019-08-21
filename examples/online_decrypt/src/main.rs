@@ -14,9 +14,7 @@
 
 use lazy_static::lazy_static;
 use mesatee_sdk::{Mesatee, MesateeEnclaveInfo};
-use ring::aead;
-use ring::aead::Aad;
-use ring::aead::Nonce;
+use ring::aead::{self, Aad, BoundKey, Nonce, UnboundKey};
 use ring::rand;
 use ring::rand::SecureRandom;
 use serde_derive::{Deserialize, Serialize};
@@ -69,24 +67,38 @@ impl AEADKeyConfig {
     }
 }
 
+struct FileNonceSequence(Option<aead::Nonce>);
+
+impl FileNonceSequence {
+    /// Constructs the sequence allowing `advance()` to be called
+    /// `allowed_invocations` times.
+    fn new(nonce: aead::Nonce) -> Self {
+        Self(Some(nonce))
+    }
+}
+
+impl aead::NonceSequence for FileNonceSequence {
+    fn advance(&mut self) -> core::result::Result<aead::Nonce, ring::error::Unspecified> {
+        self.0.take().ok_or(ring::error::Unspecified)
+    }
+}
 fn encrypt_data(mut data: Vec<u8>, aes_key: &[u8], aes_nonce: &[u8], aes_ad: &[u8]) -> Vec<u8> {
     let aead_alg = &aead::AES_256_GCM;
-    let tag_len = aead_alg.tag_len();
-    for _ in 0..aead_alg.tag_len() {
-        data.push(0);
-    }
 
     assert_eq!(aes_key.len(), 32);
     assert_eq!(aes_nonce.len(), 12);
     assert_eq!(aes_ad.len(), 5);
 
-    let s_key = aead::SealingKey::new(aead_alg, &aes_key[..]).unwrap();
+    let ub = UnboundKey::new(aead_alg, aes_key).unwrap();
     let nonce = Nonce::try_assume_unique_for_key(aes_nonce).unwrap();
-    let ad = Aad::from(aes_ad);
-    let s_result = { aead::seal_in_place(&s_key, nonce, ad, &mut data[..], tag_len) };
-    let result_len = s_result.unwrap();
+    let filesequence = FileNonceSequence::new(nonce);
 
-    data[..result_len].to_vec()
+    let mut s_key = aead::SealingKey::new(ub, filesequence);
+    let ad = Aad::from(aes_ad);
+    let s_result = s_key.seal_in_place_append_tag(ad, &mut data);
+    let _ = s_result.unwrap();
+
+    data
 }
 
 fn gen_and_upload_key(
