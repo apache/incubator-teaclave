@@ -145,7 +145,7 @@ pub fn load_and_verify_enclave_info(
             signature::UnparsedPublicKey::new(&signature::RSA_PKCS1_2048_8192_SHA256, signer.0);
         public_key
             .verify(content.as_bytes(), sig.as_slice())
-            .expect("aa");
+            .expect("invalid signature for enclave info file");
     }
 
     let lines: Vec<&str> = content.split('\n').collect();
