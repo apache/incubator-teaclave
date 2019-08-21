@@ -9,6 +9,7 @@ sym_folders = [
 'mesatee_core',
 'tests',
 'mesatee_config',
+'mesatee_cli',
 'mesatee_binder',
 'third_party',
 'examples',

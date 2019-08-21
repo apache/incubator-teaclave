@@ -77,7 +77,7 @@ SGX_LIBS :=
 UNIX_MODULES := integration_test private_join_and_compute ml_predict quickstart \
 	image_resizing online_decrypt rsa_sign py_matrix_multiply kmeans \
 	logistic_reg lin_reg svm gen_linear_model gaussian_mixture_model \
-	gaussian_processes dbscan neural_net naive_bayes
+	gaussian_processes dbscan neural_net naive_bayes mesatee_cli
 UNIX_LIBS := mesatee_sdk protected_fs_rs
 LIBS := $(SGX_LIBS) $(UNIX_LIBS)
 
