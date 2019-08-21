@@ -22,7 +22,7 @@ use std::{net, path};
 
 use fns_proto::{InvokeTaskRequest, InvokeTaskResponse};
 use mesatee_core::config::{OutboundDesc, TargetDesc};
-use mesatee_core::rpc::{self, channel::SgxTrustedChannel, sgx};
+use mesatee_core::rpc::{channel, sgx};
 use tdfs_external_proto::{DFSRequest, DFSResponse};
 use tms_external_proto::{TaskRequest, TaskResponse};
 
@@ -122,10 +122,10 @@ fn main() -> CliResult {
         None => Box::new(io::stdout()),
     };
 
-    tms_run(enclave_info, args.addr, reader, writer)
+    tms_run(&enclave_info, args.addr, reader, writer)
 }
 
-fn tms_run<R: Reader, W: Writer>(
+fn tms_run<R: Read, W: Write>(
     enclave_info: &EnclaveInfo,
     addr: net::SocketAddr,
     reader: R,
@@ -133,11 +133,14 @@ fn tms_run<R: Reader, W: Writer>(
 ) -> Result<(), ExitFailure> {
     let outbound_desc = OutboundDesc::new(*enclave_info.get("tms").unwrap());
     let target_desc = TargetDesc::new(addr.ip(), addr.port(), outbound_desc);
-    let tms_channel = match &target_desc.desc {
-        OutboundDesc::Sgx(enclave_attrs) => {
-            SgxTrustedChannel::<TaskRequest, TaskResponse>::new(addr, enclave_attrs.clone())
-        }
-    }?;
+
+    let mut channel =
+        match &target_desc.desc {
+            OutboundDesc::Sgx(enclave_attrs) => channel::SgxTrustedChannel::<
+                TaskRequest,
+                TaskResponse,
+            >::new(addr, enclave_attrs.clone()),
+        }?;
     let request = serde_json::from_reader(reader)?;
     let response = channel.invoke(request)?;
     serde_json::to_writer(writer, &response)?;
