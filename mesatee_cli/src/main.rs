@@ -88,6 +88,35 @@ struct Cli {
     enclave_info: path::PathBuf,
 }
 
+macro_rules! generate_runner_for {
+    ($endpoint:ident, $request_type: tt, $response_type: tt) => {
+        fn $endpoint<R: Read, W: Write>(
+            enclave_info: &EnclaveInfo,
+            addr: net::SocketAddr,
+            reader: R,
+            writer: W,
+        ) -> Result<(), ExitFailure> {
+            let outbound_desc = OutboundDesc::new(*enclave_info.get("$endpoint").unwrap());
+            let target_desc = TargetDesc::new(addr.ip(), addr.port(), outbound_desc);
+
+            let mut channel = match &target_desc.desc {
+                OutboundDesc::Sgx(enclave_attrs) => channel::SgxTrustedChannel::<
+                    $request_type,
+                    $response_type,
+                >::new(addr, enclave_attrs.clone()),
+            }?;
+            let request = serde_json::from_reader(reader)?;
+            let response = channel.invoke(request)?;
+            serde_json::to_writer(writer, &response)?;
+            Ok(())
+        }
+    };
+}
+
+generate_runner_for!(tms, TaskRequest, TaskResponse);
+generate_runner_for!(tdfs, DFSRequest, DFSResponse);
+generate_runner_for!(fns, InvokeTaskRequest, InvokeTaskResponse);
+
 fn main() -> CliResult {
     let args = Cli::from_args();
     if args.auditor_keys.len() != args.auditor_sigs.len() {
@@ -111,8 +140,6 @@ fn main() -> CliResult {
     let enclave_info =
         sgx::load_and_verify_enclave_info(&args.enclave_info, enclave_signers.as_slice());
 
-    // Initialization done.
-
     let reader: Box<Read> = match args.input {
         Some(i) => Box::new(io::BufReader::new(fs::File::open(i)?)),
         None => Box::new(io::stdin()),
@@ -122,27 +149,9 @@ fn main() -> CliResult {
         None => Box::new(io::stdout()),
     };
 
-    tms_run(&enclave_info, args.addr, reader, writer)
-}
-
-fn tms_run<R: Read, W: Write>(
-    enclave_info: &EnclaveInfo,
-    addr: net::SocketAddr,
-    reader: R,
-    writer: W,
-) -> Result<(), ExitFailure> {
-    let outbound_desc = OutboundDesc::new(*enclave_info.get("tms").unwrap());
-    let target_desc = TargetDesc::new(addr.ip(), addr.port(), outbound_desc);
-
-    let mut channel =
-        match &target_desc.desc {
-            OutboundDesc::Sgx(enclave_attrs) => channel::SgxTrustedChannel::<
-                TaskRequest,
-                TaskResponse,
-            >::new(addr, enclave_attrs.clone()),
-        }?;
-    let request = serde_json::from_reader(reader)?;
-    let response = channel.invoke(request)?;
-    serde_json::to_writer(writer, &response)?;
-    Ok(())
+    match args.endpoint {
+        Endpoint::TMS => tms(&enclave_info, args.addr, reader, writer),
+        Endpoint::TDFS => tdfs(&enclave_info, args.addr, reader, writer),
+        Endpoint::FNS => fns(&enclave_info, args.addr, reader, writer),
+    }
 }
