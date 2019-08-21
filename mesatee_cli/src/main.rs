@@ -59,13 +59,11 @@ struct Cli {
     /// Read from FILE instead of stdin
     input: Option<path::PathBuf>,
 
-    #[structopt(short = "v", long)]
-    /// Make the operation more talkative
-    verbose: bool,
+    #[structopt(flatten)]
+    verbosity: clap_flags::Verbosity,
 
-    #[structopt(short = "V", long)]
-    /// Show version number and quit
-    version: bool,
+    #[structopt(flatten)]
+    logger: clap_flags::Log,
 
     #[structopt(short = "e", long, required = true)]
     /// MesaTEE endpoint to connect to. Possible values are: tms, tdfs, fns.
@@ -126,6 +124,8 @@ fn main() -> CliResult {
         );
     }
 
+    args.logger.log_all(args.verbosity.log_level())?;
+
     let mut keys = vec![];
     for key_path in args.auditor_keys.iter() {
         let mut buf = vec![];
@@ -150,9 +150,10 @@ fn main() -> CliResult {
         None => Box::new(io::stdout()),
     };
 
-    match args.endpoint {
+    let ret = match args.endpoint {
         Endpoint::TMS => tms(&enclave_info, args.addr, reader, writer),
         Endpoint::TDFS => tdfs(&enclave_info, args.addr, reader, writer),
         Endpoint::FNS => fns(&enclave_info, args.addr, reader, writer),
-    }
+    };
+    ret
 }
