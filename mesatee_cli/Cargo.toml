@@ -16,5 +16,5 @@ exitfailure = "0.5"
 structopt = "0.2"
 serde_json = "1.0.39"
 tms_external_proto = { path = "../mesatee_services/tms/external/proto" }
-#tdfs_external_proto = { path = "mesatee_services/tdfs/external/proto"}
-
+tdfs_external_proto = { path = "../mesatee_services/tdfs/external/proto" }
+fns_proto = { path = "../mesatee_services/fns/proto" }

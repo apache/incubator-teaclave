@@ -20,8 +20,10 @@ use std::fs;
 use std::io::{self, Read, Write};
 use std::{net, path};
 
+use fns_proto::{InvokeTaskRequest, InvokeTaskResponse};
 use mesatee_core::config::{OutboundDesc, TargetDesc};
-use mesatee_core::rpc::{self, sgx};
+use mesatee_core::rpc::{self, channel::SgxTrustedChannel, sgx};
+use tdfs_external_proto::{DFSRequest, DFSResponse};
 use tms_external_proto::{TaskRequest, TaskResponse};
 
 type EnclaveInfo = std::collections::HashMap<String, (sgx::SgxMeasure, sgx::SgxMeasure)>;
@@ -71,7 +73,7 @@ struct Cli {
 
     #[structopt(name = "SOCKET_ADDRESS", name = "IP_ADDRESS:PORT")]
     /// Address and port of the MeasTEE endpoint
-    address: net::SocketAddr,
+    addr: net::SocketAddr,
 
     #[structopt(short = "k", long, required = true)]
     /// SPACE seperated paths of MesaTEE auditor public keys
@@ -120,25 +122,22 @@ fn main() -> CliResult {
         None => Box::new(io::stdout()),
     };
 
-    run(args.endpoint, args.address, &enclave_info, reader, writer)
+    tms_run(enclave_info, args.addr, reader, writer)
 }
 
-fn run<R: Read, W: Write>(
-    endpoint: Endpoint,
-    addr: net::SocketAddr,
+fn tms_run<R: Reader, W: Writer>(
     enclave_info: &EnclaveInfo,
+    addr: net::SocketAddr,
     reader: R,
     writer: W,
 ) -> Result<(), ExitFailure> {
     let outbound_desc = OutboundDesc::new(*enclave_info.get("tms").unwrap());
     let target_desc = TargetDesc::new(addr.ip(), addr.port(), outbound_desc);
-    let mut channel = match &target_desc.desc {
-        OutboundDesc::Sgx(enclave_attrs) => rpc::channel::SgxTrustedChannel::<
-            TaskRequest,
-            TaskResponse,
-        >::new(addr, enclave_attrs.clone()),
+    let tms_channel = match &target_desc.desc {
+        OutboundDesc::Sgx(enclave_attrs) => {
+            SgxTrustedChannel::<TaskRequest, TaskResponse>::new(addr, enclave_attrs.clone())
+        }
     }?;
-
     let request = serde_json::from_reader(reader)?;
     let response = channel.invoke(request)?;
     serde_json::to_writer(writer, &response)?;
