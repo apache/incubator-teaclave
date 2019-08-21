@@ -150,10 +150,9 @@ fn main() -> CliResult {
         None => Box::new(io::stdout()),
     };
 
-    let ret = match args.endpoint {
+    match args.endpoint {
         Endpoint::TMS => tms(&enclave_info, args.addr, reader, writer),
         Endpoint::TDFS => tdfs(&enclave_info, args.addr, reader, writer),
         Endpoint::FNS => fns(&enclave_info, args.addr, reader, writer),
-    };
-    ret
+    }
 }
