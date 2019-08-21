@@ -96,7 +96,7 @@ fn encrypt_data(mut data: Vec<u8>, aes_key: &[u8], aes_nonce: &[u8], aes_ad: &[u
     let mut s_key = aead::SealingKey::new(ub, filesequence);
     let ad = Aad::from(aes_ad);
     let s_result = s_key.seal_in_place_append_tag(ad, &mut data);
-    let _ = s_result.unwrap();
+    s_result.unwrap();
 
     data
 }

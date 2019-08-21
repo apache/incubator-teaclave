@@ -76,7 +76,7 @@ pub fn encrypt_data(
 
     let s_result = s_key.seal_in_place_append_tag(ad, &mut data);
 
-    let _ = s_result.map_err(|_| Error::from(ErrorKind::CryptoError))?;
+    s_result.map_err(|_| Error::from(ErrorKind::CryptoError))?;
 
     Ok(data)
 }
