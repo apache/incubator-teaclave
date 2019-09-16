@@ -27,7 +27,10 @@ pub trait HandleRequest {
     fn handle_request(&self) -> Result<InvokeTaskResponse>;
 }
 
-fn invoke_worker(worker: &mut Worker, request: &InvokeTaskRequest) -> Result<InvokeTaskResponse> {
+fn invoke_worker(
+    worker: &mut dyn Worker,
+    request: &InvokeTaskRequest,
+) -> Result<InvokeTaskResponse> {
     // Generate RunningTask
     let running_task = RunningTask::init(&request)?;
     let file_list = running_task.get_file_list();

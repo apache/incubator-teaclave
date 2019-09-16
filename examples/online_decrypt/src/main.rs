@@ -21,9 +21,9 @@ use serde_derive::{Deserialize, Serialize};
 use std::net::SocketAddr;
 use std::{env, fs};
 
-static FUNCTION_NAME: &'static str = "decrypt";
-static USER_ID: &'static str = "uid";
-static USER_TOKEN: &'static str = "token";
+static FUNCTION_NAME: &str = "decrypt";
+static USER_ID: &str = "uid";
+static USER_TOKEN: &str = "token";
 
 lazy_static! {
     static ref TMS_ADDR: SocketAddr = "127.0.0.1:5554".parse().unwrap();
@@ -189,7 +189,6 @@ fn main() {
         }
         _ => {
             print_usage();
-            return;
         }
     }
 }

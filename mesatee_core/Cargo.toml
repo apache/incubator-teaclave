@@ -35,12 +35,12 @@ httparse     = { version = "1.3.2", default-features = false }
 uuid         = { version = "0.7.4", features = ["v4"] }
 net2         = { version = "0.2.33" }
 
-sgx_tstd  = { version = "1.0.8", features = ["net"], optional = true }
-sgx_types = { version = "1.0.8" }
-sgx_urts  = { version = "1.0.8" }
-sgx_tcrypto = { version = "1.0.8", optional = true }
-sgx_rand  = { version = "1.0.8", optional = true }
-sgx_tse   = { version = "1.0.8", optional = true }
+sgx_tstd  = { version = "1.0.9", features = ["net"], optional = true }
+sgx_types = { version = "1.0.9" }
+sgx_urts  = { version = "1.0.9" }
+sgx_tcrypto = { version = "1.0.9", optional = true }
+sgx_rand  = { version = "1.0.9", optional = true }
+sgx_tse   = { version = "1.0.9", optional = true }
 
 mesatee_config = { version = "0.1.0" } 
 ipc_attribute = { path = "./ipc_attribute" }

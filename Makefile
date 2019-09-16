@@ -103,7 +103,7 @@ please adjust the SGX_SDK env or the Makefile"; exit 1; fi
 init-submodules:
 	if git submodule status | egrep -q '^[-]|^[+]' ; then \
 		echo "INFO: Need to reinitialize git submodules"; \
-		git submodule update --init; \
+		git submodule update --init --recursive; \
 	fi
 
 # "=" gurantees lazy evaluation until rust-sgx-sdk submodule is populated
@@ -115,7 +115,6 @@ TOOLCHAIN = $(shell cat third_party/rust-sgx-sdk/rust-toolchain)
 ifndef VERBOSE
 define cargo_build
 	cd $(1) && \
-	CARGO_BUILD_PIPELINING=true \
 	RUSTUP_TOOLCHAIN=$(TOOLCHAIN) \
 	$(COV_FLAGS) unbuffer cargo build --target-dir $(2) \
 	$(CARGO_BUILD_FLAGS) $(3) 2>&1 | \
@@ -128,7 +127,6 @@ endef
 else
 define cargo_build
 	cd $(1) && \
-	CARGO_BUILD_PIPELINING=true \
 	RUSTUP_TOOLCHAIN=$(TOOLCHAIN) \
 	$(COV_FLAGS) cargo build --target-dir $(2) \
 	$(CARGO_BUILD_FLAGS) $(3); \

@@ -17,7 +17,7 @@ use mesatee_sdk::{Mesatee, MesateeEnclaveInfo};
 use std::net::SocketAddr;
 use std::{env, fs};
 
-static FUNCTION_NAME: &'static str = "gbdt_predict";
+static FUNCTION_NAME: &str = "gbdt_predict";
 lazy_static! {
     static ref TMS_ADDR: SocketAddr = "127.0.0.1:5554".parse().unwrap();
     static ref TDFS_ADDR: SocketAddr = "127.0.0.1:5065".parse().unwrap();

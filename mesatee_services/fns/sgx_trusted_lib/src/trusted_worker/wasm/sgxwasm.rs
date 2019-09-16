@@ -17,7 +17,7 @@
 use std::prelude::v1::*;
 
 use std::collections::HashMap;
-use std::{format, print, println};
+use std::{format, println};
 use wasmi::memory_units::Pages;
 
 pub use wasmi::Error as InterpreterError;

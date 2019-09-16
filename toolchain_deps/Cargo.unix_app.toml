@@ -37,6 +37,6 @@ mesatee_config = { path = "./mesatee_config" }
 mesatee_sdk = { path = "./mesatee_sdk" }
 
 # We cannot remove these crates, because proto crates depend on them
-sgx_cov = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.8" }
-sgx_urts = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.8" }
-sgx_types = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.8" }
+sgx_cov = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.9" }
+sgx_urts = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.9" }
+sgx_types = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.9" }
