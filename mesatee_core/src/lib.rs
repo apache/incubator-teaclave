@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #![feature(specialization)] // for mayfail
-#![feature(type_alias_enum_variants)] // for mayfail test
 
 // Use sgx_tstd to replace Rust's default std
 #![cfg_attr(feature = "mesalock_sgx", no_std)]

@@ -141,11 +141,11 @@ fn main() -> CliResult {
     let enclave_info =
         sgx::load_and_verify_enclave_info(&args.enclave_info, enclave_signers.as_slice());
 
-    let reader: Box<Read> = match args.input {
+    let reader: Box<dyn Read> = match args.input {
         Some(i) => Box::new(io::BufReader::new(fs::File::open(i)?)),
         None => Box::new(io::stdin()),
     };
-    let writer: Box<Write> = match args.output {
+    let writer: Box<dyn Write> = match args.output {
         Some(o) => Box::new(io::BufWriter::new(fs::File::create(o)?)),
         None => Box::new(io::stdout()),
     };

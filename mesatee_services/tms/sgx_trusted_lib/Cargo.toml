@@ -19,7 +19,7 @@ cov = ["sgx_cov"]
 cfg-if               = { version = "0.1.9" }
 lazy_static          = { version = "1.0.2", features = ["spin_no_std"] }
 uuid                 = { version = "0.7.4", features = ["v4"] }
-rand                 = { version = "0.6" }
+rand                 = { version = "0.7.0" }
 log                  = { version = "0.4.6" }
 env_logger           = { version = "0.6.1" }
 
@@ -31,5 +31,5 @@ tms_external_proto   = { path = "../external/proto", optional = true }
 tdfs_internal_client = { path = "../../tdfs/internal/client", optional = true }
 
 sgx_cov              = { version = "0.1.0", optional = true }
-sgx_tstd             = { version = "1.0.8", features = ["net", "backtrace"], optional = true }
-sgx_types            = { version = "1.0.8" }
+sgx_tstd             = { version = "1.0.9", features = ["net", "backtrace"], optional = true }
+sgx_types            = { version = "1.0.9" }

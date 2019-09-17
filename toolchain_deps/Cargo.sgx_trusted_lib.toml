@@ -32,19 +32,19 @@ mesatee_core      = { path = "./mesatee_core" }
 mesatee_config    = { path = "./mesatee_config" }
 
 # Rust SGX SDK
-sgx_alloc         = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.8" }
-sgx_build_helper  = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.8" }
-sgx_cov           = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.8" }
-sgx_libc          = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.8" }
-sgx_rand          = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.8" }
-sgx_tcrypto       = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.8" }
-sgx_tprotected_fs = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.8" }
-sgx_trts          = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.8" }
-sgx_tse           = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.8" }
-sgx_tstd          = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.8" }
-sgx_tunittest     = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.8" }
-sgx_types         = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.8" }
-sgx_unwind        = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.8" }
+sgx_alloc         = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.9" }
+sgx_build_helper  = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.9" }
+sgx_cov           = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.9" }
+sgx_libc          = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.9" }
+sgx_rand          = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.9" }
+sgx_tcrypto       = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.9" }
+sgx_tprotected_fs = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.9" }
+sgx_trts          = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.9" }
+sgx_tse           = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.9" }
+sgx_tstd          = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.9" }
+sgx_tunittest     = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.9" }
+sgx_types         = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.9" }
+sgx_unwind        = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.9" }
 
 # SGX crates
 adler32           = { git = "https://github.com/mesalock-linux/adler32-rs-sgx" }
