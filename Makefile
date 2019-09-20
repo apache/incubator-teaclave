@@ -94,6 +94,12 @@ prep: check-sgx-sdk init-submodules
 	cd $(OUT_DIR) && wget -qN \
 		https://mesapy.org/release/$(MESAPY_VERSION)-mesapy-sgx.tar.gz && \
 		tar xzf $(MESAPY_VERSION)-mesapy-sgx.tar.gz
+	# Tell gcc/clang to remap absolute src paths to make enclaves' signature more reproducible
+	echo 'exec cc "$$''@"' " -fdebug-prefix-map=${MESATEE_PROJECT_ROOT}=/mesatee_src" > $(OUT_DIR)/cc_wrapper.sh
+	chmod +x $(OUT_DIR)/cc_wrapper.sh
+	# Tell rustc to remap absolute src paths to make enclaves' signature more reproducible
+	echo 'exec rustc "$$''@"' " --remap-path-prefix=${HOME}/.cargo=/cargo_home --remap-path-prefix=${MESATEE_PROJECT_ROOT}=/mesatee_src" > $(OUT_DIR)/rustc_wrapper.sh
+	chmod +x $(OUT_DIR)/rustc_wrapper.sh
 
 check-sgx-sdk:
 	if [ ! -d $(SGX_SDK) ] ; then \
@@ -116,6 +122,8 @@ ifndef VERBOSE
 define cargo_build
 	cd $(1) && \
 	RUSTUP_TOOLCHAIN=$(TOOLCHAIN) \
+	RUSTC=$(OUT_DIR)/rustc_wrapper.sh \
+	CC=$(OUT_DIR)/cc_wrapper.sh \
 	$(COV_FLAGS) unbuffer cargo build --target-dir $(2) \
 	$(CARGO_BUILD_FLAGS) $(3) 2>&1 | \
 	while read l; do if grep -q \
@@ -128,6 +136,8 @@ else
 define cargo_build
 	cd $(1) && \
 	RUSTUP_TOOLCHAIN=$(TOOLCHAIN) \
+	RUSTC=$(OUT_DIR)/rustc_wrapper.sh \
+	CC=$(OUT_DIR)/cc_wrapper.sh \
 	$(COV_FLAGS) cargo build --target-dir $(2) \
 	$(CARGO_BUILD_FLAGS) $(3); \
 	if [ $$? -ne 0 ]; then exit 1; fi
