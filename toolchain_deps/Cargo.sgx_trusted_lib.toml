@@ -66,7 +66,7 @@ log               = { git = "https://github.com/mesalock-linux/log-sgx" }
 lzw               = { git = "https://github.com/mesalock-linux/lzw-sgx" }
 num-bigint        = { git = "https://github.com/mesalock-linux/num-bigint-sgx" }
 num-traits        = { git = "https://github.com/mesalock-linux/num-traits-sgx" }
-parity-wasm       = { git = "https://github.com/mesalock-linux/parity-wasm-sgx", branch = "v0.31.3" }
+parity-wasm       = { git = "https://github.com/mesalock-linux/parity-wasm-sgx" }
 png               = { git = "https://github.com/mesalock-linux/image-png-sgx" }
 profiler_builtins = { git = "https://github.com/mesalock-linux/sgx-fake-profiler-builtins" }
 quick-error       = { git = "https://github.com/mesalock-linux/quick-error-sgx" }
