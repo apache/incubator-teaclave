@@ -36,7 +36,7 @@ pub use rsa::RSASignWorker;
 mod lin_reg;
 pub use lin_reg::LinRegWorker;
 mod logistic_reg;
-pub use logistic_reg::LogisticRegWorker;
+pub use logistic_reg::*;
 mod svm;
 pub use svm::SvmWorker;
 mod gen_linear_model;
