@@ -11,17 +11,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+use crate::worker::{FunctionType, Worker, WorkerContext};
+use mesatee_core::{Error, ErrorKind, Result};
 use std::fmt::Write;
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
-use crate::worker::{FunctionType, Worker, WorkerContext};
-use mesatee_core::{Error, ErrorKind, Result};
 
 use rusty_machine::learning::logistic_reg::LogisticRegressor;
+use rusty_machine::learning::optim::grad_desc::GradientDesc;
 use rusty_machine::learning::SupModel;
 use rusty_machine::linalg::Matrix;
 use rusty_machine::linalg::Vector;
-use rusty_machine::learning::optim::grad_desc::GradientDesc;
 use serde_derive::Deserialize;
 use serde_json;
 
@@ -91,9 +91,9 @@ impl Worker for LogisticRegPredictWorker {
             .take()
             .ok_or_else(|| Error::from(ErrorKind::InvalidInputError))?;
 
-        let model_bytes:Vec<u8> = context.read_file(&input.model_file_id)?;
-        let test_data_bytes:Vec<u8> = context.read_file(&input.test_file_id)?;
-        
+        let model_bytes: Vec<u8> = context.read_file(&input.model_file_id)?;
+        let test_data_bytes: Vec<u8> = context.read_file(&input.test_file_id)?;
+
         let model_json_str = String::from_utf8(model_bytes)
             .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
         let test_data_str = String::from_utf8(test_data_bytes)
@@ -104,11 +104,11 @@ impl Worker for LogisticRegPredictWorker {
         //let mut predict = LogisticRegressor::default();
         let mut alg_alpha: f64 = 0.3;
         let mut alg_iters: u64 = 100;
-        let mut param : &Vec<serde_json::Value> = &Vec::new();
+        let mut param: &Vec<serde_json::Value> = &Vec::new();
         let mut check_alg_alpha = false;
         let mut check_alg_iters = false;
         let mut check_param = false;
-        let model_param:serde_json::Value = serde_json::from_str(&model_json_str)?;
+        let model_param: serde_json::Value = serde_json::from_str(&model_json_str)?;
         if !model_param.is_null() && model_param.is_object() {
             if !model_param["alg"].is_null() && model_param["alg"].is_object() {
                 if !model_param["alg"]["alpha"].is_null() && model_param["alg"]["alpha"].is_f64() {
@@ -125,10 +125,16 @@ impl Worker for LogisticRegPredictWorker {
             }
 
             if !model_param["base"].is_null() && model_param["base"].is_object() {
-                if !model_param["base"]["parameters"].is_null() && model_param["base"]["parameters"].is_object() {
-                    if !model_param["base"]["parameters"]["data"].is_null() && model_param["base"]["parameters"]["data"].is_array() {
+                if !model_param["base"]["parameters"].is_null()
+                    && model_param["base"]["parameters"].is_object()
+                {
+                    if !model_param["base"]["parameters"]["data"].is_null()
+                        && model_param["base"]["parameters"]["data"].is_array()
+                    {
                         // set param
-                        param = model_param["base"]["parameters"]["data"].as_array().unwrap();
+                        param = model_param["base"]["parameters"]["data"]
+                            .as_array()
+                            .unwrap();
                         check_param = true;
                     }
                 }
@@ -145,22 +151,20 @@ impl Worker for LogisticRegPredictWorker {
             let gd = GradientDesc::new(alg_alpha, alg_iters as usize);
             let mut logistic_mod = LogisticRegressor::new(gd);
             logistic_mod.set_parameters(base_param);
-            let classes =  logistic_mod
+            let classes = logistic_mod
                 .predict(&test_data_matrix)
                 .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
             let mut output = String::new();
             for c in classes.data().iter() {
                 writeln!(&mut output, "{}", c)
-                .map_err(|_| Error::from(ErrorKind::OutputGenerationError))?;
+                    .map_err(|_| Error::from(ErrorKind::OutputGenerationError))?;
             }
             Ok(output)
-        }
-        else {
+        } else {
             Ok("something error in execute".to_string())
         }
     }
 }
-
 
 #[derive(Deserialize)]
 pub(crate) struct LogisticRegTrainPayload {

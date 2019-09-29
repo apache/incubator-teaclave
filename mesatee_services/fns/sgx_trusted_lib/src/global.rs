@@ -14,10 +14,10 @@
 use crate::running_task::RunningTask;
 use crate::trusted_worker::{
     BytesPlusOneWorker, ConcatWorker, DBSCANWorker, EchoFileWorker, EchoWorker,
-    FileBytesPlusOneWorker, GBDTPredictWorker, GBDTTrainWorker, GPWorker, GenLinearModelWorker, GmmWorker,
-    ImageResizeWorker, KmeansWorker, LinRegWorker, LogisticRegTrainWorker, LogisticRegPredictWorker,
-    MesaPyWorker, NaiveBayesWorker, NeuralNetWorker, OnlineDecryptWorker, PSIWorker,
-    PrivateJoinAndComputeWorker, RSASignWorker, SvmWorker, SwapFileWorker, WASMWorker,
+    FileBytesPlusOneWorker, GBDTPredictWorker, GBDTTrainWorker, GPWorker, GenLinearModelWorker,
+    GmmWorker, ImageResizeWorker, KmeansWorker, LinRegWorker, LogisticRegPredictWorker,
+    LogisticRegTrainWorker, MesaPyWorker, NaiveBayesWorker, NeuralNetWorker, OnlineDecryptWorker,
+    PSIWorker, PrivateJoinAndComputeWorker, RSASignWorker, SvmWorker, SwapFileWorker, WASMWorker,
 };
 use crate::worker::WorkerInfoQueue;
 use mesatee_core::Result;

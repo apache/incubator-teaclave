@@ -11,20 +11,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
 use crate::worker::{FunctionType, Worker, WorkerContext};
 use mesatee_core::{Error, ErrorKind, Result};
+#[cfg(feature = "mesalock_sgx")]
+use std::prelude::v1::*;
 
+use gbdt_sgx::config::Config;
 use gbdt_sgx::decision_tree::Data;
 use gbdt_sgx::gradient_boost::GBDT;
-use gbdt_sgx::config::Config;
 use serde_derive::Deserialize;
 use serde_json;
 
 use std::fmt::Write;
 use std::panic;
-
 
 #[derive(Deserialize)]
 pub(crate) struct GBDTTrainPayload {
@@ -112,7 +111,8 @@ impl Worker for GBDTTrainWorker {
             gbdt_train_loss: gbdt_train_payload.gbdt_train_loss,
             gbdt_train_debug: gbdt_train_payload.gbdt_train_debug,
             gbdt_train_initial_guess_enable: gbdt_train_payload.gbdt_train_initial_guess_enable,
-            gbdt_train_training_optimization_level: gbdt_train_payload.gbdt_train_training_optimization_level,
+            gbdt_train_training_optimization_level: gbdt_train_payload
+                .gbdt_train_training_optimization_level,
             train_data_file_id,
         });
         Ok(())
@@ -214,11 +214,13 @@ impl Worker for GBDTPredictWorker {
             .take()
             .ok_or_else(|| Error::from(ErrorKind::InvalidInputError))?;
 
-        let model_bytes:Vec<u8> = context.read_file(&input.model_file_id)?;
-        let test_data_bytes:Vec<u8> = context.read_file(&input.test_file_id)?;
+        let model_bytes: Vec<u8> = context.read_file(&input.model_file_id)?;
+        let test_data_bytes: Vec<u8> = context.read_file(&input.test_file_id)?;
 
-        let model_json_str = String::from_utf8(model_bytes).map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
-        let test_data_str = String::from_utf8(test_data_bytes).map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
+        let model_json_str = String::from_utf8(model_bytes)
+            .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
+        let test_data_str = String::from_utf8(test_data_bytes)
+            .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
         let test_data_dv = parse_test_data(&test_data_str)?;
 
         let model: GBDT = serde_json::from_str(&model_json_str)
@@ -260,18 +262,17 @@ fn parse_test_data(input: &str) -> Result<Vec<Data>> {
 }
 
 fn parse_train_data(input: &str) -> Result<Vec<Data>> {
-    
     let mut v: Vec<f32>;
     let mut samples: Vec<Data> = Vec::new();
     let mut sample_label_index = 0;
     let lines: Vec<&str> = input.split('\n').collect();
 
-    // get the label_index 
+    // get the label_index
     if lines.len() > 0 {
         if !lines[0].trim().is_empty() {
             let first_line: Vec<&str> = lines[0].trim().split(',').collect();
             if first_line.len() > 2 {
-                 sample_label_index = first_line.len() - 1;
+                sample_label_index = first_line.len() - 1;
             }
         }
     }
@@ -282,14 +283,17 @@ fn parse_train_data(input: &str) -> Result<Vec<Data>> {
             continue;
         }
 
-        v = trimed_line.split(',').map(|x| x.parse::<f32>().unwrap_or(0.0)).collect();
-        samples.push(Data{
+        v = trimed_line
+            .split(',')
+            .map(|x| x.parse::<f32>().unwrap_or(0.0))
+            .collect();
+        samples.push(Data {
             label: v.swap_remove(sample_label_index),
             feature: v,
-            target:0.0,
-            weight:1.0,
-            residual:0.0,
-            initial_guess:0.0,
+            target: 0.0,
+            weight: 1.0,
+            residual: 0.0,
+            initial_guess: 0.0,
         });
     }
     Ok(samples)
