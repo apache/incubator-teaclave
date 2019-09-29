@@ -1,5 +1,5 @@
 [package]
-name = "ml_predict"
+name = "gbdt"
 version = "0.1.0"
 authors = ["MesaTEE Authors <developers@mesatee.org>"]
 description = "Machine learning with MesaTEE."
@@ -9,3 +9,7 @@ edition = "2018"
 [dependencies]
 mesatee_sdk = { path = "../../mesatee_sdk" }
 lazy_static = "1.1.0"
+serde_derive = { version = "1.0.92" }
+serde_json = { version = "1.0.39" }
+serde = { version = "1.0.92" }
+gbdt_sgx = { git = "https://github.com/mesalock-linux/gbdt-rs" }

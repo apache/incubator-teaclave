@@ -22,7 +22,7 @@ pub use wasm::WASMWorker;
 mod mesapy;
 pub use mesapy::MesaPyWorker;
 mod gbdt;
-pub use gbdt::GBDTPredictWorker;
+pub use gbdt::*;
 mod private_join_and_compute;
 pub use private_join_and_compute::PrivateJoinAndComputeWorker;
 mod image_resize;

@@ -14,7 +14,7 @@
 use crate::running_task::RunningTask;
 use crate::trusted_worker::{
     BytesPlusOneWorker, ConcatWorker, DBSCANWorker, EchoFileWorker, EchoWorker,
-    FileBytesPlusOneWorker, GBDTPredictWorker, GPWorker, GenLinearModelWorker, GmmWorker,
+    FileBytesPlusOneWorker, GBDTPredictWorker, GBDTTrainWorker, GPWorker, GenLinearModelWorker, GmmWorker,
     ImageResizeWorker, KmeansWorker, LinRegWorker, LogisticRegTrainWorker, LogisticRegPredictWorker,
     MesaPyWorker, NaiveBayesWorker, NeuralNetWorker, OnlineDecryptWorker, PSIWorker,
     PrivateJoinAndComputeWorker, RSASignWorker, SvmWorker, SwapFileWorker, WASMWorker,
@@ -86,6 +86,9 @@ pub fn register_trusted_worker_statically() {
         let _ = WorkerInfoQueue::register(worker);
 
         let worker = Box::new(GBDTPredictWorker::new());
+        let _ = WorkerInfoQueue::register(worker);
+
+        let worker = Box::new(GBDTTrainWorker::new());
         let _ = WorkerInfoQueue::register(worker);
 
         let worker = Box::new(PrivateJoinAndComputeWorker::new());
