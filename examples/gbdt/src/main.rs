@@ -167,6 +167,8 @@ fn main() {
     }
 }
 
+// TODO: remove this lint exception
+#[allow(clippy::too_many_arguments)]
 fn gbdt_train(
     info: &MesateeEnclaveInfo,
     gbdt_train_cfg_feature_size: usize,
@@ -201,7 +203,7 @@ fn gbdt_train(
         gbdt_train_loss: gbdt_train_cfg_loss.to_string(),
         gbdt_train_debug: gbdt_train_cfg_debug,
         gbdt_train_initial_guess_enable: gbdt_train_cfg_initial_guess_enable,
-        gbdt_train_training_optimization_level: gbdt_train_training_optimization_level,
+        gbdt_train_training_optimization_level,
     };
 
     let input_string = serde_json::to_string(&input_payload).unwrap();
