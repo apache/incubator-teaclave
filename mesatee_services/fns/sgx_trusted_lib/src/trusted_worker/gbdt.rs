@@ -268,7 +268,7 @@ fn parse_train_data(input: &str) -> Result<Vec<Data>> {
     let lines: Vec<&str> = input.split('\n').collect();
 
     // get the label_index
-    if lines.len() > 0 && !lines[0].trim().is_empty() {
+    if !lines.is_empty() && !lines[0].trim().is_empty() {
         let first_line: Vec<&str> = lines[0].trim().split(',').collect();
         if first_line.len() > 2 {
             sample_label_index = first_line.len() - 1;

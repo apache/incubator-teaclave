@@ -278,7 +278,7 @@ fn parse_input_to_vector(input: &str) -> Result<Vector<f64>> {
     let mut raw_cluster_data = Vec::new();
     let lines: Vec<&str> = input.split('\n').collect();
 
-    if lines.len() > 0 && !lines[0].trim().is_empty() {
+    if !lines.is_empty() && !lines[0].trim().is_empty() {
         for c in input.lines() {
             let value = c
                 .parse::<f64>()
@@ -296,13 +296,12 @@ fn parse_input_to_matrix(input: &str) -> Result<Matrix<f64>> {
 
     let lines: Vec<&str> = input.split('\n').collect();
     let mut sample_num = 0;
-    let mut columns_num = 0;
-
-    // get columns num
-    if lines.len() > 0 && !lines[0].trim().is_empty() {
+    let columns_num = if !lines.is_empty() && !lines[0].trim().is_empty() {
         let first_line: Vec<&str> = lines[0].trim().split(',').collect();
-        columns_num = first_line.len();
-    }
+        first_line.len()
+    } else {
+        0
+    };
 
     if columns_num > 0 {
         for line in lines.iter() {
