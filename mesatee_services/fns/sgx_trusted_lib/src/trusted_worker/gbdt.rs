@@ -142,7 +142,7 @@ impl Worker for GBDTTrainWorker {
         let model_json = serde_json::to_string(&gbdt_train_mod).unwrap();
 
         // save the model
-        context.save_file_for_task_creator(model_json.as_byte())
+        context.save_file_for_task_creator(model_json.as_bytes())
     }
 }
 
