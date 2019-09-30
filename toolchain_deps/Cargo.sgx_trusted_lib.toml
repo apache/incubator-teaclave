@@ -10,7 +10,6 @@ members = [
 
 exclude = [
   "examples/private_join_and_compute",
-  "examples/ml_predict",
   "examples/image_resizing",
   "examples/online_decrypt",
   "examples/kmeans",
@@ -23,6 +22,7 @@ exclude = [
   "examples/dbscan",
   "examples/neural_net",
   "examples/naive_bayes",
+  "examples/gbdt",
   "mesatee_core",
 ]
 

@@ -74,10 +74,10 @@ EDL_FILE := $(TEE_BINDER_DIR)/Enclave.edl
 SGX_MODULES := mesatee_services/kms mesatee_services/tdfs mesatee_services/tms \
 	mesatee_services/fns tests/functional_test
 SGX_LIBS :=
-UNIX_MODULES := integration_test private_join_and_compute ml_predict quickstart \
+UNIX_MODULES := integration_test private_join_and_compute quickstart \
 	image_resizing online_decrypt rsa_sign py_matrix_multiply kmeans \
 	logistic_reg lin_reg svm gen_linear_model gaussian_mixture_model \
-	gaussian_processes dbscan neural_net naive_bayes mesatee_cli
+	gaussian_processes dbscan neural_net naive_bayes gbdt mesatee_cli
 UNIX_LIBS := mesatee_sdk protected_fs_rs
 LIBS := $(SGX_LIBS) $(UNIX_LIBS)
 
@@ -298,14 +298,13 @@ sgx: sgx_trusted sgx_untrusted
 
 unix: sgx $(UNIX_MODULES) mesatee_sdk_c quickstart_c
 
-examples: private_join_and_compute ml_predict image_resizing online_decrypt quickstart_c
+examples: private_join_and_compute image_resizing online_decrypt quickstart_c
 
 cov:
 	find . \( -name "*.gcda" -and \( ! -name "sgx_cov*" \
 		-and ! -name "kms*" -and ! -name "fns*" \
 		-and ! -name "tdfs*" -and ! -name "tms*" \
 		-and ! -name "private_join_and_compute*"\
-		-and ! -name "ml_predict*"\
 		-and ! -name "online_decrypt*"\
 		-and ! -name "image_resizing*"\
 		-and ! -name "kmeans*"\

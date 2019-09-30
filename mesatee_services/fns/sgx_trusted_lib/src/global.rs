@@ -14,10 +14,10 @@
 use crate::running_task::RunningTask;
 use crate::trusted_worker::{
     BytesPlusOneWorker, ConcatWorker, DBSCANWorker, EchoFileWorker, EchoWorker,
-    FileBytesPlusOneWorker, GBDTPredictWorker, GPWorker, GenLinearModelWorker, GmmWorker,
-    ImageResizeWorker, KmeansWorker, LinRegWorker, LogisticRegWorker, MesaPyWorker,
-    NaiveBayesWorker, NeuralNetWorker, OnlineDecryptWorker, PSIWorker, PrivateJoinAndComputeWorker,
-    RSASignWorker, SvmWorker, SwapFileWorker, WASMWorker,
+    FileBytesPlusOneWorker, GBDTPredictWorker, GBDTTrainWorker, GPWorker, GenLinearModelWorker,
+    GmmWorker, ImageResizeWorker, KmeansWorker, LinRegWorker, LogisticRegPredictWorker,
+    LogisticRegTrainWorker, MesaPyWorker, NaiveBayesWorker, NeuralNetWorker, OnlineDecryptWorker,
+    PSIWorker, PrivateJoinAndComputeWorker, RSASignWorker, SvmWorker, SwapFileWorker, WASMWorker,
 };
 use crate::worker::WorkerInfoQueue;
 use mesatee_core::Result;
@@ -88,6 +88,9 @@ pub fn register_trusted_worker_statically() {
         let worker = Box::new(GBDTPredictWorker::new());
         let _ = WorkerInfoQueue::register(worker);
 
+        let worker = Box::new(GBDTTrainWorker::new());
+        let _ = WorkerInfoQueue::register(worker);
+
         let worker = Box::new(PrivateJoinAndComputeWorker::new());
         let _ = WorkerInfoQueue::register(worker);
 
@@ -104,9 +107,6 @@ pub fn register_trusted_worker_statically() {
         let _ = WorkerInfoQueue::register(worker);
 
         let worker = Box::new(LinRegWorker::new());
-        let _ = WorkerInfoQueue::register(worker);
-
-        let worker = Box::new(LogisticRegWorker::new());
         let _ = WorkerInfoQueue::register(worker);
 
         let worker = Box::new(SvmWorker::new());
@@ -128,6 +128,12 @@ pub fn register_trusted_worker_statically() {
         let _ = WorkerInfoQueue::register(worker);
 
         let worker = Box::new(NaiveBayesWorker::new());
+        let _ = WorkerInfoQueue::register(worker);
+
+        let worker = Box::new(LogisticRegTrainWorker::new());
+        let _ = WorkerInfoQueue::register(worker);
+
+        let worker = Box::new(LogisticRegPredictWorker::new());
         let _ = WorkerInfoQueue::register(worker);
     }
 }
