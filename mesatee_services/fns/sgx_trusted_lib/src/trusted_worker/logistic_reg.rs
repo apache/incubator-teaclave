@@ -270,7 +270,7 @@ impl Worker for LogisticRegTrainWorker {
         let model_json = serde_json::to_string(&logisticreg_train_mod).unwrap();
 
         // save the model
-        context.save_file_for_all_participants(model_json.as_bytes())
+        context.save_file_for_task_creator(model_json.as_bytes())
     }
 }
 

@@ -40,8 +40,6 @@ pub(crate) struct GBDTTrainPayload {
     gbdt_train_data_sample_ratio: f64,
     gbdt_train_min_leaf_size: usize,
     gbdt_train_loss: String,
-    gbdt_train_debug: bool,
-    gbdt_train_initial_guess_enable: bool,
     gbdt_train_training_optimization_level: u8,
 }
 
@@ -57,8 +55,6 @@ fn print_gbdt_train_usage() {
     gbdt.train.cfg.data_sample_ratio            [f64, default 1.0]
     gbdt.train.cfg.min_leaf_size                [usize, default 1]
     gbdt.train.cfg.loss                         [String, default SquareError]
-    gbdt.train.cfg.debug                        [bool, default false]
-    gbdt.train.cfg.initial_guess_enable         [bool, default false]
     gbdt.train.cfg.training_optimization_level  [u8, default 2]
     gbdt.train.data.path                        [String]
     model_file_id_saving_path                   [String]
@@ -126,7 +122,7 @@ fn main() {
     let action = args[1].as_str();
     match action {
         "train" => {
-            if args.len() != 15 {
+            if args.len() != 13 {
                 print_gbdt_train_usage();
                 return;
             }
@@ -141,11 +137,9 @@ fn main() {
                 args[7].parse().unwrap(),  // gbdt.train.cfg.data_sample_ratio
                 args[8].parse().unwrap(),  // gbdt.train.cfg.min_leaf_size
                 &args[9],                  // gbdt.train.cfg.loss
-                args[10].parse().unwrap(), // gbdt.train.cfg.debug
-                args[11].parse().unwrap(), // gbdt.train.cfg.initial_guess_enable
-                args[12].parse().unwrap(), // gbdt.train.cfg.training_optimization_level
-                &args[13],                 // gbdt.train.data.path
-                &args[14],                 // model_file_id_saving_path
+                args[10].parse().unwrap(), // gbdt.train.cfg.training_optimization_level
+                &args[11],                 // gbdt.train.data.path
+                &args[12],                 // model_file_id_saving_path
             );
         }
         "predict" => {
@@ -179,8 +173,6 @@ fn gbdt_train(
     gbdt_train_cfg_data_sample_ratio: f64,
     gbdt_train_cfg_min_leaf_size: usize,
     gbdt_train_cfg_loss: &str,
-    gbdt_train_cfg_debug: bool,
-    gbdt_train_cfg_initial_guess_enable: bool,
     gbdt_train_training_optimization_level: u8,
     gbdt_train_data_path: &str,
     model_file_id_saving_path: &str,
@@ -201,8 +193,6 @@ fn gbdt_train(
         gbdt_train_data_sample_ratio: gbdt_train_cfg_data_sample_ratio,
         gbdt_train_min_leaf_size: gbdt_train_cfg_min_leaf_size,
         gbdt_train_loss: gbdt_train_cfg_loss.to_string(),
-        gbdt_train_debug: gbdt_train_cfg_debug,
-        gbdt_train_initial_guess_enable: gbdt_train_cfg_initial_guess_enable,
         gbdt_train_training_optimization_level,
     };
 

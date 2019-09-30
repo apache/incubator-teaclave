@@ -28,7 +28,7 @@ find . \( -name "*.gcda" -and \( ! -name "sgx_cov*" \
     -and ! -name "dbscan*"\
     -and ! -name "neural_net*"\
     -and ! -name "naive_bayes*"\
-    -and ! -name "gbdt"\
+    -and ! -name "gbdt*"\
     -and ! -name "mesatee_core*" -and ! -name "mesatee_config*" \) \) \
     -exec rm {} \;
 cd ${MESATEE_PROJECT_ROOT} && \

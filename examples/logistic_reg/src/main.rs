@@ -186,6 +186,6 @@ fn logisticreg_predict(
         .unwrap();
     let result = task.invoke().unwrap();
 
-    println!("result:\n{}", result);
+    println!("result:{}", result);
     fs::write(result_saving_path, result.as_bytes()).unwrap();
 }

@@ -35,8 +35,6 @@ pub(crate) struct GBDTTrainPayload {
     gbdt_train_data_sample_ratio: f64,
     gbdt_train_min_leaf_size: usize,
     gbdt_train_loss: String,
-    gbdt_train_debug: bool,
-    gbdt_train_initial_guess_enable: bool,
     gbdt_train_training_optimization_level: u8,
 }
 
@@ -56,8 +54,6 @@ struct GBDTTrainWorkerInput {
     gbdt_train_data_sample_ratio: f64,
     gbdt_train_min_leaf_size: usize,
     gbdt_train_loss: String,
-    gbdt_train_debug: bool,
-    gbdt_train_initial_guess_enable: bool,
     gbdt_train_training_optimization_level: u8,
 
     train_data_file_id: String,
@@ -109,8 +105,6 @@ impl Worker for GBDTTrainWorker {
             gbdt_train_data_sample_ratio: gbdt_train_payload.gbdt_train_data_sample_ratio,
             gbdt_train_min_leaf_size: gbdt_train_payload.gbdt_train_min_leaf_size,
             gbdt_train_loss: gbdt_train_payload.gbdt_train_loss,
-            gbdt_train_debug: gbdt_train_payload.gbdt_train_debug,
-            gbdt_train_initial_guess_enable: gbdt_train_payload.gbdt_train_initial_guess_enable,
             gbdt_train_training_optimization_level: gbdt_train_payload
                 .gbdt_train_training_optimization_level,
             train_data_file_id,
@@ -137,9 +131,8 @@ impl Worker for GBDTTrainWorker {
         cfg.set_iterations(input.gbdt_train_iterations);
         cfg.set_shrinkage(input.gbdt_train_shrinkage);
         cfg.set_loss(&input.gbdt_train_loss);
-        cfg.set_debug(input.gbdt_train_debug);
+        cfg.set_debug(false);
         cfg.set_min_leaf_size(input.gbdt_train_min_leaf_size);
-        cfg.enabled_initial_guess(input.gbdt_train_initial_guess_enable);
         cfg.set_data_sample_ratio(input.gbdt_train_data_sample_ratio);
         cfg.set_feature_sample_ratio(input.gbdt_train_feature_sample_ratio);
         cfg.set_training_optimization_level(input.gbdt_train_training_optimization_level);
@@ -149,7 +142,7 @@ impl Worker for GBDTTrainWorker {
         let model_json = serde_json::to_string(&gbdt_train_mod).unwrap();
 
         // save the model
-        context.save_file_for_all_participants(model_json.as_bytes())
+        context.save_file_for_task_creator(model_json.as_byte())
     }
 }
 
