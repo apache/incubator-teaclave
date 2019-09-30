@@ -124,20 +124,18 @@ impl Worker for LogisticRegPredictWorker {
                 }
             }
 
-            if !model_param["base"].is_null() && model_param["base"].is_object() {
-                if !model_param["base"]["parameters"].is_null()
-                    && model_param["base"]["parameters"].is_object()
-                {
-                    if !model_param["base"]["parameters"]["data"].is_null()
-                        && model_param["base"]["parameters"]["data"].is_array()
-                    {
-                        // set param
-                        param = model_param["base"]["parameters"]["data"]
-                            .as_array()
-                            .unwrap();
-                        check_param = true;
-                    }
-                }
+            if !model_param["base"].is_null()
+                && model_param["base"].is_object()
+                && !model_param["base"]["parameters"].is_null()
+                && model_param["base"]["parameters"].is_object()
+                && !model_param["base"]["parameters"]["data"].is_null()
+                && model_param["base"]["parameters"]["data"].is_array()
+            {
+                // set param
+                param = model_param["base"]["parameters"]["data"]
+                    .as_array()
+                    .unwrap();
+                check_param = true;
             }
         }
 
@@ -272,8 +270,7 @@ impl Worker for LogisticRegTrainWorker {
         let model_json = serde_json::to_string(&logisticreg_train_mod).unwrap();
 
         // save the model
-        let model_file_id = context.save_file_for_all_participants(model_json.as_bytes());
-        model_file_id
+        context.save_file_for_all_participants(model_json.as_bytes())
     }
 }
 
@@ -281,14 +278,12 @@ fn parse_input_to_vector(input: &str) -> Result<Vector<f64>> {
     let mut raw_cluster_data = Vec::new();
     let lines: Vec<&str> = input.split('\n').collect();
 
-    if lines.len() > 0 {
-        if !lines[0].trim().is_empty() {
-            for c in input.lines() {
-                let value = c
-                    .parse::<f64>()
-                    .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
-                raw_cluster_data.push(value);
-            }
+    if lines.len() > 0 && !lines[0].trim().is_empty() {
+        for c in input.lines() {
+            let value = c
+                .parse::<f64>()
+                .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
+            raw_cluster_data.push(value);
         }
     }
 
@@ -304,11 +299,9 @@ fn parse_input_to_matrix(input: &str) -> Result<Matrix<f64>> {
     let mut columns_num = 0;
 
     // get columns num
-    if lines.len() > 0 {
-        if !lines[0].trim().is_empty() {
-            let first_line: Vec<&str> = lines[0].trim().split(',').collect();
-            columns_num = first_line.len();
-        }
+    if lines.len() > 0 && !lines[0].trim().is_empty() {
+        let first_line: Vec<&str> = lines[0].trim().split(',').collect();
+        columns_num = first_line.len();
     }
 
     if columns_num > 0 {

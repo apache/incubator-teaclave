@@ -147,9 +147,9 @@ impl Worker for GBDTTrainWorker {
         let mut gbdt_train_mod = GBDT::new(&cfg);
         gbdt_train_mod.fit(&mut train_dv);
         let model_json = serde_json::to_string(&gbdt_train_mod).unwrap();
+
         // save the model
-        let model_file_id = context.save_file_for_all_participants(model_json.as_bytes());
-        model_file_id
+        context.save_file_for_all_participants(model_json.as_bytes())
     }
 }
 
@@ -268,12 +268,10 @@ fn parse_train_data(input: &str) -> Result<Vec<Data>> {
     let lines: Vec<&str> = input.split('\n').collect();
 
     // get the label_index
-    if lines.len() > 0 {
-        if !lines[0].trim().is_empty() {
-            let first_line: Vec<&str> = lines[0].trim().split(',').collect();
-            if first_line.len() > 2 {
-                sample_label_index = first_line.len() - 1;
-            }
+    if lines.len() > 0 && !lines[0].trim().is_empty() {
+        let first_line: Vec<&str> = lines[0].trim().split(',').collect();
+        if first_line.len() > 2 {
+            sample_label_index = first_line.len() - 1;
         }
     }
 
