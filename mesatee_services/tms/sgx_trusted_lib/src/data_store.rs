@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::collections::HashSet;
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
@@ -30,47 +31,12 @@ pub use tms_common_proto::TaskStatus;
 use lazy_static::lazy_static;
 
 lazy_static! {
+    // At this moment, this is just a workaround; later the data structure will be redesigned according to the persistent db, lock mechanism  and architecture.
+    pub static ref USER_TASK_STORE: Memdb<String, HashSet<String>> = {
+        Memdb::<String, HashSet<String>>::open().expect("cannot open db")
+    };
     pub static ref TASK_STORE: Memdb<String, TaskInfo> = {
-        let store = Memdb::<String, TaskInfo>::open().expect("cannot open db");
-        // For API Test
-        let fake_task = TaskInfo {
-            user_id: "fake".to_string(),
-            collaborator_list: Vec::new(),
-            approved_user_number: 0,
-            function_name: "echo".to_string(),
-            function_type: FunctionType::Single,
-            status: TaskStatus::Ready,
-            ip: IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
-            port: 0,
-            task_token: "fake".to_string(),
-            input_files: Vec::new(),
-            output_files: Vec::new(),
-            task_result_file_id: None,
-        };
-        let _ = store.set(&"fake".to_string(), &fake_task);
-
-        let collaborator_for_fake_task = CollaboratorStatus {
-            user_id: "fake_file_owner".to_string(),
-            approved: false,
-        };
-
-        let fake_multi_task = TaskInfo {
-            user_id: "fake".to_string(),
-            collaborator_list: vec![collaborator_for_fake_task],
-            approved_user_number: 0,
-            function_name: "fake".to_string(),
-            function_type: FunctionType::Multiparty,
-            status: TaskStatus::Created,
-            ip: IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
-            port: 0,
-            task_token: "fake".to_string(),
-            input_files: Vec::new(),
-            output_files: Vec::new(),
-            task_result_file_id: None,
-        };
-        let _ = store.set(&"fake_multi_task".to_string(), &fake_multi_task);
-
-        store
+        Memdb::<String, TaskInfo>::open().expect("cannot open db")
     };
 
     pub static ref UPDATELOCK: SgxMutex<u32> = SgxMutex::new(0);
@@ -106,4 +72,70 @@ pub fn gen_token() -> Result<String> {
             .map_err(|_| mesatee_core::Error::from(mesatee_core::ErrorKind::Unknown))?;
     }
     Ok(hex_token)
+}
+
+// Before calling this function, use lock to avoid data race;
+fn add_task_to_user(task_id: &String, user_id: &String) -> Result<()> {
+    let id_set = USER_TASK_STORE.get(user_id)?;
+    match id_set {
+        Some(mut set) => {
+            set.insert(task_id.to_owned());
+            USER_TASK_STORE.set(user_id, &set)?;
+        }
+        None => {
+            let mut set = HashSet::<String>::new();
+            set.insert(task_id.to_owned());
+            USER_TASK_STORE.set(user_id, &set)?;
+        }
+    }
+    Ok(())
+}
+pub fn add_task(task_id: &String, task_info: &TaskInfo) -> Result<()> {
+    let _ = TASK_STORE.set(&task_id, &task_info)?;
+    let _lock = UPDATELOCK.lock()?;
+    add_task_to_user(task_id, &task_info.user_id)?;
+    for collaborator in task_info.collaborator_list.iter() {
+        add_task_to_user(task_id, &collaborator.user_id)?;
+    }
+    Ok(())
+}
+
+// For API Test, called by enclave_init
+pub fn add_test_infomation() {
+    let fake_task = TaskInfo {
+        user_id: "fake".to_string(),
+        collaborator_list: Vec::new(),
+        approved_user_number: 0,
+        function_name: "echo".to_string(),
+        function_type: FunctionType::Single,
+        status: TaskStatus::Ready,
+        ip: IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
+        port: 0,
+        task_token: "fake".to_string(),
+        input_files: Vec::new(),
+        output_files: Vec::new(),
+        task_result_file_id: None,
+    };
+    let _ = add_task(&"fake".to_owned(), &fake_task);
+
+    let collaborator_for_fake_task = CollaboratorStatus {
+        user_id: "fake_file_owner".to_string(),
+        approved: false,
+    };
+
+    let fake_multi_task = TaskInfo {
+        user_id: "fake".to_string(),
+        collaborator_list: vec![collaborator_for_fake_task],
+        approved_user_number: 0,
+        function_name: "fake".to_string(),
+        function_type: FunctionType::Multiparty,
+        status: TaskStatus::Created,
+        ip: IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
+        port: 0,
+        task_token: "fake".to_string(),
+        input_files: Vec::new(),
+        output_files: Vec::new(),
+        task_result_file_id: None,
+    };
+    let _ = add_task(&"fake_multi_task".to_owned(), &fake_multi_task);
 }

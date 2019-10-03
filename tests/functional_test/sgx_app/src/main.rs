@@ -46,6 +46,7 @@ fn test_from_unstrusted() {
         tests::tms_test::api_get_task,
         tests::tms_test::api_create_task,
         tests::tms_test::api_update_task,
+        tests::tms_test::api_list_task,
         tests::fns_test::api_invoke_task,
         tests::fns_test::api_invoke_multiparty_task,
     );

@@ -44,6 +44,16 @@ pub(crate) const USER_THREE: User = User {
     user_token: "token3",
 };
 
+pub(crate) const USER_FAKE: User = User {
+    user_id: "fake",
+    user_token: "fake",
+};
+
+pub(crate) const USER_FOUR: User = User {
+    user_id: "user_four",
+    user_token: "token4",
+};
+
 #[inline]
 fn target_tms() -> TargetDesc {
     TargetDesc::new(

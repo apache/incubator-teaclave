@@ -13,12 +13,13 @@
 // limitations under the License.
 
 use super::common_setup::{
-    save_file_for_user, setup_tms_external_client, USER_ERR, USER_ONE, USER_THREE, USER_TWO,
+    save_file_for_user, setup_tms_external_client, USER_ERR, USER_FAKE, USER_FOUR, USER_ONE,
+    USER_THREE, USER_TWO,
 };
 use tms_external_proto::{FunctionType, TaskStatus};
 
 pub fn api_create_task() {
-    trace!("Test tdfs: create task.");
+    trace!("Test tms: create task.");
     let mut client = setup_tms_external_client(&USER_ONE);
 
     let function_name = "abc";
@@ -56,7 +57,7 @@ pub fn api_create_task() {
 }
 
 pub fn api_get_task() {
-    trace!("Test tdfs: get task.");
+    trace!("Test tms: get task.");
     let mut client = setup_tms_external_client(&USER_ONE);
 
     let function_name = "abc";
@@ -94,7 +95,7 @@ pub fn api_get_task() {
 }
 
 pub fn api_update_task() {
-    trace!("Test tdfs: update task.");
+    trace!("Test tms: update task.");
     let mut user_tms_client = setup_tms_external_client(&USER_ONE);
 
     //Create file
@@ -179,4 +180,30 @@ pub fn api_update_task() {
     let response =
         collaborator_tms_client.request_update_task(&launch_info.task_id, &["fake_file_record"]);
     assert!(response.is_err());
+}
+
+pub fn api_list_task() {
+    trace!("Test tms: list task.");
+    let mut user_tms_client = setup_tms_external_client(&USER_FAKE);
+
+    let mut list = user_tms_client.request_list_task().unwrap().list;
+
+    list.sort_by(|a, b| a.cmp(b));
+
+    assert_eq!(list.len(), 2);
+    assert_eq!(list[0], "fake");
+    assert_eq!(list[1], "fake_multi_task");
+
+    let mut user_tms_client = setup_tms_external_client(&USER_THREE);
+    let list = user_tms_client.request_list_task().unwrap().list;
+    assert_eq!(list.len(), 1);
+    assert_eq!(list[0], "fake_multi_task");
+
+    let mut user_tms_client = setup_tms_external_client(&USER_TWO);
+    let list = user_tms_client.request_list_task().unwrap().list;
+    assert!(list.len() > 0);
+
+    let mut user_tms_client = setup_tms_external_client(&USER_FOUR);
+    let list = user_tms_client.request_list_task().unwrap().list;
+    assert_eq!(list.len(), 0);
 }
