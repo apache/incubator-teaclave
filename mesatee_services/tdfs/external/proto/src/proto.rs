@@ -28,6 +28,7 @@ use serde_derive::*;
 pub enum DFSRequest {
     Create(CreateFileRequest),
     Get(GetFileRequest),
+    List(ListFileRequest),
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -35,6 +36,7 @@ pub enum DFSRequest {
 pub enum DFSResponse {
     Create(CreateFileResponse),
     Get(GetFileResponse),
+    List(ListFileResponse),
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -77,6 +79,17 @@ pub struct FileInfo {
     pub key_config: AEADKeyConfig,
 }
 
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct ListFileRequest {
+    pub user_id: String,
+    pub user_token: String,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct ListFileResponse {
+    pub list: Vec<String>,
+}
+
 impl DFSRequest {
     pub fn new_create_file(
         file_name: &str,
@@ -101,6 +114,13 @@ impl DFSRequest {
             user_token: user_token.to_owned(),
         })
     }
+
+    pub fn new_list_file(user_id: &str, user_token: &str) -> DFSRequest {
+        DFSRequest::List(ListFileRequest {
+            user_id: user_id.to_owned(),
+            user_token: user_token.to_owned(),
+        })
+    }
 }
 
 impl DFSResponse {
@@ -119,6 +139,12 @@ impl DFSResponse {
     pub fn new_get_file(file_info: &FileInfo) -> DFSResponse {
         DFSResponse::Get(GetFileResponse {
             file_info: file_info.clone(),
+        })
+    }
+
+    pub fn new_list_file(list: &[&str]) -> DFSResponse {
+        DFSResponse::List(ListFileResponse {
+            list: list.iter().map(|s| s.to_string()).collect(),
         })
     }
 }

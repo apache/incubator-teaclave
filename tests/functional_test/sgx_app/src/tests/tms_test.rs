@@ -201,7 +201,7 @@ pub fn api_list_task() {
 
     let mut user_tms_client = setup_tms_external_client(&USER_TWO);
     let list = user_tms_client.request_list_task().unwrap().list;
-    assert!(list.len() > 0);
+    assert!(!list.is_empty());
 
     let mut user_tms_client = setup_tms_external_client(&USER_FOUR);
     let list = user_tms_client.request_list_task().unwrap().list;

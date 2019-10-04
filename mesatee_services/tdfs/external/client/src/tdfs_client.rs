@@ -21,7 +21,9 @@ use mesatee_core::config::{OutboundDesc, TargetDesc};
 use mesatee_core::rpc::channel::SgxTrustedChannel;
 use mesatee_core::{self, Result};
 use std::fs;
-use tdfs_external_proto::{CreateFileResponse, DFSRequest, DFSResponse, GetFileResponse};
+use tdfs_external_proto::{
+    CreateFileResponse, DFSRequest, DFSResponse, GetFileResponse, ListFileResponse,
+};
 
 pub struct TDFSClient {
     user_id: String,
@@ -111,5 +113,16 @@ impl TDFSClient {
             &key_config.ad,
         )?;
         Ok(plaintxt)
+    }
+
+    pub fn request_list_file(&mut self) -> Result<ListFileResponse> {
+        let req = DFSRequest::new_list_file(&self.user_id, &self.user_token);
+        let resp = self.channel.invoke(req)?;
+        match resp {
+            DFSResponse::List(resp) => Ok(resp),
+            _ => Err(mesatee_core::Error::from(
+                mesatee_core::ErrorKind::RPCResponseError,
+            )),
+        }
     }
 }

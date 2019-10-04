@@ -16,13 +16,15 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use crate::data_store::{verify_user, FileMeta, FILE_STORE};
+use crate::data_store::{self, verify_user, FileMeta, FILE_STORE, USER_FILE_STORE};
 use kms_client::KMSClient;
 use mesatee_core::config;
 use mesatee_core::rpc::EnclaveService;
 use mesatee_core::{Error, ErrorKind, Result};
 use std::marker::PhantomData;
-use tdfs_external_proto::{CreateFileRequest, DFSRequest, DFSResponse, GetFileRequest};
+use tdfs_external_proto::{
+    CreateFileRequest, DFSRequest, DFSResponse, GetFileRequest, ListFileRequest,
+};
 use uuid::Uuid;
 
 pub trait HandleRequest {
@@ -59,7 +61,7 @@ impl HandleRequest for CreateFileRequest {
         if FILE_STORE.get(&file_id)?.is_some() {
             return Err(Error::from(ErrorKind::UUIDError));
         }
-        FILE_STORE.set(&file_id, &file_meta)?;
+        data_store::add_file(&file_id, &file_meta)?;
 
         let resp =
             DFSResponse::new_create_file(&file_id, &file_meta.get_access_path(), &key_config);
@@ -108,6 +110,24 @@ impl HandleRequest for GetFileRequest {
     }
 }
 
+impl HandleRequest for ListFileRequest {
+    fn handle_request(&self) -> Result<DFSResponse> {
+        if !verify_user(&self.user_id, &self.user_token) {
+            return Err(mesatee_core::Error::from(
+                mesatee_core::ErrorKind::PermissionDenied,
+            ));
+        }
+        // lock is not needed here
+        let file_ids = USER_FILE_STORE.get(&self.user_id)?;
+        let list: Vec<&str> = match file_ids {
+            Some(ref ids) => ids.iter().map(|s| s.as_str()).collect(),
+            None => Vec::new(),
+        };
+        let resp = DFSResponse::new_list_file(&list);
+        Ok(resp)
+    }
+}
+
 pub struct DFSExternalEnclave<S, T> {
     state: i32,
     x: PhantomData<S>,
@@ -132,6 +152,7 @@ impl EnclaveService<DFSRequest, DFSResponse> for DFSExternalEnclave<DFSRequest, 
         let response = match input {
             DFSRequest::Create(req) => req.handle_request()?,
             DFSRequest::Get(req) => req.handle_request()?,
+            DFSRequest::List(req) => req.handle_request()?,
         };
         trace!("{}th round complete!", self.state);
         Ok(response)

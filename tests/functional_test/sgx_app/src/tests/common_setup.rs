@@ -99,3 +99,8 @@ pub(crate) fn save_file_for_user(user: &User, content: &[u8], save_path: &str) -
     let file_name = "unittest";
     tdfs_client.save_file(save_path, file_name).unwrap()
 }
+
+pub(crate) fn read_file_for_user(user: &User, file_id: &str) -> Vec<u8> {
+    let mut tdfs_client = setup_tdfs_external_client(user);
+    tdfs_client.read_file(&file_id).unwrap()
+}

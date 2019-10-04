@@ -13,7 +13,8 @@
 // limitations under the License.
 
 use super::common_setup::{
-    save_file_for_user, setup_fns_client, setup_tms_external_client, USER_ONE, USER_TWO,
+    read_file_for_user, save_file_for_user, setup_fns_client, setup_tms_external_client, USER_ONE,
+    USER_TWO,
 };
 
 pub fn api_invoke_task() {
@@ -95,7 +96,7 @@ pub fn api_invoke_multiparty_task() {
     let user_file_id = save_file_for_user(&USER_ONE, b"abc", "concat_file1");
     let collaborator_file_id = save_file_for_user(&USER_TWO, b"def", "concat_file2");
 
-    let function = "concat";
+    let function = "swap_file";
     let mut user_tms_client = setup_tms_external_client(&USER_ONE);
     let collaborator_list = vec![USER_TWO.user_id];
     let input_list = vec![user_file_id.as_str()];
@@ -121,5 +122,7 @@ pub fn api_invoke_multiparty_task() {
         )
         .unwrap();
 
-    assert_eq!(response.result.as_str(), "abcdef");
+    let plaintxt = read_file_for_user(&USER_ONE, response.result.as_str());
+
+    assert_eq!(plaintxt, b"abcdef");
 }

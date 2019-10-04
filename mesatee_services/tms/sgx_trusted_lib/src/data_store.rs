@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::collections::HashSet;
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
 use mesatee_core::db::Memdb;
 use mesatee_core::Result;
+use std::collections::HashSet;
 use std::fmt::Write;
 use std::net::{IpAddr, Ipv4Addr};
 use std::sync::SgxMutex;
@@ -31,7 +31,8 @@ pub use tms_common_proto::TaskStatus;
 use lazy_static::lazy_static;
 
 lazy_static! {
-    // At this moment, this is just a workaround; later the data structure will be redesigned according to the persistent db, lock mechanism  and architecture.
+    // At this moment, this is just a workaround;
+    // Later the data structure will be redesigned according to the persistent db, lock mechanism  and architecture.
     pub static ref USER_TASK_STORE: Memdb<String, HashSet<String>> = {
         Memdb::<String, HashSet<String>>::open().expect("cannot open db")
     };
@@ -75,23 +76,24 @@ pub fn gen_token() -> Result<String> {
 }
 
 // Before calling this function, use lock to avoid data race;
-fn add_task_to_user(task_id: &String, user_id: &String) -> Result<()> {
-    let id_set = USER_TASK_STORE.get(user_id)?;
+fn add_task_to_user(task_id: &str, user_id: &str) -> Result<()> {
+    let uid = user_id.to_owned();
+    let id_set = USER_TASK_STORE.get(&uid)?;
     match id_set {
         Some(mut set) => {
             set.insert(task_id.to_owned());
-            USER_TASK_STORE.set(user_id, &set)?;
+            USER_TASK_STORE.set(&uid, &set)?;
         }
         None => {
             let mut set = HashSet::<String>::new();
             set.insert(task_id.to_owned());
-            USER_TASK_STORE.set(user_id, &set)?;
+            USER_TASK_STORE.set(&uid, &set)?;
         }
     }
     Ok(())
 }
-pub fn add_task(task_id: &String, task_info: &TaskInfo) -> Result<()> {
-    let _ = TASK_STORE.set(&task_id, &task_info)?;
+pub fn add_task(task_id: &str, task_info: &TaskInfo) -> Result<()> {
+    let _ = TASK_STORE.set(&task_id.to_owned(), &task_info)?;
     let _lock = UPDATELOCK.lock()?;
     add_task_to_user(task_id, &task_info.user_id)?;
     for collaborator in task_info.collaborator_list.iter() {

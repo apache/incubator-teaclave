@@ -18,7 +18,10 @@ use std::prelude::v1::*;
 
 use lazy_static::lazy_static;
 use mesatee_core::db::Memdb;
+use mesatee_core::Result;
+use std::collections::HashSet;
 use std::format;
+use std::sync::SgxMutex;
 
 #[derive(Clone)]
 pub struct FileMeta {
@@ -34,34 +37,15 @@ pub struct FileMeta {
 }
 
 lazy_static! {
-    pub static ref FILE_STORE: Memdb<String, FileMeta> = {
-        let db = Memdb::<String, FileMeta>::open().expect("failed to open database");
-        let fake_file_record = FileMeta {
-            user_id: "fake_file_owner".to_string(),
-            file_name: "fake_file".to_string(),
-            sha256: "aaa".to_string(),
-            file_size: 100,
-            key_id: "fake_kms_record".to_string(),
-            storage_path: "fake_file".to_string(),
-            task_id: None,
-            allow_policy: 0,
-            collaborator_list: Vec::new(),
-        };
-        let _ = db.set(&"fake_file_record".to_string(), &fake_file_record);
-        let fake_file_without_key = FileMeta {
-            user_id: "fake_file_owner".to_string(),
-            file_name: "fake_file".to_string(),
-            sha256: "aaa".to_string(),
-            file_size: 100,
-            key_id: "kms_record_none".to_string(),
-            storage_path: "fake_file".to_string(),
-            task_id: None,
-            allow_policy: 0,
-            collaborator_list: Vec::new(),
-        };
-        let _ = db.set(&"fake_file_without_key".to_string(), &fake_file_without_key);
+    // At this moment, this is just a workaround;
+    // Later the data structure will be redesigned according to the persistent db, lock mechanism and architecture.
+    pub static ref USER_FILE_STORE: Memdb<String, HashSet<String>> = {
+        Memdb::<String, HashSet<String>>::open().expect("cannot open db")
+    };
+    pub static ref UPDATELOCK: SgxMutex<u32> = SgxMutex::new(0);
 
-        db
+    pub static ref FILE_STORE: Memdb<String, FileMeta> = {
+        Memdb::<String, FileMeta>::open().expect("failed to open database")
     };
 }
 
@@ -92,4 +76,78 @@ pub fn verify_user(_user_id: &str, user_token: &str) -> bool {
         return false;
     }
     true
+}
+
+// Before calling this function, use lock to avoid data race;
+fn add_file_to_user(file_id: &str, user_id: &str) -> Result<()> {
+    let uid = user_id.to_owned();
+    let id_set = USER_FILE_STORE.get(&uid)?;
+    match id_set {
+        Some(mut set) => {
+            set.insert(file_id.to_owned());
+            USER_FILE_STORE.set(&uid, &set)?;
+        }
+        None => {
+            let mut set = HashSet::<String>::new();
+            set.insert(file_id.to_owned());
+            USER_FILE_STORE.set(&uid, &set)?;
+        }
+    }
+    Ok(())
+}
+pub fn add_file(file_id: &str, file_meta: &FileMeta) -> Result<()> {
+    let _ = FILE_STORE.set(&file_id.to_owned(), &file_meta)?;
+    let _lock = UPDATELOCK.lock()?;
+    add_file_to_user(file_id, &file_meta.user_id)?;
+    if file_meta.allow_policy == 1 {
+        for collaborator in file_meta.collaborator_list.iter() {
+            add_file_to_user(file_id, &collaborator)?;
+        }
+    }
+    Ok(())
+}
+
+// For API Test, called by enclave_init
+pub fn add_test_infomation() {
+    let fake_file_record = FileMeta {
+        user_id: "fake_file_owner".to_string(),
+        file_name: "fake_file".to_string(),
+        sha256: "aaa".to_string(),
+        file_size: 100,
+        key_id: "fake_kms_record".to_string(),
+        storage_path: "fake_file".to_string(),
+        task_id: None,
+        allow_policy: 0,
+        collaborator_list: Vec::new(),
+    };
+    let _ = add_file(&"fake_file_record".to_string(), &fake_file_record);
+    let fake_file_without_key = FileMeta {
+        user_id: "fake_file_owner".to_string(),
+        file_name: "fake_file".to_string(),
+        sha256: "aaa".to_string(),
+        file_size: 100,
+        key_id: "kms_record_none".to_string(),
+        storage_path: "fake_file".to_string(),
+        task_id: None,
+        allow_policy: 0,
+        collaborator_list: Vec::new(),
+    };
+    let _ = add_file(&"fake_file_without_key".to_string(), &fake_file_without_key);
+
+    let fake_file_with_collaborator = FileMeta {
+        user_id: "fake_file_owner".to_string(),
+        file_name: "fake_file".to_string(),
+        sha256: "aaa".to_string(),
+        file_size: 100,
+        key_id: "kms_record_none".to_string(),
+        storage_path: "fake_file".to_string(),
+        task_id: None,
+        allow_policy: 1,
+        collaborator_list: vec!["fake".to_string()],
+    };
+
+    let _ = add_file(
+        &"fake_file_with_collaborator".to_string(),
+        &fake_file_with_collaborator,
+    );
 }
