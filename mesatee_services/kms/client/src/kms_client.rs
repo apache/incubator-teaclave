@@ -16,7 +16,7 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use kms_proto::{CreateKeyResponse, GetKeyResponse, KMSRequest, KMSResponse};
+use kms_proto::{CreateKeyResponse, DeleteKeyResponse, GetKeyResponse, KMSRequest, KMSResponse};
 use mesatee_core::config::{OutboundDesc, TargetDesc};
 use mesatee_core::rpc::channel::SgxTrustedChannel;
 use mesatee_core::{Error, ErrorKind, Result};
@@ -50,6 +50,15 @@ impl KMSClient {
         let resp = self.channel.invoke(req)?;
         match resp {
             KMSResponse::Get(resp) => Ok(resp),
+            _ => Err(Error::from(ErrorKind::RPCResponseError)),
+        }
+    }
+
+    pub fn request_del_key(&mut self, key_id: &str) -> Result<DeleteKeyResponse> {
+        let req = KMSRequest::new_del_key(key_id);
+        let resp = self.channel.invoke(req)?;
+        match resp {
+            KMSResponse::Delete(resp) => Ok(resp),
             _ => Err(Error::from(ErrorKind::RPCResponseError)),
         }
     }

@@ -23,7 +23,7 @@ use mesatee_core::rpc::EnclaveService;
 use mesatee_core::{Error, ErrorKind, Result};
 use std::marker::PhantomData;
 use tdfs_external_proto::{
-    CreateFileRequest, DFSRequest, DFSResponse, GetFileRequest, ListFileRequest,
+    CreateFileRequest, DFSRequest, DFSResponse, DeleteFileRequest, GetFileRequest, ListFileRequest,
 };
 use uuid::Uuid;
 
@@ -110,6 +110,48 @@ impl HandleRequest for GetFileRequest {
     }
 }
 
+impl HandleRequest for DeleteFileRequest {
+    fn handle_request(&self) -> Result<DFSResponse> {
+        if !verify_user(&self.user_id, &self.user_token) {
+            return Err(mesatee_core::Error::from(
+                mesatee_core::ErrorKind::PermissionDenied,
+            ));
+        }
+
+        let file_id = &self.file_id;
+        let file_meta = FILE_STORE
+            .get(file_id)?
+            .ok_or_else(|| Error::from(ErrorKind::MissingValue))?;
+
+        if file_meta.user_id != self.user_id {
+            return Err(mesatee_core::Error::from(
+                mesatee_core::ErrorKind::PermissionDenied,
+            ));
+        }
+        let _ = data_store::del_file(file_id)?;
+
+        let target = config::Internal::target_kms();
+        let mut client = KMSClient::new(target)?;
+        let key_resp = client.request_del_key(&file_meta.key_id)?;
+        let key_config = key_resp.config;
+
+        let access_path = file_meta.get_access_path();
+        let file_info = tdfs_external_proto::FileInfo {
+            user_id: file_meta.user_id,
+            file_name: file_meta.file_name,
+            sha256: file_meta.sha256,
+            file_size: file_meta.file_size,
+            access_path,
+            task_id: file_meta.task_id,
+            collaborator_list: file_meta.collaborator_list,
+            key_config,
+        };
+
+        let resp = DFSResponse::new_del_file(&file_info);
+        Ok(resp)
+    }
+}
+
 impl HandleRequest for ListFileRequest {
     fn handle_request(&self) -> Result<DFSResponse> {
         if !verify_user(&self.user_id, &self.user_token) {
@@ -153,6 +195,7 @@ impl EnclaveService<DFSRequest, DFSResponse> for DFSExternalEnclave<DFSRequest, 
             DFSRequest::Create(req) => req.handle_request()?,
             DFSRequest::Get(req) => req.handle_request()?,
             DFSRequest::List(req) => req.handle_request()?,
+            DFSRequest::Delete(req) => req.handle_request()?,
         };
         trace!("{}th round complete!", self.state);
         Ok(response)

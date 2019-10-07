@@ -22,7 +22,8 @@ use mesatee_core::rpc::channel::SgxTrustedChannel;
 use mesatee_core::{self, Result};
 use std::fs;
 use tdfs_external_proto::{
-    CreateFileResponse, DFSRequest, DFSResponse, GetFileResponse, ListFileResponse,
+    CreateFileResponse, DFSRequest, DFSResponse, DeleteFileResponse, GetFileResponse,
+    ListFileResponse,
 };
 
 pub struct TDFSClient {
@@ -120,6 +121,17 @@ impl TDFSClient {
         let resp = self.channel.invoke(req)?;
         match resp {
             DFSResponse::List(resp) => Ok(resp),
+            _ => Err(mesatee_core::Error::from(
+                mesatee_core::ErrorKind::RPCResponseError,
+            )),
+        }
+    }
+
+    pub fn request_del_file(&mut self, file_id: &str) -> Result<DeleteFileResponse> {
+        let req = DFSRequest::new_del_file(file_id, &self.user_id, &self.user_token);
+        let resp = self.channel.invoke(req)?;
+        match resp {
+            DFSResponse::Delete(resp) => Ok(resp),
             _ => Err(mesatee_core::Error::from(
                 mesatee_core::ErrorKind::RPCResponseError,
             )),

@@ -29,6 +29,7 @@ pub enum DFSRequest {
     Create(CreateFileRequest),
     Get(GetFileRequest),
     List(ListFileRequest),
+    Delete(DeleteFileRequest),
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -37,6 +38,7 @@ pub enum DFSResponse {
     Create(CreateFileResponse),
     Get(GetFileResponse),
     List(ListFileResponse),
+    Delete(DeleteFileResponse),
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -64,6 +66,18 @@ pub struct GetFileRequest {
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct GetFileResponse {
+    pub file_info: FileInfo,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct DeleteFileRequest {
+    pub file_id: String,
+    pub user_id: String,
+    pub user_token: String,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct DeleteFileResponse {
     pub file_info: FileInfo,
 }
 
@@ -121,6 +135,14 @@ impl DFSRequest {
             user_token: user_token.to_owned(),
         })
     }
+
+    pub fn new_del_file(file_id: &str, user_id: &str, user_token: &str) -> DFSRequest {
+        DFSRequest::Delete(DeleteFileRequest {
+            file_id: file_id.to_owned(),
+            user_id: user_id.to_owned(),
+            user_token: user_token.to_owned(),
+        })
+    }
 }
 
 impl DFSResponse {
@@ -145,6 +167,12 @@ impl DFSResponse {
     pub fn new_list_file(list: &[&str]) -> DFSResponse {
         DFSResponse::List(ListFileResponse {
             list: list.iter().map(|s| s.to_string()).collect(),
+        })
+    }
+
+    pub fn new_del_file(file_info: &FileInfo) -> DFSResponse {
+        DFSResponse::Delete(DeleteFileResponse {
+            file_info: file_info.clone(),
         })
     }
 }

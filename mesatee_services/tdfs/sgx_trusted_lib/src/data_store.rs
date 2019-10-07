@@ -18,7 +18,7 @@ use std::prelude::v1::*;
 
 use lazy_static::lazy_static;
 use mesatee_core::db::Memdb;
-use mesatee_core::Result;
+use mesatee_core::{Error, ErrorKind, Result};
 use std::collections::HashSet;
 use std::format;
 use std::sync::SgxMutex;
@@ -107,6 +107,30 @@ pub fn add_file(file_id: &str, file_meta: &FileMeta) -> Result<()> {
     Ok(())
 }
 
+// Before calling this function, use lock to avoid data race;
+fn del_file_for_user(file_id: &str, user_id: &str) -> Result<()> {
+    let uid = user_id.to_owned();
+    let id_set = USER_FILE_STORE.get(&uid)?;
+    if let Some(mut set) = id_set {
+        set.remove(&file_id.to_owned());
+        USER_FILE_STORE.set(&uid, &set)?;
+    }
+    Ok(())
+}
+pub fn del_file(file_id: &str) -> Result<FileMeta> {
+    let file_meta = FILE_STORE
+        .del(&file_id.to_owned())?
+        .ok_or_else(|| Error::from(ErrorKind::MissingValue))?;
+    let _lock = UPDATELOCK.lock()?;
+    del_file_for_user(file_id, &file_meta.user_id)?;
+    if file_meta.allow_policy == 1 {
+        for collaborator in file_meta.collaborator_list.iter() {
+            del_file_for_user(file_id, &collaborator)?;
+        }
+    }
+    Ok(file_meta)
+}
+
 // For API Test, called by enclave_init
 pub fn add_test_infomation() {
     let fake_file_record = FileMeta {
@@ -134,7 +158,7 @@ pub fn add_test_infomation() {
     };
     let _ = add_file(&"fake_file_without_key".to_string(), &fake_file_without_key);
 
-    let fake_file_with_collaborator = FileMeta {
+    let mut fake_file_with_collaborator = FileMeta {
         user_id: "fake_file_owner".to_string(),
         file_name: "fake_file".to_string(),
         sha256: "aaa".to_string(),
@@ -148,6 +172,12 @@ pub fn add_test_infomation() {
 
     let _ = add_file(
         &"fake_file_with_collaborator".to_string(),
+        &fake_file_with_collaborator,
+    );
+
+    fake_file_with_collaborator.key_id = "fake_kms_record_to_be_deleted".to_string();
+    let _ = add_file(
+        &"fake_file_to_be_deleted".to_string(),
         &fake_file_with_collaborator,
     );
 }
