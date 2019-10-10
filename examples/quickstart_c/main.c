@@ -33,10 +33,16 @@ void single_party_task(mesatee_enclave_info_t *enclave_info) {
   tdfs_addr.sin_port = htons(5065);
 
   printf("[+] This is a single-party task: echo\n");
-
+  
+#if 1
   mesatee_t *context = mesatee_context_new(enclave_info, "uid1", "token1",
                                            (struct sockaddr *)&tms_addr,
                                            (struct sockaddr *)&tdfs_addr);
+#else
+  mesatee_t *context = mesatee_context_new2(enclave_info, "uid1", "token1",
+                                           "127.0.0.1:5554",
+                                           "127.0.0.1:5065");
+#endif
   assert(context != NULL);
 
   mesatee_task_t *task = mesatee_create_task(context, "echo");
