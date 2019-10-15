@@ -44,6 +44,16 @@ pub(crate) const USER_THREE: User = User {
     user_token: "token3",
 };
 
+pub(crate) const USER_FAKE: User = User {
+    user_id: "fake",
+    user_token: "fake",
+};
+
+pub(crate) const USER_FOUR: User = User {
+    user_id: "user_four",
+    user_token: "token4",
+};
+
 #[inline]
 fn target_tms() -> TargetDesc {
     TargetDesc::new(
@@ -88,4 +98,9 @@ pub(crate) fn save_file_for_user(user: &User, content: &[u8], save_path: &str) -
     fs::write(save_path, content).unwrap();
     let file_name = "unittest";
     tdfs_client.save_file(save_path, file_name).unwrap()
+}
+
+pub(crate) fn read_file_for_user(user: &User, file_id: &str) -> Vec<u8> {
+    let mut tdfs_client = setup_tdfs_external_client(user);
+    tdfs_client.read_file(&file_id).unwrap()
 }

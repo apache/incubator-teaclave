@@ -25,6 +25,7 @@ pub enum TaskRequest {
     Get(GetTaskRequest),
     Create(CreateTaskRequest),
     Update(UpdateTaskRequest),
+    List(ListTaskRequest),
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -33,11 +34,18 @@ pub enum TaskResponse {
     Get(GetTaskResponse),
     Create(CreateTaskResponse),
     Update(UpdateTaskResponse),
+    List(ListTaskResponse),
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct GetTaskRequest {
     pub task_id: String,
+    pub user_id: String,
+    pub user_token: String,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct ListTaskRequest {
     pub user_id: String,
     pub user_token: String,
 }
@@ -95,6 +103,11 @@ pub struct UpdateTaskResponse {
     pub task_token: String,
 }
 
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct ListTaskResponse {
+    pub list: Vec<String>,
+}
+
 impl TaskRequest {
     pub fn new_get_task(task_id: &str, user_id: &str, user_token: &str) -> TaskRequest {
         TaskRequest::Get(GetTaskRequest {
@@ -133,6 +146,13 @@ impl TaskRequest {
             user_token: user_token.to_owned(),
         })
     }
+
+    pub fn new_list_task(user_id: &str, user_token: &str) -> TaskRequest {
+        TaskRequest::List(ListTaskRequest {
+            user_id: user_id.to_owned(),
+            user_token: user_token.to_owned(),
+        })
+    }
 }
 
 impl TaskResponse {
@@ -164,6 +184,12 @@ impl TaskResponse {
             ip,
             port,
             task_token: task_token.to_owned(),
+        })
+    }
+
+    pub fn new_list_task(list: &[&str]) -> TaskResponse {
+        TaskResponse::List(ListTaskResponse {
+            list: list.iter().map(|s| s.to_string()).collect(),
         })
     }
 }
