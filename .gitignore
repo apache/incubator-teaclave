@@ -4,6 +4,7 @@
 **/Enclave_u*
 **/Enclave_t*
 **/*.o
+**/*.pyc
 **/*.a
 **/*.so
 **/*.swp

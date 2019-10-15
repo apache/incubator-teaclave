@@ -19,14 +19,14 @@ if [ ! "$LIBENCLAVE_PATH" -nt "$SIGNED_PATH" ] \
     exit 0
 fi
 cd ${MESATEE_OUT_DIR}
-${CMAKE_C_COMPILER} libEnclave_t.o ffi.o -o \
+${CMAKE_C_COMPILER} libEnclave_t.o -o \
     ${MESATEE_OUT_DIR}/${CUR_MODULE_NAME}.enclave.so ${SGX_COMMON_CFLAGS} \
     -Wl,--no-undefined -nostdlib -nodefaultlibs -nostartfiles \
     -L${SGX_LIBRARY_PATH} -Wl,--whole-archive -l${Trts_Library_Name} \
     -Wl,--no-whole-archive -Wl,--start-group \
     -l${Service_Library_Name} -lsgx_tprotected_fs -lsgx_tkey_exchange \
     -lsgx_tstdc -lsgx_tcxx -lsgx_tservice -lsgx_tcrypto \
-    -L${MESATEE_OUT_DIR} -lpypy-c -lsgx_tlibc_ext -lffi \
+    -L${MESATEE_OUT_DIR} -lpycomponent ffi.o -lpypy-c -lsgx_tlibc_ext -lffi \
     -L${TRUSTED_TARGET_DIR}/${TARGET} -l${CUR_MODULE_NAME}_enclave -Wl,--end-group \
     -Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefined \
     -Wl,-pie,-eenclave_entry -Wl,--export-dynamic  \

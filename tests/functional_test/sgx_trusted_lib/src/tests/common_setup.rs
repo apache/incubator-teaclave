@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 use kms_client::KMSClient;
+use acs_client::ACSClient;
 use mesatee_core::config;
 use tdfs_internal_client::TDFSClient;
 use tms_internal_client::TMSClient;
@@ -19,6 +20,11 @@ use tms_internal_client::TMSClient;
 pub(crate) fn setup_kms_internal_client() -> KMSClient {
     let target = config::Internal::target_kms();
     KMSClient::new(target).unwrap()
+}
+
+pub(crate) fn setup_acs_internal_client() -> ACSClient {
+    let target = config::Internal::target_acs();
+    ACSClient::new(target).unwrap()
 }
 
 pub(crate) fn setup_tdfs_internal_client() -> TDFSClient {
@@ -30,3 +36,4 @@ pub(crate) fn setup_tms_internal_client() -> TMSClient {
     let target = config::Internal::target_tms();
     TMSClient::new(target).unwrap()
 }
+

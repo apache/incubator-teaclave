@@ -45,6 +45,14 @@ impl Internal {
         )
     }
 
+    pub fn acs() -> ServiceConfig {
+        ServiceConfig::new(
+            MESATEE_CONFIG.acs_internal_listen_addr,
+            MESATEE_CONFIG.acs_internal_port,
+            InboundDesc::Sgx(get_trusted_enclave_attr(vec!["kms", "tms", "tdfs"])),
+        )
+    }
+
     pub fn target_tms() -> TargetDesc {
         TargetDesc::new(
             MESATEE_CONFIG.tms_internal_connect_addr,
@@ -66,6 +74,14 @@ impl Internal {
             MESATEE_CONFIG.tdfs_internal_connect_addr,
             MESATEE_CONFIG.tdfs_internal_port,
             OutboundDesc::Sgx(get_trusted_enclave_attr(vec!["tdfs"])),
+        )
+    }
+
+    pub fn target_acs() -> TargetDesc {
+        TargetDesc::new(
+            MESATEE_CONFIG.acs_internal_connect_addr,
+            MESATEE_CONFIG.acs_internal_port,
+            OutboundDesc::Sgx(get_trusted_enclave_attr(vec!["acs"])),
         )
     }
 }

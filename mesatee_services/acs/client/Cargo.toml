@@ -1,0 +1,22 @@
+[package]
+name = "acs_client"
+version = "0.1.0"
+authors = ["MesaTEE Authors <developers@mesatee.org>"]
+description = "RPC client of ACS."
+license = "Apache-2.0"
+edition = "2018"
+
+[features]
+default = []
+mesalock_sgx = ["sgx_tstd", "mesatee_core/mesalock_sgx", "acs_proto/mesalock_sgx"]
+cov = ["sgx_cov"]
+
+[dependencies]
+cfg-if          = { version = "0.1.9" }
+acs_proto       = { path = "../proto" }
+
+mesatee_core    = { version = "0.1.0" }
+
+sgx_types       = { version = "1.0.9" }
+sgx_cov         = { version = "0.1.0", optional = true }
+sgx_tstd        = { version = "1.0.9", optional = true }

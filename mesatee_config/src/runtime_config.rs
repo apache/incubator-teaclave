@@ -91,6 +91,9 @@ impl MesateeConfigToml {
         if !internal_endpoints.contains_key("kms") {
             return Err(err("[api_endpoint]: missing `kms`"));
         }
+        if !internal_endpoints.contains_key("acs") {
+            return Err(err("[api_endpoint]: missing `acs`"));
+        }
 
         let audited_enclave_config = &self.audited_enclave_config;
         if !audited_enclave_config.contains_key("enclave_info") {
@@ -165,6 +168,10 @@ pub struct MesateeConfig {
     pub kms_internal_connect_addr: IpAddr,
     pub kms_internal_port: u16,
 
+    pub acs_internal_listen_addr: IpAddr,
+    pub acs_internal_connect_addr: IpAddr,
+    pub acs_internal_port: u16,
+
     pub fns_external_listen_addr: IpAddr,
     pub fns_external_connect_addr: IpAddr, // for TMS to return to users
     pub fns_external_port: u16,
@@ -219,6 +226,10 @@ lazy_static! {
             kms_internal_listen_addr: MESATEE_CONFIG_TOML.internal_endpoints["kms"].listen_ip,
             kms_internal_connect_addr: MESATEE_CONFIG_TOML.internal_endpoints["kms"].connect_ip,
             kms_internal_port: MESATEE_CONFIG_TOML.internal_endpoints["kms"].port,
+
+            acs_internal_listen_addr: MESATEE_CONFIG_TOML.internal_endpoints["acs"].listen_ip,
+            acs_internal_connect_addr: MESATEE_CONFIG_TOML.internal_endpoints["acs"].connect_ip,
+            acs_internal_port: MESATEE_CONFIG_TOML.internal_endpoints["acs"].port,
 
             fns_external_listen_addr: MESATEE_CONFIG_TOML.api_endpoints["fns"].listen_ip,
             // `connect_ip` is a required field for FNS in [api_endpoints];

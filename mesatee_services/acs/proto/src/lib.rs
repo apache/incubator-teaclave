@@ -11,10 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#![cfg_attr(feature = "mesalock_sgx", no_std)]
+#[cfg(feature = "mesalock_sgx")]
 
-pub mod common_setup;
-pub mod kms_test;
-pub mod protected_fs_test;
-pub mod tdfs_test;
-pub mod tms_test;
-pub mod acs_test;
+extern crate sgx_tstd as std;
+
+mod proto;
+pub use proto::*;

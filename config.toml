@@ -48,6 +48,7 @@ fns  = { listen_ip = "0.0.0.0", connect_ip = "127.0.0.1", port = 3444 }
 tms  = { listen_ip = "0.0.0.0", connect_ip = "127.0.0.1", port = 5555 }
 tdfs = { listen_ip = "0.0.0.0", connect_ip = "127.0.0.1", port = 5066 }
 kms  = { listen_ip = "0.0.0.0", connect_ip = "127.0.0.1", port = 6016 }
+acs  = { listen_ip = "0.0.0.0", connect_ip = "127.0.0.1", port = 5077 }
 
 
 # This section configures the location of certificate/private key used to
