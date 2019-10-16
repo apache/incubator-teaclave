@@ -42,27 +42,33 @@ typedef enum mesatee_task_status_t {
 MESATEE_API int mesatee_init();
 
 // MesaTEE Context APIs
-MESATEE_API mesatee_t *mesatee_context_new(const mesatee_enclave_info_t *,
-                                           const char *, const char *,
-                                           sockaddr_t *, sockaddr_t *);
-MESATEE_API int mesatee_context_free(mesatee_t *);
+MESATEE_API mesatee_t *mesatee_context_new(const mesatee_enclave_info_t *enclave_info_ptr,
+                                           const char* user_id, const char* user_token,
+                                           sockaddr_t * tms_addr, sockaddr_t * tdfs_addr);
+
+MESATEE_API mesatee_t* mesatee_context_new2(const mesatee_enclave_info_t* enclave_info_ptr,
+                                           const char* user_id, const char* user_token,
+                                           const char* tms_addr_ptr/*ip:port*/,
+                                           const char* tdfs_addr_ptr/*ip:port*/);
+
+MESATEE_API int mesatee_context_free(mesatee_t *ctx_ptr);
 
 // MesaTEE EnclaveInfo APIs
 MESATEE_API mesatee_enclave_info_t *
-mesatee_enclave_info_load(mesatee_auditor_set_t *, const char *);
-MESATEE_API int mesatee_enclave_info_free(mesatee_enclave_info_t *);
+mesatee_enclave_info_load(mesatee_auditor_set_t *auditors_ptr, const char *enclave_info_file_path_ptr);
+MESATEE_API int mesatee_enclave_info_free(mesatee_enclave_info_t *enclave_info_ptr);
 
 // Auditor APIs
 MESATEE_API mesatee_auditor_set_t *mesatee_auditor_set_new();
-MESATEE_API int mesatee_auditor_set_add_auditor(mesatee_auditor_set_t *,
-                                                const char *, const char *);
-MESATEE_API int mesatee_auditor_set_free(mesatee_auditor_set_t *);
+MESATEE_API int mesatee_auditor_set_add_auditor(mesatee_auditor_set_t *ptr,
+                                                const char *pub_key_path, const char *sig_path);
+MESATEE_API int mesatee_auditor_set_free(mesatee_auditor_set_t *ptr);
 
 // MesaTEE Task APIs
-MESATEE_API mesatee_task_t *mesatee_create_task(mesatee_t *, const char *);
-MESATEE_API int mesatee_task_free(mesatee_task_t *);
-MESATEE_API int mesatee_task_invoke_with_payload(mesatee_task_t *, const char *,
-                                                 int, char *, int);
+MESATEE_API mesatee_task_t *mesatee_create_task(mesatee_t *ctx_ptr, const char *func_name_ptr);
+MESATEE_API int mesatee_task_free(mesatee_task_t *mesatee_task_ptr);
+MESATEE_API int mesatee_task_invoke_with_payload(mesatee_task_t *mesatee_task_ptr, const char *payload_buf_ptr,
+                                                 int payload_buf_len, char *result_buf_ptr, int result_buf_len);
 
 #ifdef __cplusplus
 } /* extern C */
