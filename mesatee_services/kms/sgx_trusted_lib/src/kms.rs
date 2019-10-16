@@ -26,7 +26,7 @@ use std::marker::PhantomData;
 
 use kms_proto::AEADKeyConfig;
 use kms_proto::KMSResponse;
-use kms_proto::{CreateKeyRequest, GetKeyRequest, KMSRequest};
+use kms_proto::{CreateKeyRequest, DeleteKeyRequest, GetKeyRequest, KMSRequest};
 
 use lazy_static::lazy_static;
 
@@ -39,6 +39,7 @@ lazy_static! {
             ad: vec![65; 5],
         };
         let _ = db.set(&"fake_kms_record".to_string(), &fake_record);
+        let _ = db.set(&"fake_kms_record_to_be_deleted".to_string(), &fake_record);
         db
     };
 }
@@ -71,6 +72,17 @@ impl HandleRequest for GetKeyRequest {
     }
 }
 
+impl HandleRequest for DeleteKeyRequest {
+    fn handle_request(&self) -> Result<KMSResponse> {
+        let key_config = KEY_STORE
+            .del(&self.key_id)?
+            .ok_or_else(|| Error::from(ErrorKind::MissingValue))?;
+
+        let resp = KMSResponse::new_del_key(&key_config);
+        Ok(resp)
+    }
+}
+
 pub struct KMSEnclave<S, T> {
     state: i32,
     x: PhantomData<S>,
@@ -95,6 +107,7 @@ impl EnclaveService<KMSRequest, KMSResponse> for KMSEnclave<KMSRequest, KMSRespo
         let response = match input {
             KMSRequest::Create(req) => req.handle_request()?,
             KMSRequest::Get(req) => req.handle_request()?,
+            KMSRequest::Delete(req) => req.handle_request()?,
         };
         trace!("{}th round complete!", self.state);
         Ok(response)

@@ -21,6 +21,7 @@ use mesatee_core::Result;
 use env_logger;
 use std::backtrace::{self, PrintFormat};
 
+use crate::data_store::add_test_infomation;
 use crate::tdfs_external::DFSExternalEnclave;
 use crate::tdfs_internal::DFSInternalEnclave;
 
@@ -96,6 +97,8 @@ fn handle_init_enclave(_args: &InitEnclaveInput) -> Result<InitEnclaveOutput> {
         PrintFormat::Full,
     );
     mesatee_core::rpc::sgx::prelude();
+
+    add_test_infomation();
 
     Ok(InitEnclaveOutput::default())
 }
