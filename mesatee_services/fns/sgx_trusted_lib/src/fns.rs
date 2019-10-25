@@ -20,7 +20,7 @@ use crate::running_task::RunningTask;
 use crate::worker::{Worker, WorkerInfoQueue};
 use fns_proto::{InvokeTaskRequest, InvokeTaskResponse};
 use mesatee_core::rpc::EnclaveService;
-use mesatee_core::Result;
+use mesatee_core::{Error, ErrorKind, Result};
 use std::marker::PhantomData;
 
 pub trait HandleRequest {
@@ -37,18 +37,25 @@ fn invoke_worker(
     // New worker context
     let worker_context = running_task.get_worker_context();
     let payload = request.payload.clone();
-    worker.prepare_input(payload, file_list)?;
-    let result = worker.execute(worker_context);
-    match result {
-        Ok(output) => {
-            let _ = running_task.save_dynamic_output(&output);
-            running_task.finish()?;
-            let response = InvokeTaskResponse::new(&output);
-            Ok(response)
+    match worker.prepare_input(payload, file_list) {
+        Ok(_) => {
+            let result = worker.execute(worker_context);
+            match result {
+                Ok(output) => {
+                    let _ = running_task.save_dynamic_output(&output);
+                    running_task.finish()?;
+                    let response = InvokeTaskResponse::new(&output);
+                    Ok(response)
+                }
+                Err(err) => {
+                    let _ = running_task.finish();
+                    Err(err)
+                }
+            }
         }
-        Err(err) => {
+        Err(_) => {
             let _ = running_task.finish();
-            Err(err)
+            Err(Error::from(ErrorKind::InvalidInputError))
         }
     }
 }
