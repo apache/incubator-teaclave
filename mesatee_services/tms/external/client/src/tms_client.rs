@@ -19,7 +19,8 @@ use mesatee_core::config::{OutboundDesc, TargetDesc};
 use mesatee_core::rpc::channel::SgxTrustedChannel;
 use mesatee_core::{self, Result};
 use tms_external_proto::{
-    CreateTaskResponse, GetTaskResponse, TaskRequest, TaskResponse, UpdateTaskResponse,
+    CreateTaskResponse, GetTaskResponse, ListTaskResponse, TaskRequest, TaskResponse,
+    UpdateTaskResponse,
 };
 
 pub struct TMSClient {
@@ -87,6 +88,17 @@ impl TMSClient {
         let resp = self.channel.invoke(req)?;
         match resp {
             TaskResponse::Update(resp) => Ok(resp),
+            _ => Err(mesatee_core::Error::from(
+                mesatee_core::ErrorKind::RPCResponseError,
+            )),
+        }
+    }
+
+    pub fn request_list_task(&mut self) -> Result<ListTaskResponse> {
+        let req = TaskRequest::new_list_task(&self.user_id, &self.user_token);
+        let resp = self.channel.invoke(req)?;
+        match resp {
+            TaskResponse::List(resp) => Ok(resp),
             _ => Err(mesatee_core::Error::from(
                 mesatee_core::ErrorKind::RPCResponseError,
             )),

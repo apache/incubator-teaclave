@@ -43,9 +43,12 @@ fn test_from_unstrusted() {
     unit_tests!(
         tests::tdfs_test::read_not_exist_file,
         tests::tdfs_test::save_and_read,
+        tests::tdfs_test::list_file_api,
+        tests::tdfs_test::delete_file_api,
         tests::tms_test::api_get_task,
         tests::tms_test::api_create_task,
         tests::tms_test::api_update_task,
+        tests::tms_test::api_list_task,
         tests::fns_test::api_invoke_task,
         tests::fns_test::api_invoke_multiparty_task,
     );

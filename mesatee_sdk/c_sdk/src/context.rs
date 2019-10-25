@@ -41,6 +41,26 @@ unsafe extern "C" fn mesatee_context_new(
     )
 }
 
+#[no_mangle]
+unsafe extern "C" fn mesatee_context_new2(
+    enclave_info_ptr: *mut MesateeEnclaveInfo,
+    user_id: *const c_char,
+    user_token: *const c_char,
+    tms_addr_ptr: *const c_char,
+    tdfs_addr_ptr: *const c_char,
+) -> *mut Mesatee {
+    check_inner_result!(
+        inner_mesatee_context_new2(
+            enclave_info_ptr,
+            user_id,
+            user_token,
+            tms_addr_ptr,
+            tdfs_addr_ptr
+        ),
+        ptr::null_mut()
+    )
+}
+
 unsafe fn inner_mesatee_context_new(
     enclave_info_ptr: *mut MesateeEnclaveInfo,
     user_id_ptr: *const c_char,
@@ -64,6 +84,50 @@ unsafe fn inner_mesatee_context_new(
     let tms_addr = sockaddr_to_rust(tms_addr_ptr)?;
     let tdfs_addr = sockaddr_to_rust(tdfs_addr_ptr)?;
     let mesatee = Mesatee::new(enclave_info, user_id, user_token, tms_addr, tdfs_addr)?;
+    let mesatee_ptr = Box::into_raw(Box::new(mesatee)) as *mut Mesatee;
+    Ok(mesatee_ptr)
+}
+
+unsafe fn inner_mesatee_context_new2(
+    enclave_info_ptr: *mut MesateeEnclaveInfo,
+    user_id_ptr: *const c_char,
+    user_token_ptr: *const c_char,
+    tms_addr_ptr: *const c_char,
+    tdfs_addr_ptr: *const c_char,
+) -> MesateeResult<*mut Mesatee> {
+    let enclave_info = sanitize_ptr_for_ref(enclave_info_ptr)?;
+    if user_id_ptr.is_null() {
+        return Err(Error::from(ErrorKind::InvalidInputError));
+    }
+    let user_id = ffi::CStr::from_ptr(user_id_ptr)
+        .to_str()
+        .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
+    if user_token_ptr.is_null() {
+        return Err(Error::from(ErrorKind::InvalidInputError));
+    }
+    let user_token = ffi::CStr::from_ptr(user_id_ptr)
+        .to_str()
+        .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
+
+    if tms_addr_ptr.is_null() {
+        return Err(Error::from(ErrorKind::InvalidInputError));
+    }
+    let tms_addr = ffi::CStr::from_ptr(tms_addr_ptr)
+        .to_str()
+        .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
+    if tdfs_addr_ptr.is_null() {
+        return Err(Error::from(ErrorKind::InvalidInputError));
+    }
+    let tdfs_addr = ffi::CStr::from_ptr(tdfs_addr_ptr)
+        .to_str()
+        .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
+    let tmsaddr = tms_addr
+        .parse()
+        .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
+    let tdfsaddr = tdfs_addr
+        .parse()
+        .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
+    let mesatee = Mesatee::new(enclave_info, user_id, user_token, tmsaddr, tdfsaddr)?;
     let mesatee_ptr = Box::into_raw(Box::new(mesatee)) as *mut Mesatee;
     Ok(mesatee_ptr)
 }

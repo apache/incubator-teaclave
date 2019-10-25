@@ -30,8 +30,8 @@ use mesatee_core::ipc::protos::ECallCommand;
 use mesatee_core::ipc::IpcSender;
 use mesatee_core::{utils::sgx_launch_check, Error, ErrorKind, Result};
 
-static ENCLAVE_FILE_SUFFIX: &'static str = "enclave.signed.so";
-static ENCLAVE_TOKEN_SUFFIX: &'static str = "enclave.token";
+static ENCLAVE_FILE_SUFFIX: &str = "enclave.signed.so";
+static ENCLAVE_TOKEN_SUFFIX: &str = "enclave.token";
 
 const TOKEN_LEN: usize = mem::size_of::<sgx_launch_token_t>();
 

@@ -58,9 +58,6 @@ echo "[+] run three_party_demo"
 echo "[+] run four_party_demo"
 ../examples/private_join_and_compute/four_party_demo.sh > /dev/null
 [ $? -eq 0 ] || exit $?
-echo "[+] run ml_predict_demo"
-../examples/ml_predict/ml_predict_demo.sh > /dev/null
-[ $? -eq 0 ] || exit $?
 echo "[+] run image_resize_demo"
 ../examples/image_resizing/image_resize_demo.sh 2>&1 | tee image_resize.log
 [ ${PIPESTATUS[0]} -eq 0 ] || exit ${PIPESTATUS[0]}
@@ -75,4 +72,34 @@ echo "[+] run py_matrix_multiply"
 [ ${PIPESTATUS[0]} -eq 0 ] || exit ${PIPESTATUS[0]}
 echo "[+] run kmeans"
 ../examples/kmeans/kmeans_demo.sh 2>&1 | tee kmeans_demo.log
+[ ${PIPESTATUS[0]} -eq 0 ] || exit ${PIPESTATUS[0]}
+echo "[+] run logistic_reg"
+../examples/logistic_reg/logistic_reg_demo.sh 2>&1 | tee logistic_reg_demo.log
+[ ${PIPESTATUS[0]} -eq 0 ] || exit ${PIPESTATUS[0]}
+echo "[+] run lin_reg"
+../examples/lin_reg/lin_reg_demo.sh 2>&1 | tee lin_reg_demo.log
+[ ${PIPESTATUS[0]} -eq 0 ] || exit ${PIPESTATUS[0]}
+echo "[+] run svm"
+../examples/svm/svm_demo.sh 2>&1 | tee svm_demo.log
+[ ${PIPESTATUS[0]} -eq 0 ] || exit ${PIPESTATUS[0]}
+echo "[+] run gen_linear_model"
+../examples/gen_linear_model/gen_linear_model_demo.sh 2>&1 | tee gen_linear_model_demo.log
+[ ${PIPESTATUS[0]} -eq 0 ] || exit ${PIPESTATUS[0]}
+echo "[+] run gaussian_mixture_model"
+../examples/gaussian_mixture_model/gaussian_mixture_model_demo.sh 2>&1 | tee gaussian_mixture_model_demo.log
+[ ${PIPESTATUS[0]} -eq 0 ] || exit ${PIPESTATUS[0]}
+echo "[+] run gaussian_processes"
+../examples/gaussian_processes/gaussian_processes_demo.sh 2>&1 | tee gaussian_processes_demo.log
+[ ${PIPESTATUS[0]} -eq 0 ] || exit ${PIPESTATUS[0]}
+echo "[+] run dbscan"
+../examples/dbscan/dbscan_demo.sh 2>&1 | tee dbscan_demo.log
+[ ${PIPESTATUS[0]} -eq 0 ] || exit ${PIPESTATUS[0]}
+echo "[+] run neural_net"
+../examples/neural_net/neural_net_demo.sh 2>&1 | tee neural_net_demo.log
+[ ${PIPESTATUS[0]} -eq 0 ] || exit ${PIPESTATUS[0]}
+echo "[+] run naive_bayes"
+../examples/naive_bayes/naive_bayes_demo.sh 2>&1 | tee naive_bayes_demo.log
+[ ${PIPESTATUS[0]} -eq 0 ] || exit ${PIPESTATUS[0]}
+echo "[+] run gbdt"
+../examples/gbdt/gbdt_demo.sh 2>&1 | tee gbdt_demo.log
 [ ${PIPESTATUS[0]} -eq 0 ] || exit ${PIPESTATUS[0]}

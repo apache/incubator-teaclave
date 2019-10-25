@@ -17,6 +17,6 @@ kms_proto       = { path = "../proto" }
 
 mesatee_core    = { version = "0.1.0" }
 
-sgx_types       = { version = "1.0.8" }
+sgx_types       = { version = "1.0.9" }
 sgx_cov         = { version = "0.1.0", optional = true }
-sgx_tstd        = { version = "1.0.8", optional = true }
+sgx_tstd        = { version = "1.0.9", optional = true }

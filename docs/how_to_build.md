@@ -6,7 +6,7 @@ We only support Linux environment for now. Ubuntu 16.04/18.04 are prefered.  If
 you want to build in native environment, please have nightly Rust and the
 latest [Intel SGX SDK](https://01.org/intel-software-guard-extensions/downloads) installed.
 As of writing, the latest Intel SGX SDK version is
-[2.5.101](https://download.01.org/intel-sgx/linux-2.5/ubuntu18.04-server), and
+[2.6.100](https://download.01.org/intel-sgx/linux-2.6/ubuntu18.04-server/), and
 our testing is based on that. Detailed instructions can be found in our
 [Dockerfile](https://github.com/mesalock-linux/mesatee/blob/master/Dockerfile).
 Or, you can directly build in the [docker image](https://hub.docker.com/r/mesalocklinux/build-mesatee).

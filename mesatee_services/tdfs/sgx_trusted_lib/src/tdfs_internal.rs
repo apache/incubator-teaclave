@@ -15,7 +15,7 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use crate::data_store::{FileMeta, FILE_STORE};
+use crate::data_store::{self, FileMeta, FILE_STORE};
 use kms_client::KMSClient;
 use mesatee_core::config;
 use mesatee_core::rpc::EnclaveService;
@@ -52,7 +52,7 @@ impl HandleRequest for CreateFileRequest {
         if FILE_STORE.get(&file_id)?.is_some() {
             return Err(Error::from(ErrorKind::UUIDError));
         }
-        FILE_STORE.set(&file_id, &file_meta)?;
+        data_store::add_file(&file_id, &file_meta)?;
 
         let resp =
             DFSResponse::new_create_file(&file_id, &file_meta.get_access_path(), &key_config);

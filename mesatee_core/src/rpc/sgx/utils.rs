@@ -140,14 +140,12 @@ pub fn load_and_verify_enclave_info(
             .read_to_end(&mut sig)
             .unwrap_or_else(|_| panic!("cannot read signature from {:?}", signer.1));
 
-        #[allow(deprecated)]
-        ring::signature::verify(
-            &ring::signature::RSA_PKCS1_2048_8192_SHA256,
-            untrusted::Input::from(signer.0),
-            untrusted::Input::from(content.as_bytes()),
-            untrusted::Input::from(sig.as_slice()),
-        )
-        .expect("invalid signature for enclave info file");
+        use ring::signature;
+        let public_key =
+            signature::UnparsedPublicKey::new(&signature::RSA_PKCS1_2048_8192_SHA256, signer.0);
+        public_key
+            .verify(content.as_bytes(), sig.as_slice())
+            .expect("invalid signature for enclave info file");
     }
 
     let lines: Vec<&str> = content.split('\n').collect();

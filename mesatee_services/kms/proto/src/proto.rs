@@ -25,6 +25,7 @@ use serde_derive::*;
 pub enum KMSRequest {
     Create(CreateKeyRequest),
     Get(GetKeyRequest),
+    Delete(DeleteKeyRequest),
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -32,6 +33,7 @@ pub enum KMSRequest {
 pub enum KMSResponse {
     Create(CreateKeyResponse),
     Get(GetKeyResponse),
+    Delete(DeleteKeyResponse),
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
@@ -63,6 +65,16 @@ pub struct GetKeyResponse {
     pub config: AEADKeyConfig,
 }
 
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct DeleteKeyRequest {
+    pub key_id: String,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct DeleteKeyResponse {
+    pub config: AEADKeyConfig,
+}
+
 impl KMSRequest {
     pub fn new_create_key() -> KMSRequest {
         KMSRequest::Create(CreateKeyRequest {})
@@ -73,6 +85,13 @@ impl KMSRequest {
             key_id: key_id.to_owned(),
         };
         KMSRequest::Get(req)
+    }
+
+    pub fn new_del_key(key_id: &str) -> KMSRequest {
+        let req = DeleteKeyRequest {
+            key_id: key_id.to_owned(),
+        };
+        KMSRequest::Delete(req)
     }
 }
 
@@ -90,6 +109,13 @@ impl KMSResponse {
             config: config.clone(),
         };
         KMSResponse::Get(resp)
+    }
+
+    pub fn new_del_key(config: &AEADKeyConfig) -> KMSResponse {
+        let resp = DeleteKeyResponse {
+            config: config.clone(),
+        };
+        KMSResponse::Delete(resp)
     }
 }
 

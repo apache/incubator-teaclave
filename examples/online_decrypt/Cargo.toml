@@ -12,5 +12,5 @@ base64 = { version = "0.10.1" }
 serde_derive = { version = "1.0.92" }
 serde_json = { version = "1.0.39" }
 serde = { version = "1.0.92" }
-ring = { version = "0.14.6" }
+ring = { version = "0.16.5" }
 lazy_static = { version = "1.3.0" }

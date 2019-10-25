@@ -17,11 +17,25 @@
 use std::prelude::v1::*;
 
 use mesatee_core::{Error, ErrorKind, Result};
-use ring::aead;
-use ring::aead::Aad;
-use ring::aead::Nonce;
+use ring::aead::{self, Aad, BoundKey, Nonce, UnboundKey};
 use ring::digest;
 use std::fmt::Write;
+
+struct OneNonceSequence(Option<aead::Nonce>);
+
+impl OneNonceSequence {
+    /// Constructs the sequence allowing `advance()` to be called
+    /// `allowed_invocations` times.
+    fn new(nonce: aead::Nonce) -> Self {
+        Self(Some(nonce))
+    }
+}
+
+impl aead::NonceSequence for OneNonceSequence {
+    fn advance(&mut self) -> core::result::Result<aead::Nonce, ring::error::Unspecified> {
+        self.0.take().ok_or(ring::error::Unspecified)
+    }
+}
 
 pub fn decrypt_data(
     mut data: Vec<u8>,
@@ -30,12 +44,13 @@ pub fn decrypt_data(
     aes_ad: &[u8],
 ) -> Result<Vec<u8>> {
     let aead_alg = &aead::AES_256_GCM;
-    let o_key = aead::OpeningKey::new(aead_alg, aes_key)
-        .map_err(|_| Error::from(ErrorKind::CryptoError))?;
+    let ub = UnboundKey::new(aead_alg, aes_key).map_err(|_| Error::from(ErrorKind::CryptoError))?;
     let nonce = Nonce::try_assume_unique_for_key(aes_nonce)
         .map_err(|_| Error::from(ErrorKind::CryptoError))?;
+    let filesequence = OneNonceSequence::new(nonce);
+    let mut o_key = aead::OpeningKey::new(ub, filesequence);
     let ad = Aad::from(aes_ad);
-    let result = aead::open_in_place(&o_key, nonce, ad, 0, &mut data[..]);
+    let result = o_key.open_in_place(ad, &mut data[..]);
     let decrypted_buffer = result.map_err(|_| Error::from(ErrorKind::CryptoError))?;
     Ok(decrypted_buffer.to_vec())
 }
@@ -47,26 +62,23 @@ pub fn encrypt_data(
     aes_ad: &[u8],
 ) -> Result<Vec<u8>> {
     let aead_alg = &aead::AES_256_GCM;
-    let tag_len = aead_alg.tag_len();
-    for _ in 0..aead_alg.tag_len() {
-        data.push(0);
-    }
 
     if (aes_key.len() != 32) || (aes_nonce.len() != 12) || (aes_ad.len() != 5) {
         return Err(Error::from(ErrorKind::CryptoError));
     }
 
-    let s_key = aead::SealingKey::new(aead_alg, &aes_key[..])
-        .or_else(|_| Err(Error::from(ErrorKind::CryptoError)))?;
+    let ub = UnboundKey::new(aead_alg, aes_key).map_err(|_| Error::from(ErrorKind::CryptoError))?;
     let nonce = Nonce::try_assume_unique_for_key(aes_nonce)
         .map_err(|_| Error::from(ErrorKind::CryptoError))?;
+    let filesequence = OneNonceSequence::new(nonce);
+    let mut s_key = aead::SealingKey::new(ub, filesequence);
     let ad = Aad::from(aes_ad);
 
-    let s_result = { aead::seal_in_place(&s_key, nonce, ad, &mut data[..], tag_len) };
+    let s_result = s_key.seal_in_place_append_tag(ad, &mut data);
 
-    let result_len = s_result.map_err(|_| Error::from(ErrorKind::CryptoError))?;
+    s_result.map_err(|_| Error::from(ErrorKind::CryptoError))?;
 
-    Ok(data[..result_len].to_vec())
+    Ok(data)
 }
 
 pub fn cal_hash(data: &[u8]) -> Result<String> {

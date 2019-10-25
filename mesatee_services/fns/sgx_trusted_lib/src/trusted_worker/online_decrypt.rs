@@ -14,9 +14,7 @@
 
 use crate::worker::{FunctionType, Worker, WorkerContext};
 use mesatee_core::{Error, ErrorKind, Result};
-use ring::aead;
-use ring::aead::Aad;
-use ring::aead::Nonce;
+use ring::aead::{self, Aad, BoundKey, Nonce, UnboundKey};
 use serde_derive::Deserialize;
 use serde_json;
 use std::prelude::v1::*;
@@ -109,6 +107,22 @@ impl Worker for OnlineDecryptWorker {
     }
 }
 
+struct OneNonceSequence(Option<aead::Nonce>);
+
+impl OneNonceSequence {
+    /// Constructs the sequence allowing `advance()` to be called
+    /// `allowed_invocations` times.
+    fn new(nonce: aead::Nonce) -> Self {
+        Self(Some(nonce))
+    }
+}
+
+impl aead::NonceSequence for OneNonceSequence {
+    fn advance(&mut self) -> core::result::Result<aead::Nonce, ring::error::Unspecified> {
+        self.0.take().ok_or(ring::error::Unspecified)
+    }
+}
+
 fn decrypt_data(
     mut data: Vec<u8>,
     aes_key: &[u8],
@@ -116,12 +130,13 @@ fn decrypt_data(
     aes_ad: &[u8],
 ) -> Result<Vec<u8>> {
     let aead_alg = &aead::AES_256_GCM;
-    let o_key = aead::OpeningKey::new(aead_alg, aes_key)
-        .map_err(|_| mesatee_core::Error::from(mesatee_core::ErrorKind::CryptoError))?;
+    let ub = UnboundKey::new(aead_alg, aes_key).map_err(|_| Error::from(ErrorKind::CryptoError))?;
     let nonce = Nonce::try_assume_unique_for_key(aes_nonce)
         .map_err(|_| mesatee_core::Error::from(mesatee_core::ErrorKind::CryptoError))?;
+    let filesequence = OneNonceSequence::new(nonce);
+    let mut o_key = aead::OpeningKey::new(ub, filesequence);
     let ad = Aad::from(aes_ad);
-    let result = aead::open_in_place(&o_key, nonce, ad, 0, &mut data[..]);
+    let result = o_key.open_in_place(ad, &mut data[..]);
     let decrypted_buffer =
         result.map_err(|_| mesatee_core::Error::from(mesatee_core::ErrorKind::CryptoError))?;
     Ok(decrypted_buffer.to_vec())

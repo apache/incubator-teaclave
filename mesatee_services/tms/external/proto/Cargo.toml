@@ -20,4 +20,4 @@ serde_derive = { version = "1.0.92" }
 tms_common_proto = { path = "../../common/proto" }
 
 sgx_cov  = { version = "0.1.0", optional = true }
-sgx_tstd = { version = "1.0.8", features = ["net", "backtrace"], optional = true }
+sgx_tstd = { version = "1.0.9", features = ["net", "backtrace"], optional = true }

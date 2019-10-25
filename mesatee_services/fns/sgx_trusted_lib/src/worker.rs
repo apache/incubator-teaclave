@@ -55,7 +55,7 @@ pub trait Worker: Send + Sync {
 pub struct WorkerInfoQueue {
     running_worker: HashSet<u32>,
     worker_id_counter: u32,
-    queue: HashMap<String, Vec<Box<Worker>>>,
+    queue: HashMap<String, Vec<Box<dyn Worker>>>,
 }
 
 lazy_static! {
@@ -77,7 +77,7 @@ impl WorkerInfoQueue {
         id
     }
 
-    pub fn register(mut worker: Box<Worker>) -> Result<()> {
+    pub fn register(mut worker: Box<dyn Worker>) -> Result<()> {
         let mut worker_info_queue = WORKER_INFO_QUEUE.write()?;
         let worker_id = worker_info_queue.inc_id();
 
@@ -98,7 +98,7 @@ impl WorkerInfoQueue {
         Ok(())
     }
 
-    pub fn aquire_worker(func_name: &str) -> Result<Box<Worker>> {
+    pub fn aquire_worker(func_name: &str) -> Result<Box<dyn Worker>> {
         let mut worker_info_queue = WORKER_INFO_QUEUE.write()?;
         let queue = worker_info_queue
             .queue
@@ -115,7 +115,7 @@ impl WorkerInfoQueue {
         }
     }
 
-    pub fn release_worker(worker: Box<Worker>) -> Result<()> {
+    pub fn release_worker(worker: Box<dyn Worker>) -> Result<()> {
         let mut worker_info_queue = WORKER_INFO_QUEUE.write()?;
         let worker_id = worker.id();
         worker_info_queue.running_worker.remove(&worker_id);

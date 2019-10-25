@@ -14,28 +14,41 @@
 
 use lazy_static::lazy_static;
 use mesatee_sdk::{Mesatee, MesateeEnclaveInfo};
+use serde_derive::Serialize;
+use serde_json;
 use std::net::SocketAddr;
 use std::{env, fs};
 
-static FUNCTION_NAME: &'static str = "gbdt_predict";
 lazy_static! {
     static ref TMS_ADDR: SocketAddr = "127.0.0.1:5554".parse().unwrap();
     static ref TDFS_ADDR: SocketAddr = "127.0.0.1:5065".parse().unwrap();
 }
 
+#[derive(Serialize)]
+pub(crate) struct SvmPayload {
+    input_model_columns: usize,
+    input_model_data: String,
+    target_model_data: String,
+    test_data: String,
+}
+
 fn print_usage() {
     let msg = "
-    ./ml_predict test_data_path model_data_path
-    test data format:
+    ./svm input_model_data_columns input_model_data_path target_model_data_path test_data_path 
+    input_model_data format:
         f32,f32,f32,f32 ...
         f32,f32,f32,f32 ...
         ...
-    supported model:
-        model saved by gbdt-rs
-    output:
-        f32
-        f32
-        ...
+    target_model_data format:
+        1.
+        0.
+        1.
+        0.
+        0.
+        1.
+        ....   
+    test_data format:
+        f32,f32,f32,f32 ...
     ";
     println!("usage: \n{}", msg);
 }
@@ -55,18 +68,37 @@ fn main() {
             "../auditors/albus_dumbledore/albus_dumbledore.sign.sha256",
         ),
     ];
-    let enclave_info_file_path = "../out/enclave_info.txt";
-
-    let mesatee_enclave_info = MesateeEnclaveInfo::load(auditors, enclave_info_file_path).unwrap();
 
     let args: Vec<String> = env::args().collect();
-    if args.len() != 3 {
+    if args.len() != 5 {
         print_usage();
         return;
     }
-    let test_data_path = &args[1];
-    let model_data_path = &args[2];
 
+    let columns = args[1].parse().unwrap();
+    let input_model_data_path = &args[2];
+    let target_model_data_path = &args[3];
+    let test_date_path = &args[4];
+
+    let input_model_data_bytes = fs::read(&input_model_data_path).unwrap();
+    let input_model_data_str = String::from_utf8(input_model_data_bytes).unwrap();
+
+    let target_model_data_bytes = fs::read(&target_model_data_path).unwrap();
+    let target_model_data_str = String::from_utf8(target_model_data_bytes).unwrap();
+
+    let test_data_bytes = fs::read(&test_date_path).unwrap();
+    let test_data_str = String::from_utf8(test_data_bytes).unwrap();
+
+    let input_payload = SvmPayload {
+        input_model_columns: columns,
+        input_model_data: input_model_data_str,
+        target_model_data: target_model_data_str,
+        test_data: test_data_str,
+    };
+
+    let input_string = serde_json::to_string(&input_payload).unwrap();
+    let enclave_info_file_path = "../out/enclave_info.txt";
+    let mesatee_enclave_info = MesateeEnclaveInfo::load(auditors, enclave_info_file_path).unwrap();
     let mesatee = Mesatee::new(
         &mesatee_enclave_info,
         "uid1",
@@ -75,15 +107,8 @@ fn main() {
         *TDFS_ADDR,
     )
     .unwrap();
-    let file_id = mesatee.upload_file(model_data_path).unwrap();
+    let task = mesatee.create_task("svm").unwrap();
+    let result = task.invoke_with_payload(&input_string).unwrap();
 
-    let payload_bytes = fs::read(&test_data_path).unwrap();
-    let payload_str = String::from_utf8(payload_bytes).unwrap();
-
-    let task = mesatee
-        .create_task_with_files(FUNCTION_NAME, &[file_id.as_str()])
-        .unwrap();
-    let result = task.invoke_with_payload(&payload_str).unwrap();
-
-    println!("result: \n{}", result);
+    println!("result:{}", result)
 }

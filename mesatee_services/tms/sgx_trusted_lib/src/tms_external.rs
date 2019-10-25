@@ -24,11 +24,12 @@ use std::marker::PhantomData;
 use tdfs_internal_client::TDFSClient;
 
 use crate::data_store::{
-    check_get_permission, gen_token, verify_user, CollaboratorStatus, FunctionType, TaskFile,
-    TaskInfo, TaskStatus, TASK_STORE, UPDATELOCK,
+    self, check_get_permission, gen_token, verify_user, CollaboratorStatus, FunctionType, TaskFile,
+    TaskInfo, TaskStatus, TASK_STORE, UPDATELOCK, USER_TASK_STORE,
 };
 use tms_external_proto::{
-    CreateTaskRequest, GetTaskRequest, TaskRequest, TaskResponse, UpdateTaskRequest,
+    CreateTaskRequest, GetTaskRequest, ListTaskRequest, TaskRequest, TaskResponse,
+    UpdateTaskRequest,
 };
 
 pub trait HandleRequest {
@@ -166,7 +167,7 @@ impl HandleRequest for CreateTaskRequest {
         if TASK_STORE.get(&task_id)?.is_some() {
             return Err(Error::from(ErrorKind::UUIDError));
         }
-        TASK_STORE.set(&task_id, &task_info)?;
+        data_store::add_task(&task_id, &task_info)?;
 
         let resp = TaskResponse::new_create_task(
             &task_id,
@@ -174,6 +175,24 @@ impl HandleRequest for CreateTaskRequest {
             task_info.ip,
             task_info.port,
         );
+        Ok(resp)
+    }
+}
+
+impl HandleRequest for ListTaskRequest {
+    fn handle_request(&self) -> Result<TaskResponse> {
+        if !verify_user(&self.user_id, &self.user_token) {
+            return Err(mesatee_core::Error::from(
+                mesatee_core::ErrorKind::PermissionDenied,
+            ));
+        }
+        // lock is not needed here
+        let task_ids = USER_TASK_STORE.get(&self.user_id)?;
+        let list: Vec<&str> = match task_ids {
+            Some(ref ids) => ids.iter().map(|s| s.as_str()).collect(),
+            None => Vec::new(),
+        };
+        let resp = TaskResponse::new_list_task(&list);
         Ok(resp)
     }
 }
@@ -299,6 +318,7 @@ impl EnclaveService<TaskRequest, TaskResponse> for TMSExternalEnclave<TaskReques
             TaskRequest::Create(req) => req.handle_request()?,
             TaskRequest::Get(req) => req.handle_request()?,
             TaskRequest::Update(req) => req.handle_request()?,
+            TaskRequest::List(req) => req.handle_request()?,
         };
         trace!("{}th round complete!", self.state);
         Ok(response)

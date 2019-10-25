@@ -27,8 +27,8 @@ base64               = { version = "0.10.1" }
 itertools            = { version = "0.8.0", default-features = false }
 log                  = { version = "0.4.7", features = ["max_level_trace"] }
 env_logger           = { version = "0.6.1" }
-image                = { version = "0.21.0" }
-ring                 = { version = "0.14.6" }
+image                = { version = "0.22.1" }
+ring                 = { version = "0.16.5" }
 uuid                 = { version = "0.7.4", features = ["v4"] }
 
 mesatee_core         = { version = "0.1.0" }
@@ -39,7 +39,7 @@ tms_internal_proto   = { path = "../../tms/internal/proto", optional = true }
 tdfs_internal_client = { path = "../../tdfs/internal/client", optional = true }
 
 sgx_cov              = { version = "0.1.0", optional = true }
-sgx_tstd             = { version = "1.0.8", features = ["net", "backtrace"], optional = true }
-sgx_types            = { version = "1.0.8" }
-gbdt_sgx = { git = "https://github.com/mesalock-linux/gbdt-rs" }
+sgx_tstd             = { version = "1.0.9", features = ["net", "backtrace"], optional = true }
+sgx_types            = { version = "1.0.9" }
+gbdt_sgx = { git = "https://github.com/mesalock-linux/gbdt-rs", default-features = false, features = ["mesalock_sgx", "input", "enable_training"] }
 rusty-machine =  { version = "0.5.4" }
