@@ -12,7 +12,7 @@ SET_STRVAR_FROM_ENV_OR(SGX_SDK "/opt/sgxsdk" "Path of SGX SDK")
 SET_STRVAR_FROM_ENV_OR(SGX_MODE "HW" "Mode of SGX, HW or SW")
 SET_STRVAR_FROM_ENV_OR(RUSTFLAGS "" "Rust flags")
 SET_STRVAR_FROM_ENV_OR(MESATEE_CMAKE_DBG "" "set to turn on debug message for cmake")
-set(MESAPY_VERSION 544d70a041643eed8a0f362e9746facb254381af CACHE STRING "mesapy version")
+set(MESAPY_VERSION 118324d6fcf7303bd9d76c3ed7f6009302177575 CACHE STRING "mesapy version")
 option(COV OFF "Turn on coverage or not")
 # ======= VARIABLES FOR CMAKE -D{VAR}=VAL CONFIGURATION END =======
 

@@ -14,7 +14,7 @@
 
 SHELL = /bin/bash
 
-MESAPY_VERSION = 544d70a041643eed8a0f362e9746facb254381af
+MESAPY_VERSION = 118324d6fcf7303bd9d76c3ed7f6009302177575
 
 SGX_ENCLAVE_FEATURES = -Z package-features --features mesalock_sgx
 ifeq ($(DBG),) 	# Release build
