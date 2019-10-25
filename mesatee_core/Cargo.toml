@@ -21,27 +21,26 @@ log          = { version = "0.4.6" }
 serde        = { version = "1.0.92" }
 serde_derive = { version = "1.0.92" }
 serde_json   = { version = "1.0.39" }
-rustls       = { version = "0.15.2", features = ["dangerous_configuration"] }
+rustls       = { version = "0.16.0", features = ["dangerous_configuration"] }
 lazy_static  = { version = "1.0.2", features = ["spin_no_std"] }
 chrono       = { version = "0.4.6" }
-ring         = { version = "0.14.6" }
-webpki       = { version = "0.19.1" }
-webpki-roots = { version = "0.16.0" }
+ring         = { version = "0.16.5" }
+webpki       = { version = "0.21.0" }
+webpki-roots = { version = "0.17.0" }
 base64       = { version = "0.10.1" }
 yasna        = { version = "0.3.0", features = ["bit-vec", "num-bigint", "chrono"] }
 num-bigint   = { version = "0.2.2" }
 bit-vec      = { version = "0.6.1", default-features = false }
 httparse     = { version = "1.3.2", default-features = false }
-untrusted    = { version = "0.6.2" }
 uuid         = { version = "0.7.4", features = ["v4"] }
 net2         = { version = "0.2.33" }
 
-sgx_tstd  = { version = "1.0.8", features = ["net"], optional = true }
-sgx_types = { version = "1.0.8" }
-sgx_urts  = { version = "1.0.8" }
-sgx_tcrypto = { version = "1.0.8", optional = true }
-sgx_rand  = { version = "1.0.8", optional = true }
-sgx_tse   = { version = "1.0.8", optional = true }
+sgx_tstd  = { version = "1.0.9", features = ["net"], optional = true }
+sgx_types = { version = "1.0.9" }
+sgx_urts  = { version = "1.0.9" }
+sgx_tcrypto = { version = "1.0.9", optional = true }
+sgx_rand  = { version = "1.0.9", optional = true }
+sgx_tse   = { version = "1.0.9", optional = true }
 
 mesatee_config = { version = "0.1.0" } 
 ipc_attribute = { path = "./ipc_attribute" }

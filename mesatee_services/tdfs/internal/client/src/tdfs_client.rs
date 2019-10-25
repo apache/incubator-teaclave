@@ -15,6 +15,7 @@
 use std::prelude::v1::*;
 
 use crate::file_util;
+use core::convert::TryInto;
 use kms_client::KMSClient;
 use mesatee_core::config::{self, OutboundDesc, TargetDesc};
 use mesatee_core::rpc::channel::SgxTrustedChannel;
@@ -143,7 +144,8 @@ impl TDFSClient {
         let key_config = key_resp.config;
         let access_path = &file_info.access_path;
         let mut f = fs::File::open(access_path)?;
-        let mut ciphertxt: Vec<u8> = Vec::new();
+        let capacity: usize = file_info.file_size.try_into().unwrap_or(1024 * 1024) + 1024;
+        let mut ciphertxt: Vec<u8> = Vec::with_capacity(capacity);
         let mut buffer = vec![0; 1024 * 1024];
         while let Ok(bytes_len) = f.read(&mut buffer) {
             if bytes_len > 0 {

@@ -17,7 +17,7 @@ use mesatee_sdk::{Mesatee, MesateeEnclaveInfo, TaskStatus};
 use std::env;
 use std::net::SocketAddr;
 
-static FUNCTION_NAME: &'static str = "private_join_and_compute";
+static FUNCTION_NAME: &str = "private_join_and_compute";
 
 lazy_static! {
     static ref TMS_ADDR: SocketAddr = "127.0.0.1:5554".parse().unwrap();
@@ -189,7 +189,6 @@ fn main() {
         }
         _ => {
             print_usage();
-            return;
         }
     }
 }

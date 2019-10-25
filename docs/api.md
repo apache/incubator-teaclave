@@ -253,6 +253,48 @@ pub enum TaskResponse {
   "task_token":"70a58efaa0dc3a567f1c2bc3555d95b8"
 }
 ```
+### List Task
+#### List Task request data structure: 
+```rust
+#[derive(Serialize)]
+pub struct ListTaskRequest {
+    pub user_id: String,
+    pub user_token: String,
+}
+#[derive(Serialize)]
+#[serde(tag = "type")]
+pub enum TaskRequest {
+    List(ListTaskRequest),
+}
+```
+#### Request examples:
+```json
+{
+	"type":"List",
+	"user_id":"bbbb",
+	"user_token":"xxxx"
+}
+```
+
+#### List Task response data structure
+```rust
+#[derive(Deserialize)]
+pub struct ListTaskResponse {
+    pub list: Vec<String>,
+}
+#[derive(Deserialize)]
+#[serde(tag = "type")]
+pub enum TaskResponse {
+    List(ListTaskResponse),
+}
+```
+#### Response examples:
+``` json
+{
+  "type":"List",
+  "list": ["88a6b759-8662-11e9-8001-010203040506", "88a6b759-8662-11e9-8002-010203040506"]
+}
+```
 ## Internal API (port: 5555)
 
 ### Get Task
@@ -574,6 +616,68 @@ pub enum KMSResponse {
 }
 ```
 
+### Delete Key
+
+#### Delete Key request data structure
+
+```rust
+#[derive(Serialize)]
+pub struct DeleteKeyRequest {
+    pub key_id: String,
+}
+
+#[derive(Serialize)]
+#[serde(tag = "type")]
+pub enum KMSRequest {
+    Delete(DeleteKeyRequest),
+}
+```
+
+#### Delete key request examples
+
+```json
+{
+	"type":"Delete",
+	"key_id":"c26ada76-8557-11e9-8002-020203040506"
+}
+```
+
+#### Delete key response data structure
+
+```rust
+#[derive(Clone, Deserialize)]
+pub struct AEADKeyConfig {
+    #[serde(with = "base64_decoder")]
+    pub key: Vec<u8>,
+    #[serde(with = "base64_decoder")]
+    pub nonce: Vec<u8>,
+    #[serde(with = "base64_decoder")]
+    pub ad: Vec<u8>,
+}
+#[derive(Deserialize)]
+pub struct DeleteKeyResponse {
+    pub config: AEADKeyConfig,
+}
+#[derive(Deserialize)]
+#[serde(tag = "type")]
+pub enum KMSResponse {
+    Delete(DeleteKeyResponse),
+}
+```
+
+#### response example
+
+```json
+{
+  "type":"Delete",
+  "config":{
+    "key":"CvEH2KdKLyTRaycAbx28oU5FSUxTEaA9q8gGC6/IwS4=",
+    "nonce":"NygUVqPwxJDffni3",
+    "ad":"IFx5qXQ="
+  }
+}
+```
+
 #Trusted DFS
 
 ## External API (port: 5065)
@@ -719,6 +823,134 @@ pub enum DFSResponse {
 ```json
 {
   "type":"Get",
+  "file_info":{
+    "user_id":"user1",
+    "file_name":"5ef0cfc7-11e9-445a-8c46-23790ea86819",
+    "sha256":"d5e2d2ac07b741be58f6b9e50ede5fdcf16f3e8053ecef9350e7744b0d8bd90c",
+    "file_size":4,
+    "access_path":"/tmp/d18fb288-8fef-48c3-b800-201b2734882e",
+    "task_id":"5ef0cfc7-11e9-445a-8c46-23790ea86819",
+    "collaborator_list":[],
+    "key_config":{
+      "key":"E99iifHZ16dDY0IocaGFyD3v2j/kvHsn6wRqFZWGeDA=",
+      "nonce":"jcqPUkPIqgYeLe9B",
+      "ad":"V/gZjZY="
+    }
+  }
+}
+```
+
+### List File
+#### List File request data structure: 
+```rust
+#[derive(Serialize)]
+pub struct ListFileRequest {
+    pub user_id: String,
+    pub user_token: String,
+}
+#[derive(Serialize)]
+#[serde(tag = "type")]
+pub enum DFSRequest {
+    List(ListFileRequest),
+}
+```
+#### Request examples:
+```json
+{
+	"type":"List",
+	"user_id":"bbbb",
+	"user_token":"xxxx"
+}
+```
+
+#### List File response data structure
+```rust
+#[derive(Deserialize)]
+pub struct ListFileResponse {
+    pub list: Vec<String>,
+}
+#[derive(Deserialize)]
+#[serde(tag = "type")]
+pub enum DFSResponse {
+    List(ListFileResponse),
+}
+```
+#### Response examples:
+``` json
+{
+  "type":"List",
+  "list": ["0e8446d1-6fa5-49db-b828-8087a0141370", "b76f9ee2-63d2-43bd-a722-466792af7035"]
+}
+```
+
+### Delete File
+Delete file meta information in the TDFS and related key in the KMS. Client should delete the encrypted file in the file system.
+#### Delete File request data structure
+
+```rust
+#[derive(Serialize)]
+pub struct DeleteFileRequest {
+    pub file_id: String,
+    pub user_id: String,
+    pub user_token: String,
+}
+#[derive(Serialize)]
+#[serde(tag = "type")]
+pub enum DFSRequest {
+    Delete(DeleteFileRequest),
+}
+```
+
+#### Delete File request examples
+
+```json
+{
+  "type":"Delete",
+  "file_id":"d18fb288-8fef-48c3-b800-201b2734882e",
+  "user_id":"user1",
+  "user_token":"token1"
+}
+```
+
+#### Delete File response data structure
+
+```rust
+#[derive(Clone, Deserialize)]
+pub struct AEADKeyConfig {
+    #[serde(with = "base64_decoder")]
+    pub key: Vec<u8>,
+    #[serde(with = "base64_decoder")]
+    pub nonce: Vec<u8>,
+    #[serde(with = "base64_decoder")]
+    pub ad: Vec<u8>,
+}
+#[derive(Deserialize)]
+pub struct FileInfo {
+    pub user_id: String,
+    pub file_name: String,
+    pub sha256: String,
+    pub file_size: u32,
+    pub access_path: String,
+    pub task_id: Option<String>,
+    pub collaborator_list: Vec<String>,
+    pub key_config: AEADKeyConfig,
+}
+#[derive(Deserialize)]
+pub struct DeleteFileResponse {
+    pub file_info: FileInfo,
+}
+#[derive(Deserialize)]
+#[serde(tag = "type")]
+pub enum DFSResponse {
+    Delete(DeleteFileResponse),
+}
+```
+
+#### response example
+
+```json
+{
+  "type":"Delete",
   "file_info":{
     "user_id":"user1",
     "file_name":"5ef0cfc7-11e9-445a-8c46-23790ea86819",

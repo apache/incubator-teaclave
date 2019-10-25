@@ -10,7 +10,7 @@ done
 
 ${MT_SCRIPT_DIR}/setup_cmake_tomls ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR} 
 mkdir -p ${MESATEE_BIN_DIR} ${MESATEE_OUT_DIR} ${MESATEE_TARGET_DIR}
-if git submodule status | egrep -q '^[-]|^[+]'; then echo 'INFO: Need to reinitialize git submodules' && git submodule update --init; fi
+if git submodule status | egrep -q '^[-]|^[+]'; then echo 'INFO: Need to reinitialize git submodules' && git submodule update --init --recursive; fi
 rustup install --no-self-update ${RUSTUP_TOOLCHAIN} > /dev/null 2>&1
 # get mesapy
 if [ ! -f ${MESATEE_OUT_DIR}/libpypy-c.a ]; then

@@ -21,8 +21,8 @@ lazy_static! {
     static ref TMS_ADDR: SocketAddr = "127.0.0.1:5554".parse().unwrap();
     static ref TDFS_ADDR: SocketAddr = "127.0.0.1:5065".parse().unwrap();
 }
-static PSI_TEST_DATA_1_PATH: &'static str = "./test_data/psi1.txt";
-static PSI_TEST_DATA_2_PATH: &'static str = "./test_data/psi2.txt";
+static PSI_TEST_DATA_1_PATH: &str = "./test_data/psi1.txt";
+static PSI_TEST_DATA_2_PATH: &str = "./test_data/psi2.txt";
 
 fn single_party_task(enclave_info: &MesateeEnclaveInfo) -> Result<()> {
     println!("[+] This is a single-party task: echo");

@@ -35,7 +35,9 @@ register_ecall_handler!(
 #[handle_ecall]
 fn handle_run_functional_test(_args: &RunFunctionalTestInput) -> Result<RunFunctionalTestOutput> {
     let nfailed = rsgx_unit_tests!(
+        tests::protected_fs_test::read_write_large_file,
         tests::kms_test::api_create_key,
+        tests::kms_test::api_get_deleted_key,
         tests::tdfs_test::read_not_exist_file,
         tests::tdfs_test::save_and_read,
         tests::tdfs_test::check_file_permission,

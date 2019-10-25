@@ -16,7 +16,7 @@ default = []
 mesalock_sgx = ["sgx_tstd"]
 
 [dependencies]
-sgx_tstd  = { version = "1.0.8", features = ["net"], optional = true }
+sgx_tstd  = { version = "1.0.9", features = ["net"], optional = true }
 lazy_static = { version = "1.3", features = ["spin_no_std"] }
 toml = "0.5.1"
 serde_derive = "1.0.93"
