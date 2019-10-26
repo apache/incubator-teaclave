@@ -19,14 +19,22 @@ use std::prelude::v1::*;
 use crate::worker::{FunctionType, Worker, WorkerContext};
 use itertools::Itertools;
 use mesatee_core::{Error, ErrorKind, Result};
-use std::format;
+use sgx_types;
+use std::ffi::CString;
+use std::{format, vec};
 
 const MAXPYBUFLEN: usize = 1024;
 const MESAPY_ERROR_BUFFER_TOO_SHORT: i64 = -1i64;
 const MESAPY_EXEC_ERROR: i64 = -2i64;
 
 extern "C" {
-    fn mesapy_exec(input: *const u8, output: *mut u8, buflen: u64) -> i64;
+    fn mesapy_exec(
+        input: *const u8,
+        argc: usize,
+        argv: *const *const sgx_types::c_char,
+        output: *mut u8,
+        buflen: u64,
+    ) -> i64;
 }
 
 pub struct MesaPyWorker {
@@ -79,16 +87,32 @@ impl Worker for MesaPyWorker {
         Ok(())
     }
 
-    fn execute(&mut self, _context: WorkerContext) -> Result<String> {
+    fn execute(&mut self, context: WorkerContext) -> Result<String> {
         let input = self
             .input
             .take()
             .ok_or_else(|| Error::from(ErrorKind::InvalidInputError))?;
         let mut py_result = [0u8; MAXPYBUFLEN];
 
+        let context_vec = vec![context.context_id, context.context_token];
+        let cstr_argv: Vec<_> = context_vec
+            .iter()
+            .map(|arg| CString::new(arg.as_str()).unwrap())
+            .collect();
+
+        let mut p_argv: Vec<_> = cstr_argv
+            .iter() // do NOT into_iter()
+            .map(|arg| arg.as_ptr())
+            .collect();
+
+        p_argv.push(std::ptr::null());
+        let mesapy_exec_argc = context_vec.len();
+
         let result = unsafe {
             mesapy_exec(
                 input.py_script_vec.as_ptr(),
+                mesapy_exec_argc,
+                p_argv.as_ptr(),
                 &mut py_result as *mut _ as *mut u8,
                 MAXPYBUFLEN as u64,
             )
