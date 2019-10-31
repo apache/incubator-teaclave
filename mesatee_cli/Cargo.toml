@@ -16,7 +16,7 @@ exitfailure = "0.5"
 structopt = "0.2"
 serde_json = "1.0.39"
 log = "0.4.6"
-env_logger = "0.6.1"
+env_logger = "0.7.1"
 clap_flags = "0.2.0"
 tms_external_proto = { path = "../mesatee_services/tms/external/proto" }
 tdfs_external_proto = { path = "../mesatee_services/tdfs/external/proto" }
