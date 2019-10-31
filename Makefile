@@ -14,7 +14,7 @@
 
 SHELL = /bin/bash
 
-MESAPY_VERSION = 118324d6fcf7303bd9d76c3ed7f6009302177575
+MESAPY_VERSION = da84c8c65d400581a7c17aab06751eace42ef90a
 
 SGX_ENCLAVE_FEATURES = -Z package-features --features mesalock_sgx
 ifeq ($(DBG),) 	# Release build
@@ -75,7 +75,7 @@ SGX_MODULES := mesatee_services/kms mesatee_services/tdfs mesatee_services/tms \
 	mesatee_services/fns tests/functional_test
 SGX_LIBS :=
 UNIX_MODULES := integration_test private_join_and_compute quickstart \
-	image_resizing online_decrypt rsa_sign py_matrix_multiply kmeans \
+	image_resizing online_decrypt rsa_sign py_matrix_multiply py_file kmeans \
 	logistic_reg lin_reg svm gen_linear_model gaussian_mixture_model \
 	gaussian_processes dbscan neural_net naive_bayes gbdt mesatee_cli
 UNIX_LIBS := mesatee_sdk protected_fs_rs
