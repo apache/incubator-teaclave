@@ -1,4 +1,12 @@
-
+'''
+This script parses Cargo.toml to generate a list of package to be built for CMake
+lines ending with "# ignore" will be omitted
+e.g.
+members = [
+  "examples/neural_net",
+  "mesatee_sdk", # ignore
+]
+'''
 import os
 import re
 import sys
@@ -37,7 +45,7 @@ def parse_package_name(package_toml_path):
 
 
 if len(sys.argv) < 3:
-    err = f"[usage] python3 {sys.argv[0]} cargo_toml_path workspace_path"
+    err = "[usage] python {} cargo_toml_path workspace_path".format(sys.argv[0])
     raise ValueError(err)
 
 toml_path = sys.argv[1]
@@ -52,4 +60,4 @@ for m in members:
 
     packages.append(pkg_name)
 
-print(";".join(packages), end="")
+sys.stdout.write(";".join(packages))
