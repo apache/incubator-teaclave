@@ -1,5 +1,8 @@
 [workspace]
 
+# every member should take its own line,
+# and for those to exclude from cmake build, just append the '# ignore'
+# annotation suffix
 members = [
   "mesatee_config/config_gen",
   "tests/integration_test",
@@ -21,10 +24,10 @@ members = [
   "examples/neural_net",
   "examples/naive_bayes",
   "examples/gbdt",
-  "mesatee_sdk",
-  "mesatee_sdk/c_sdk",
-  "mesatee_utils/protected_fs_rs",
-  "mesatee_cli"
+  "mesatee_sdk", # ignore
+  "mesatee_sdk/c_sdk", # ignore
+  "mesatee_utils/protected_fs_rs", # ignore
+  "mesatee_cli" # ignore
 ]
 
 exclude = [

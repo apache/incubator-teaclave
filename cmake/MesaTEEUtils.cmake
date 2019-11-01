@@ -238,6 +238,31 @@ Please install the dependency and retry.")
     endforeach()
 endfunction()
 
+function(parse_cargo_packages packages_name)
+    set(options)
+    set(oneValueArgs CARGO_TOML_PATH)
+    set(multiValueArgs)
+
+    cmake_parse_arguments(MC "${options}" "${oneValueArgs}"
+        "${multiValueArgs}" ${ARGN})
+
+    set(_packages_name)
+    set(err)
+
+    execute_process(
+        COMMAND python3 ${PROJECT_SOURCE_DIR}/cmake/scripts/parse_cargo_packages.py 
+            ${MC_CARGO_TOML_PATH} ${PROJECT_SOURCE_DIR}
+        OUTPUT_VARIABLE _packages_name
+        ERROR_VARIABLE err
+    ) 
+
+    if(NOT (err STREQUAL ""))
+        message(FATAL_ERROR "failed to load packages: ${err}")
+    endif()
+
+    # level up the local variable to its parent scope
+    set(${packages_name} ${_packages_name} PARENT_SCOPE)
+endfunction()
 
 # SGXLIB_PKGS, SGXAPP_PKGS, UNIXLIB_PKGS, UNIXAPP_PKGS
 # SGXLIB_PKGS_P, SGXAPP_PKGS_P, UNIXLIB_PKGS_P, UNIXAPP_PKGS_P
