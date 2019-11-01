@@ -45,6 +45,7 @@ pub struct MesaPyWorker {
 }
 struct MesaPyWorkerWorkerInput {
     py_script_vec: Vec<u8>,
+    file_id_vec: Vec<String>,
 }
 impl MesaPyWorker {
     pub fn new() -> Self {
@@ -73,7 +74,7 @@ impl Worker for MesaPyWorker {
     fn prepare_input(
         &mut self,
         dynamic_input: Option<String>,
-        _file_ids: Vec<String>,
+        file_ids: Vec<String>,
     ) -> Result<()> {
         let payload = match dynamic_input {
             Some(value) => value,
@@ -83,7 +84,10 @@ impl Worker for MesaPyWorker {
         let mut py_script_vec =
             base64::decode(&payload).or_else(|_| Err(Error::from(ErrorKind::InvalidInputError)))?;
         py_script_vec.push(0u8);
-        self.input = Some(MesaPyWorkerWorkerInput { py_script_vec });
+        self.input = Some(MesaPyWorkerWorkerInput {
+            py_script_vec,
+            file_id_vec: file_ids,
+        });
         Ok(())
     }
 
@@ -94,7 +98,8 @@ impl Worker for MesaPyWorker {
             .ok_or_else(|| Error::from(ErrorKind::InvalidInputError))?;
         let mut py_result = [0u8; MAXPYBUFLEN];
 
-        let context_vec = vec![context.context_id, context.context_token];
+        let mut context_vec = vec![context.context_id, context.context_token];
+        context_vec.extend_from_slice(&input.file_id_vec);
         let cstr_argv: Vec<_> = context_vec
             .iter()
             .map(|arg| CString::new(arg.as_str()).unwrap())
