@@ -12,13 +12,13 @@ SET_STRVAR_FROM_ENV_OR(SGX_SDK "/opt/sgxsdk" "Path of SGX SDK")
 SET_STRVAR_FROM_ENV_OR(SGX_MODE "HW" "Mode of SGX, HW or SW")
 SET_STRVAR_FROM_ENV_OR(RUSTFLAGS "" "Rust flags")
 SET_STRVAR_FROM_ENV_OR(MESATEE_CMAKE_DBG "" "set to turn on debug message for cmake")
-set(MESAPY_VERSION 118324d6fcf7303bd9d76c3ed7f6009302177575 CACHE STRING "mesapy version")
+set(MESAPY_VERSION be21a3fa089832b27b817ef263b79a79ef3c8a6f CACHE STRING "mesapy version")
 option(COV OFF "Turn on coverage or not")
 # ======= VARIABLES FOR CMAKE -D{VAR}=VAL CONFIGURATION END =======
 
 # =============== VARIABLES FOR MANUAL CHANGE BEGIN ===============
 set(UNIX_APPS config_gen integration_test private_join_and_compute quickstart
- image_resizing online_decrypt rsa_sign py_matrix_multiply kmeans
+ image_resizing online_decrypt rsa_sign py_matrix_multiply py_file kmeans
 logistic_reg lin_reg svm gen_linear_model gaussian_mixture_model gaussian_processes
 dbscan neural_net naive_bayes gbdt mesatee_cli)
 set(UNIX_LIBS mesatee_sdk protected_fs_rs)
