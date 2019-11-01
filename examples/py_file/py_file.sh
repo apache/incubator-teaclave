@@ -1,7 +1,7 @@
 #!/bin/bash
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 BIN_DIR=$SCRIPT_DIR/../../bin
-BIN=./py_matrix_multiply
+BIN=./py_file
 cd $BIN_DIR
 
 PY_SCRIPT=$SCRIPT_DIR/payload.py

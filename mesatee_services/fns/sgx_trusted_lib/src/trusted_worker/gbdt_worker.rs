@@ -16,9 +16,9 @@ use mesatee_core::{Error, ErrorKind, Result};
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use gbdt_sgx::config::Config;
-use gbdt_sgx::decision_tree::Data;
-use gbdt_sgx::gradient_boost::GBDT;
+use gbdt::config::Config;
+use gbdt::decision_tree::Data;
+use gbdt::gradient_boost::GBDT;
 use serde_derive::Deserialize;
 use serde_json;
 

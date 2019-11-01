@@ -14,7 +14,6 @@
 
 #![cfg_attr(feature = "mesalock_sgx", no_std)]
 #[cfg(feature = "mesalock_sgx")]
-#[macro_use]
 extern crate sgx_tstd as std;
 
 mod deps;

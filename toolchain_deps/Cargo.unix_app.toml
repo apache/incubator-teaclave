@@ -12,6 +12,7 @@ members = [
   "examples/online_decrypt",
   "examples/rsa_sign",
   "examples/py_matrix_multiply",
+  "examples/py_file",
   "examples/kmeans",
   "examples/logistic_reg",
   "examples/lin_reg",

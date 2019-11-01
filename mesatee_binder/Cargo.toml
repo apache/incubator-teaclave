@@ -19,7 +19,7 @@ sgx_urts = "1.0.9"
 mesatee_core = { version = "0.1.0" }
 mesatee_config = { path = "../mesatee_config" }
 log = { version = "0.4.6" }
-env_logger = "0.6.1"
+env_logger = "0.7.1"
 
 serde        = "1.0.92"
 serde_derive = "1.0.92"

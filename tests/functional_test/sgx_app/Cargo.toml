@@ -18,7 +18,7 @@ mesatee_config = { version = "0.1.0" }
 mesatee_binder = { version = "0.1.0" }
 ctrlc = "3.1.2"
 log = { version = "0.4.6" }
-env_logger = "0.6.1"
+env_logger = "0.7.1"
 tdfs_external_client = { path = "../../../mesatee_services/tdfs/external/client" }
 tms_external_client = { path = "../../../mesatee_services/tms/external/client" }
 tms_external_proto = { path = "../../../mesatee_services/tms/external/proto" }
