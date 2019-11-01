@@ -42,7 +42,7 @@ How](mutual_attestation.md), auditors' credentials should be configured in the
 ## Build Modes
 
 After fulfill all requirements specified in [build.toml](../build.toml), you
-can start to build by using either ``cmake`` or ``make``.
+can start to build by using either ``cmake`` or ``make`` (deprecated).
 
 ### The ``cmake`` Way
 
@@ -58,7 +58,7 @@ The cmake options to change build modes:
 `-DCMAKE_BUILD_TYPE=<DEBUG|RELEASE>` build in debug/release mode  
 `-DCMAKE_BUILD_TYPE=DEBUG -DCOV=1` debug with gcov enabled
 
-### The ``make`` Way
+### The ``make`` Way (deprecated)
 
 ```
 . ./environment # unlike cmake, environment variables need to be sourced for makefile
@@ -71,11 +71,11 @@ make VERBOSE=1 # enable verbose build output
 ## Enabling Simulation Mode
 
 By default, the outcome is targeting a platform with SGX hardware.  In order to
-switch to SGX simulation target, please set ```-DSGX_MODE=SW``` when running ```cmake```, or ```export SGX_MODE=SW``` for ```make```
+switch to SGX simulation target, please set ```-DSGX_MODE=SW``` when running ```cmake```, or ```export SGX_MODE=SW``` for ```make``` (deprecated)
 
 ## Other Environment Variables
 
-For ```make```, sourcing environment variables from [environment](../environment) is required; for ```cmake```, all needed environment variables are generated and configured in <BUILD_DIR>/environment.
+For ```make``` (deprecated), sourcing environment variables from [environment](../environment) is required; for ```cmake```, all needed environment variables are generated and configured in <BUILD_DIR>/environment.
 When manually running the executables, sourcing the corresponding environment script can
 help set the variables. Below is the description for the environment variables:
 
