@@ -27,4 +27,7 @@ assert_eq() {
     echo "$1"
   fi
 }
-assert_eq "`$BIN $K_NUM $FEATURES_NUM $TEST_DATA_PATH | grep -Eo '[0-9]' | sort | uniq -c | sort -nr | awk '{print $1}' 2>&1`" "`cat $EXPECTED_RESULT`"
+
+# Since k-means randomly select initial points, the classification result is not
+# stable. Uncomment this line if you need to assert the result.
+# assert_eq "`$BIN $K_NUM $FEATURES_NUM $TEST_DATA_PATH | grep -Eo '[0-9]' | sort | uniq -c | sort -nr | awk '{print $1}' 2>&1`" "`cat $EXPECTED_RESULT`"
