@@ -250,7 +250,7 @@ function(parse_cargo_packages packages_name)
     set(err)
 
     execute_process(
-        COMMAND python3 ${PROJECT_SOURCE_DIR}/cmake/scripts/parse_cargo_packages.py 
+        COMMAND python ${PROJECT_SOURCE_DIR}/cmake/scripts/parse_cargo_packages.py
             ${MC_CARGO_TOML_PATH} ${PROJECT_SOURCE_DIR}
         OUTPUT_VARIABLE _packages_name
         ERROR_VARIABLE err
