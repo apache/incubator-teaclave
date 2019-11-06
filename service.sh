@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source ./environment
+source ./environment.deprecated
 
 get_stdout_file() {
     echo -n "/tmp/$1.log"
