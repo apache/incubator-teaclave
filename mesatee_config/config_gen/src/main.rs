@@ -110,7 +110,7 @@ fn generate_config_rs(
         audited_enclave_pubkey_b: {},
         audited_enclave_pubkey_c: {},
 
-        max_msg_size: {},
+        max_msg_size: {:#x},
     }};
 
 }}
