@@ -48,15 +48,36 @@ can start to build by using either ``cmake`` or ``make`` (deprecated).
 
 ```
 cd <MESATEE_PROJECT_ROOT>
-mkdir <BUILD_DIR> && cd <BUILD_DIR>
-cmake -DSGX_SDK=<SGX_SDK_PATH> -DSGX_MODE=HW .. # build with release mode
-make VERBOSE=1 # enable verbose build output
+mkdir build && cd build
+cmake -DSGX_SDK=<SGX_SDK_PATH> ..
+make
+
+# Other Useful Make Targets:
+# print all make targets
+make help
+# separately make sgxlib-<module> and sgxapp-<module>
+# equal to make <module>, e.g. make kms
+make sgxlib-kms && make sgxapp-kms
+# print verbose build commands
+make VERBOSE=1
+# run cargo clippy for all targets
+make clippy
+# run cargo clippy for a single target
+make CLP=1 <target_name>
+# mute cargo
+make MUTE_CARGO=1
 ```
 
-The cmake options to change build modes:  
-`-DSGX_MODE=<HW|SW>` build in hardware SGX mode or simulation SGX mode  
-`-DCMAKE_BUILD_TYPE=<DEBUG|RELEASE>` build in debug/release mode  
-`-DCMAKE_BUILD_TYPE=DEBUG -DCOV=1` debug with gcov enabled
+Available cmake options:  
+`-DSGX_MODE=<HW|SW, default HW>` build in hardware SGX mode or simulation SGX mode  
+`-DSGX_SDK=<SGX_SDK_PATH, default /opt/sgxsdk>` config path of Intel SGX SDK  
+`-DCMAKE_BUILD_TYPE=<RELEASE|DEBUG, default RELEASE>` build in debug/release mode  
+`-DCMAKE_BUILD_TYPE=DEBUG -DCOV=1`  debug with gcov enabled  
+If SGX_MODE/SGX_SDK are not given on cmake command line, they will be read from
+1. Environment Variable
+2. Default Value
+
+
 
 ### The ``make`` Way (deprecated)
 
@@ -75,7 +96,8 @@ switch to SGX simulation target, please set ```-DSGX_MODE=SW``` when running ```
 
 ## Other Environment Variables
 
-For ```make``` (deprecated), sourcing environment variables from [environment](../environment) is required; for ```cmake```, all needed environment variables are generated and configured in <BUILD_DIR>/environment.
+For ```cmake```, all needed environment variables are auto-generated in <BUILD_DIR>/environment;
+for ```make``` (deprecated), sourcing environment variables from [environment](../environment) is required.
 When manually running the executables, sourcing the corresponding environment script can
 help set the variables. Below is the description for the environment variables:
 
