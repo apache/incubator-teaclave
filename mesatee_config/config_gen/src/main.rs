@@ -136,7 +136,7 @@ fn get_string<P: AsRef<Path>>(
 ) -> Result<String, ExitFailure> {
     match config_value {
         ConfigValue::Simple(ref s) => Ok(s.to_string()),
-        ConfigValue::Numerical(ref s) => {
+        ConfigValue::Numerical(_) => {
             Err(failure::err_msg("Please specify a valid string".to_string()).into())
         }
         ConfigValue::Full(ref complex) => match &complex.path {
