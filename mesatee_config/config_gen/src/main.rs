@@ -31,12 +31,14 @@ pub struct MesateeBuildToml {
     pub ra_config: BTreeMap<String, ConfigValue>,
     pub client_config: BTreeMap<String, ConfigValue>,
     pub audited_enclave_config: BTreeMap<String, ConfigValue>,
+    pub rpc_config: BTreeMap<String, ConfigValue>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
 pub enum ConfigValue {
     Simple(String),
+    Numerical(u64),
     Full(ConfigComplex),
 }
 
@@ -77,6 +79,10 @@ impl MesateeBuildToml {
             return Err(failure::err_msg("[audited_enclave_config]: missing `pubkey_c`").into());
         }
 
+        let rpc_config = &self.rpc_config;
+        if !rpc_config.contains_key("max_msg_size") {
+            return Err(failure::err_msg("[rpc_config]: missing `max_msg_size`").into());
+        }
         Ok(())
     }
 }
@@ -103,7 +109,10 @@ fn generate_config_rs(
         audited_enclave_pubkey_a: {},
         audited_enclave_pubkey_b: {},
         audited_enclave_pubkey_c: {},
+
+        max_msg_size: {},
     }};
+
 }}
 "#,
         get_string(&cfg.ra_config["mr_signer"], &base_dir)?,
@@ -114,6 +123,7 @@ fn generate_config_rs(
         get_string(&cfg.audited_enclave_config["pubkey_a"], &base_dir)?,
         get_string(&cfg.audited_enclave_config["pubkey_b"], &base_dir)?,
         get_string(&cfg.audited_enclave_config["pubkey_c"], &base_dir)?,
+        get_numeric(&cfg.rpc_config["max_msg_size"])?
     );
     let _ = writer.write(code.as_bytes());
     writer.flush()?;
@@ -126,6 +136,7 @@ fn get_string<P: AsRef<Path>>(
 ) -> Result<String, ExitFailure> {
     match config_value {
         ConfigValue::Simple(ref s) => Ok(s.to_string()),
+        ConfigValue::Numerical(ref s) => Ok(s.to_string()),
         ConfigValue::Full(ref complex) => match &complex.path {
             Some(ref p) => {
                 let path = base_dir.as_ref().to_path_buf().join(p);
@@ -134,6 +145,13 @@ fn get_string<P: AsRef<Path>>(
             }
             None => Err(failure::err_msg("Please specify a valid path".to_string()).into()),
         },
+    }
+}
+
+fn get_numeric(config_value: &ConfigValue) -> Result<u64, ExitFailure> {
+    match config_value {
+        ConfigValue::Numerical(s) => Ok(*s),
+        _ => Err(failure::err_msg("Please specify a valid number".to_string()).into()),
     }
 }
 

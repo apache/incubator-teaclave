@@ -16,3 +16,8 @@ client_private_key = { path = "cert/client.pkcs8" }
 pubkey_a = { path = "auditors/godzilla/godzilla.public.der" }
 pubkey_b = { path = "auditors/optimus_prime/optimus_prime.public.der" }
 pubkey_c = { path = "auditors/albus_dumbledore/albus_dumbledore.public.der" }
+
+# This section configures the rpc
+# This is a required section.
+[rpc_config]
+max_msg_size = 409600 
