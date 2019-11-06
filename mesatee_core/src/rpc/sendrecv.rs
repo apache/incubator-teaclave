@@ -20,11 +20,11 @@ use std::io::BufReader;
 use std::io::{Read, Write};
 use std::mem::transmute;
 
-use crate::{Result, Error, ErrorKind};
+use crate::{Error, ErrorKind, Result};
 
 // TODO: configuration in config.toml
 // message size over MAX_MSG_SIZE will cause RPC error
-const MAX_MSG_SIZE: u64 = 409600;
+const MAX_MSG_SIZE: u64 = 0x64000;
 
 fn get_send_vec(mut to_send: &mut Vec<u8>) -> Vec<u8> {
     let buf_len: u64 = to_send.len() as u64;
