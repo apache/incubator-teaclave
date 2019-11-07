@@ -1,6 +1,9 @@
 #!/bin/bash
-
-source ./environment.deprecated
+if [ -z "${MESATEE_BIN}" ]; then
+    SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+    MESATEE_BIN=${SCRIPT_DIR}/bin
+    echo "env var MESATEE_BIN is not set, use ${MESATEE_BIN}"
+fi
 
 get_stdout_file() {
     echo -n "/tmp/$1.log"
@@ -28,7 +31,7 @@ case "$1" in
             exit 1
         fi
     done
-    cd $MESATEE_CFG_DIR/bin
+    cd $MESATEE_BIN
     for name in tms tdfs fns kms ; do
         echo "Starting $name"
         stdout_log=`get_stdout_file $name`
