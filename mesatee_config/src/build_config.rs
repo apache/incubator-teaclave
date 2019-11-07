@@ -25,6 +25,8 @@ pub struct MesateeSecurityConstants {
     pub audited_enclave_pubkey_a: &'static [u8],
     pub audited_enclave_pubkey_b: &'static [u8],
     pub audited_enclave_pubkey_c: &'static [u8],
+
+    pub max_msg_size: u64,
 }
 
 include!(concat!(env!("OUT_DIR"), "/gen_build_config.rs"));
