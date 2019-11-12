@@ -39,6 +39,10 @@ improvements. Details are discussed
 	  dedicated project called
 [MesaPy](https://github.com/mesalock-linux/mesapy). In this specific example,
 we demonstrate how to invoke the MesaPy engine integrated into MesaTEE.
+* [py_logistic_reg](py_logistic_reg)
+	- MesaTEE supports secondary AI development all in Python with the help of 
+	  MesaPy Engine. Here is an example about logistic regression model 
+	  including training and prediction.
 * [DBSCAN](DBSCAN)
 	- Provides an implementaton of DBSCAN clustering.
 * [Generalized Linear Model](GeneralizedLinearModel)
