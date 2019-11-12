@@ -12,15 +12,11 @@ SET_STRVAR_FROM_ENV_OR(SGX_SDK "/opt/sgxsdk" "Path of SGX SDK")
 SET_STRVAR_FROM_ENV_OR(SGX_MODE "HW" "Mode of SGX, HW or SW")
 SET_STRVAR_FROM_ENV_OR(RUSTFLAGS "" "Rust flags")
 SET_STRVAR_FROM_ENV_OR(MESATEE_CMAKE_DBG "" "set to turn on debug message for cmake")
-set(MESAPY_VERSION 544d70a041643eed8a0f362e9746facb254381af CACHE STRING "mesapy version")
+set(MESAPY_VERSION be21a3fa089832b27b817ef263b79a79ef3c8a6f CACHE STRING "mesapy version")
 option(COV OFF "Turn on coverage or not")
 # ======= VARIABLES FOR CMAKE -D{VAR}=VAL CONFIGURATION END =======
 
 # =============== VARIABLES FOR MANUAL CHANGE BEGIN ===============
-set(UNIX_APPS config_gen integration_test private_join_and_compute ml_predict quickstart
- image_resizing online_decrypt rsa_sign py_matrix_multiply kmeans
-logistic_reg lin_reg svm gen_linear_model gaussian_mixture_model gaussian_processes
-dbscan neural_net naive_bayes mesatee_cli)
 set(UNIX_LIBS mesatee_sdk protected_fs_rs)
 # need relative path for SGX_MODULE_PATHS to find Enclave.config.xml
 set(SGX_MODULE_PATHS mesatee_services/kms mesatee_services/tdfs mesatee_services/tms
@@ -30,6 +26,11 @@ set(SGX_MODULE_PATHS mesatee_services/kms mesatee_services/tdfs mesatee_services
 # ================ VARIABLES FOR MANUAL CHANGE END ================
 
 # AUTO-GENERATE VARS
+## parse the unix apps to build
+parse_cargo_packages(UNIX_APPS
+    CARGO_TOML_PATH ${PROJECT_SOURCE_DIR}/toolchain_deps/Cargo.unix_app.toml
+)
+
 include(MesaTEEGenVars)
 
 # ========== CONFIG-TIME CHECKS AND INITIALIZATIONS BEGIN =========

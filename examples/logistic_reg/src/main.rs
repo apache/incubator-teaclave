@@ -18,6 +18,13 @@ use serde_derive::Serialize;
 use serde_json;
 use std::net::SocketAddr;
 use std::{env, fs};
+//use std::fs;
+
+static FUNCTION_TRAIN_NAME: &str = "logisticreg_train";
+static FUNCTION_PREDICT_NAME: &str = "logisticreg_predict";
+
+static USER_ID: &str = "uid1";
+static USER_TOKEN: &str = "token1";
 
 lazy_static! {
     static ref TMS_ADDR: SocketAddr = "127.0.0.1:5554".parse().unwrap();
@@ -25,21 +32,21 @@ lazy_static! {
 }
 
 #[derive(Serialize)]
-pub(crate) struct LogisticRegPayload {
-    input_model_columns: usize,
-    input_model_data: String,
-    target_model_data: String,
-    test_data: String,
+pub(crate) struct LogisticRegTrainPayload {
+    train_alg_alpha: f64,
+    train_alg_iters: usize,
 }
 
-fn print_usage() {
+fn print_logisticreg_train_usage() {
     let msg = "
-    ./logistic input_model_data_columns input_model_data_path target_model_data_path test_data_path 
-    input_model format:
+    ./logisticreg train logisticreg.train.alg.alpha logisticreg.train.alg.iters logisticreg.train.data.path logisticreg.target.data.path model_file_id_saving_path
+    logisticreg.train.alg_alpha : f64, such as 0.3
+    logisticreg.train.alg_iters : usize, such as 100 
+    logisticreg.train.data format:
         f32,f32,f32,f32 ...
         f32,f32,f32,f32 ...
         ...
-    target_data format:
+    logisticreg.target.data format:
         1.
         0.
         1.
@@ -47,10 +54,25 @@ fn print_usage() {
         0.
         1.
         ....
-    test_data format:
-        f32,f32,f32,f32 ...
     ";
-    println!("usage: \n{}", msg);
+    println!("logisticreg_train usage: \n{}", msg);
+}
+
+fn print_logisticreg_predict_usage() {
+    let msg = "
+    ./logisticreg predict logisticreg.predict.model.file.id logisticreg.predict.test.data.path predict_result_saving_path
+    1.use logisticreg train to get the logisticreg.predict.mode.file.id file,then 
+    2.logisticreg.predict.test.data format:
+        f32,f32,f32,f32 ...
+        f32,f32,f32,f32 ...
+        ...
+    ";
+    println!("logisticreg_predict usage: \n{}", msg);
+}
+
+fn print_usage() {
+    print_logisticreg_train_usage();
+    print_logisticreg_predict_usage();
 }
 
 fn main() {
@@ -69,46 +91,101 @@ fn main() {
         ),
     ];
 
-    let args: Vec<String> = env::args().collect();
-    if args.len() != 5 {
+    let enclave_info_file_path = "../out/enclave_info.txt";
+
+    let mesatee_enclave_info = MesateeEnclaveInfo::load(auditors, enclave_info_file_path).unwrap();
+    let args_string: Vec<String> = env::args().collect();
+    let args: Vec<&str> = args_string.iter().map(|s| s.as_str()).collect();
+    if args.len() < 2 {
         print_usage();
         return;
     }
 
-    let columns = args[1].parse().unwrap();
-    let input_model_data_path = &args[2];
-    let target_model_data_path = &args[3];
-    let test_date_path = &args[4];
+    let action = args[1];
+    match action {
+        "train" => {
+            if args.len() != 7 {
+                print_logisticreg_train_usage();
+                return;
+            }
 
-    let input_model_data_bytes = fs::read(&input_model_data_path).unwrap();
-    let input_model_data_str = String::from_utf8(input_model_data_bytes).unwrap();
+            logisticreg_train(
+                &mesatee_enclave_info,
+                args[2].parse().unwrap(), // logisticreg.train.alg.alpha
+                args[3].parse().unwrap(), // logisticreg.train.alg.iters
+                args[4],                  // logisticreg.train.data.path
+                args[5],                  // logisticreg.target.data.path
+                args[6],                  // model_file_id_saving_path
+            );
+        }
+        "predict" => {
+            if args.len() != 5 {
+                print_logisticreg_predict_usage();
+                return;
+            }
 
-    let target_model_data_bytes = fs::read(&target_model_data_path).unwrap();
-    let target_model_data_str = String::from_utf8(target_model_data_bytes).unwrap();
+            logisticreg_predict(
+                &mesatee_enclave_info,
+                args[2], // logisticreg.predict.model.file.id
+                args[3], // logisticreg.predict.test.data.path
+                args[4], // predict_result_saving_path
+            );
+        }
+        _ => {
+            print_usage();
+        }
+    }
+}
 
-    let test_data_bytes = fs::read(&test_date_path).unwrap();
-    let test_data_str = String::from_utf8(test_data_bytes).unwrap();
+fn logisticreg_train(
+    info: &MesateeEnclaveInfo,
+    alg_alpha: f64,
+    alg_iters: usize,
+    train_data_path: &str,
+    target_data_path: &str,
+    model_file_id_saving_path: &str,
+) {
+    let mesatee = Mesatee::new(info, USER_ID, USER_TOKEN, *TMS_ADDR, *TDFS_ADDR).unwrap();
+    // upload train_data and target_data to mesatee's tdfs
+    let train_file_id = mesatee.upload_file(train_data_path).unwrap();
+    let target_file_id = mesatee.upload_file(target_data_path).unwrap();
 
-    let input_payload = LogisticRegPayload {
-        input_model_columns: columns,
-        input_model_data: input_model_data_str,
-        target_model_data: target_model_data_str,
-        test_data: test_data_str,
+    let file_ids: [&str; 2] = [train_file_id.as_str(), target_file_id.as_str()];
+
+    let task = mesatee
+        .create_task_with_files(FUNCTION_TRAIN_NAME, &file_ids)
+        .unwrap();
+
+    let input_payload = LogisticRegTrainPayload {
+        train_alg_alpha: alg_alpha,
+        train_alg_iters: alg_iters,
     };
 
     let input_string = serde_json::to_string(&input_payload).unwrap();
-    let enclave_info_file_path = "../out/enclave_info.txt";
-    let mesatee_enclave_info = MesateeEnclaveInfo::load(auditors, enclave_info_file_path).unwrap();
-    let mesatee = Mesatee::new(
-        &mesatee_enclave_info,
-        "uid1",
-        "token1",
-        *TMS_ADDR,
-        *TDFS_ADDR,
-    )
-    .unwrap();
-    let task = mesatee.create_task("logistic_reg").unwrap();
-    let result = task.invoke_with_payload(&input_string).unwrap();
+    let model_file_id = task.invoke_with_payload(&input_string).unwrap();
 
-    println!("result:{}", result)
+    println!("the model file id: \n{}", model_file_id);
+    fs::write(model_file_id_saving_path, model_file_id.as_bytes()).unwrap();
+}
+
+fn logisticreg_predict(
+    info: &MesateeEnclaveInfo,
+    model_file_id: &str,
+    test_data_path: &str,
+    result_saving_path: &str,
+) {
+    let mesatee = Mesatee::new(info, USER_ID, USER_TOKEN, *TMS_ADDR, *TDFS_ADDR).unwrap();
+    // upload train_data and target_data to mesatee's tdfs
+    // let model_file_id = mesatee.upload_file(model_data_path).unwrap();
+    let test_file_id = mesatee.upload_file(test_data_path).unwrap();
+
+    let file_ids: [&str; 2] = [model_file_id, test_file_id.as_str()];
+
+    let task = mesatee
+        .create_task_with_files(FUNCTION_PREDICT_NAME, &file_ids)
+        .unwrap();
+    let result = task.invoke().unwrap();
+
+    println!("result:{}", result);
+    fs::write(result_saving_path, result.as_bytes()).unwrap();
 }

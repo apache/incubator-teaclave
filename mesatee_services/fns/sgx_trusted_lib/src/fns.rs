@@ -37,7 +37,10 @@ fn invoke_worker(
     // New worker context
     let worker_context = running_task.get_worker_context();
     let payload = request.payload.clone();
-    worker.prepare_input(payload, file_list)?;
+    if let Err(err) = worker.prepare_input(payload, file_list) {
+        let _ = running_task.finish();
+        return Err(err);
+    }
     let result = worker.execute(worker_context);
     match result {
         Ok(output) => {

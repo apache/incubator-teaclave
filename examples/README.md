@@ -14,7 +14,7 @@ coming, MesaTEE function services are immediately triggered. For example, you
 can use MesaTEE to thumbnail images, transcode videos, index files, process
 logs, validate content, and aggregate and filter data in real-time. In this
 specific example, we demonstrate image resizing.
-* [ml_predict](ml_predict)
+* [gbdt](gbdt)
 	- MesaTEE also supports a variety of big data analyses and machine learning
 	  algorithms, such as GBDT, Linear Regression, as well as neural networks.
 In this specific example, we demonstrate how to utilize a GBDT model to perform

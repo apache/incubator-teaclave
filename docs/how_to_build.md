@@ -6,7 +6,7 @@ We only support Linux environment for now. Ubuntu 16.04/18.04 are prefered.  If
 you want to build in native environment, please have nightly Rust and the
 latest [Intel SGX SDK](https://01.org/intel-software-guard-extensions/downloads) installed.
 As of writing, the latest Intel SGX SDK version is
-[2.5.101](https://download.01.org/intel-sgx/linux-2.5/ubuntu18.04-server), and
+[2.6.100](https://download.01.org/intel-sgx/linux-2.6/ubuntu18.04-server/), and
 our testing is based on that. Detailed instructions can be found in our
 [Dockerfile](https://github.com/mesalock-linux/mesatee/blob/master/Dockerfile).
 Or, you can directly build in the [docker image](https://hub.docker.com/r/mesalocklinux/build-mesatee).
@@ -42,23 +42,44 @@ How](mutual_attestation.md), auditors' credentials should be configured in the
 ## Build Modes
 
 After fulfill all requirements specified in [build.toml](../build.toml), you
-can start to build by using either ``cmake`` or ``make``.
+can start to build by using either ``cmake`` or ``make`` (deprecated).
 
 ### The ``cmake`` Way
 
 ```
 cd <MESATEE_PROJECT_ROOT>
-mkdir <BUILD_DIR> && cd <BUILD_DIR>
-cmake -DSGX_SDK=<SGX_SDK_PATH> -DSGX_MODE=HW .. # build with release mode
-make VERBOSE=1 # enable verbose build output
+mkdir build && cd build
+cmake -DSGX_SDK=<SGX_SDK_PATH> ..
+make
+
+# Other Useful Make Targets:
+# print all make targets
+make help
+# separately make sgxlib-<module> and sgxapp-<module>
+# equal to make <module>, e.g. make kms
+make sgxlib-kms && make sgxapp-kms
+# print verbose build commands
+make VERBOSE=1
+# run cargo clippy for all targets
+make clippy
+# run cargo clippy for a single target
+make CLP=1 <target_name>
+# mute cargo
+make MUTE_CARGO=1
 ```
 
-The cmake options to change build modes:  
-`-DSGX_MODE=<HW|SW>` build in hardware SGX mode or simulation SGX mode  
-`-DCMAKE_BUILD_TYPE=<DEBUG|RELEASE>` build in debug/release mode  
-`-DCMAKE_BUILD_TYPE=DEBUG -DCOV=1` debug with gcov enabled
+Available cmake options:  
+`-DSGX_MODE=<HW|SW, default HW>` build in hardware SGX mode or simulation SGX mode  
+`-DSGX_SDK=<SGX_SDK_PATH, default /opt/sgxsdk>` config path of Intel SGX SDK  
+`-DCMAKE_BUILD_TYPE=<RELEASE|DEBUG, default RELEASE>` build in debug/release mode  
+`-DCMAKE_BUILD_TYPE=DEBUG -DCOV=1`  debug with gcov enabled  
+If SGX_MODE/SGX_SDK are not given on cmake command line, they will be read from
+1. Environment Variable
+2. Default Value
 
-### The ``make`` Way
+
+
+### The ``make`` Way (deprecated)
 
 ```
 . ./environment # unlike cmake, environment variables need to be sourced for makefile
@@ -71,11 +92,12 @@ make VERBOSE=1 # enable verbose build output
 ## Enabling Simulation Mode
 
 By default, the outcome is targeting a platform with SGX hardware.  In order to
-switch to SGX simulation target, please set ```-DSGX_MODE=SW``` when running ```cmake```, or ```export SGX_MODE=SW``` for ```make```
+switch to SGX simulation target, please set ```-DSGX_MODE=SW``` when running ```cmake```, or ```export SGX_MODE=SW``` for ```make``` (deprecated)
 
 ## Other Environment Variables
 
-For ```make```, sourcing environment variables from [environment](../environment) is required; for ```cmake```, all needed environment variables are generated and configured in <BUILD_DIR>/environment.
+For ```cmake```, all needed environment variables are auto-generated in <BUILD_DIR>/environment;
+for ```make``` (deprecated), sourcing environment variables from [environment](../environment) is required.
 When manually running the executables, sourcing the corresponding environment script can
 help set the variables. Below is the description for the environment variables:
 

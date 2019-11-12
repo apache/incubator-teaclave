@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use super::common_setup::{setup_tdfs_external_client, USER_ERR, USER_ONE, USER_THREE, USER_TWO};
+use super::common_setup::{
+    setup_tdfs_external_client, USER_ERR, USER_FAKE, USER_ONE, USER_THREE, USER_TWO,
+};
+use super::fns_test;
 use std::fs;
 
 pub fn read_not_exist_file() {
@@ -55,4 +58,63 @@ pub fn save_and_read() {
     let mut client = setup_tdfs_external_client(&USER_THREE);
     let read_err = client.read_file("fake_file_without_key");
     assert!(read_err.is_err());
+}
+
+pub fn delete_file_api() {
+    trace!("Test tdfs: delete a file");
+    let mut client = setup_tdfs_external_client(&USER_THREE);
+    let list = client.request_list_file().unwrap().list;
+    assert_eq!(list.len(), 4);
+    println!("{:?}", list);
+
+    let mut client = setup_tdfs_external_client(&USER_FAKE);
+    let list = client.request_list_file().unwrap().list;
+    assert_eq!(list.len(), 2);
+
+    let mut client = setup_tdfs_external_client(&USER_THREE);
+    let resp = client.request_del_file("fake_file_to_be_deleted");
+    let path = resp.unwrap().file_info.access_path;
+    assert!(!path.is_empty());
+    let list = client.request_list_file().unwrap().list;
+    assert_eq!(list.len(), 3);
+
+    let mut client = setup_tdfs_external_client(&USER_FAKE);
+    assert!(!path.is_empty());
+    let list = client.request_list_file().unwrap().list;
+    assert_eq!(list.len(), 1);
+}
+
+pub fn list_file_api() {
+    trace!("Test tdfs: list files");
+    let mut client = setup_tdfs_external_client(&USER_THREE);
+    let mut list = client.request_list_file().unwrap().list;
+    list.sort_by(|a, b| a.cmp(b));
+    assert_eq!(list.len(), 4);
+    assert_eq!(list[0], "fake_file_record");
+    assert_eq!(list[1], "fake_file_to_be_deleted");
+    assert_eq!(list[2], "fake_file_with_collaborator");
+    assert_eq!(list[3], "fake_file_without_key");
+
+    let mut client = setup_tdfs_external_client(&USER_FAKE);
+    let mut list = client.request_list_file().unwrap().list;
+    list.sort_by(|a, b| a.cmp(b));
+    assert_eq!(list.len(), 2);
+    assert_eq!(list[0], "fake_file_to_be_deleted");
+    assert_eq!(list[1], "fake_file_with_collaborator");
+
+    let mut client = setup_tdfs_external_client(&USER_ONE);
+    let list = client.request_list_file().unwrap().list;
+    let user_one_file_count = list.len();
+    let mut client = setup_tdfs_external_client(&USER_TWO);
+    let list = client.request_list_file().unwrap().list;
+    let user_two_file_count = list.len();
+
+    fns_test::api_invoke_multiparty_task();
+
+    let mut client = setup_tdfs_external_client(&USER_ONE);
+    let list = client.request_list_file().unwrap().list;
+    assert_eq!(user_one_file_count + 3, list.len());
+    let mut client = setup_tdfs_external_client(&USER_TWO);
+    let list = client.request_list_file().unwrap().list;
+    assert_eq!(user_two_file_count + 3, list.len());
 }

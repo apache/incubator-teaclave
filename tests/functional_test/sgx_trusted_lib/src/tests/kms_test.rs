@@ -25,3 +25,10 @@ pub fn api_create_key() {
 
     assert_eq!(key_config, resp.config);
 }
+
+pub fn api_get_deleted_key() {
+    trace!("Test kms: api get deleted key.");
+    let mut client = setup_kms_internal_client();
+    let resp = client.request_get_key("fake_kms_record_to_be_deleted");
+    assert!(resp.is_err());
+}

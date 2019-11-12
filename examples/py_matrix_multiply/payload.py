@@ -1,7 +1,8 @@
 from ffi import ffi
 import _numpypy as np
 
-def entrypoint():
+def entrypoint(argv):
+    context_id, context_token = argv
     x = get_matrix(10)
     y = get_matrix(10)
     z = x.dot(y)

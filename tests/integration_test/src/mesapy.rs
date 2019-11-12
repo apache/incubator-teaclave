@@ -19,7 +19,7 @@ pub fn test_mesapy() {
     trace!(">>>>> mesapy");
     let request = base64::encode(
         "
-def entrypoint():
+def entrypoint(argv):
     print('Hello Python World!')
     ",
     );

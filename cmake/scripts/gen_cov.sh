@@ -16,7 +16,6 @@ find . \( -name "*.gcda" -and \( ! -name "sgx_cov*" \
     -and ! -name "kms*" -and ! -name "fns*" \
     -and ! -name "tdfs*" -and ! -name "tms*" \
     -and ! -name "private_join_and_compute*"\
-    -and ! -name "ml_predict*"\
     -and ! -name "online_decrypt*"\
     -and ! -name "image_resizing*"\
     -and ! -name "kmeans*"\
@@ -29,6 +28,7 @@ find . \( -name "*.gcda" -and \( ! -name "sgx_cov*" \
     -and ! -name "dbscan*"\
     -and ! -name "neural_net*"\
     -and ! -name "naive_bayes*"\
+    -and ! -name "gbdt*"\
     -and ! -name "mesatee_core*" -and ! -name "mesatee_config*" \) \) \
     -exec rm {} \;
 cd ${MESATEE_PROJECT_ROOT} && \

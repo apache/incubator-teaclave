@@ -14,15 +14,171 @@
 use crate::running_task::RunningTask;
 use crate::trusted_worker::{
     BytesPlusOneWorker, ConcatWorker, DBSCANWorker, EchoFileWorker, EchoWorker,
-    FileBytesPlusOneWorker, GBDTPredictWorker, GPWorker, GenLinearModelWorker, GmmWorker,
-    ImageResizeWorker, KmeansWorker, LinRegWorker, LogisticRegWorker, MesaPyWorker,
-    NaiveBayesWorker, NeuralNetWorker, OnlineDecryptWorker, PSIWorker, PrivateJoinAndComputeWorker,
-    RSASignWorker, SvmWorker, SwapFileWorker, WASMWorker,
+    FileBytesPlusOneWorker, GBDTPredictWorker, GBDTTrainWorker, GPWorker, GenLinearModelWorker,
+    GmmWorker, ImageResizeWorker, KmeansWorker, LinRegWorker, LogisticRegPredictWorker,
+    LogisticRegTrainWorker, MesaPyWorker, NaiveBayesWorker, NeuralNetWorker, OnlineDecryptWorker,
+    PSIWorker, PrivateJoinAndComputeWorker, RSASignWorker, SvmWorker, SwapFileWorker, WASMWorker,
 };
 use crate::worker::WorkerInfoQueue;
 use mesatee_core::Result;
+use sgx_types::{c_char, c_int, size_t};
+use std::ffi::CStr;
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
+
+use std::slice;
+
+// C API of read_file for workers
+//
+// int c_read_file(char* context_id,
+//                 char* context_token,
+//                 char* file_id,
+//                 char* out_buf,
+//                 size_t out_buf_size);
+#[allow(unused)]
+#[no_mangle]
+extern "C" fn c_read_file(
+    context_id: *const c_char,
+    context_token: *const c_char,
+    file_id: *const c_char,
+    out_buf: *mut u8,
+    out_buf_size: size_t,
+) -> c_int {
+    let context_id = unsafe { CStr::from_ptr(context_id).to_string_lossy().into_owned() };
+    let context_token = unsafe { CStr::from_ptr(context_token).to_string_lossy().into_owned() };
+    let file_id = unsafe { CStr::from_ptr(file_id).to_string_lossy().into_owned() };
+    let out: &mut [u8] = unsafe { slice::from_raw_parts_mut(out_buf, out_buf_size) };
+
+    match read_file(&context_id, &context_token, &file_id) {
+        Ok(content) => {
+            let content_len = content.len();
+            if content_len <= out_buf_size {
+                out[..content.len()].copy_from_slice(&content);
+                content_len as c_int
+            } else {
+                out_buf_size as c_int - content_len as c_int
+            }
+        }
+        Err(_) => 0,
+    }
+}
+
+// C API of save_file_for_task_creator for workers
+//
+// int c_save_file_for_task_creator(char* context_id,
+//                                  char* context_token,
+//                                  char* in_buf,
+//                                  size_t in_buf_size,
+//                                  char* out_file_id_buf,
+//                                  size_t out_file_id_buf_size);
+#[allow(unused)]
+#[no_mangle]
+extern "C" fn c_save_file_for_task_creator(
+    context_id: *const c_char,
+    context_token: *const c_char,
+    in_buf: *const u8,
+    in_buf_size: size_t,
+    out_file_id_buf: *mut u8,
+    out_file_id_buf_size: size_t,
+) -> c_int {
+    let context_id = unsafe { CStr::from_ptr(context_id).to_string_lossy().into_owned() };
+    let context_token = unsafe { CStr::from_ptr(context_token).to_string_lossy().into_owned() };
+    let in_buf: &[u8] = unsafe { slice::from_raw_parts(in_buf, in_buf_size) };
+    let out_file_id: &mut [u8] =
+        unsafe { slice::from_raw_parts_mut(out_file_id_buf, out_file_id_buf_size) };
+
+    match save_file_for_task_creator(&context_id, &context_token, in_buf) {
+        Ok(file_id) => {
+            let file_id_len = file_id.len();
+            if file_id_len <= out_file_id_buf_size {
+                out_file_id[..file_id_len].copy_from_slice(file_id.as_bytes());
+                file_id_len as c_int
+            } else {
+                out_file_id_buf_size as c_int - file_id_len as c_int
+            }
+        }
+        Err(_) => 0,
+    }
+}
+
+// C API of save_file_for_all_participants for workers
+//
+// int c_save_file_for_all_participants(char* context_id,
+//                                      char* context_token,
+//                                      char* in_buf,
+//                                      size_t in_buf_size,
+//                                      char* out_file_id_buf,
+//                                      size_t out_file_id_buf_size);
+#[allow(unused)]
+#[no_mangle]
+extern "C" fn c_save_file_for_all_participants(
+    context_id: *const c_char,
+    context_token: *const c_char,
+    in_buf: *const u8,
+    in_buf_size: size_t,
+    out_file_id_buf: *mut u8,
+    out_file_id_buf_size: size_t,
+) -> c_int {
+    let context_id = unsafe { CStr::from_ptr(context_id).to_string_lossy().into_owned() };
+    let context_token = unsafe { CStr::from_ptr(context_token).to_string_lossy().into_owned() };
+    let in_buf: &[u8] = unsafe { slice::from_raw_parts(in_buf, in_buf_size) };
+    let out_file_id: &mut [u8] =
+        unsafe { slice::from_raw_parts_mut(out_file_id_buf, out_file_id_buf_size) };
+
+    match save_file_for_all_participants(&context_id, &context_token, in_buf) {
+        Ok(file_id) => {
+            let file_id_len = file_id.len();
+            if file_id_len <= out_file_id_buf_size {
+                out_file_id[..file_id_len].copy_from_slice(file_id.as_bytes());
+                file_id_len as c_int
+            } else {
+                out_file_id_buf_size as c_int - file_id_len as c_int
+            }
+        }
+        Err(_) => 0,
+    }
+}
+
+// C API of save_file_for_file_owner for workers
+//
+// int c_save_file_for_file_owner(char* context_id,
+//                                char* context_token,
+//                                char* in_buf,
+//                                size_t in_buf_size,
+//                                char* file_id,
+//                                char* out_file_id_buf,
+//                                size_t out_file_id_buf_size)
+#[allow(unused)]
+#[no_mangle]
+extern "C" fn c_save_file_for_file_owner(
+    context_id: *const c_char,
+    context_token: *const c_char,
+    in_buf: *const u8,
+    in_buf_size: size_t,
+    in_file_id: *const c_char,
+    out_file_id_buf: *mut u8,
+    out_file_id_buf_size: size_t,
+) -> c_int {
+    let context_id = unsafe { CStr::from_ptr(context_id).to_string_lossy().into_owned() };
+    let context_token = unsafe { CStr::from_ptr(context_token).to_string_lossy().into_owned() };
+    let in_buf: &[u8] = unsafe { slice::from_raw_parts(in_buf, in_buf_size) };
+    let in_file_id = unsafe { CStr::from_ptr(in_file_id).to_string_lossy().into_owned() };
+    let out_file_id: &mut [u8] =
+        unsafe { slice::from_raw_parts_mut(out_file_id_buf, out_file_id_buf_size) };
+
+    match save_file_for_file_owner(&context_id, &context_token, in_buf, &in_file_id) {
+        Ok(file_id) => {
+            let file_id_len = file_id.len();
+            if file_id_len <= out_file_id_buf_size {
+                out_file_id[..file_id_len].copy_from_slice(file_id.as_bytes());
+                file_id_len as c_int
+            } else {
+                out_file_id_buf_size as c_int - file_id_len as c_int
+            }
+        }
+        Err(_) => 0,
+    }
+}
 
 pub fn read_file(context_id: &str, context_token: &str, file_id: &str) -> Result<Vec<u8>> {
     let mut running_task = RunningTask::retrieve_running_task(context_id, context_token)?;
@@ -88,6 +244,9 @@ pub fn register_trusted_worker_statically() {
         let worker = Box::new(GBDTPredictWorker::new());
         let _ = WorkerInfoQueue::register(worker);
 
+        let worker = Box::new(GBDTTrainWorker::new());
+        let _ = WorkerInfoQueue::register(worker);
+
         let worker = Box::new(PrivateJoinAndComputeWorker::new());
         let _ = WorkerInfoQueue::register(worker);
 
@@ -104,9 +263,6 @@ pub fn register_trusted_worker_statically() {
         let _ = WorkerInfoQueue::register(worker);
 
         let worker = Box::new(LinRegWorker::new());
-        let _ = WorkerInfoQueue::register(worker);
-
-        let worker = Box::new(LogisticRegWorker::new());
         let _ = WorkerInfoQueue::register(worker);
 
         let worker = Box::new(SvmWorker::new());
@@ -128,6 +284,12 @@ pub fn register_trusted_worker_statically() {
         let _ = WorkerInfoQueue::register(worker);
 
         let worker = Box::new(NaiveBayesWorker::new());
+        let _ = WorkerInfoQueue::register(worker);
+
+        let worker = Box::new(LogisticRegTrainWorker::new());
+        let _ = WorkerInfoQueue::register(worker);
+
+        let worker = Box::new(LogisticRegPredictWorker::new());
         let _ = WorkerInfoQueue::register(worker);
     }
 }

@@ -17,27 +17,13 @@ use mesatee_sdk::{Mesatee, MesateeEnclaveInfo};
 use std::net::SocketAddr;
 use std::{env, fs};
 
-static FUNCTION_NAME: &str = "gbdt_predict";
+static FUNCTION_NAME: &str = "mesapy_from_buffer";
+static USER_ID: &str = "uid";
+static USER_TOKEN: &str = "token";
+
 lazy_static! {
     static ref TMS_ADDR: SocketAddr = "127.0.0.1:5554".parse().unwrap();
     static ref TDFS_ADDR: SocketAddr = "127.0.0.1:5065".parse().unwrap();
-}
-
-fn print_usage() {
-    let msg = "
-    ./ml_predict test_data_path model_data_path
-    test data format:
-        f32,f32,f32,f32 ...
-        f32,f32,f32,f32 ...
-        ...
-    supported model:
-        model saved by gbdt-rs
-    output:
-        f32
-        f32
-        ...
-    ";
-    println!("usage: \n{}", msg);
 }
 
 fn main() {
@@ -56,34 +42,25 @@ fn main() {
         ),
     ];
     let enclave_info_file_path = "../out/enclave_info.txt";
+    let info = MesateeEnclaveInfo::load(auditors, enclave_info_file_path).unwrap();
 
-    let mesatee_enclave_info = MesateeEnclaveInfo::load(auditors, enclave_info_file_path).unwrap();
-
-    let args: Vec<String> = env::args().collect();
-    if args.len() != 3 {
-        print_usage();
+    let args_string: Vec<String> = env::args().collect();
+    let args: Vec<&str> = args_string.iter().map(|s| s.as_str()).collect();
+    if args.len() < 2 {
+        println!("Please specify the python script");
         return;
     }
-    let test_data_path = &args[1];
-    let model_data_path = &args[2];
+    let py_script_path = args[1];
+    let py_script = fs::read(py_script_path).unwrap();
+    let request = base64::encode(&py_script);
 
-    let mesatee = Mesatee::new(
-        &mesatee_enclave_info,
-        "uid1",
-        "token1",
-        *TMS_ADDR,
-        *TDFS_ADDR,
-    )
-    .unwrap();
-    let file_id = mesatee.upload_file(model_data_path).unwrap();
-
-    let payload_bytes = fs::read(&test_data_path).unwrap();
-    let payload_str = String::from_utf8(payload_bytes).unwrap();
-
-    let task = mesatee
-        .create_task_with_files(FUNCTION_NAME, &[file_id.as_str()])
+    let mesatee = Mesatee::new(&info, USER_ID, USER_TOKEN, *TMS_ADDR, *TDFS_ADDR).unwrap();
+    let file_id = mesatee
+        .upload_file("../examples/py_file/data/1.txt")
         .unwrap();
-    let result = task.invoke_with_payload(&payload_str).unwrap();
-
-    println!("result: \n{}", result);
+    let task = mesatee
+        .create_task_with_files(FUNCTION_NAME, &[&file_id])
+        .unwrap();
+    let result = task.invoke_with_payload(&request).unwrap();
+    println!("{}", result);
 }

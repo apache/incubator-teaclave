@@ -18,4 +18,4 @@ for port in 5554 5555 3444 6016 5065 5066; do
 done
 
 $BIN $PY_SCRIPT > $RESULT_PATH # result is in Python marshal format
-cmp --silent $RESULT_PATH $GROUND_TRUTH && echo "Python Execution Successful" || exit 1
+cmp $RESULT_PATH $GROUND_TRUTH && echo "Python Execution Successful" || exit 1
