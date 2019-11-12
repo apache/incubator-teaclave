@@ -23,7 +23,7 @@ use sgx_types;
 use std::ffi::CString;
 use std::{format, vec};
 
-const MAXPYBUFLEN: usize = 1024;
+const MAXPYBUFLEN: usize = 20480;
 const MESAPY_ERROR_BUFFER_TOO_SHORT: i64 = -1i64;
 const MESAPY_EXEC_ERROR: i64 = -2i64;
 
