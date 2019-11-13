@@ -2,7 +2,7 @@
 name = "py_logistic_reg"
 version = "0.1.0"
 authors = ["MesaTEE Authors <developers@mesatee.org>"]
-description = "File operations in Python with MesaTEE."
+description = "Logistic Regression in Python with MesaTEE."
 license = "Apache-2.0"
 edition = "2018"
 
