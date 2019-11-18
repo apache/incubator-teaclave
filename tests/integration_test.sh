@@ -70,6 +70,9 @@ echo "[+] run rsa_sign"
 echo "[+] run py_matrix_multiply"
 ../examples/py_matrix_multiply/py_matrix_multiply.sh 2>&1 | tee py_matrix_multiply.log
 [ ${PIPESTATUS[0]} -eq 0 ] || exit ${PIPESTATUS[0]}
+echo "[+] run py_logistic_reg"
+../examples/py_logistic_reg/py_logistic_reg.sh 2>&1 | tee py_logistic_reg.log
+[ ${PIPESTATUS[0]} -eq 0 ] || exit ${PIPESTATUS[0]}
 echo "[+] run py_file"
 ../examples/py_file/py_file.sh 2>&1 | tee py_file.log
 [ ${PIPESTATUS[0]} -eq 0 ] || exit ${PIPESTATUS[0]}

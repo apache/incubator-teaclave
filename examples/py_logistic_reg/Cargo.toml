@@ -1,0 +1,12 @@
+[package]
+name = "py_logistic_reg"
+version = "0.1.0"
+authors = ["MesaTEE Authors <developers@mesatee.org>"]
+description = "Logistic Regression in Python with MesaTEE."
+license = "Apache-2.0"
+edition = "2018"
+
+[dependencies]
+mesatee_sdk = { path = "../../mesatee_sdk" }
+base64 = { version = "0.10.1" }
+lazy_static = { version = "1.3.0" }
