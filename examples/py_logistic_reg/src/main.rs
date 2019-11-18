@@ -63,7 +63,7 @@ fn main() {
         .unwrap();
 
     let file_ids: [&str; 2] = [train_file_id.as_str(), predict_file_id.as_str()];
-    
+
     let task = mesatee
         .create_task_with_files(FUNCTION_NAME, &file_ids)
         .unwrap();
