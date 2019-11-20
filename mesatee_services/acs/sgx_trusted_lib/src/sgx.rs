@@ -21,7 +21,7 @@ use std::os::raw::c_char;
 
 use mesatee_core::config;
 use mesatee_core::prelude::*;
-use mesatee_core::{Result, Error, ErrorKind};
+use mesatee_core::{Error, ErrorKind, Result};
 
 use env_logger;
 use std::backtrace::{self, PrintFormat};
@@ -72,7 +72,7 @@ fn handle_serve_connection(args: &ServeConnectionInput) -> Result<ServeConnectio
     Ok(ServeConnectionOutput::default())
 }
 
-const MODEL_TEXT: &'static str = include_str!("../../model.conf");
+const MODEL_TEXT: &str = include_str!("../../model.conf");
 
 #[handle_ecall]
 fn handle_init_enclave(_args: &InitEnclaveInput) -> Result<InitEnclaveOutput> {

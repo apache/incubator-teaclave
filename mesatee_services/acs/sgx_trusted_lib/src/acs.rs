@@ -17,10 +17,10 @@
 use std::prelude::v1::*;
 
 use mesatee_core::rpc::EnclaveService;
-use mesatee_core::{Result, ErrorKind};
+use mesatee_core::{ErrorKind, Result};
+use std::collections::HashSet;
 use std::ffi::CString;
 use std::os::raw::c_char;
-use std::collections::HashSet;
 
 use acs_proto::*;
 
@@ -70,10 +70,13 @@ where
     }
 }
 
-impl<T> PyMarshallable for [T] where T: PyMarshallable {
+impl<T> PyMarshallable for [T]
+where
+    T: PyMarshallable,
+{
     fn marshal(&self, buffer: &mut String) {
         buffer.push('[');
-        for t in self.as_ref() {
+        for t in self {
             t.marshal(buffer);
             buffer.push(',');
         }
@@ -146,12 +149,11 @@ impl HandleRequest for EnforceRequest {
                 ("delete_script", buffer)
             }
         };
-        
+
         let c_request_type = CString::new(request_type.to_string()).unwrap();
         let c_request_content = CString::new(request_content).unwrap();
-        let py_ret = unsafe {
-            acs_enforce_request(c_request_type.as_ptr(), c_request_content.as_ptr())
-        };
+        let py_ret =
+            unsafe { acs_enforce_request(c_request_type.as_ptr(), c_request_content.as_ptr()) };
 
         match py_ret {
             0 => Ok(ACSResponse::Enforce(false)),
@@ -196,10 +198,8 @@ impl HandleRequest for AnnounceRequest {
             let c_term_type = CString::new(term_type.to_string()).unwrap();
             let c_term_fact = CString::new(term_fact).unwrap();
 
-            let py_ret = unsafe {
-                acs_announce_fact(c_term_type.as_ptr(), c_term_fact.as_ptr())
-            };
-            
+            let py_ret = unsafe { acs_announce_fact(c_term_type.as_ptr(), c_term_fact.as_ptr()) };
+
             if py_ret != 0 {
                 return Err(ErrorKind::MesaPyError.into());
             }
@@ -225,7 +225,7 @@ impl EnclaveService<ACSRequest, ACSResponse> for ACSEnclave {
             ACSRequest::Enforce(req) => req.handle_request()?,
             ACSRequest::Announce(req) => req.handle_request()?,
         };
- 
+
         Ok(response)
     }
 }

@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-use kms_client::KMSClient;
 use acs_client::ACSClient;
+use kms_client::KMSClient;
 use mesatee_core::config;
 use tdfs_internal_client::TDFSClient;
 use tms_internal_client::TMSClient;
@@ -36,4 +36,3 @@ pub(crate) fn setup_tms_internal_client() -> TMSClient {
     let target = config::Internal::target_tms();
     TMSClient::new(target).unwrap()
 }
-

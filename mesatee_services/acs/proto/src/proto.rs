@@ -40,7 +40,7 @@ pub enum EnforceRequest {
 
     // access_data = task, data
     AccessData(String, String),
-    
+
     // delete_data = usr, data
     DeleteData(String, String),
 
@@ -60,7 +60,7 @@ pub struct AnnounceRequest {
 pub enum AccessControlTerms {
     // task_creator = task, usr
     TaskCreator(String, String),
-    
+
     // task_participant = task, usr
     TaskParticipant(String, String),
 

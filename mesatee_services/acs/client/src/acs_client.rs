@@ -51,11 +51,7 @@ impl ACSClient {
         }
     }
 
-    pub fn enforce_data_access(
-        &mut self,
-        task: String,
-        data: String
-    ) -> Result<bool> {
+    pub fn enforce_data_access(&mut self, task: String, data: String) -> Result<bool> {
         let req = ACSRequest::Enforce(EnforceRequest::AccessData(task, data));
         let resp = self.channel.invoke(req)?;
         match resp {
@@ -64,11 +60,7 @@ impl ACSClient {
         }
     }
 
-    pub fn enforce_data_deletion(
-        &mut self,
-        usr: String,
-        data: String,
-    ) -> Result<bool> {
+    pub fn enforce_data_deletion(&mut self, usr: String, data: String) -> Result<bool> {
         let req = ACSRequest::Enforce(EnforceRequest::DeleteData(usr, data));
         let resp = self.channel.invoke(req)?;
         match resp {
@@ -76,12 +68,8 @@ impl ACSClient {
             _ => Err(Error::from(ErrorKind::RPCResponseError)),
         }
     }
-    
-    pub fn enforce_script_access(
-        &mut self,
-        task: String,
-        script: String,
-    ) -> Result<bool> {
+
+    pub fn enforce_script_access(&mut self, task: String, script: String) -> Result<bool> {
         let req = ACSRequest::Enforce(EnforceRequest::AccessScript(task, script));
         let resp = self.channel.invoke(req)?;
         match resp {
@@ -89,12 +77,8 @@ impl ACSClient {
             _ => Err(Error::from(ErrorKind::RPCResponseError)),
         }
     }
-    
-    pub fn enforce_script_deletion(
-        &mut self,
-        usr: String,
-        script: String
-    ) -> Result<bool> {
+
+    pub fn enforce_script_deletion(&mut self, usr: String, script: String) -> Result<bool> {
         let req = ACSRequest::Enforce(EnforceRequest::DeleteScript(usr, script));
         let resp = self.channel.invoke(req)?;
         match resp {
@@ -120,17 +104,16 @@ impl ACSClient {
     ) -> Result<()> {
         let mut facts = Vec::with_capacity(1 + participants.len());
         for par in participants {
-            facts.push(AccessControlTerms::TaskParticipant(task.clone(), par.clone()));
+            facts.push(AccessControlTerms::TaskParticipant(
+                task.clone(),
+                par.clone(),
+            ));
         }
         facts.push(AccessControlTerms::TaskCreator(task, creator));
         self._announce_terms(facts)
     }
 
-    pub fn announce_data_creation(
-        &mut self,
-        data: String,
-        creator: String,
-    ) -> Result<()> {
+    pub fn announce_data_creation(&mut self, data: String, creator: String) -> Result<()> {
         self._announce_terms(std::vec!(AccessControlTerms::DataOwner(data, creator)))
     }
 

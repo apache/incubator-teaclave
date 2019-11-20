@@ -16,23 +16,23 @@ use super::common_setup::setup_acs_internal_client;
 
 use std::collections::HashSet;
 use std::string::ToString;
-    
-const FUSION_TASK: &'static str = "data_fusion";
 
-const FUSION_TASK_PARTY_1: &'static str = "usr1";
-const FUSION_TASK_PARTY_2: &'static str = "usr2";
+const FUSION_TASK: &str = "data_fusion";
 
-const FUSION_TASK_DATA_1: &'static str = "data1";
-const FUSION_TASK_DATA_2: &'static str = "data2";
+const FUSION_TASK_PARTY_1: &str = "usr1";
+const FUSION_TASK_PARTY_2: &str = "usr2";
 
-const FUSION_TASK_SCRIPT: &'static str = "fusion_script";
-const FUSION_TASK_SCRIPT_WRITER: &'static str = "usr3";
-const PUBLIC_SCRIPT: &'static str = "public_script";
-const PUBLIC_SCRIPT_WRITER: &'static str = "usr4";
+const FUSION_TASK_DATA_1: &str = "data1";
+const FUSION_TASK_DATA_2: &str = "data2";
 
-const IRRELEVANT_TASK: &'static str = "task_irrelevant";
-const IRRELEVANT_PARTY: &'static str = "usr_irrelevant";
-const IRRELEVANT_DATA: &'static str = "data_irrelevant";
+const FUSION_TASK_SCRIPT: &str = "fusion_script";
+const FUSION_TASK_SCRIPT_WRITER: &str = "usr3";
+const PUBLIC_SCRIPT: &str = "public_script";
+const PUBLIC_SCRIPT_WRITER: &str = "usr4";
+
+const IRRELEVANT_TASK: &str = "task_irrelevant";
+const IRRELEVANT_PARTY: &str = "usr_irrelevant";
+const IRRELEVANT_DATA: &str = "data_irrelevant";
 
 pub fn access_control_model() {
     trace!("Test ACS: access control model.");
@@ -43,112 +43,113 @@ pub fn access_control_model() {
     participants.insert(FUSION_TASK_PARTY_2.to_string());
     participants.insert(FUSION_TASK_SCRIPT_WRITER.to_string());
 
-    client.announce_task_creation(
-        FUSION_TASK.to_string(),
-        FUSION_TASK_PARTY_1.to_string(),
-        &participants,
-    ).expect("fusion task creation announcement failed");
+    client
+        .announce_task_creation(
+            FUSION_TASK.to_string(),
+            FUSION_TASK_PARTY_1.to_string(),
+            &participants,
+        )
+        .expect("fusion task creation announcement failed");
 
-    client.announce_data_creation(
-        FUSION_TASK_DATA_1.to_string(),
-        FUSION_TASK_PARTY_1.to_string(),
-    ).expect("fusion data n1 creation announcement failed");
+    client
+        .announce_data_creation(
+            FUSION_TASK_DATA_1.to_string(),
+            FUSION_TASK_PARTY_1.to_string(),
+        )
+        .expect("fusion data n1 creation announcement failed");
 
-    client.announce_data_creation(
-        FUSION_TASK_DATA_2.to_string(),
-        FUSION_TASK_PARTY_2.to_string(),
-    ).expect("fusion data 2 creation announcement failed");
+    client
+        .announce_data_creation(
+            FUSION_TASK_DATA_2.to_string(),
+            FUSION_TASK_PARTY_2.to_string(),
+        )
+        .expect("fusion data 2 creation announcement failed");
 
-    client.announce_data_creation(
-        IRRELEVANT_DATA.to_string(),
-        IRRELEVANT_PARTY.to_string(),
-    ).expect("irrelevant data creation announcement failed");
+    client
+        .announce_data_creation(IRRELEVANT_DATA.to_string(), IRRELEVANT_PARTY.to_string())
+        .expect("irrelevant data creation announcement failed");
 
-    client.announce_script_creation(
-        FUSION_TASK_SCRIPT.to_string(),
-        FUSION_TASK_SCRIPT_WRITER.to_string(),
-        false,
-    ).expect("fusion script creation announcement failed");
+    client
+        .announce_script_creation(
+            FUSION_TASK_SCRIPT.to_string(),
+            FUSION_TASK_SCRIPT_WRITER.to_string(),
+            false,
+        )
+        .expect("fusion script creation announcement failed");
 
-    client.announce_script_creation(
-        PUBLIC_SCRIPT.to_string(),
-        PUBLIC_SCRIPT_WRITER.to_string(),
-        true,
-    ).expect("public script creation announcement failed");
+    client
+        .announce_script_creation(
+            PUBLIC_SCRIPT.to_string(),
+            PUBLIC_SCRIPT_WRITER.to_string(),
+            true,
+        )
+        .expect("public script creation announcement failed");
 
     let mut participants = HashSet::new();
-    
+
     assert_eq!(
-        client.enforce_task_launch(
-            FUSION_TASK.to_string(),
-            participants.clone(),
-        ).unwrap(),
+        client
+            .enforce_task_launch(FUSION_TASK.to_string(), participants.clone(),)
+            .unwrap(),
         false,
     );
 
     participants.insert(FUSION_TASK_PARTY_1.to_string());
 
     assert_eq!(
-        client.enforce_task_launch(
-            FUSION_TASK.to_string(),
-            participants.clone(),
-        ).unwrap(),
+        client
+            .enforce_task_launch(FUSION_TASK.to_string(), participants.clone(),)
+            .unwrap(),
         false,
     );
 
     participants.insert(FUSION_TASK_PARTY_2.to_string());
 
-        assert_eq!(
-        client.enforce_task_launch(
-            FUSION_TASK.to_string(),
-            participants.clone(),
-        ).unwrap(),
+    assert_eq!(
+        client
+            .enforce_task_launch(FUSION_TASK.to_string(), participants.clone(),)
+            .unwrap(),
         false,
     );
 
     participants.insert(FUSION_TASK_SCRIPT_WRITER.to_string());
 
     assert_eq!(
-        client.enforce_task_launch(
-            FUSION_TASK.to_string(),
-            participants.clone(),
-        ).unwrap(),
+        client
+            .enforce_task_launch(FUSION_TASK.to_string(), participants.clone(),)
+            .unwrap(),
         true,
     );
-    
+
     // Load fusion script
     assert_eq!(
-        client.enforce_script_access(
-            FUSION_TASK.to_string(),
-            FUSION_TASK_SCRIPT.to_string(),
-        ).unwrap(),
+        client
+            .enforce_script_access(FUSION_TASK.to_string(), FUSION_TASK_SCRIPT.to_string(),)
+            .unwrap(),
         true,
     );
 
     // Load public script
     assert_eq!(
-        client.enforce_script_access(
-            FUSION_TASK.to_string(),
-            PUBLIC_SCRIPT.to_string(),
-        ).unwrap(),
+        client
+            .enforce_script_access(FUSION_TASK.to_string(), PUBLIC_SCRIPT.to_string(),)
+            .unwrap(),
         true,
     );
 
     // Read data1
     assert_eq!(
-        client.enforce_data_access(
-            FUSION_TASK.to_string(),
-            FUSION_TASK_DATA_1.to_string(),
-        ).unwrap(),
+        client
+            .enforce_data_access(FUSION_TASK.to_string(), FUSION_TASK_DATA_1.to_string(),)
+            .unwrap(),
         true,
     );
 
     // Read data2
     assert_eq!(
-        client.enforce_data_access(
-            FUSION_TASK.to_string(),
-            FUSION_TASK_DATA_2.to_string(),
-        ).unwrap(),
+        client
+            .enforce_data_access(FUSION_TASK.to_string(), FUSION_TASK_DATA_2.to_string(),)
+            .unwrap(),
         true,
     );
 
@@ -156,112 +157,116 @@ pub fn access_control_model() {
 
     participants.insert(IRRELEVANT_PARTY.to_string());
     participants.insert(FUSION_TASK_PARTY_2.to_string());
-    
-    client.announce_task_creation(
-        IRRELEVANT_TASK.to_string(),
-        IRRELEVANT_PARTY.to_string(),
-        &participants,
-    ).expect("irrelevant task creation announcement failed");
+
+    client
+        .announce_task_creation(
+            IRRELEVANT_TASK.to_string(),
+            IRRELEVANT_PARTY.to_string(),
+            &participants,
+        )
+        .expect("irrelevant task creation announcement failed");
 
     // Launch irrelevant task
     assert_eq!(
-        client.enforce_task_launch(
-            IRRELEVANT_TASK.to_string(),
-            participants,
-        ).unwrap(),
+        client
+            .enforce_task_launch(IRRELEVANT_TASK.to_string(), participants,)
+            .unwrap(),
         true,
     );
 
     // Load fusion script; deny
     assert_eq!(
-        client.enforce_script_access(
-            IRRELEVANT_TASK.to_string(),
-            FUSION_TASK_SCRIPT.to_string(),
-        ).unwrap(),
+        client
+            .enforce_script_access(IRRELEVANT_TASK.to_string(), FUSION_TASK_SCRIPT.to_string(),)
+            .unwrap(),
         false,
     );
 
     // Load public script; allow
     assert_eq!(
-        client.enforce_script_access(
-            IRRELEVANT_TASK.to_string(),
-            PUBLIC_SCRIPT.to_string(),
-        ).unwrap(),
+        client
+            .enforce_script_access(IRRELEVANT_TASK.to_string(), PUBLIC_SCRIPT.to_string(),)
+            .unwrap(),
         true,
     );
 
     // Read data1; deny
     assert_eq!(
-        client.enforce_data_access(
-            IRRELEVANT_TASK.to_string(),
-            FUSION_TASK_DATA_1.to_string(),
-        ).unwrap(),
+        client
+            .enforce_data_access(IRRELEVANT_TASK.to_string(), FUSION_TASK_DATA_1.to_string(),)
+            .unwrap(),
         false,
     );
 
     // Read data2; allow
     assert_eq!(
-        client.enforce_data_access(
-            IRRELEVANT_TASK.to_string(),
-            FUSION_TASK_DATA_2.to_string(),
-        ).unwrap(),
+        client
+            .enforce_data_access(IRRELEVANT_TASK.to_string(), FUSION_TASK_DATA_2.to_string(),)
+            .unwrap(),
         true,
     );
 
     assert_eq!(
-        client.enforce_data_deletion(
-            FUSION_TASK_PARTY_1.to_string(),
-            FUSION_TASK_DATA_1.to_string(),
-        ).unwrap(),
+        client
+            .enforce_data_deletion(
+                FUSION_TASK_PARTY_1.to_string(),
+                FUSION_TASK_DATA_1.to_string(),
+            )
+            .unwrap(),
         true,
     );
 
     assert_eq!(
-        client.enforce_data_deletion(
-            FUSION_TASK_PARTY_2.to_string(),
-            FUSION_TASK_DATA_2.to_string(),
-        ).unwrap(),
+        client
+            .enforce_data_deletion(
+                FUSION_TASK_PARTY_2.to_string(),
+                FUSION_TASK_DATA_2.to_string(),
+            )
+            .unwrap(),
         true,
     );
 
     assert_eq!(
-        client.enforce_data_deletion(
-            FUSION_TASK_PARTY_1.to_string(),
-            FUSION_TASK_DATA_2.to_string(),
-        ).unwrap(),
+        client
+            .enforce_data_deletion(
+                FUSION_TASK_PARTY_1.to_string(),
+                FUSION_TASK_DATA_2.to_string(),
+            )
+            .unwrap(),
         false,
     );
 
     assert_eq!(
-        client.enforce_script_deletion(
-            FUSION_TASK_PARTY_1.to_string(),
-            FUSION_TASK_SCRIPT.to_string(),
-        ).unwrap(),
+        client
+            .enforce_script_deletion(
+                FUSION_TASK_PARTY_1.to_string(),
+                FUSION_TASK_SCRIPT.to_string(),
+            )
+            .unwrap(),
         false,
     );
 
     assert_eq!(
-        client.enforce_script_deletion(
-            FUSION_TASK_SCRIPT_WRITER.to_string(),
-            FUSION_TASK_SCRIPT.to_string(),
-        ).unwrap(),
+        client
+            .enforce_script_deletion(
+                FUSION_TASK_SCRIPT_WRITER.to_string(),
+                FUSION_TASK_SCRIPT.to_string(),
+            )
+            .unwrap(),
         true,
     );
 
     assert_eq!(
-        client.enforce_script_deletion(
-            IRRELEVANT_PARTY.to_string(),
-            PUBLIC_SCRIPT.to_string(),
-        ).unwrap(),
+        client
+            .enforce_script_deletion(IRRELEVANT_PARTY.to_string(), PUBLIC_SCRIPT.to_string(),)
+            .unwrap(),
         false,
     );
 
     assert_eq!(
-        client.enforce_script_deletion(
-            PUBLIC_SCRIPT_WRITER.to_string(),
-            PUBLIC_SCRIPT.to_string(),
-        ).unwrap(),
+        client
+            .enforce_script_deletion(PUBLIC_SCRIPT_WRITER.to_string(), PUBLIC_SCRIPT.to_string(),)
+            .unwrap(),
         true,
     );
-
 }
