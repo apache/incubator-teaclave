@@ -74,6 +74,7 @@ add_custom_command(
     COMMENT "Generating mesapy ffi stubs"
 )
 add_library(pycomponent STATIC ${MESATEE_OUT_DIR}/acs_py_enclave.c)
+set_target_properties(pycomponent PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${MESATEE_OUT_DIR})
 target_compile_definitions(pycomponent PUBLIC SGX)
 target_compile_options(pycomponent PUBLIC -UWITH_THREAD -O2 -fPIC -Wimplicit -I/usr/lib/pypy/include)
 
