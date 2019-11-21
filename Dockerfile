@@ -49,6 +49,11 @@ RUN apt-get update && apt-get install -q -y \
     systemd-sysv \
     gdb
 
+# install other dependencies
+RUN apt-get update && apt-get install -q -y \
+    pypy \
+    pypy-dev
+
 RUN mkdir ~/sgx                                                               && \
     mkdir /etc/init                                                           && \
     cd ~/sgx                                                                  && \
@@ -78,7 +83,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
 
 # install dependencies for testing and coverage
 
-RUN apt-get install -q -y \
+RUN apt-get update && apt-get install -q -y \
     lsof \
     procps \
     lcov \

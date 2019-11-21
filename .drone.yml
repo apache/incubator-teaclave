@@ -3,7 +3,7 @@ name: cmake-release
 
 steps:
 - name: prepare
-  image: mesalocklinux/build-mesatee:0.1.4
+  image: mesalocklinux/build-mesatee:0.1.5
   commands:
   - mkdir -p bin
   - echo $V5_SPID > bin/ias_spid.txt
@@ -17,23 +17,23 @@ steps:
     V5_SPID:
       from_secret: V5_SPID
 - name: check
-  image: mesalocklinux/build-mesatee:0.1.4
+  image: mesalocklinux/build-mesatee:0.1.5
   commands:
   - . /root/.cargo/env
   - cd build && make check
 - name: compile
-  image: mesalocklinux/build-mesatee:0.1.4
+  image: mesalocklinux/build-mesatee:0.1.5
   commands:
   - . /root/.cargo/env
   - export RUSTFLAGS="-D warnings"
   - cd build && make VERBOSE=1 -j2
 - name: clippy
-  image: mesalocklinux/build-mesatee:0.1.4
+  image: mesalocklinux/build-mesatee:0.1.5
   commands:
   - . /root/.cargo/env
   - cd build && make CLP=1
 - name: sgx-test
-  image: mesalocklinux/build-mesatee:0.1.4
+  image: mesalocklinux/build-mesatee:0.1.5
   privileged: true
   volumes:
   - name: isgx
@@ -62,7 +62,7 @@ name: cmake-debug
 
 steps:
 - name: prepare
-  image: mesalocklinux/build-mesatee:0.1.4
+  image: mesalocklinux/build-mesatee:0.1.5
   commands:
   - mkdir -p bin
   - echo $V5_SPID > bin/ias_spid.txt
@@ -76,18 +76,18 @@ steps:
     V5_SPID:
       from_secret: V5_SPID
 - name: check
-  image: mesalocklinux/build-mesatee:0.1.4
+  image: mesalocklinux/build-mesatee:0.1.5
   commands:
   - . /root/.cargo/env
   - cd build && make check
 - name: compile
-  image: mesalocklinux/build-mesatee:0.1.4
+  image: mesalocklinux/build-mesatee:0.1.5
   commands:
   - . /root/.cargo/env
   - export RUSTFLAGS="-D warnings"
   - cd build && make VERBOSE=1 -j2
 - name: sgx-test
-  image: mesalocklinux/build-mesatee:0.1.4
+  image: mesalocklinux/build-mesatee:0.1.5
   privileged: true
   volumes:
   - name: isgx
@@ -116,7 +116,7 @@ name: cmake-sim_release
 
 steps:
 - name: prepare
-  image: mesalocklinux/build-mesatee:0.1.4
+  image: mesalocklinux/build-mesatee:0.1.5
   commands:
   - . /root/.cargo/env
   - mkdir -p build
@@ -125,17 +125,17 @@ steps:
     V5_SPID:
       from_secret: V5_SPID
 - name: check
-  image: mesalocklinux/build-mesatee:0.1.4
+  image: mesalocklinux/build-mesatee:0.1.5
   commands:
   - . /root/.cargo/env
   - cd build && make check
 - name: compile
-  image: mesalocklinux/build-mesatee:0.1.4
+  image: mesalocklinux/build-mesatee:0.1.5
   commands:
   - . /root/.cargo/env
   - cd build && cmake -DRUSTFLAGS="-D warnings" -DSGX_MODE=SW .. && make VERBOSE=1 -j2
 - name: sgx-test
-  image: mesalocklinux/build-mesatee:0.1.4
+  image: mesalocklinux/build-mesatee:0.1.5
   privileged: true
   commands:
   - . /root/.cargo/env
@@ -151,7 +151,7 @@ name: cmake-sim_debug
 
 steps:
 - name: prepare
-  image: mesalocklinux/build-mesatee:0.1.4
+  image: mesalocklinux/build-mesatee:0.1.5
   commands:
   - . /root/.cargo/env
   - mkdir -p build
@@ -160,17 +160,17 @@ steps:
     V5_SPID:
       from_secret: V5_SPID
 - name: check
-  image: mesalocklinux/build-mesatee:0.1.4
+  image: mesalocklinux/build-mesatee:0.1.5
   commands:
   - . /root/.cargo/env
   - cd build && make check
 - name: compile
-  image: mesalocklinux/build-mesatee:0.1.4
+  image: mesalocklinux/build-mesatee:0.1.5
   commands:
   - . /root/.cargo/env
   - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DRUSTFLAGS="-D warnings" -DSGX_MODE=SW .. && make VERBOSE=1 -j2
 - name: sgx-test
-  image: mesalocklinux/build-mesatee:0.1.4
+  image: mesalocklinux/build-mesatee:0.1.5
   privileged: true
   commands:
   - . /root/.cargo/env
