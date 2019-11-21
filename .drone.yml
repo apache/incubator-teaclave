@@ -27,11 +27,6 @@ steps:
   - . /root/.cargo/env
   - export RUSTFLAGS="-D warnings"
   - cd build && make VERBOSE=1 -j2
-- name: clippy
-  image: mesalocklinux/build-mesatee:0.1.5
-  commands:
-  - . /root/.cargo/env
-  - cd build && make CLP=1
 - name: sgx-test
   image: mesalocklinux/build-mesatee:0.1.5
   privileged: true
@@ -51,6 +46,37 @@ volumes:
 - name: aesmd
   host:
     path: /var/run/aesmd/aesm.socket
+
+node:
+  instance: mesatee-sgx
+
+---
+
+kind: pipeline
+name: cmake-clippy
+
+steps:
+- name: prepare
+  image: mesalocklinux/build-mesatee:0.1.5
+  commands:
+  - . /root/.cargo/env
+  - mkdir -p build
+  - cd build && cmake ..
+  environment:
+    V5_KEY:
+      from_secret: V5_KEY
+    V5_SPID:
+      from_secret: V5_SPID
+- name: check
+  image: mesalocklinux/build-mesatee:0.1.5
+  commands:
+  - . /root/.cargo/env
+  - cd build && make check
+- name: clippy
+  image: mesalocklinux/build-mesatee:0.1.5
+  commands:
+  - . /root/.cargo/env
+  - cd build && make CLP=1
 
 node:
   instance: mesatee-sgx
