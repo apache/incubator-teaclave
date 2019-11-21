@@ -30,6 +30,7 @@ use std::slice;
 
 const FFI_FILE_ERROR: c_int = -1;
 const FFI_BUFFER_NOT_ENOUGH_ERROR: c_int = -2;
+const UUID_SIZE: size_t = 36;
 
 // C API of read_file for workers
 //
@@ -86,6 +87,9 @@ extern "C" fn c_save_file_for_task_creator(
     out_file_id_buf: *mut u8,
     out_file_id_buf_size: size_t,
 ) -> c_int {
+    if out_file_id_buf_size < UUID_SIZE {
+        return FFI_BUFFER_NOT_ENOUGH_ERROR
+    }
     let context_id = unsafe { CStr::from_ptr(context_id).to_string_lossy().into_owned() };
     let context_token = unsafe { CStr::from_ptr(context_token).to_string_lossy().into_owned() };
     let in_buf: &[u8] = unsafe { slice::from_raw_parts(in_buf, in_buf_size) };
@@ -124,6 +128,9 @@ extern "C" fn c_save_file_for_all_participants(
     out_file_id_buf: *mut u8,
     out_file_id_buf_size: size_t,
 ) -> c_int {
+    if out_file_id_buf_size < UUID_SIZE {
+        return FFI_BUFFER_NOT_ENOUGH_ERROR
+    }
     let context_id = unsafe { CStr::from_ptr(context_id).to_string_lossy().into_owned() };
     let context_token = unsafe { CStr::from_ptr(context_token).to_string_lossy().into_owned() };
     let in_buf: &[u8] = unsafe { slice::from_raw_parts(in_buf, in_buf_size) };
@@ -164,6 +171,9 @@ extern "C" fn c_save_file_for_file_owner(
     out_file_id_buf: *mut u8,
     out_file_id_buf_size: size_t,
 ) -> c_int {
+    if out_file_id_buf_size < UUID_SIZE {
+        return FFI_BUFFER_NOT_ENOUGH_ERROR
+    }
     let context_id = unsafe { CStr::from_ptr(context_id).to_string_lossy().into_owned() };
     let context_token = unsafe { CStr::from_ptr(context_token).to_string_lossy().into_owned() };
     let in_buf: &[u8] = unsafe { slice::from_raw_parts(in_buf, in_buf_size) };
