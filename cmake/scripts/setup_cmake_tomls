@@ -1,70 +1,85 @@
 #!/usr/bin/env python
-# Create cmake_tomls under build_dir
-# Create separate folders for unix_app|sgx_trusted|sgx_untrusted under build_dir/cmake_tomls
-# Create symlinks for Cargo.*.toml and folders so cargo build can run in separate folders
-# Setup Cargo config for enclaves
-
-import os, sys
+'''
+[usage] setup_cmake_tomls [project_root_dir] [project_build_dir]
+Create cmake_tomls under build_dir
+Create separate folders for unix_app|sgx_trusted|sgx_untrusted under build_dir/cmake_tomls
+Create symlinks for Cargo.*.toml and folders so cargo build can run in separate folders
+Setup Cargo config for enclaves
+'''
+import os
 import os.path as osp
+import sys
 
 # symlinks won't be created for the following directories
 SYM_FOLDER_BLACKLIST = [
-'docs',
-'cmake',
-'out',
-'bin',
-'build'
+    'docs',
+    'cmake',
+    'out',
+    'bin',
+    'build'
 ]
 
 CATEGORIES = ['sgx_trusted_lib', 'sgx_untrusted_app', 'unix_app']
 
+
 def exec_cmd(cmd):
+    """execute a shell command"""
     # print(cmd)
     os.system(cmd)
 
-ROOT_DIR = None
-def filter_sym_dir(name):
-    return not name.startswith('.') and not name in SYM_FOLDER_BLACKLIST and osp.isdir(osp.join(ROOT_DIR, name))
+
+def filter_sym_dir(root_dir, name):
+    """return true if name corresponds to a folder and is not in blacklist"""
+    return not name.startswith(
+        '.') and not name in SYM_FOLDER_BLACKLIST and osp.isdir(osp.join(root_dir, name))
+
 
 def create_symlinks(root_dir, build_dir):
+    """create symolic links"""
     exec_cmd('mkdir -p {build_dir}/cmake_tomls'.format(build_dir=build_dir))
 
-    sym_folders = list(filter(filter_sym_dir, os.listdir(root_dir)))
+    sym_folders = list(
+        filter(
+            lambda name: filter_sym_dir(
+                root_dir,
+                name),
+            os.listdir(root_dir)))
 
-    for c in CATEGORIES:
-        cate_dir = '{build_dir}/cmake_tomls/{c}'.format(build_dir=build_dir, c=c)
-        cmd = 'mkdir -p {cate_dir} && ln -s {root_dir}/toolchain_deps/Cargo.{c}.toml {cate_dir}/Cargo.toml'.format(
-            root_dir=root_dir, c=c, cate_dir=cate_dir)
+    for cate in CATEGORIES:
+        cate_dir = '{build_dir}/cmake_tomls/{cate}'.format(
+            build_dir=build_dir, cate=cate)
+        cmd = 'mkdir -p {cate_dir} && [ ! -f {cate_dir}/Cargo.toml ] && \
+            ln -s {root_dir}/toolchain_deps/Cargo.{cate}.toml \
+            {cate_dir}/Cargo.toml'.format(root_dir=root_dir, cate=cate, cate_dir=cate_dir)
         exec_cmd(cmd)
 
-        for f in sym_folders:
-            cmd = 'ln -sn {root_dir}/{f} {cate_dir}/'.format(root_dir=root_dir, 
-                f=f, cate_dir=cate_dir)
+        for folder in sym_folders:
+            cmd = '[ ! -d {cate_dir}/{folder} ] && ln -sn {root_dir}/{folder} \
+                {cate_dir}/'.format(root_dir=root_dir, folder=folder, cate_dir=cate_dir)
             exec_cmd(cmd)
 
+
 def setup_cargo_for_sgx(root_dir, build_dir):
+    """setup cargo related files for sgx"""
     third_party_dir = os.path.join(root_dir, 'third_party')
     cmd = r'''mkdir -p {build_dir}/cmake_tomls/sgx_trusted_lib/.cargo \
     && cp -f {third_party_dir}/crates-sgx/Cargo.lock {build_dir}/cmake_tomls/sgx_trusted_lib/Cargo.lock \
     && cp -f {third_party_dir}/crates-sgx/config {build_dir}/cmake_tomls/sgx_trusted_lib/.cargo/config \
-    && sed -i 's/directory = "vendor"/directory = "third_party\/crates-sgx\/vendor"/' {build_dir}/cmake_tomls/sgx_trusted_lib/.cargo/config'''
+    && sed -i 's/directory = "vendor"/directory = "third_party\/crates-sgx\/vendor"/' \
+    {build_dir}/cmake_tomls/sgx_trusted_lib/.cargo/config'''
     cmd = cmd.format(build_dir=build_dir, third_party_dir=third_party_dir)
     exec_cmd(cmd)
 
+
 def main():
-    global ROOT_DIR
+    """setup tomls for cmake"""
     if len(sys.argv) != 3:
         print('[usage] setup_cmake_tomls [project_root_dir] [project_build_dir]')
-        exit(-1)
+        sys.exit(-1)
     root_dir = sys.argv[1]
     build_dir = sys.argv[2]
-    ROOT_DIR = root_dir
 
-    if os.path.exists('{build_dir}/cmake_tomls'.format(build_dir=build_dir)):
-        print('cmake_tomls exists, skip creating symlinks')
-    else:
-        create_symlinks(root_dir, build_dir)
-
+    create_symlinks(root_dir, build_dir)
     setup_cargo_for_sgx(root_dir, build_dir)
 
 
