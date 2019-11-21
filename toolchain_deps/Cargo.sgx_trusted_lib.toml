@@ -5,6 +5,7 @@ members = [
   "mesatee_services/fns/sgx_trusted_lib",
   "mesatee_services/tdfs/sgx_trusted_lib",
   "mesatee_services/tms/sgx_trusted_lib",
+  "mesatee_services/acs/sgx_trusted_lib",
   "tests/functional_test/sgx_trusted_lib",
 ]
 

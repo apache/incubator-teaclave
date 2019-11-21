@@ -47,6 +47,7 @@ fn handle_run_functional_test(_args: &RunFunctionalTestInput) -> Result<RunFunct
         tests::tms_test::update_task_result,
         tests::tms_test::update_private_result,
         tests::tms_test::update_status,
+        tests::acs_test::access_control_model,
     );
 
     Ok(RunFunctionalTestOutput::new(nfailed))

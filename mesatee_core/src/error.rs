@@ -113,10 +113,12 @@ pub enum ErrorKind {
     IPCError,
     /// IAS client key or cert not available
     IASClientKeyCertError,
-    /// No valid worker for the task,
+    /// No valid worker for the task
     NoValidWorkerError,
     /// RPC Message size excceds the limit
     MsgSizeLimitExceedError,
+    /// Unhandled MesaPy exception encountered
+    MesaPyError,
     /// Others.
     Unknown,
 }
@@ -189,6 +191,7 @@ impl ErrorKind {
             }
             ErrorKind::NoValidWorkerError => "no valid worker error",
             ErrorKind::MsgSizeLimitExceedError => "message size exceeds limit",
+            ErrorKind::MesaPyError => "unhandled mesapy exception",
             ErrorKind::Unknown => "unknown error",
         }
     }
@@ -240,6 +243,7 @@ impl From<u32> for Error {
             0x0000_1011 => ErrorKind::IASClientKeyCertError,
             0x0000_1012 => ErrorKind::NoValidWorkerError,
             0x0000_1013 => ErrorKind::MsgSizeLimitExceedError,
+            0x0000_1014 => ErrorKind::MesaPyError,
             _ => ErrorKind::Unknown,
         };
 
@@ -287,6 +291,7 @@ impl Into<u32> for Error {
             ErrorKind::IASClientKeyCertError => 0x0000_1011,
             ErrorKind::NoValidWorkerError => 0x0000_1012,
             ErrorKind::MsgSizeLimitExceedError => 0x0000_1013,
+            ErrorKind::MesaPyError => 0x0000_1014,
             ErrorKind::Unknown => 0xffff_ffff,
         }
     }

@@ -20,9 +20,9 @@ option(COV OFF "Turn on coverage or not")
 set(UNIX_LIBS mesatee_sdk protected_fs_rs)
 # need relative path for SGX_MODULE_PATHS to find Enclave.config.xml
 set(SGX_MODULE_PATHS mesatee_services/kms mesatee_services/tdfs mesatee_services/tms
-    mesatee_services/fns tests/functional_test)
+    mesatee_services/fns mesatee_services/acs tests/functional_test)
 # SGX_MODULES is generated from SGX_MODULE_PATHS
-# set(SGX_MODULES kms tdfs tms fns functional_test)
+# set(SGX_MODULES kms tdfs tms fns acs functional_test)
 # ================ VARIABLES FOR MANUAL CHANGE END ================
 
 # AUTO-GENERATE VARS
@@ -61,12 +61,30 @@ foreach(package_name ${SGX_MODULES})
     )
 endforeach()
 
+# mesapy components
+add_custom_command(
+    OUTPUT ${MESATEE_OUT_DIR}/acs_py_enclave.c
+    COMMAND env
+    ARGS PYTHONPATH=${PROJECT_SOURCE_DIR}/third_party/mesapy/sgx
+         PYPY_FFI_OUTDIR=${MESATEE_OUT_DIR}
+         pypy ${PROJECT_SOURCE_DIR}/mesatee_services/acs/python/ffi.py
+    DEPENDS prep
+            ${PROJECT_SOURCE_DIR}/mesatee_services/acs/python/ffi.py
+            ${PROJECT_SOURCE_DIR}/mesatee_services/acs/python/acs_engine.py
+    COMMENT "Generating mesapy ffi stubs"
+)
+add_library(pycomponent STATIC ${MESATEE_OUT_DIR}/acs_py_enclave.c)
+set_target_properties(pycomponent PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${MESATEE_OUT_DIR})
+target_compile_definitions(pycomponent PUBLIC SGX)
+target_compile_options(pycomponent PUBLIC -UWITH_THREAD -O2 -fPIC -Wimplicit -I/usr/lib/pypy/include)
+
+
 # sgx_trusted_lib
 foreach(package_path ${SGX_MODULE_PATHS})
     set(_package_name)
     get_filename_component(_package_name ${package_path} NAME)
     add_sgx_build_target(${package_path}
-        DEPENDS prep ${TARGET_CONFIG_GEN} "${SGXAPP_PREFIX}-${_package_name}"
+        DEPENDS prep ${TARGET_CONFIG_GEN} "${SGXAPP_PREFIX}-${_package_name}" pycomponent
     )
 endforeach()
 

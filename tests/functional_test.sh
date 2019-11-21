@@ -15,16 +15,16 @@ if lsof -i :5066; then
     echo "[-] port 5066 is in use"
     exit 1
 fi
+if lsof -i :5077; then
+    echo "[-] port 5066 is in use"
+    exit 1
+fi
 if lsof -i :5065; then
     echo "[-] port 5065 is in use"
     exit 1
 fi
 if lsof -i :5554; then
     echo "[-] port 5554 is in use"
-    exit 1
-fi
-if lsof -i :5555; then
-    echo "[-] port 5555 is in use"
     exit 1
 fi
 if lsof -i :5555; then
@@ -41,6 +41,7 @@ fi
 ./tdfs 2>&1 | tee tdfs.log &
 ./tms 2>&1 | tee tms.log &
 ./fns 2>&1 | tee fns.log &
+./acs 2>&1 | tee acs.log &
 
 wait_service() {
     name=$1
@@ -61,6 +62,7 @@ wait_service tdfs 5065 30
 wait_service tms 5554 30
 wait_service tms 5555 30
 wait_service fns 3444 30
+wait_service acs 5077 30
 
 ./functional_test 2>&1 | tee functional_test.log
 exit ${PIPESTATUS[0]}

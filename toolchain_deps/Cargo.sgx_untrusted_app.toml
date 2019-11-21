@@ -5,6 +5,7 @@ members = [
   "mesatee_services/fns/sgx_app",
   "mesatee_services/tdfs/sgx_app",
   "mesatee_services/tms/sgx_app",
+  "mesatee_services/acs/sgx_app",
   "tests/functional_test/sgx_app",
 ]
 
