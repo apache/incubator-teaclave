@@ -28,13 +28,17 @@ use std::prelude::v1::*;
 
 use std::slice;
 
+const FFI_FILE_ERROR: c_int = -1;
+const FFI_BUFFER_NOT_ENOUGH_ERROR: c_int = -2;
+const UUID_SIZE: size_t = 36;
+
 // C API of read_file for workers
 //
 // int c_read_file(char* context_id,
 //                 char* context_token,
 //                 char* file_id,
 //                 char* out_buf,
-//                 size_t out_buf_size);
+//                 size_t* out_buf_size);
 #[allow(unused)]
 #[no_mangle]
 extern "C" fn c_read_file(
@@ -42,11 +46,12 @@ extern "C" fn c_read_file(
     context_token: *const c_char,
     file_id: *const c_char,
     out_buf: *mut u8,
-    out_buf_size: size_t,
+    out_buf_size_p: *mut size_t,
 ) -> c_int {
     let context_id = unsafe { CStr::from_ptr(context_id).to_string_lossy().into_owned() };
     let context_token = unsafe { CStr::from_ptr(context_token).to_string_lossy().into_owned() };
     let file_id = unsafe { CStr::from_ptr(file_id).to_string_lossy().into_owned() };
+    let out_buf_size = unsafe { *out_buf_size_p };
     let out: &mut [u8] = unsafe { slice::from_raw_parts_mut(out_buf, out_buf_size) };
 
     match read_file(&context_id, &context_token, &file_id) {
@@ -56,10 +61,11 @@ extern "C" fn c_read_file(
                 out[..content.len()].copy_from_slice(&content);
                 content_len as c_int
             } else {
-                out_buf_size as c_int - content_len as c_int
+                unsafe { *out_buf_size_p = content_len }
+                FFI_BUFFER_NOT_ENOUGH_ERROR
             }
         }
-        Err(_) => 0,
+        Err(_) => FFI_FILE_ERROR,
     }
 }
 
@@ -81,6 +87,9 @@ extern "C" fn c_save_file_for_task_creator(
     out_file_id_buf: *mut u8,
     out_file_id_buf_size: size_t,
 ) -> c_int {
+    if out_file_id_buf_size < UUID_SIZE {
+        return FFI_BUFFER_NOT_ENOUGH_ERROR;
+    }
     let context_id = unsafe { CStr::from_ptr(context_id).to_string_lossy().into_owned() };
     let context_token = unsafe { CStr::from_ptr(context_token).to_string_lossy().into_owned() };
     let in_buf: &[u8] = unsafe { slice::from_raw_parts(in_buf, in_buf_size) };
@@ -94,10 +103,10 @@ extern "C" fn c_save_file_for_task_creator(
                 out_file_id[..file_id_len].copy_from_slice(file_id.as_bytes());
                 file_id_len as c_int
             } else {
-                out_file_id_buf_size as c_int - file_id_len as c_int
+                FFI_BUFFER_NOT_ENOUGH_ERROR
             }
         }
-        Err(_) => 0,
+        Err(_) => FFI_FILE_ERROR,
     }
 }
 
@@ -119,6 +128,9 @@ extern "C" fn c_save_file_for_all_participants(
     out_file_id_buf: *mut u8,
     out_file_id_buf_size: size_t,
 ) -> c_int {
+    if out_file_id_buf_size < UUID_SIZE {
+        return FFI_BUFFER_NOT_ENOUGH_ERROR;
+    }
     let context_id = unsafe { CStr::from_ptr(context_id).to_string_lossy().into_owned() };
     let context_token = unsafe { CStr::from_ptr(context_token).to_string_lossy().into_owned() };
     let in_buf: &[u8] = unsafe { slice::from_raw_parts(in_buf, in_buf_size) };
@@ -132,10 +144,10 @@ extern "C" fn c_save_file_for_all_participants(
                 out_file_id[..file_id_len].copy_from_slice(file_id.as_bytes());
                 file_id_len as c_int
             } else {
-                out_file_id_buf_size as c_int - file_id_len as c_int
+                FFI_BUFFER_NOT_ENOUGH_ERROR
             }
         }
-        Err(_) => 0,
+        Err(_) => FFI_FILE_ERROR,
     }
 }
 
@@ -159,6 +171,9 @@ extern "C" fn c_save_file_for_file_owner(
     out_file_id_buf: *mut u8,
     out_file_id_buf_size: size_t,
 ) -> c_int {
+    if out_file_id_buf_size < UUID_SIZE {
+        return FFI_BUFFER_NOT_ENOUGH_ERROR;
+    }
     let context_id = unsafe { CStr::from_ptr(context_id).to_string_lossy().into_owned() };
     let context_token = unsafe { CStr::from_ptr(context_token).to_string_lossy().into_owned() };
     let in_buf: &[u8] = unsafe { slice::from_raw_parts(in_buf, in_buf_size) };
@@ -173,10 +188,10 @@ extern "C" fn c_save_file_for_file_owner(
                 out_file_id[..file_id_len].copy_from_slice(file_id.as_bytes());
                 file_id_len as c_int
             } else {
-                out_file_id_buf_size as c_int - file_id_len as c_int
+                FFI_BUFFER_NOT_ENOUGH_ERROR
             }
         }
-        Err(_) => 0,
+        Err(_) => FFI_FILE_ERROR,
     }
 }
 

@@ -9,7 +9,7 @@ def save_file_for_task_creator(context_id, context_token):
 
 def read_file(context_id, context_token, file_id):
     content = mesatee.mesatee_read_file(context_id, context_token, file_id)
-    if content == "testdata\n": return True
+    if content.startswith("Lorem ipsum dolor sit amet"): return True
     else: return False
 
 def save_file_for_all_participants(context_id, context_token):
