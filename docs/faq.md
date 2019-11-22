@@ -1,14 +1,5 @@
 # FAQs in Build and Run
 
-## Why did I ... ?
-
-If you see any error during compilation or execution, please first of all
-double check if you have done ``. ./environment`` or ``source ./environment``.
-This is a must before doing anything.
-
-If problem persists, please try ``make clean && make`` to see if situation
-changes.
-
 ## Why did I see ``SGX launch check failed: ias_spid.txt or ias_key.txt does NOT exist``?
 
 Because the Intel Attestation Service (IAS) requires mutual authentication in
