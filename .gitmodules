@@ -1,6 +1,7 @@
 [submodule "third_party/crates-sgx"]
 	path = third_party/crates-sgx
 	url = https://github.com/mesalock-linux/crates-sgx.git
+	ignore = dirty
 [submodule "third_party/rust-sgx-sdk"]
 	path = third_party/rust-sgx-sdk
 	url = https://github.com/baidu/rust-sgx-sdk.git
