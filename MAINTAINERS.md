@@ -14,13 +14,12 @@ The list is sorted alphabetically:
 
 Name | Email |
 -----|-------|
-[Mingshen Sun](https://github.com/mssun) | [sunmingshen@baidu.com](mailto:sunmingshen@baidu.com)
-[Pei Wang](https://github.com/uraj) | [wangpei10@baidu.com](mailto:wangpei10@baidu.com)
-[Rundong Zhou](https://github.com/rdzhou) | [zhourundong@baidu.com](mailto:zhourundong@baidu.com)
-[Tao Wei](https://github.com/LenxWei) | [lenx@baidu.com](mailto:lenx@baidu.com)
-[Tongxin Li](https://github.com/litongxin1991) | [litongxin@baidu.com](mailto:litongxin@baidu.com)
-[Yiming Jing](https://github.com/kevinis) | [jingyiming@baidu.com](mailto:jingyiming@baidu.com)
-[Yu Ding](https://github.com/dingelish) | [dingyu02@baidu.com](mailto:dingyu02@baidu.com)
-[Yueqiang Cheng](https://github.com/strongerwill) | [chengyueqiang@baidu.com](mailto:chengyueqiang@baidu.com)
-[Yulong Zhang](https://github.com/yulongzhang) | [ylzhang@baidu.com](mailto:ylzhang@baidu.com)
-[Zhaofeng Chen](https://github.com/m4sterchain) | [chenzhaofeng@baidu.com](mailto:chenzhaofeng@baidu.com)
+[Mingshen Sun](https://github.com/mssun) | [mssun@apache.org](mailto:mssun@apache.org)
+[Pei Wang](https://github.com/uraj) | [uraj@apache.org](mailto:uraj@apache.org)
+[Rundong Zhou](https://github.com/rdzhou) | [rundongzhou@apache.org](mailto:rundongzhou@apache.org)
+[Tao Wei](https://github.com/LenxWei) | [lenxwei@apache.org](mailto:lenxwei@apache.org)
+[Tongxin Li](https://github.com/litongxin1991) | [litongxin1991@apache.org](mailto:litongxin1991@apache.org)
+[Yiming Jing](https://github.com/kevinis) | [yjing@apache.org](mailto:yjing@apache.org)
+[Yu Ding](https://github.com/dingelish) | [dingyu@apache.org](mailto:dingyu@apache.org)
+[Yulong Zhang](https://github.com/yulongzhang) | [yulongzhang@apache.org](mailto:yulongzhang@apache.org)
+[Zhaofeng Chen](https://github.com/m4sterchain) | [zfc@apache.org](mailto:zfc@apache.org)
