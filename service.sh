@@ -5,6 +5,14 @@ if [ -z "${MESATEE_BIN}" ]; then
     echo "env var MESATEE_BIN is not set, use ${MESATEE_BIN}"
 fi
 
+if [ -z "${MESATEE_CFG_DIR}" ]; then
+    SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+    MESATEE_CFG_DIR=$SCRIPT_DIR
+    echo "env var MESATEE_CFG_DIR is not set, use ${MESATEE_CFG_DIR}"
+fi
+
+export MESATEE_CFG_DIR
+
 get_stdout_file() {
     echo -n "/tmp/$1.log"
 }
