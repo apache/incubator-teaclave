@@ -142,7 +142,8 @@ fn get_mesatee_cfg_dir() -> String {
     match env::var(&MESATEE_CFG_DIR_ENV) {
         Ok(p) => p,
         Err(_) => {
-            #[cfg(feature = "mesalock_sgx")] use std::println;
+            #[cfg(feature = "mesalock_sgx")]
+            use std::println;
             println!("Missing environment variable MESATEE_CFG_DIR. Using \".\"");
             ".".to_string()
         }
