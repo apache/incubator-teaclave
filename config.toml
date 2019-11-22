@@ -55,8 +55,8 @@ acs  = { listen_ip = "0.0.0.0", connect_ip = "127.0.0.1", port = 5077 }
 # connect to Intel® Attestation Service (IAS).
 # This is a required section.
 [ias_client_config]
-spid = { path = "bin/ias_spid.txt" }
-key = { path = "bin/ias_key.txt" }
+spid = { env = "IAS_SPID" }
+key = { env = "IAS_KEY" }
 
 
 # This section configures the auditors.

@@ -41,7 +41,7 @@ use std::net::IpAddr;
 pub struct MesateeConfigToml {
     pub api_endpoints: BTreeMap<String, ApiEndpoint>,
     pub internal_endpoints: BTreeMap<String, InternalEndpoint>,
-    pub ias_client_config: BTreeMap<String, PathValue>,
+    pub ias_client_config: BTreeMap<String, EnvValue>,
     pub audited_enclave_config: BTreeMap<String, PathValue>,
 }
 
@@ -63,6 +63,11 @@ pub struct InternalEndpoint {
 #[derive(Debug, Deserialize)]
 pub struct PathValue {
     pub path: PathBuf,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct EnvValue {
+    pub env: String,
 }
 
 impl MesateeConfigToml {
@@ -95,18 +100,26 @@ impl MesateeConfigToml {
             return Err(err("[api_endpoint]: missing `acs`"));
         }
 
+        let ias_client_config = &self.ias_client_config;
+        if !ias_client_config.contains_key("spid") {
+            return Err(err("[ias_client_config]: missing `spid`"));
+        }
+        if !ias_client_config.contains_key("key") {
+            return Err(err("[ias_client_config]: missing `key`"));
+        }
+
         let audited_enclave_config = &self.audited_enclave_config;
         if !audited_enclave_config.contains_key("enclave_info") {
-            return Err(err("[ias_client_config]: missing `enclave_info`"));
+            return Err(err("[audited_enclave_config]: missing `enclave_info`"));
         }
         if !audited_enclave_config.contains_key("signature_a") {
-            return Err(err("[ias_client_config]: missing `signature_a`"));
+            return Err(err("[audited_enclave_config]: missing `signature_a`"));
         }
         if !audited_enclave_config.contains_key("signature_b") {
-            return Err(err("[ias_client_config]: missing `signature_b`"));
+            return Err(err("[audited_enclave_config]: missing `signature_b`"));
         }
         if !audited_enclave_config.contains_key("signature_c") {
-            return Err(err("[ias_client_config]: missing `signature_c`"));
+            return Err(err("[audited_enclave_config]: missing `signature_c`"));
         }
 
         Ok(())
@@ -126,7 +139,14 @@ lazy_static! {
 
 #[inline]
 fn get_mesatee_cfg_dir() -> String {
-    env::var(&MESATEE_CFG_DIR_ENV).expect("Please set $MESATEE_CFG_DIR")
+    match env::var(&MESATEE_CFG_DIR_ENV) {
+        Ok(p) => p,
+        Err(_) => {
+            #[cfg(feature = "mesalock_sgx")] use std::println;
+            println!("Missing environment variable MESATEE_CFG_DIR. Using \".\"");
+            ".".to_string()
+        }
+    }
 }
 
 #[inline]
@@ -176,8 +196,8 @@ pub struct MesateeConfig {
     pub fns_external_connect_addr: IpAddr, // for TMS to return to users
     pub fns_external_port: u16,
 
-    pub ias_client_spid_path: PathBuf,
-    pub ias_client_key_path: PathBuf,
+    pub ias_client_spid_envvar: String,
+    pub ias_client_key_envvar: String,
 
     pub audited_enclave_info_path: PathBuf,
     pub auditor_a_signature_path: PathBuf,
@@ -202,13 +222,15 @@ lazy_static! {
             .to_path_buf()
             .join(&MESATEE_CONFIG_TOML.audited_enclave_config["signature_c"].path);
 
-        let ias_client_spid_path = Path::new(&mesatee_cfg_dir)
-            .to_path_buf()
-            .join(&MESATEE_CONFIG_TOML.ias_client_config["spid"].path);
+        //let ias_client_spid_path = Path::new(&mesatee_cfg_dir)
+        //    .to_path_buf()
+        //    .join(&MESATEE_CONFIG_TOML.ias_client_config["spid"].env);
 
-        let ias_client_key_path = Path::new(&mesatee_cfg_dir)
-            .to_path_buf()
-            .join(&MESATEE_CONFIG_TOML.ias_client_config["key"].path);
+        //let ias_client_key_path = Path::new(&mesatee_cfg_dir)
+        //    .to_path_buf()
+        //    .join(&MESATEE_CONFIG_TOML.ias_client_config["key"].env);
+        let ias_client_spid_envvar = env::var(&MESATEE_CONFIG_TOML.ias_client_config["spid"].env).unwrap();
+        let ias_client_key_envvar = env::var(&MESATEE_CONFIG_TOML.ias_client_config["key"].env).unwrap();
 
         MesateeConfig {
             tms_external_listen_addr: MESATEE_CONFIG_TOML.api_endpoints["tms"].listen_ip,
@@ -237,8 +259,8 @@ lazy_static! {
             fns_external_connect_addr: MESATEE_CONFIG_TOML.api_endpoints["fns"].connect_ip.unwrap(),
             fns_external_port: MESATEE_CONFIG_TOML.api_endpoints["fns"].port,
 
-            ias_client_spid_path: ias_client_spid_path,
-            ias_client_key_path: ias_client_key_path,
+            ias_client_spid_envvar: ias_client_spid_envvar,
+            ias_client_key_envvar: ias_client_key_envvar,
 
             audited_enclave_info_path: audited_enclave_info_path,
             auditor_a_signature_path: auditor_a_signature_path,
