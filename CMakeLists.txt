@@ -4,7 +4,7 @@ project (MesaTEE C)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(MesaTEEUtils)
 include(ExternalProject)
-check_exe_dependencies(git openssl python rustup)
+check_exe_dependencies(git openssl python rustup lsof pypy)
 init_submodules()
 
 # ====== VARIABLES FOR CMAKE -D{VAR}=VAL CONFIGURATION BEGIN ======
@@ -76,6 +76,9 @@ add_custom_command(
 add_library(pycomponent STATIC ${MESATEE_OUT_DIR}/acs_py_enclave.c)
 set_target_properties(pycomponent PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${MESATEE_OUT_DIR})
 target_compile_definitions(pycomponent PUBLIC SGX)
+if(NOT EXISTS "/usr/lib/pypy/include")
+    message(FATAL_ERROR "pypy development package not found\nFor Ubuntu, please run `apt-get install pypy-dev`")
+endif()
 target_compile_options(pycomponent PUBLIC -UWITH_THREAD -O2 -fPIC -Wimplicit -I/usr/lib/pypy/include)
 
 
