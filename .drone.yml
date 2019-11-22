@@ -6,15 +6,13 @@ steps:
   image: mesalocklinux/build-mesatee:0.1.5
   commands:
   - mkdir -p bin
-  - echo $V5_SPID > bin/ias_spid.txt
-  - echo $V5_KEY > bin/ias_key.txt
   - . /root/.cargo/env
   - mkdir -p build
   - cd build && cmake ..
   environment:
-    V5_KEY:
+    IAS_KEY:
       from_secret: V5_KEY
-    V5_SPID:
+    IAS_SPID:
       from_secret: V5_SPID
 - name: check
   image: mesalocklinux/build-mesatee:0.1.5
@@ -86,8 +84,6 @@ steps:
   image: mesalocklinux/build-mesatee:0.1.5
   commands:
   - mkdir -p bin
-  - echo $V5_SPID > bin/ias_spid.txt
-  - echo $V5_KEY > bin/ias_key.txt
   - . /root/.cargo/env
   - mkdir -p build
   - cd build && cmake -DCMAKE_BUILD_TYPE=Debug ..
@@ -143,7 +139,7 @@ steps:
   - mkdir -p build
   - cd build && cmake ..
   environment:
-    V5_SPID:
+    IAS_SPID:
       from_secret: V5_SPID
 - name: check
   image: mesalocklinux/build-mesatee:0.1.5
@@ -178,7 +174,7 @@ steps:
   - mkdir -p build
   - cd build && cmake ..
   environment:
-    V5_SPID:
+    IAS_SPID:
       from_secret: V5_SPID
 - name: check
   image: mesalocklinux/build-mesatee:0.1.5
