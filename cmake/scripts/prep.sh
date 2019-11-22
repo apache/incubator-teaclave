@@ -18,10 +18,12 @@ ln -snf ${CMAKE_BINARY_DIR} /tmp/mesatee_symlinks/mesatee_build
 if git submodule status | egrep -q '^[-]|^[+]'; then echo 'INFO: Need to reinitialize git submodules' && git submodule update --init --recursive; fi
 rustup install --no-self-update ${RUSTUP_TOOLCHAIN} > /dev/null 2>&1
 # get mesapy
-if [ ! -f ${MESATEE_OUT_DIR}/libpypy-c.a ]; then
-    $(cd ${MESATEE_OUT_DIR};
+if [ ! -f ${MESATEE_OUT_DIR}/libpypy-c.a ] || [ ! -f ${MESATEE_OUT_DIR}/${MESAPY_VERSION}-mesapy-sgx.tar.gz ]; then
+    cd ${MESATEE_OUT_DIR};
+    echo "Downloading MesaPy ${MESAPY_VERSION}..."
     wget -qN https://mesapy.org/release/${MESAPY_VERSION}-mesapy-sgx.tar.gz;
-    tar xzf ${MESAPY_VERSION}-mesapy-sgx.tar.gz)
+    tar xzf ${MESAPY_VERSION}-mesapy-sgx.tar.gz;
+    cd -
 fi
 # build libEnclave_u.a & libEnclave_t.o
 if [ ! -f ${MESATEE_OUT_DIR}/libEnclave_u.a ]; then
