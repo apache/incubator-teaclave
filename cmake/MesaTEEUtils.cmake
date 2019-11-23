@@ -28,7 +28,7 @@ endfunction()
 # )
 function(add_cargo_build_target package_name)
     set(options NOT_SET_COMMON_ENV)
-    set(oneValueArgs TARGET_NAME TOML_DIR TARGET_DIR)
+    set(oneValueArgs TARGET_NAME TOML_DIR TARGET_DIR INSTALL_DIR)
     set(multiValueArgs DEPENDS EXTRA_CARGO_FLAGS)
     cmake_parse_arguments(MTEE "${options}" "${oneValueArgs}"
         "${multiValueArgs}" ${ARGN})
@@ -37,6 +37,12 @@ function(add_cargo_build_target package_name)
         set(_target_name ${MTEE_TARGET_NAME})
     else()
         set(_target_name cg_${package_name})
+    endif()
+
+    if (DEFINED MTEE_INSTALL_DIR)
+        set(_copy_dir ${MTEE_INSTALL_DIR})
+    else()
+        set(_copy_dir ${MESATEE_INSTALL_DIR})
     endif()
 
     if (MTEE_NOT_SET_COMMON_ENV)
@@ -55,7 +61,7 @@ function(add_cargo_build_target package_name)
         COMMAND ${CMAKE_COMMAND} -E env ${_envs} RUSTFLAGS=${RUSTFLAGS}
             ${MT_SCRIPT_DIR}/cargo_build_ex.sh -p ${package_name}
             --target-dir ${MTEE_TARGET_DIR} ${CARGO_BUILD_FLAGS} ${MTEE_EXTRA_CARGO_FLAGS}
-            && cp ${MTEE_TARGET_DIR}/${TARGET}/${package_name} ${MESATEE_BIN_DIR}
+            && cp ${MTEE_TARGET_DIR}/${TARGET}/${package_name} ${_copy_dir}
         ${_depends}
         COMMENT "Building ${_target_name}"
         WORKING_DIRECTORY ${MTEE_TOML_DIR}
@@ -99,7 +105,7 @@ function(add_cargo_build_dylib_target package_name)
         COMMAND ${CMAKE_COMMAND} -E env ${_envs} RUSTFLAGS=${RUSTFLAGS}
             ${MT_SCRIPT_DIR}/cargo_build_ex.sh -p ${package_name}
             --target-dir ${MTEE_TARGET_DIR} ${CARGO_BUILD_FLAGS} ${MTEE_EXTRA_CARGO_FLAGS}
-            && cp ${MTEE_TARGET_DIR}/${TARGET}/lib${package_name}.so ${MESATEE_BIN_DIR}
+            && cp ${MTEE_TARGET_DIR}/${TARGET}/lib${package_name}.so ${MESATEE_LIB_INSTALL_DIR}
         ${_depends}
         COMMENT "Building ${_target_name} as a dynamic library"
         WORKING_DIRECTORY ${MTEE_TOML_DIR}
@@ -171,7 +177,7 @@ endfunction()
 function(generate_env_file)
     set(envs ${MESATEE_COMMON_ENVS})
     list(FILTER envs INCLUDE REGEX "MESATEE_PROJECT_ROOT|MESATEE_CFG_DIR|\
-MESATEE_BUILD_CFG_DIR|MESATEE_BIN_DIR|MESATEE_OUT_DIR|MESATEE_AUDITORS_DIR")
+MESATEE_BUILD_CFG_DIR|MESATEE_OUT_DIR|MESATEE_AUDITORS_DIR")
     # add extra env vars
     list(APPEND envs "MESATEE_TEST_MODE=1" "RUST_LOG=info" "RUST_BACKTRACE=1")
     join_string("${envs}" "\nexport " env_file)

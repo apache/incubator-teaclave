@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 REQUIRED_ENVS=("TOOLCHAIN_DEPS_DIR" "CMAKE_C_COMPILER" "CUR_MODULE_NAME" "CUR_MODULE_PATH"
-"MESATEE_BIN_DIR" "MESATEE_OUT_DIR" "MESATEE_PROJECT_ROOT" "Service_Library_Name"
+"MESATEE_SERVICE_INSTALL_DIR" "MESATEE_OUT_DIR" "MESATEE_PROJECT_ROOT" "Service_Library_Name"
 "SGX_COMMON_CFLAGS" "SGX_ENCLAVE_SIGNER" "SGX_LIBRARY_PATH" "TARGET" "Trts_Library_Name"
 "TRUSTED_TARGET_DIR")
 for var in "${REQUIRED_ENVS[@]}"; do
@@ -10,7 +10,7 @@ done
 
 LIBENCLAVE_PATH="${TRUSTED_TARGET_DIR}/${TARGET}/lib${CUR_MODULE_NAME}_enclave.a"
 CONFIG_PATH="${MESATEE_PROJECT_ROOT}/${CUR_MODULE_PATH}/sgx_trusted_lib/Enclave.config.xml"
-SIGNED_PATH="${MESATEE_BIN_DIR}/${CUR_MODULE_NAME}.enclave.signed.so"
+SIGNED_PATH="${MESATEE_SERVICE_INSTALL_DIR}/${CUR_MODULE_NAME}.enclave.signed.so"
 CUR_ENCLAVE_INFO_PATH="${MESATEE_OUT_DIR}/${CUR_MODULE_NAME}_enclave_info.txt"
 if [ ! "$LIBENCLAVE_PATH" -nt "$SIGNED_PATH" ] \
     && [ ! "$CONFIG_PATH" -nt "$SIGNED_PATH" ] \
@@ -35,7 +35,7 @@ ${CMAKE_C_COMPILER} libEnclave_t.o -o \
     -Wl,--version-script=${TOOLCHAIN_DEPS_DIR}/Enclave.lds
 ${SGX_ENCLAVE_SIGNER} sign -key ${TOOLCHAIN_DEPS_DIR}/Enclave_private.pem \
     -enclave ${CUR_MODULE_NAME}.enclave.so \
-    -out ${MESATEE_BIN_DIR}/${CUR_MODULE_NAME}.enclave.signed.so \
+    -out ${MESATEE_SERVICE_INSTALL_DIR}/${CUR_MODULE_NAME}.enclave.signed.so \
     -config ${MESATEE_PROJECT_ROOT}/${CUR_MODULE_PATH}/sgx_trusted_lib/Enclave.config.xml \
     -dumpfile ${CUR_MODULE_NAME}.enclave.meta.txt > /dev/null 2>&1
 echo ${CUR_MODULE_NAME} > ${CUR_MODULE_NAME}_enclave_info.txt

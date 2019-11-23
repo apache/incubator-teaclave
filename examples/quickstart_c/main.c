@@ -56,19 +56,19 @@ int main() {
 
   mesatee_auditor_set_t *auditors = mesatee_auditor_set_new();
   mesatee_auditor_set_add_auditor(auditors,
-                                  "../auditors/godzilla/godzilla.public.der",
-                                  "../auditors/godzilla/godzilla.sign.sha256");
+                                  "../service/auditors/godzilla/godzilla.public.der",
+                                  "../service/auditors/godzilla/godzilla.sign.sha256");
   mesatee_auditor_set_add_auditor(
-      auditors, "../auditors/optimus_prime/optimus_prime.public.der",
-      "../auditors/optimus_prime/optimus_prime.sign.sha256");
+      auditors, "../service/auditors/optimus_prime/optimus_prime.public.der",
+      "../service/auditors/optimus_prime/optimus_prime.sign.sha256");
   mesatee_auditor_set_add_auditor(
-      auditors, "../auditors/albus_dumbledore/albus_dumbledore.public.der",
-      "../auditors/albus_dumbledore/albus_dumbledore.sign.sha256");
+      auditors, "../service/auditors/albus_dumbledore/albus_dumbledore.public.der",
+      "../service/auditors/albus_dumbledore/albus_dumbledore.sign.sha256");
 
   assert(auditors != NULL);
 
   mesatee_enclave_info_t *enclave_info =
-      mesatee_enclave_info_load(auditors, "../out/enclave_info.txt");
+      mesatee_enclave_info_load(auditors, "../service/enclave_info.txt");
 
   assert(enclave_info != NULL);
 

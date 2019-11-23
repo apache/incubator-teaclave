@@ -21,7 +21,8 @@ fn main() {
     let dest_file = Path::new(&out_dir)
         .to_path_buf()
         .join("gen_build_config.rs");
-    let mut cmd = Command::new("../bin/config_gen");
+    // the hardcoded path is a little ugly here, but makes it easy to debug without cmake
+    let mut cmd = Command::new("../release/example/config_gen");
     cmd.arg(dest_file);
     match cmd.status() {
         Ok(status) => {

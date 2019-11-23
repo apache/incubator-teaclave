@@ -49,19 +49,19 @@ pub(crate) struct ImageResizePayload {
 fn main() {
     let auditors = vec![
         (
-            "../auditors/godzilla/godzilla.public.der",
-            "../auditors/godzilla/godzilla.sign.sha256",
+            "../service/auditors/godzilla/godzilla.public.der",
+            "../service/auditors/godzilla/godzilla.sign.sha256",
         ),
         (
-            "../auditors/optimus_prime/optimus_prime.public.der",
-            "../auditors/optimus_prime/optimus_prime.sign.sha256",
+            "../service/auditors/optimus_prime/optimus_prime.public.der",
+            "../service/auditors/optimus_prime/optimus_prime.sign.sha256",
         ),
         (
-            "../auditors/albus_dumbledore/albus_dumbledore.public.der",
-            "../auditors/albus_dumbledore/albus_dumbledore.sign.sha256",
+            "../service/auditors/albus_dumbledore/albus_dumbledore.public.der",
+            "../service/auditors/albus_dumbledore/albus_dumbledore.sign.sha256",
         ),
     ];
-    let enclave_info_file_path = "../out/enclave_info.txt";
+    let enclave_info_file_path = "../service/enclave_info.txt";
 
     let mesatee_enclave_info = MesateeEnclaveInfo::load(auditors, enclave_info_file_path).unwrap();
 
