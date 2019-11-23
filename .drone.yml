@@ -150,10 +150,6 @@ steps:
   - cd build && cmake -DRUSTFLAGS="-D warnings" -DSGX_MODE=SW .. && make VERBOSE=1 -j2
 - name: sgx-test
   image: mesalocklinux/build-mesatee:0.1.5
-  environment:
-    IAS_SPID:
-      from_secret: V5_SPID
-  privileged: true
   commands:
   - . /root/.cargo/env
   - cd build && make sgx-test
@@ -185,10 +181,6 @@ steps:
   - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DRUSTFLAGS="-D warnings" -DSGX_MODE=SW .. && make VERBOSE=1 -j2
 - name: sgx-test
   image: mesalocklinux/build-mesatee:0.1.5
-  environment:
-    IAS_SPID:
-      from_secret: V5_SPID
-  privileged: true
   commands:
   - . /root/.cargo/env
   - cd build && make sgx-test
