@@ -37,7 +37,7 @@ add_custom_target(cov-clean
 
 # add folders for "clean" target
 set_property(DIRECTORY PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
-   "${MESATEE_BIN_DIR}"
+   "${MESATEE_INSTALL_DIR}"
    "${MESATEE_OUT_DIR}"
    "${MESATEE_TARGET_DIR}")
 

@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
-if [ -z "${MESATEE_PROJECT_ROOT}" ] || [ -z "${MESATEE_BIN_DIR}" ] \
+if [ -z "${MESATEE_PROJECT_ROOT}" ] \
 || [ -z "${SGX_SDK}" ] || [ -z "${SGX_MODE}" ]; then
-    echo "Please set MESATEE_PROJECT_ROOT, MESATEE_BIN_DIR, SGX_SDK and SGX_MODE";
+    echo "Please set MESATEE_PROJECT_ROOT, SGX_SDK and SGX_MODE";
     exit -1
 fi
 

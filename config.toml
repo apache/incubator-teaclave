@@ -62,7 +62,7 @@ key = { env = "IAS_KEY" }
 # This section configures the auditors.
 # This is a required section.
 [audited_enclave_config]
-enclave_info = { path = "out/enclave_info.txt" }
-signature_a = { path = "auditors/godzilla/godzilla.sign.sha256" }
-signature_b = { path = "auditors/optimus_prime/optimus_prime.sign.sha256" }
-signature_c = { path = "auditors/albus_dumbledore/albus_dumbledore.sign.sha256" }
+enclave_info = { path = "release/service/enclave_info.txt" }
+signature_a = { path = "release/service/auditors/godzilla/godzilla.sign.sha256" }
+signature_b = { path = "release/service/auditors/optimus_prime/optimus_prime.sign.sha256" }
+signature_c = { path = "release/service/auditors/albus_dumbledore/albus_dumbledore.sign.sha256" }

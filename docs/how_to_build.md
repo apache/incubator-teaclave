@@ -93,7 +93,6 @@ help set the variables. Below is the description for the environment variables:
 * ``MESATEE_PROJECT_ROOT``: MesaTEE project root directory
 * ``MESATEE_CFG_DIR``: directory containing the runtime config
 * ``MESATEE_BUILD_CFG_DIR``: directory containing the compile time config
-* ``MESATEE_BIN_DIR``: directory that you want to place the generated binaries
 * ``MESATEE_AUDITORS_DIR``: directory containing auditors' public keys and endorsement to TEE enclaves (digital signatures)
 * ``MESATEE_TEST_MODE``: whether executing in testing mode
 * ``RUST_LOG``: logging levels

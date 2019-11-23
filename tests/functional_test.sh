@@ -1,10 +1,11 @@
 #!/bin/bash
 
 trap "pkill -2 -P $$; wait" SIGINT SIGTERM EXIT
-cd ../bin
+
+cd ../release/service
 
 # prepare test data
-cp -r ../tests/integration_test/test_data ../bin/
+cp -r ../../tests/integration_test/test_data ./
 
 # check port
 if lsof -i :6016; then

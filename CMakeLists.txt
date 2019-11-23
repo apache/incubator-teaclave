@@ -47,6 +47,7 @@ foreach(package_name ${UNIX_APPS})
         TARGET_NAME "${UNIXAPP_PREFIX}-${package_name}"
         TOML_DIR ${MT_UNIX_TOML_DIR}
         TARGET_DIR ${UNIX_TARGET_DIR}
+        INSTALL_DIR ${MESATEE_EXAMPLE_INSTALL_DIR}
         DEPENDS prep ${TARGET_CONFIG_GEN}
     )
 endforeach()
@@ -57,6 +58,7 @@ foreach(package_name ${SGX_MODULES})
         TARGET_NAME "${SGXAPP_PREFIX}-${package_name}"
         TOML_DIR ${MT_SGXAPP_TOML_DIR}
         TARGET_DIR ${UNTRUSTED_TARGET_DIR}
+        INSTALL_DIR ${MESATEE_SERVICE_INSTALL_DIR}
         DEPENDS prep ${TARGET_CONFIG_GEN}
     )
 endforeach()
@@ -100,7 +102,7 @@ add_cargo_build_dylib_target(mesatee_sdk_c
 )
 
 # example/quickstart_c
-link_directories(${MESATEE_BIN_DIR})
+link_directories(${MESATEE_LIB_INSTALL_DIR})
 add_executable(quickstart_c ${MESATEE_PROJECT_ROOT}/examples/quickstart_c/main.c)
 add_dependencies(quickstart_c prep ${TARGET_CONFIG_GEN} ${UNIXLIB_PREFIX}-mesatee_sdk_c)
 target_include_directories(quickstart_c
@@ -108,7 +110,7 @@ target_include_directories(quickstart_c
 target_link_libraries(quickstart_c mesatee_sdk_c)
 add_custom_command(TARGET quickstart_c POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/quickstart_c
-    ${MESATEE_BIN_DIR}/quickstart_c
+    ${MESATEE_EXAMPLE_INSTALL_DIR}/quickstart_c
 )
 
 add_enclave_sig_target_n_hooks()
