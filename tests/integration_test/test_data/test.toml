@@ -63,7 +63,7 @@ payload = """
 {"type":"Get","file_id":"fake_file_record","user_id":"fake_file_owner","user_token":"token"}
 """
 expected = """
-{"type":"Get","file_info":{"user_id":"fake_file_owner","file_name":"fake_file","sha256":"aaa","file_size":100,"access_path":"/tmp/fake_file","task_id":null,"collaborator_list":[],"key_config":{"key":"QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE=","nonce":"QUFBQUFBQUFBQUFB","ad":"QUFBQUE="}}}
+{"type":"Get","file_info":{"user_id":"fake_file_owner","file_name":"fake_file","sha256":"aaa","file_size":100,"access_path":"/*/fake_file","task_id":null,"collaborator_list":[],"key_config":{"key":"QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE=","nonce":"QUFBQUFBQUFBQUFB","ad":"QUFBQUE="}}}
 """
 
 [[step]]

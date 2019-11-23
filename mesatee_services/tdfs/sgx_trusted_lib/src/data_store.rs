@@ -20,7 +20,8 @@ use lazy_static::lazy_static;
 use mesatee_core::db::Memdb;
 use mesatee_core::{Error, ErrorKind, Result};
 use std::collections::HashSet;
-use std::format;
+use std::env;
+use std::path::Path;
 use std::sync::SgxMutex;
 
 #[derive(Clone)]
@@ -51,7 +52,11 @@ lazy_static! {
 
 impl FileMeta {
     pub fn get_access_path(&self) -> String {
-        format!("/tmp/{}", self.storage_path)
+        let storage_dir = env::var("MESATEE_STORAGE_DIR").unwrap_or_else(|_| "/tmp".into());
+        Path::new(&storage_dir)
+            .join(&self.storage_path)
+            .to_string_lossy()
+            .to_string()
     }
 
     pub fn check_permission(&self, user_id: &str) -> bool {
