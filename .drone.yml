@@ -186,7 +186,7 @@ steps:
 - name: sgx-test
   image: mesalocklinux/build-mesatee:0.1.5
   environment:
-    V5_SPID:
+    IAS_SPID:
       from_secret: V5_SPID
   privileged: true
   commands:
