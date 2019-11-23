@@ -19,7 +19,7 @@
 use std::prelude::v1::*;
 
 use crate::data_store::{self, FileMeta, FILE_STORE};
-use kms_client::KMSClient;
+use kms_proto::{self, KMSClient};
 use mesatee_core::config;
 use mesatee_core::rpc::EnclaveService;
 use mesatee_core::{Error, ErrorKind, Result};
@@ -35,10 +35,14 @@ impl HandleRequest for CreateFileRequest {
     fn handle_request(&self) -> Result<DFSResponse> {
         let target = config::Internal::target_kms();
         let mut client = KMSClient::new(target)?;
-
-        let resp = client.request_create_key()?;
-        let key_id = resp.key_id;
-        let key_config = resp.config;
+        let req = kms_proto::proto::CreateKeyRequest::new(kms_proto::EncType::Aead);
+        let resp = client.create_key(req)?;
+        let key_id = resp.get_key_id();
+        let key_config = resp.get_key_config()?;
+        let key_config = match key_config {
+            kms_proto::KeyConfig::Aead(config) => kms_proto::proto::AeadConfig::from(config),
+            kms_proto::KeyConfig::ProtectedFs(_config) => unimplemented!(),
+        };
 
         let file_id = Uuid::new_v4().to_string();
         let file_meta = FileMeta {

@@ -19,7 +19,8 @@ use std::prelude::v1::*;
 
 use crate::file_util;
 use core::convert::TryInto;
-use kms_client::KMSClient;
+use kms_proto;
+use kms_proto::KMSClient;
 use mesatee_core::config::{self, OutboundDesc, TargetDesc};
 use mesatee_core::rpc::channel::SgxTrustedChannel;
 use mesatee_core::{self, Result};
@@ -143,8 +144,13 @@ impl TDFSClient {
 
         let target = config::Internal::target_kms();
         let mut client = KMSClient::new(target)?;
-        let key_resp = client.request_get_key(&file_info.key_id)?;
-        let key_config = key_resp.config;
+        let key_req = kms_proto::proto::GetKeyRequest::new(&file_info.key_id);
+        let key_resp = client.get_key(key_req)?;
+        let key_config = key_resp.get_key_config()?;
+        let key_config = match key_config {
+            kms_proto::KeyConfig::Aead(config) => kms_proto::proto::AeadConfig::from(config),
+            kms_proto::KeyConfig::ProtectedFs(_config) => unimplemented!(),
+        };
         let access_path = &file_info.access_path;
         let mut f = fs::File::open(access_path)?;
         let capacity: usize = file_info.file_size.try_into().unwrap_or(1024 * 1024) + 1024;

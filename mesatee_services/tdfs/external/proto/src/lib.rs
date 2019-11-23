@@ -23,7 +23,7 @@ cfg_if! {
     if #[cfg(feature = "mesalock_sgx")]  {
     } else {
         mod key;
-        pub use key::AEADKeyConfig;
+        pub use key::AeadConfig;
     }
 }
 

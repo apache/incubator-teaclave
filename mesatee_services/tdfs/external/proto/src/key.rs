@@ -18,7 +18,7 @@
 use serde_derive::*;
 
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
-pub struct AEADKeyConfig {
+pub struct AeadConfig {
     #[serde(with = "base64_coder")]
     pub key: Vec<u8>,
     #[serde(with = "base64_coder")]

@@ -21,6 +21,7 @@ lazy_static     = { version = "1.0.2", features = ["spin_no_std"] }
 log             = { version = "0.4.6" }
 env_logger      = { version = "0.7.1" }
 uuid            = { version = "0.7.4", features = ["v4"] }
+rand            = { version = "0.7.0" }
 
 kms_proto       = { path = "../proto", optional = true}
 mesatee_core    = { version = "0.1.0" }

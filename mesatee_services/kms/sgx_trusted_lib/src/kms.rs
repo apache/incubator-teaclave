@@ -18,87 +18,75 @@
 // Insert std prelude in the top for the sgx feature
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
-use std::vec;
 
 use uuid::Uuid;
 
+use kms_proto::proto::{
+    CreateKeyRequest, CreateKeyResponse, DeleteKeyRequest, DeleteKeyResponse, GetKeyRequest,
+    GetKeyResponse, KMSRequest, KMSResponse, KMSService,
+};
+use kms_proto::{AEADKeyConfig, EncType, KeyConfig};
+use lazy_static::lazy_static;
 use mesatee_core::db::Memdb;
 use mesatee_core::rpc::EnclaveService;
 use mesatee_core::{Error, ErrorKind, Result};
 use std::marker::PhantomData;
 
-use kms_proto::AEADKeyConfig;
-use kms_proto::KMSResponse;
-use kms_proto::{CreateKeyRequest, DeleteKeyRequest, GetKeyRequest, KMSRequest};
-
-use lazy_static::lazy_static;
-
 lazy_static! {
-    static ref KEY_STORE: Memdb<String, AEADKeyConfig> = {
-        let db = Memdb::<String, AEADKeyConfig>::open().expect("cannot open memdb");
-        let fake_record = AEADKeyConfig {
-            key: vec![65; 32],
-            nonce: vec![65; 12],
-            ad: vec![65; 5],
-        };
+    static ref KEY_STORE: Memdb<String, KeyConfig> = {
+        let db = Memdb::<String, KeyConfig>::open().expect("cannot open memdb");
+        let fake_record = KeyConfig::Aead(AEADKeyConfig {
+            key: [65; 32],
+            nonce: [65; 12],
+            ad: [65; 5],
+        });
         let _ = db.set(&"fake_kms_record".to_string(), &fake_record);
         let _ = db.set(&"fake_kms_record_to_be_deleted".to_string(), &fake_record);
         db
     };
 }
 
-pub trait HandleRequest {
-    fn handle_request(&self) -> Result<KMSResponse>;
-}
-
-impl HandleRequest for CreateKeyRequest {
-    fn handle_request(&self) -> Result<KMSResponse> {
-        let key_config = AEADKeyConfig::new()?;
-        let key_id = Uuid::new_v4().to_string();
-        if KEY_STORE.get(&key_id)?.is_some() {
-            return Err(Error::from(ErrorKind::UUIDError));
-        }
-        KEY_STORE.set(&key_id, &key_config)?;
-        let resp = KMSResponse::new_create_key(&key_id, &key_config);
-        Ok(resp)
-    }
-}
-
-impl HandleRequest for GetKeyRequest {
-    fn handle_request(&self) -> Result<KMSResponse> {
-        let key_config = KEY_STORE
-            .get(&self.key_id)?
-            .ok_or_else(|| Error::from(ErrorKind::MissingValue))?;
-
-        let resp = KMSResponse::new_get_key(&key_config);
-        Ok(resp)
-    }
-}
-
-impl HandleRequest for DeleteKeyRequest {
-    fn handle_request(&self) -> Result<KMSResponse> {
-        let key_config = KEY_STORE
-            .del(&self.key_id)?
-            .ok_or_else(|| Error::from(ErrorKind::MissingValue))?;
-
-        let resp = KMSResponse::new_del_key(&key_config);
-        Ok(resp)
-    }
-}
-
 pub struct KMSEnclave<S, T> {
     state: i32,
-    x: PhantomData<S>,
-    y: PhantomData<T>,
+    x: PhantomData<(S, T)>,
 }
 
 impl<S, T> Default for KMSEnclave<S, T> {
     fn default() -> Self {
         KMSEnclave {
             state: 0,
-            x: PhantomData::<S>,
-            y: PhantomData::<T>,
+            x: PhantomData::<(S, T)>,
         }
+    }
+}
+
+impl KMSService for KMSEnclave<KMSRequest, KMSResponse> {
+    fn get_key(req: GetKeyRequest) -> mesatee_core::Result<GetKeyResponse> {
+        let key_config = KEY_STORE
+            .get(&req.key_id)?
+            .ok_or_else(|| Error::from(ErrorKind::MissingValue))?;
+
+        Ok(GetKeyResponse::new(&key_config))
+    }
+    fn del_key(req: DeleteKeyRequest) -> mesatee_core::Result<DeleteKeyResponse> {
+        let key_config = KEY_STORE
+            .del(&req.key_id)?
+            .ok_or_else(|| Error::from(ErrorKind::MissingValue))?;
+
+        Ok(DeleteKeyResponse::new(&key_config))
+    }
+    fn create_key(req: CreateKeyRequest) -> mesatee_core::Result<CreateKeyResponse> {
+        let enc_type = req.get_enc_type()?;
+        let config = match enc_type {
+            EncType::Aead => KeyConfig::new_aead_config(),
+            EncType::ProtectedFs => KeyConfig::new_protected_fs_config(),
+        };
+        let key_id = Uuid::new_v4().to_string();
+        if KEY_STORE.get(&key_id)?.is_some() {
+            return Err(Error::from(ErrorKind::UUIDError));
+        }
+        KEY_STORE.set(&key_id, &config)?;
+        Ok(CreateKeyResponse::new(&key_id, &config))
     }
 }
 
@@ -107,12 +95,8 @@ impl EnclaveService<KMSRequest, KMSResponse> for KMSEnclave<KMSRequest, KMSRespo
         trace!("handle_invoke invoked!");
         trace!("incoming payload = {:?}", input);
         self.state += 1;
-        let response = match input {
-            KMSRequest::Create(req) => req.handle_request()?,
-            KMSRequest::Get(req) => req.handle_request()?,
-            KMSRequest::Delete(req) => req.handle_request()?,
-        };
+        let result = self.dispatch(input);
         trace!("{}th round complete!", self.state);
-        Ok(response)
+        result
     }
 }

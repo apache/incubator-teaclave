@@ -1,0 +1,54 @@
+syntax = "proto2";
+package kms_proto;
+
+enum EncType {
+  Aead = 0;
+  ProtectedFs = 1;
+}
+
+message CreateKeyRequest {
+  required EncType enc_type = 1;
+}
+
+message AeadConfig {
+  required bytes key = 1;
+  required bytes nonce = 2;
+  required bytes ad = 3;
+}
+
+message ProtectedFsConfig {
+  required bytes key = 1;
+}
+
+message KeyConfig {
+  oneof config {
+    AeadConfig Aead = 1;
+    ProtectedFsConfig ProtectedFs = 2;
+  }
+}
+message CreateKeyResponse {
+  required string key_id = 1;
+  required KeyConfig config = 2;
+}
+
+message GetKeyRequest {
+  required string key_id = 1;
+}
+
+message GetKeyResponse {
+  required KeyConfig config = 1;
+}
+
+message DeleteKeyRequest {
+  required string key_id = 1;
+}
+
+message DeleteKeyResponse {
+  required KeyConfig config = 1;
+}
+
+service KMS {
+  rpc GetKey(GetKeyRequest) returns (GetKeyResponse);
+  rpc DelKey(DeleteKeyRequest) returns (DeleteKeyResponse);
+  rpc CreateKey(CreateKeyRequest) returns (CreateKeyResponse);
+}

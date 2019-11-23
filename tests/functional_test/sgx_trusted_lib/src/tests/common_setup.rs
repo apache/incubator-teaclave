@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 use acs_client::ACSClient;
-use kms_client::KMSClient;
+use kms_proto::KMSClient;
 use mesatee_core::config;
 use tdfs_internal_client::TDFSClient;
 use tms_internal_client::TMSClient;

@@ -17,7 +17,7 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use kms_proto::AEADKeyConfig;
+use kms_proto::proto::AeadConfig;
 use serde_derive::*;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -71,7 +71,7 @@ pub struct CreateFileRequest {
 pub struct CreateFileResponse {
     pub file_id: String,
     pub access_path: String,
-    pub key_config: AEADKeyConfig,
+    pub key_config: AeadConfig,
 }
 
 impl DFSRequest {
@@ -102,7 +102,7 @@ impl DFSRequest {
 }
 
 impl DFSResponse {
-    pub fn new_create_file(file_id: &str, access_path: &str, key: &AEADKeyConfig) -> DFSResponse {
+    pub fn new_create_file(file_id: &str, access_path: &str, key: &AeadConfig) -> DFSResponse {
         let resp = CreateFileResponse {
             file_id: file_id.to_owned(),
             access_path: access_path.to_owned(),
