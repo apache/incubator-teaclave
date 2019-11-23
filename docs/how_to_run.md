@@ -13,9 +13,15 @@ The ``api_endpoints`` and ``internal_endpoints``  of
 services. Please configure them accordingly.
 
 Then, please set SPID and key (either primary or secondary) from Intel Trusted
-Service API portal by ``cat YOUR_SPID > ./bin/ias_spid.txt && cat YOUR_KEY > ./bin/ias_key.txt``.
-Note that the default paths for `ias_spid.txt` and `ias_key.txt` is under the `./bin` directory,
-but can be configured in the `config.toml` file.
+Service API portal by ``export IAS_KEY=YOUR_SPID && export IAS_SPID=YOUR_KEY``.
+Next, please edit [config.toml](../config.toml) to tell MesaTEE where to find
+IAS API key and SPID:
+
+```toml
+[ias_client_config]
+spid = { env = "IAS_SPID" }
+key = { env = "IAS_KEY" }
+```
 
 Afterwards, you can launch MesaTEE services as background daemons by running:
 ``./service.sh {start|stop|restart}``
