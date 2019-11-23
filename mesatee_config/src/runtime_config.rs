@@ -223,15 +223,8 @@ lazy_static! {
             .to_path_buf()
             .join(&MESATEE_CONFIG_TOML.audited_enclave_config["signature_c"].path);
 
-        //let ias_client_spid_path = Path::new(&mesatee_cfg_dir)
-        //    .to_path_buf()
-        //    .join(&MESATEE_CONFIG_TOML.ias_client_config["spid"].env);
-
-        //let ias_client_key_path = Path::new(&mesatee_cfg_dir)
-        //    .to_path_buf()
-        //    .join(&MESATEE_CONFIG_TOML.ias_client_config["key"].env);
-        let ias_client_spid_envvar = env::var(&MESATEE_CONFIG_TOML.ias_client_config["spid"].env).unwrap_or_else("".into());
-        let ias_client_key_envvar = env::var(&MESATEE_CONFIG_TOML.ias_client_config["key"].env).unwrap_or_else("".into());
+        let ias_client_spid_envvar = env::var(&MESATEE_CONFIG_TOML.ias_client_config["spid"].env).unwrap_or_else(|_| "".into());
+        let ias_client_key_envvar = env::var(&MESATEE_CONFIG_TOML.ias_client_config["key"].env).unwrap_or_else(|_| "".into());
 
         MesateeConfig {
             tms_external_listen_addr: MESATEE_CONFIG_TOML.api_endpoints["tms"].listen_ip,
