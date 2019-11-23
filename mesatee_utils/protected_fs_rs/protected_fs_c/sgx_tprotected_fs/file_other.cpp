@@ -387,3 +387,14 @@ int32_t protected_fs_file::clear_cache()
 	return 0;
 }
 
+
+int32_t protected_fs_file::get_current_meta_gmac(sgx_aes_gcm_128bit_tag_t out_gmac) {
+	if (out_gmac == NULL) {
+		return 1;
+	}
+
+	sgx_thread_mutex_lock(&mutex);
+	memcpy(out_gmac, file_meta_data.plain_part.meta_data_gmac, sizeof(sgx_aes_gcm_128bit_tag_t));
+	sgx_thread_mutex_unlock(&mutex);
+	return 0;
+}

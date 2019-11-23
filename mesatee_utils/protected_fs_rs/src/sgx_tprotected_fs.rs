@@ -20,6 +20,7 @@ use crate::deps::c_void;
 use crate::deps::cmp;
 use crate::deps::errno;
 use crate::deps::libc;
+use crate::deps::sgx_aes_gcm_128bit_tag_t;
 use crate::deps::sgx_key_128bit_t;
 use crate::deps::size_t;
 use crate::deps::CStr;
@@ -68,6 +69,11 @@ extern "C" {
     pub fn sgx_fimport_auto_key(filename: *const c_char, key: *const sgx_key_128bit_t) -> int32_t;
 
     pub fn sgx_fclear_cache(stream: SGX_FILE) -> int32_t;
+
+    pub fn sgx_get_current_meta_gmac(
+        stream: SGX_FILE,
+        out_gmac: *mut sgx_aes_gcm_128bit_tag_t,
+    ) -> int32_t;
 }
 
 fn max_len() -> usize {
@@ -119,7 +125,7 @@ unsafe fn rsgx_fread(stream: SGX_FILE, buf: &mut [u8]) -> SysResult<usize> {
     let ret_size = sgx_fread(buf.as_mut_ptr() as *mut c_void, 1, read_size, stream);
 
     if ret_size != read_size {
-        let is_eof = rsgx_feof(stream)?;
+        let is_eof = r#try!(rsgx_feof(stream));
         if is_eof {
             Ok(ret_size)
         } else {
@@ -210,6 +216,22 @@ unsafe fn rsgx_fclear_cache(stream: SGX_FILE) -> SysError {
     }
 
     let ret = sgx_fclear_cache(stream);
+    if ret == 0 {
+        Ok(())
+    } else {
+        Err(rsgx_ferror(stream))
+    }
+}
+
+unsafe fn rsgx_get_current_meta_gmac(
+    stream: SGX_FILE,
+    out_gmac: &mut sgx_aes_gcm_128bit_tag_t,
+) -> SysError {
+    if stream.is_null() {
+        return Err(libc::EINVAL);
+    }
+
+    let ret = sgx_get_current_meta_gmac(stream, out_gmac as *mut sgx_aes_gcm_128bit_tag_t);
     if ret == 0 {
         Ok(())
     } else {
@@ -566,6 +588,10 @@ impl SgxFileStream {
     ///
     pub fn clear_cache(&self) -> SysError {
         unsafe { rsgx_fclear_cache(self.stream) }
+    }
+
+    pub fn get_current_meta_gmac(&self, meta_gmac: &mut sgx_aes_gcm_128bit_tag_t) -> SysError {
+        unsafe { rsgx_get_current_meta_gmac(self.stream, meta_gmac) }
     }
 }
 

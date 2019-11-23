@@ -259,6 +259,14 @@ int32_t SGXAPI sgx_fimport_auto_key(const char* filename, const sgx_key_128bit_t
 */
 int32_t SGXAPI sgx_fclear_cache(SGX_FILE* stream);
 
+/*
+*
+*
+*/
+#define SGX_AESGCM_MAC_SIZE             16
+typedef uint8_t aead_128bit_tag_t[SGX_AESGCM_MAC_SIZE];
+typedef aead_128bit_tag_t sgx_aes_gcm_128bit_tag_t;
+int32_t SGXAPI sgx_get_current_meta_gmac(SGX_FILE* stream, sgx_aes_gcm_128bit_tag_t out_gmac);
 
 #ifdef __cplusplus
 }

@@ -17,6 +17,7 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
+use crate::deps::sgx_aes_gcm_128bit_tag_t;
 use crate::deps::sgx_key_128bit_t;
 use crate::sgx_fs_inner as fs_imp;
 use std::io::{self, Read, Seek, SeekFrom, Write};
@@ -76,6 +77,13 @@ impl ProtectedFile {
 
     pub fn clear_cache(&self) -> io::Result<()> {
         self.inner.clear_cache()
+    }
+
+    pub fn get_current_meta_gmac(
+        &self,
+        meta_gmac: &mut sgx_aes_gcm_128bit_tag_t,
+    ) -> io::Result<()> {
+        self.inner.get_current_meta_gmac(meta_gmac)
     }
 }
 
@@ -231,7 +239,7 @@ pub fn import_auto_key<P: AsRef<Path>>(path: P, key: &sgx_key_128bit_t) -> io::R
 mod tests {
     use crate::remove_protected_file;
     use crate::ProtectedFile;
-    use rand::prelude::RngCore;
+    use rand_core::RngCore;
     use std::io::{Read, Write};
 
     #[test]
@@ -243,7 +251,7 @@ mod tests {
         let write_size;
         let read_size;
         {
-            let mut rng = rand::thread_rng();
+            let mut rng = rdrand::RdRand::new().unwrap();
             rng.fill_bytes(&mut write_data);
 
             let opt = ProtectedFile::create_ex("sgx_file", &key);
@@ -280,10 +288,6 @@ mod tests {
             assert_eq!(opt.is_err(), true);
             let opt = ProtectedFile::open_ex("?", &key);
             assert_eq!(opt.is_err(), true);
-        }
-        {
-            let opt = ProtectedFile::open_ex("/dev/isgx", &key);
-            assert_eq!(opt.is_ok(), true);
         }
         {
             let opt = ProtectedFile::create_ex("/", &key);

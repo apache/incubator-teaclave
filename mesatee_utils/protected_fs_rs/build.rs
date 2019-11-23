@@ -14,65 +14,60 @@
 
 use cfg_if::cfg_if;
 use std::env;
-
-cfg_if! {
-    if #[cfg(feature = "mesalock_sgx")]  {
-        const LIB_T_PROTECTED_FS_NAME: &'static str = "sgx_tprotected_fs";
-    } else {
-        use std::path::PathBuf;
-        use std::process::Command;
-        const LIBPROTECTED_FS_NAME: &'static str = "protected_fs";
-        const PROTECTED_FS_C_NAME: &'static str = "protected_fs_c";
-    }
-}
+use std::path::PathBuf;
+use std::process::Command;
 
 #[cfg(not(feature = "mesalock_sgx"))]
-fn build_protected_fs_c() {
-    Command::new("make")
-        .arg("--version")
-        .output()
-        .expect("make not found");
+fn build_non_sgx_protected_fs_c_with_cmake() {
+    let build_dir = PathBuf::from(env::var_os("OUT_DIR").unwrap()).join("build");
+    let script = PathBuf::from("protected_fs_c").join("build.sh");
+    let target_dir = build_dir.join("target");
 
-    let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
-    let source_dir = manifest_dir.join(PROTECTED_FS_C_NAME);
-    let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
-    let build_dir = out_dir.join(PROTECTED_FS_C_NAME);
+    let status = Command::new("bash")
+        .arg(&script)
+        .arg("--build")
+        .arg(&build_dir)
+        .arg("--mode")
+        .arg("non_sgx")
+        .status()
+        .expect("bash command failed to start");
+    assert!(status.success());
 
-    let output = Command::new("make")
-        .current_dir(&source_dir)
-        .env("CXXFLAGS", "")
-        .env("PROTECTED_FS_OUT_DIR", &build_dir)
-        .output()
-        .expect("failed to compile protected_fs_c");
-    if !output.status.success() {
-        panic!("failed to compile protected_fs_c");
-    }
+    println!("cargo:rustc-link-search=native={}", target_dir.display());
+    println!("cargo:rustc-link-lib=static=tprotected_fs");
+    println!("cargo:rustc-link-lib=static=uprotected_fs");
+}
 
-    env::set_var("PROTECTED_FS_LIB_DIR", &build_dir);
-    env::set_var("PROTECTED_FS_STATIC", "true");
+#[cfg(feature = "mesalock_sgx")]
+fn build_sgx_protected_fs_c_with_cmake() {
+    let sdk_dir = env::var("SGX_SDK").unwrap_or("/opt/intel/sgxsdk".into());
+    let build_dir = PathBuf::from(env::var_os("OUT_DIR").unwrap()).join("build");
+    let script = PathBuf::from("protected_fs_c").join("build.sh");
+    let target_dir = build_dir.join("target");
+
+    let status = Command::new("bash")
+        .env("SGX_SDK", &sdk_dir)
+        .arg(&script)
+        .arg("--build")
+        .arg(&build_dir)
+        .arg("--mode")
+        .arg("sgx")
+        .status()
+        .expect("bash command failed to start");
+    assert!(status.success());
+
+    println!("cargo:rustc-link-search=native={}", target_dir.display());
+    println!("cargo:rustc-link-lib=static=tprotected_fs");
 }
 
 cfg_if! {
     if #[cfg(feature = "mesalock_sgx")] {
         fn build() {
-            let sdk_dir = env::var("SGX_SDK").unwrap_or("/opt/intel/sgxsdk".into());
-            println!("cargo:rustc-link-search=native={}/lib64", sdk_dir);
-            println!("cargo:rustc-link-lib=static={}", LIB_T_PROTECTED_FS_NAME);
+            build_sgx_protected_fs_c_with_cmake();
         }
     } else {
         fn build() {
-            build_protected_fs_c();
-
-            if let Ok(lib_dir) = env::var("PROTECTED_FS_LIB_DIR") {
-                println!("cargo:rustc-link-search=native={}", lib_dir);
-                let mode = match env::var_os("PROTECTED_FS_STATIC") {
-                    Some(_) => "static",
-                    None => panic!("Not supported dylib."),
-                };
-                println!("cargo:rustc-link-lib={}={}", mode, LIBPROTECTED_FS_NAME);
-            } else {
-                panic!("Env var {} not set", "PROTECTED_FS_LIB_DIR");
-            }
+            build_non_sgx_protected_fs_c_with_cmake();
             println!("cargo:rustc-link-lib=crypto");
             println!("cargo:rustc-link-lib=stdc++");
         }

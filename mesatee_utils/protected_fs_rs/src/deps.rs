@@ -22,6 +22,7 @@ cfg_if! {
 
         pub(crate) use sgx_types::size_t;
         pub(crate) use sgx_types::sgx_key_128bit_t;
+        pub(crate) use sgx_types::sgx_aes_gcm_128bit_tag_t;
 
         pub(crate) use sgx_types::{c_char, c_int};
         pub(crate) use sgx_types::{int32_t, int64_t};
@@ -36,6 +37,7 @@ cfg_if! {
 
         pub(crate) use libc::size_t;
         pub(crate) type sgx_key_128bit_t = [u8; 16];
+        pub(crate) type sgx_aes_gcm_128bit_tag_t = [u8; 16];
 
         pub(crate) use std::os::raw::{c_char, c_int};
         pub(crate) type int32_t = i32;

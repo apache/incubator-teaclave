@@ -11,5 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-#define NON_SGX_PROTECTED_FS
+#define PROTECTED_FS_VERSION_MAJOR @PROTECTED_FS_VERSION_MAJOR@
+#define PROTECTED_FS_VERSION_MINOR @PROTECTED_FS_VERSION_MINOR@
+#cmakedefine NON_SGX_PROTECTED_FS

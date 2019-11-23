@@ -11,10 +11,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 #![cfg_attr(feature = "mesalock_sgx", no_std)]
+
 #[cfg(feature = "mesalock_sgx")]
+#[macro_use]
 extern crate sgx_tstd as std;
+#[cfg(feature = "mesalock_sgx")]
+extern crate sgx_trts;
+#[cfg(feature = "mesalock_sgx")]
+extern crate sgx_types;
 
 mod deps;
 mod protected_fs;

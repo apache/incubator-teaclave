@@ -20,6 +20,7 @@ use std::io::{self, Error, SeekFrom};
 use std::path::Path;
 
 use crate::deps::libc;
+use crate::deps::sgx_aes_gcm_128bit_tag_t;
 use crate::deps::sgx_key_128bit_t;
 
 use crate::sgx_tprotected_fs::{self, SgxFileStream};
@@ -130,11 +131,12 @@ impl SgxFile {
             SeekFrom::Current(off) => (sgx_tprotected_fs::SeekFrom::Current, off),
         };
 
-        self.0
+        r#try!(self
+            .0
             .seek(offset, whence)
-            .map_err(Error::from_raw_os_error)?;
+            .map_err(|err| { Error::from_raw_os_error(err) }));
 
-        let offset = self.tell()?;
+        let offset = r#try!(self.tell());
         Ok(offset as u64)
     }
 
@@ -152,6 +154,15 @@ impl SgxFile {
 
     pub fn clear_cache(&self) -> io::Result<()> {
         self.0.clear_cache().map_err(Error::from_raw_os_error)
+    }
+
+    pub fn get_current_meta_gmac(
+        &self,
+        meta_gmac: &mut sgx_aes_gcm_128bit_tag_t,
+    ) -> io::Result<()> {
+        self.0
+            .get_current_meta_gmac(meta_gmac)
+            .map_err(Error::from_raw_os_error)
     }
 }
 

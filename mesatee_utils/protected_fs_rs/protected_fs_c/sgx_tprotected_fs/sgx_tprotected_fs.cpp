@@ -234,4 +234,12 @@ int32_t sgx_fclear_cache(SGX_FILE* stream)
 }
 
 
+// Add for MesaTEE
+int32_t sgx_get_current_meta_gmac(SGX_FILE* stream, sgx_aes_gcm_128bit_tag_t out_gmac)
+{
+	if (stream == NULL)
+		return 1;
+	protected_fs_file* file = (protected_fs_file*)stream;
+	return file->get_current_meta_gmac(out_gmac);
+}
 
