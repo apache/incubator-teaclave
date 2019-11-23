@@ -24,9 +24,9 @@ steps:
   image: mesalocklinux/build-mesatee:0.1.5
   privileged: true
   environment:
-    V5_KEY:
+    IAS_KEY:
       from_secret: V5_KEY
-    V5_SPID:
+    IAS_SPID:
       from_secret: V5_SPID
   volumes:
   - name: isgx
