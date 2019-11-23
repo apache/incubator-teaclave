@@ -52,7 +52,7 @@ lazy_static! {
 
 impl FileMeta {
     pub fn get_access_path(&self) -> String {
-        let storage_dir = env::var("MESATEE_STORAGE_DIR").unwrap_or("/tmp".into());
+        let storage_dir = env::var("MESATEE_STORAGE_DIR").unwrap_or_else(|_| "/tmp".into());
         Path::new(&storage_dir)
             .join(&self.storage_path)
             .to_string_lossy()
