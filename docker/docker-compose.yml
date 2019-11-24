@@ -7,7 +7,6 @@ services:
       dockerfile: docker/Dockerfile.runtime.tms
     ports:
       - 5554:5554
-      - 5555
     expose:
       - 5555
     volumes:
@@ -33,7 +32,6 @@ services:
       dockerfile: docker/Dockerfile.runtime.tdfs
     ports:
       - 5065:5065
-      - 5066
     expose:
       - 5066
     volumes:
@@ -88,8 +86,6 @@ services:
     build:
       context: ../
       dockerfile: docker/Dockerfile.runtime.kms
-    ports:
-      - 6016
     expose:
       - 6016
     volumes:
