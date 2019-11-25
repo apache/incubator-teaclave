@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "protected_fs_config.h"
+
+#ifdef NON_SGX_PROTECTED_FS
+
 #include "non_sgx_protected_fs.h"
 #include "openssl/cmac.h"
 #include "openssl/err.h"
@@ -307,3 +311,5 @@ consttime_memequal(const void *b1, const void *b2, size_t len)
 	 */
 	return (1 & ((res - 1) >> 8));
 }
+
+#endif

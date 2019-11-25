@@ -226,6 +226,9 @@ public:
 	bool flush(/*bool mc*/);
 	bool pre_close(sgx_key_128bit_t* key, bool import);
 	static int32_t remove(const char* filename);
+
+	// Add for MesaTEE
+	int32_t get_current_meta_gmac(sgx_aes_gcm_128bit_tag_t out_gmac);
 };
 
 #pragma pack(pop)

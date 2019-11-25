@@ -29,7 +29,7 @@
 #include <stdint.h>
 #else
 #include "sgx_tprotected_fs_u.h"
-#include <uprotected_fs.h>
+#include "uprotected_fs.h"
 #endif
 
 
