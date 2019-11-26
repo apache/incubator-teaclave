@@ -255,10 +255,11 @@ steps:
   - . /root/.cargo/env
   - cd build && make sgx-test
 - name: coverage
+  failure: ignore
   image: mesalocklinux/build-mesatee:0.1.5
   commands:
   - cd build && make cov
-  - bash -c "bash <(curl -s https://codecov.io/bash) -f cov.info"
+  - bash -c "bash <(curl -s https://codecov.io/bash) -f intermediate/cov.info"
   environment:
     CODECOV_TOKEN:
       from_secret: CODECOV_TOKEN
@@ -294,6 +295,7 @@ steps:
   - cd build && cmake ..
 - name: doc
   image: mesalocklinux/build-mesatee:0.1.5
+  failure: ignore
   commands:
   - . /root/.cargo/env
   - cd build && make doc
