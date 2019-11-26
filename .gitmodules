@@ -9,3 +9,7 @@
 	path = third_party/mesapy
 	url = https://github.com/mesalock-linux/mesapy.git
 	branch = sgx
+[submodule "third_party/crates-io"]
+	path = third_party/crates-io
+	url = https://github.com/mesalock-linux/crates-io.git
+	ignore = dirty
