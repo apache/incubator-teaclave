@@ -28,7 +28,7 @@ set(SGX_MODULE_PATHS mesatee_services/kms mesatee_services/tdfs mesatee_services
 # AUTO-GENERATE VARS
 ## parse the unix apps to build
 parse_cargo_packages(UNIX_APPS
-    CARGO_TOML_PATH ${PROJECT_SOURCE_DIR}/toolchain_deps/Cargo.unix_app.toml
+    CARGO_TOML_PATH ${PROJECT_SOURCE_DIR}/cmake/tomls/Cargo.unix_app.toml
 )
 
 include(MesaTEEGenVars)

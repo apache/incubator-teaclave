@@ -2,7 +2,7 @@
 
 trap "pkill -2 -P $$; wait" SIGINT SIGTERM EXIT
 
-cd ../release/service
+cd ../release/services
 
 # prepare test data
 cp -r ../../tests/integration_test/test_data ./

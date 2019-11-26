@@ -22,7 +22,7 @@ fn main() {
         .to_path_buf()
         .join("gen_build_config.rs");
     // the hardcoded path is a little ugly here, but makes it easy to debug without cmake
-    let mut cmd = Command::new("../release/example/config_gen");
+    let mut cmd = Command::new("../release/examples/config_gen");
     cmd.arg(dest_file);
     match cmd.status() {
         Ok(status) => {

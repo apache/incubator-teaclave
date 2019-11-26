@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-REQUIRED_ENVS=("MESATEE_OUT_DIR" "MESATEE_AUDITORS_DIR" "MESATEE_SERVICE_INSTALL_DIR")
+REQUIRED_ENVS=("MESATEE_OUT_DIR" "MESATEE_AUDITORS_DIR" "MESATEE_EXAMPLE_AUDITORS_DIR" "MESATEE_SERVICE_INSTALL_DIR")
 for var in "${REQUIRED_ENVS[@]}"; do
     [ -z "${!var}" ] && echo "Please set ${var}" && exit -1
 done
@@ -15,3 +15,5 @@ openssl dgst -sha256 \
         -out ${MESATEE_AUDITORS_DIR}/${auditor}/${auditor}.sign.sha256 \
         ${MESATEE_SERVICE_INSTALL_DIR}/enclave_info.txt;
 done
+
+cp -RT ${MESATEE_AUDITORS_DIR}/ ${MESATEE_EXAMPLE_AUDITORS_DIR}/

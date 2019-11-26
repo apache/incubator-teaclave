@@ -1,6 +1,6 @@
 #!/bin/bash
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-BIN_DIR=$SCRIPT_DIR/../../release/example
+BIN_DIR=$SCRIPT_DIR/../../release/examples
 BIN=./gaussian_processes
 cd $BIN_DIR
 

@@ -29,19 +29,19 @@ lazy_static! {
 fn main() {
     let auditors = vec![
         (
-            "../service/auditors/godzilla/godzilla.public.der",
-            "../service/auditors/godzilla/godzilla.sign.sha256",
+            "../services/auditors/godzilla/godzilla.public.der",
+            "../services/auditors/godzilla/godzilla.sign.sha256",
         ),
         (
-            "../service/auditors/optimus_prime/optimus_prime.public.der",
-            "../service/auditors/optimus_prime/optimus_prime.sign.sha256",
+            "../services/auditors/optimus_prime/optimus_prime.public.der",
+            "../services/auditors/optimus_prime/optimus_prime.sign.sha256",
         ),
         (
-            "../service/auditors/albus_dumbledore/albus_dumbledore.public.der",
-            "../service/auditors/albus_dumbledore/albus_dumbledore.sign.sha256",
+            "../services/auditors/albus_dumbledore/albus_dumbledore.public.der",
+            "../services/auditors/albus_dumbledore/albus_dumbledore.sign.sha256",
         ),
     ];
-    let enclave_info_file_path = "../service/enclave_info.txt";
+    let enclave_info_file_path = "../services/enclave_info.txt";
     let info = MesateeEnclaveInfo::load(auditors, enclave_info_file_path).unwrap();
 
     let args_string: Vec<String> = env::args().collect();

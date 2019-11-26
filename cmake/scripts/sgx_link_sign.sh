@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-REQUIRED_ENVS=("TOOLCHAIN_DEPS_DIR" "CMAKE_C_COMPILER" "CUR_MODULE_NAME" "CUR_MODULE_PATH"
+REQUIRED_ENVS=("CMAKE_C_COMPILER" "CUR_MODULE_NAME" "CUR_MODULE_PATH"
 "MESATEE_SERVICE_INSTALL_DIR" "MESATEE_OUT_DIR" "MESATEE_PROJECT_ROOT" "Service_Library_Name"
 "SGX_COMMON_CFLAGS" "SGX_ENCLAVE_SIGNER" "SGX_LIBRARY_PATH" "TARGET" "Trts_Library_Name"
 "TRUSTED_TARGET_DIR")
@@ -32,8 +32,8 @@ ${CMAKE_C_COMPILER} libEnclave_t.o -o \
     -Wl,-pie,-eenclave_entry -Wl,--export-dynamic  \
     -Wl,--defsym,__ImageBase=0 \
     -Wl,--gc-sections \
-    -Wl,--version-script=${TOOLCHAIN_DEPS_DIR}/Enclave.lds
-${SGX_ENCLAVE_SIGNER} sign -key ${TOOLCHAIN_DEPS_DIR}/Enclave_private.pem \
+    -Wl,--version-script=${MESATEE_PROJECT_ROOT}/cmake/scripts/Enclave.lds
+${SGX_ENCLAVE_SIGNER} sign -key ${MESATEE_PROJECT_ROOT}/cert/Enclave_private.pem \
     -enclave ${CUR_MODULE_NAME}.enclave.so \
     -out ${MESATEE_SERVICE_INSTALL_DIR}/${CUR_MODULE_NAME}.enclave.signed.so \
     -config ${MESATEE_PROJECT_ROOT}/${CUR_MODULE_PATH}/sgx_trusted_lib/Enclave.config.xml \

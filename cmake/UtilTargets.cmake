@@ -39,7 +39,8 @@ add_custom_target(cov-clean
 set_property(DIRECTORY PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
    "${MESATEE_INSTALL_DIR}"
    "${MESATEE_OUT_DIR}"
-   "${MESATEE_TARGET_DIR}")
+   "${MESATEE_TARGET_DIR}"
+   "${PROJECT_BINARY_DIR}/cmake_tomls")
 
 # doc target
 add_custom_target(doc
