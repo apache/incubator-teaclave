@@ -49,7 +49,7 @@ def create_symlinks(root_dir, build_dir):
         cate_dir = '{build_dir}/cmake_tomls/{cate}'.format(
             build_dir=build_dir, cate=cate)
         cmd = 'mkdir -p {cate_dir} && [ ! -f {cate_dir}/Cargo.toml ] && \
-            ln -s {root_dir}/toolchain_deps/Cargo.{cate}.toml \
+            ln -s {root_dir}/cmake/tomls/Cargo.{cate}.toml \
             {cate_dir}/Cargo.toml'.format(root_dir=root_dir, cate=cate, cate_dir=cate_dir)
         exec_cmd(cmd)
 

@@ -3,7 +3,7 @@
 + Project Root
 	+ [auditors](../auditors)
 		- auditor credentials
-	+ [toolchain_deps](../toolchain_deps)
+	+ [cmake](../cmake)
 		- build scripts/utilities
 	+ [cert](../cert)
 		- pre-generated keys/certificates that are used in the prototype. Note

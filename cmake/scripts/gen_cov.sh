@@ -8,7 +8,7 @@ done
 
 
 LCOV=lcov
-LCOVOPT="--gcov-tool ${MESATEE_PROJECT_ROOT}/toolchain_deps/llvm-gcov"
+LCOVOPT="--gcov-tool ${MESATEE_PROJECT_ROOT}/cmake/scripts/llvm-gcov"
 GENHTML=genhtml
 
 cd ${MESATEE_PROJECT_ROOT}
