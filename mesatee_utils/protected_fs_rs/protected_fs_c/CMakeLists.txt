@@ -26,21 +26,9 @@ elseif (NOT EXISTS ${SGX_SDK})
     message(FATAL_ERROR "$SGX_SDK directory must exist")
 else ()
     message("SGX_SDK=${SGX_SDK}")
-
     set(SGX_LIBRARY_PATH  ${SGX_SDK}/lib64)
-    set(SGX_COMMON_CFLAGS  -m64 -O2)
-    set(SGX_UNTRUSTED_CFLAGS  ${SGX_COMMON_CFLAGS} -fPIC -Wno-attributes
-        -I${SGX_SDK}/include)
-    set(SGX_TRUSTED_CFLAGS  ${SGX_COMMON_CFLAGS} -nostdinc -fvisibility=hidden
-        -fpie -fstack-protector
-        -I${SGX_SDK}/include -I${SGX_SDK}/include/tlibc
-        -I${SGX_SDK}/include/stdc++ -I${SGX_SDK}/include/libcxx 
-        -I${SGX_SDK}/include/stlport -I${SGX_SDK}/include/epid)
-
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -U__STRICT_ANSI__ -Werror")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-local-typedefs -Wno-shadow -Wno-missing-field-initializers -Wno-unused-parameter")
-    set(${PROJECT_NAME}_sgx_tprotected_fs_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SGX_TRUSTED_CFLAGS}")
-    set(${PROJECT_NAME}_sgx_uprotected_fs_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SGX_UNTRUSTED_CFLAGS}")
+    set(SGX_COMMON_CFLAGS  "-m64 -O2")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -U__STRICT_ANSI__ -Werror -Wno-unused-local-typedefs -Wno-shadow -Wno-missing-field-initializers -Wno-unused-parameter")
 endif (NON_SGX_PROTECTED_FS)
 
 add_subdirectory (sgx_tprotected_fs)
