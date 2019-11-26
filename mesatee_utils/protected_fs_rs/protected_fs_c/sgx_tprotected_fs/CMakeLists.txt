@@ -2,6 +2,8 @@
 include_directories("${PROJECT_SOURCE_DIR}")
 
 if (NOT NON_SGX_PROTECTED_FS)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SGX_COMMON_CFLAGS} -nostdinc -fvisibility=hidden -fPIC -fstack-protector")
+
 include_directories("${SGX_SDK}/include")
 include_directories("${SGX_SDK}/include/tlibc")
 include_directories("${SGX_SDK}/include/libcxx")
