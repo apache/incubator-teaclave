@@ -1,3 +1,9 @@
+macro(dbg_message)
+if(MESATEE_CMAKE_DBG)
+    message("${ARGN}")
+endif()
+endmacro()
+
 macro(SET_STRVAR_FROM_ENV_OR var default_val docstring)
 if (NOT "$ENV{${var}}" STREQUAL "")
     set(${var} "$ENV{${var}}" CACHE STRING "${docstring}")
@@ -17,6 +23,10 @@ function(init_submodules)
     COMMAND bash -c "if git submodule status | egrep -q '^[-]|^[+]'; then echo 'INFO: Need to reinitialize git submodules' && git submodule update --init --recursive; fi"
     )
 endfunction()
+
+macro(sgxlib_pkgname_2_modname pkg_name mod_name)
+    string(REGEX REPLACE "_enclave$" "" ${mod_name} ${pkg_name})
+endmacro()
 
 # add_cargo_build_target(package_name
 # [TARGET_NAME target_name] # default to cg_${package_name}
@@ -112,11 +122,11 @@ function(add_cargo_build_dylib_target package_name)
     )
 endfunction()
 
-# add_sgx_build_target(sgx_module_path
+# add_sgx_build_target(sgx_lib_path
 # [DEPENDS [dep]...]
 # [EXTRA_CARGO_FLAGS flg...]
 # )
-function(add_sgx_build_target sgx_module_path)
+function(add_sgx_build_target sgx_lib_path pkg_name)
     set(options)
     set(oneValueArgs)
     set(multiValueArgs DEPENDS EXTRA_CARGO_FLAGS)
@@ -129,19 +139,17 @@ function(add_sgx_build_target sgx_module_path)
         set(_depends)
     endif()
 
-    get_filename_component(_module_name ${sgx_module_path} NAME)
+    # remove trailing "_enclave" to get _module_name
+    sgxlib_pkgname_2_modname(${pkg_name} _module_name)
 
     set(_target_name ${SGXLIB_PREFIX}-${_module_name})
 
-    set(package_name)
-    string(APPEND package_name ${_module_name} "_enclave")
-
     add_custom_target(${_target_name} ALL
         COMMAND ${CMAKE_COMMAND} -E env ${MESATEE_COMMON_ENVS} RUSTFLAGS=${RUSTFLAGS}
-            ${MT_SCRIPT_DIR}/cargo_build_ex.sh -p ${package_name}
+            ${MT_SCRIPT_DIR}/cargo_build_ex.sh -p ${pkg_name}
             --target-dir ${TRUSTED_TARGET_DIR} ${CARGO_BUILD_FLAGS} ${SGX_ENCLAVE_FEATURES} ${MTEE_EXTRA_CARGO_FLAGS}
         COMMAND ${CMAKE_COMMAND} -E env ${TARGET_SGXLIB_ENVS} SGX_COMMON_CFLAGS=${STR_SGX_COMMON_CFLAGS}
-            CUR_MODULE_NAME=${_module_name} CUR_MODULE_PATH=${sgx_module_path} ${MT_SCRIPT_DIR}/sgx_link_sign.sh
+            CUR_MODULE_NAME=${_module_name} CUR_MODULE_PATH=${sgx_lib_path} ${MT_SCRIPT_DIR}/sgx_link_sign.sh
         ${_depends}
         COMMENT "Building ${_target_name}"
         WORKING_DIRECTORY ${MT_SGXLIB_TOML_DIR}
@@ -156,7 +164,7 @@ function(add_enclave_sig_target_n_hooks)
         DEPENDS ${SGXLIB_TARGETS}
     )
 
-    # Hook the convenience targets for SGX_MODULES
+    # Hook the convenience targets for SGX modules
     # so manually `make kms/tms/...` will trigger
     # updating enclave sig files
     foreach(sgx_module ${SGX_MODULES})
@@ -244,21 +252,21 @@ Please install the dependency and retry.")
     endforeach()
 endfunction()
 
-function(parse_cargo_packages packages_name)
+function(parse_cargo_packages pkg_names)
     set(options)
-    set(oneValueArgs CARGO_TOML_PATH)
+    set(oneValueArgs CARGO_TOML_PATH PKG_PATHS CATEGORIES)
     set(multiValueArgs)
 
-    cmake_parse_arguments(MC "${options}" "${oneValueArgs}"
+    cmake_parse_arguments(MTEE "${options}" "${oneValueArgs}"
         "${multiValueArgs}" ${ARGN})
 
-    set(_packages_name)
+    set(_output)
     set(err)
 
     execute_process(
         COMMAND python ${PROJECT_SOURCE_DIR}/cmake/scripts/parse_cargo_packages.py
-            ${MC_CARGO_TOML_PATH} ${PROJECT_SOURCE_DIR}
-        OUTPUT_VARIABLE _packages_name
+            ${MTEE_CARGO_TOML_PATH} ${PROJECT_SOURCE_DIR}
+        OUTPUT_VARIABLE _output
         ERROR_VARIABLE err
     ) 
 
@@ -266,8 +274,28 @@ function(parse_cargo_packages packages_name)
         message(FATAL_ERROR "failed to load packages: ${err}")
     endif()
 
+    string(REGEX REPLACE "\n" ";" _out_list ${_output})
+    list(LENGTH _out_list LLEN)
+
+    if (DEFINED MTEE_CATEGORIES)
+        list(GET _out_list 2 _categories)
+        string(REPLACE ":" ";" _categories ${_categories})
+        set(${MTEE_CATEGORIES} ${_categories} PARENT_SCOPE)
+        dbg_message("${MTEE_CATEGORIES}=${_categories}\n")
+    endif()
+
+    if (DEFINED MTEE_PKG_PATHS)
+        list(GET _out_list 1 _pkg_paths)
+        string(REPLACE ":" ";" _pkg_paths ${_pkg_paths})
+        set(${MTEE_PKG_PATHS} ${_pkg_paths} PARENT_SCOPE)
+        dbg_message("${MTEE_PKG_PATHS}=${_pkg_paths}\n")
+    endif()
+
     # level up the local variable to its parent scope
-    set(${packages_name} ${_packages_name} PARENT_SCOPE)
+    list(GET _out_list 0 _pkg_names)
+    string(REPLACE ":" ";" _pkg_names ${_pkg_names})
+    set(${pkg_names} ${_pkg_names} PARENT_SCOPE)
+    dbg_message("${pkg_names}=${_pkg_names}\n")
 endfunction()
 
 # SGXLIB_PKGS, SGXAPP_PKGS, UNIXLIB_PKGS, UNIXAPP_PKGS
@@ -276,7 +304,7 @@ endfunction()
 macro(gen_cargo_package_lists)
     new_list_with_suffix(SGXLIB_PKGS "_enclave" ${SGX_MODULES})
     new_list_with_insert_prefix(SGXLIB_PKGS_P "-p" ${SGXLIB_PKGS})
-    set(SGXAPP_PKGS ${SGX_MODULES})
+    set(SGXAPP_PKGS ${SGX_APPS})
     new_list_with_insert_prefix(SGXAPP_PKGS_P "-p" ${SGXAPP_PKGS})
     set(UNIXLIB_PKGS ${UNIX_LIBS})
     new_list_with_insert_prefix(UNIXLIB_PKGS_P "-p" ${UNIXLIB_PKGS})
@@ -284,8 +312,3 @@ macro(gen_cargo_package_lists)
     new_list_with_insert_prefix(UNIXAPP_PKGS_P "-p" ${UNIXAPP_PKGS})
 endmacro()
 
-macro(dbg_message)
-    if(MESATEE_CMAKE_DBG)
-        message("${ARGN}")
-    endif()
-endmacro()

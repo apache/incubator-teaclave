@@ -9,7 +9,7 @@ for var in "${REQUIRED_ENVS[@]}"; do
 done
 
 LIBENCLAVE_PATH="${TRUSTED_TARGET_DIR}/${TARGET}/lib${CUR_MODULE_NAME}_enclave.a"
-CONFIG_PATH="${MESATEE_PROJECT_ROOT}/${CUR_MODULE_PATH}/sgx_trusted_lib/Enclave.config.xml"
+CONFIG_PATH="${MESATEE_PROJECT_ROOT}/${CUR_MODULE_PATH}/Enclave.config.xml"
 SIGNED_PATH="${MESATEE_SERVICE_INSTALL_DIR}/${CUR_MODULE_NAME}.enclave.signed.so"
 CUR_ENCLAVE_INFO_PATH="${MESATEE_OUT_DIR}/${CUR_MODULE_NAME}_enclave_info.txt"
 if [ ! "$LIBENCLAVE_PATH" -nt "$SIGNED_PATH" ] \
@@ -36,7 +36,7 @@ ${CMAKE_C_COMPILER} libEnclave_t.o -o \
 ${SGX_ENCLAVE_SIGNER} sign -key ${MESATEE_PROJECT_ROOT}/cert/Enclave_private.pem \
     -enclave ${CUR_MODULE_NAME}.enclave.so \
     -out ${MESATEE_SERVICE_INSTALL_DIR}/${CUR_MODULE_NAME}.enclave.signed.so \
-    -config ${MESATEE_PROJECT_ROOT}/${CUR_MODULE_PATH}/sgx_trusted_lib/Enclave.config.xml \
+    -config ${MESATEE_PROJECT_ROOT}/${CUR_MODULE_PATH}/Enclave.config.xml \
     -dumpfile ${CUR_MODULE_NAME}.enclave.meta.txt > /dev/null 2>&1
 echo ${CUR_MODULE_NAME} > ${CUR_MODULE_NAME}_enclave_info.txt
 grep -m1 -A2 "mrsigner->value" ${CUR_MODULE_NAME}.enclave.meta.txt >> ${CUR_MODULE_NAME}_enclave_info.txt

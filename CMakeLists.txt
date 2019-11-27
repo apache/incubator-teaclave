@@ -18,17 +18,22 @@ option(COV OFF "Turn on coverage or not")
 
 # =============== VARIABLES FOR MANUAL CHANGE BEGIN ===============
 set(UNIX_LIBS mesatee_sdk protected_fs_rs)
-# need relative path for SGX_MODULE_PATHS to find Enclave.config.xml
-set(SGX_MODULE_PATHS mesatee_services/kms mesatee_services/tdfs mesatee_services/tms
-    mesatee_services/fns mesatee_services/acs tests/functional_test)
-# SGX_MODULES is generated from SGX_MODULE_PATHS
-# set(SGX_MODULES kms tdfs tms fns acs functional_test)
 # ================ VARIABLES FOR MANUAL CHANGE END ================
 
-# AUTO-GENERATE VARS
-## parse the unix apps to build
+# UNIX_APPS, SGX_APPS and SGX_LIBS are parsed from corresponding toml files
 parse_cargo_packages(UNIX_APPS
     CARGO_TOML_PATH ${PROJECT_SOURCE_DIR}/cmake/tomls/Cargo.unix_app.toml
+    CATEGORIES UNIX_APP_CATEGORIES
+)
+
+parse_cargo_packages(SGX_APPS
+    CARGO_TOML_PATH ${PROJECT_SOURCE_DIR}/cmake/tomls/Cargo.sgx_untrusted_app.toml
+    CATEGORIES SGX_APP_CATEGORIES
+)
+
+parse_cargo_packages(SGX_LIBS
+    CARGO_TOML_PATH ${PROJECT_SOURCE_DIR}/cmake/tomls/Cargo.sgx_trusted_lib.toml
+    PKG_PATHS SGX_LIB_PATHS
 )
 
 include(MesaTEEGenVars)
@@ -42,23 +47,31 @@ generate_env_file()
 include(UtilTargets)
 
 # unix_app
-foreach(package_name ${UNIX_APPS})
-    add_cargo_build_target(${package_name}
-        TARGET_NAME "${UNIXAPP_PREFIX}-${package_name}"
+list(LENGTH UNIX_APPS UNIX_APP_LEN)
+math(EXPR UNIX_APP_LAST_INDEX "${UNIX_APP_LEN} - 1")
+foreach(_i RANGE ${UNIX_APP_LAST_INDEX})
+    list(GET UNIX_APPS ${_i} _pkg_name)
+    list(GET UNIX_APP_CATEGORIES ${_i} _category)
+    add_cargo_build_target(${_pkg_name}
+        TARGET_NAME "${UNIXAPP_PREFIX}-${_pkg_name}"
         TOML_DIR ${MT_UNIX_TOML_DIR}
         TARGET_DIR ${UNIX_TARGET_DIR}
-        INSTALL_DIR ${MESATEE_EXAMPLE_INSTALL_DIR}
+        INSTALL_DIR ${MESATEE_INSTALL_DIR}/${_category}
         DEPENDS prep ${TARGET_CONFIG_GEN}
     )
 endforeach()
 
 # sgx_untrusted_app
-foreach(package_name ${SGX_MODULES})
-    add_cargo_build_target(${package_name}
-        TARGET_NAME "${SGXAPP_PREFIX}-${package_name}"
+list(LENGTH SGX_APPS SGX_APP_LEN)
+math(EXPR SGX_APP_LAST_INDEX "${SGX_APP_LEN} - 1")
+foreach(_i RANGE ${SGX_APP_LAST_INDEX})
+    list(GET SGX_APPS ${_i} _pkg_name)
+    list(GET SGX_APP_CATEGORIES ${_i} _category)
+    add_cargo_build_target(${_pkg_name}
+        TARGET_NAME "${SGXAPP_PREFIX}-${_pkg_name}"
         TOML_DIR ${MT_SGXAPP_TOML_DIR}
         TARGET_DIR ${UNTRUSTED_TARGET_DIR}
-        INSTALL_DIR ${MESATEE_SERVICE_INSTALL_DIR}
+        INSTALL_DIR ${MESATEE_INSTALL_DIR}/${_category}
         DEPENDS prep ${TARGET_CONFIG_GEN}
     )
 endforeach()
@@ -85,11 +98,14 @@ target_compile_options(pycomponent PUBLIC -UWITH_THREAD -O2 -fPIC -Wimplicit -I/
 
 
 # sgx_trusted_lib
-foreach(package_path ${SGX_MODULE_PATHS})
-    set(_package_name)
-    get_filename_component(_package_name ${package_path} NAME)
-    add_sgx_build_target(${package_path}
-        DEPENDS prep ${TARGET_CONFIG_GEN} "${SGXAPP_PREFIX}-${_package_name}" pycomponent
+list(LENGTH SGX_LIBS SGX_LIB_LEN)
+math(EXPR SGX_LIB_LAST_INDEX "${SGX_LIB_LEN} - 1")
+foreach(_i RANGE ${SGX_LIB_LAST_INDEX})
+    list(GET SGX_LIBS ${_i} _pkg_name)
+    list(GET SGX_LIB_PATHS ${_i} _pkg_path)
+    sgxlib_pkgname_2_modname(${_pkg_name} _mod_name)
+    add_sgx_build_target(${_pkg_path} ${_pkg_name}
+        DEPENDS prep ${TARGET_CONFIG_GEN} "${SGXAPP_PREFIX}-${_mod_name}" pycomponent
     )
 endforeach()
 

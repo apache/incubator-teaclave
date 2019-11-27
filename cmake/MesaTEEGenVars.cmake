@@ -79,19 +79,13 @@ set(UNIXLIB_PREFIX "unixlib")
 set(SGXAPP_PREFIX "sgxapp")
 set(SGXLIB_PREFIX "sgxlib")
 set(TARGET_CONFIG_GEN "${UNIXAPP_PREFIX}-config_gen")
-
-# generate SGX_MODULES from SGX_MODULE_PATHS
-set(SGX_MODULES)
-foreach(sgx_module_path ${SGX_MODULE_PATHS})
-    get_filename_component(_tmp_sgx_module ${sgx_module_path} NAME)
-    list(APPEND SGX_MODULES ${_tmp_sgx_module})
-endforeach()
+set(SGX_MODULES ${SGX_APPS})
 
 # generate SGXLIB_TARGETS (sgxlib-fns sgxlib-kms ...)
 new_list_with_prefix(SGXLIB_TARGETS "${SGXLIB_PREFIX}-" ${SGX_MODULES})
 
 # generate SGXAPP_TARGETS (sgxapp-fns sgxapp-kms ...)
-new_list_with_prefix(SGXAPP_TARGETS "${SGXAPP_PREFIX}-" ${SGX_MODULES})
+new_list_with_prefix(SGXAPP_TARGETS "${SGXAPP_PREFIX}-" ${SGX_APPS})
 
 # generate UNIXAPP_TARGETS (unixapp-config_gen ...)
 new_list_with_prefix(UNIXAPP_TARGETS "${UNIXAPP_PREFIX}-" ${UNIX_APPS})

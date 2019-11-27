@@ -28,7 +28,7 @@ members = [
   "mesatee_sdk", # ignore
   "mesatee_sdk/c_sdk", # ignore
   "mesatee_utils/protected_fs_rs", # ignore
-  "mesatee_cli" # ignore
+  "mesatee_cli"
 ]
 
 exclude = [
