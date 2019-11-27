@@ -38,8 +38,8 @@ endmacro()
 # )
 function(add_cargo_build_target package_name)
     set(options NOT_SET_COMMON_ENV)
-    set(oneValueArgs TARGET_NAME TOML_DIR TARGET_DIR INSTALL_DIR)
-    set(multiValueArgs DEPENDS EXTRA_CARGO_FLAGS)
+    set(oneValueArgs TARGET_NAME TOML_DIR TARGET_DIR INSTALL_DIR EXTRA_CARGO_FLAGS)
+    set(multiValueArgs DEPENDS)
     cmake_parse_arguments(MTEE "${options}" "${oneValueArgs}"
         "${multiValueArgs}" ${ARGN})
 

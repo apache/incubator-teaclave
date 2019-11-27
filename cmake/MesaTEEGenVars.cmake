@@ -67,6 +67,10 @@ else()
     set(CARGO_BUILD_FLAGS --release)
 endif()
 
+if (OFFLINE)
+  set(EXTRA_CARGO_FLAGS "--offline")
+endif()
+
 execute_process (
     COMMAND bash -c "cat ${PROJECT_SOURCE_DIR}/third_party/rust-sgx-sdk/rust-toolchain"
     OUTPUT_VARIABLE RUSTUP_TOOLCHAIN

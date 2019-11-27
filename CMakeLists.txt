@@ -13,7 +13,8 @@ SET_STRVAR_FROM_ENV_OR(SGX_MODE "HW" "Mode of SGX, HW or SW")
 SET_STRVAR_FROM_ENV_OR(RUSTFLAGS "" "Rust flags")
 SET_STRVAR_FROM_ENV_OR(MESATEE_CMAKE_DBG "" "set to turn on debug message for cmake")
 set(MESAPY_VERSION 2b7ea38773d337d106c613a239661a60a4fa7528)
-option(COV OFF "Turn on coverage or not")
+option(COV "Turn on/off coverage" OFF)
+option(OFFLINE "Turn on/off cargo offline" ON)
 # ======= VARIABLES FOR CMAKE -D{VAR}=VAL CONFIGURATION END =======
 
 # =============== VARIABLES FOR MANUAL CHANGE BEGIN ===============
@@ -57,6 +58,7 @@ foreach(_i RANGE ${UNIX_APP_LAST_INDEX})
         TOML_DIR ${MT_UNIX_TOML_DIR}
         TARGET_DIR ${UNIX_TARGET_DIR}
         INSTALL_DIR ${MESATEE_INSTALL_DIR}/${_category}
+        EXTRA_CARGO_FLAGS ${EXTRA_CARGO_FLAGS}
         DEPENDS prep ${TARGET_CONFIG_GEN}
     )
 endforeach()
@@ -72,6 +74,7 @@ foreach(_i RANGE ${SGX_APP_LAST_INDEX})
         TOML_DIR ${MT_SGXAPP_TOML_DIR}
         TARGET_DIR ${UNTRUSTED_TARGET_DIR}
         INSTALL_DIR ${MESATEE_INSTALL_DIR}/${_category}
+        EXTRA_CARGO_FLAGS ${EXTRA_CARGO_FLAGS}
         DEPENDS prep ${TARGET_CONFIG_GEN}
     )
 endforeach()

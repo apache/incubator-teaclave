@@ -56,7 +56,7 @@ chrono            = { git = "https://github.com/mesalock-linux/chrono-sgx" }
 crc32fast         = { git = "https://github.com/mesalock-linux/rust-crc32fast-sgx" }
 color_quant       = { git = "https://github.com/mesalock-linux/color_quant-sgx" }
 deflate           = { git = "https://github.com/mesalock-linux/deflate-rs-sgx", branch = "dev" }
-gbdt              = { git = "https://github.com/mesalock-linux/gbdt-rs", package = "gbdt_sgx" }
+gbdt              = { git = "https://github.com/mesalock-linux/gbdt-rs", branch = "mesatee-sgx" }
 getrandom         = { git = "https://github.com/mesalock-linux/getrandom-sgx" }
 gif               = { git = "https://github.com/mesalock-linux/image-gif-sgx" }
 image             = { git = "https://github.com/mesalock-linux/image-sgx" }
@@ -71,6 +71,7 @@ parity-wasm       = { git = "https://github.com/mesalock-linux/parity-wasm-sgx" 
 png               = { git = "https://github.com/mesalock-linux/image-png-sgx" }
 profiler_builtins = { git = "https://github.com/mesalock-linux/sgx-fake-profiler-builtins" }
 quick-error       = { git = "https://github.com/mesalock-linux/quick-error-sgx" }
+rand              = { git = "https://github.com/mesalock-linux/rand-sgx", tag = "v0.6.5_sgx1.0.9" }
 regex             = { git = "https://github.com/mesalock-linux/regex-sgx" }
 ring              = { git = "https://github.com/mesalock-linux/ring-sgx", tag = "v0.16.5" }
 rustls            = { git = "https://github.com/mesalock-linux/rustls", branch = "mesalock_sgx" }
