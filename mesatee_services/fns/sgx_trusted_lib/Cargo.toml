@@ -41,5 +41,5 @@ tdfs_internal_client = { path = "../../tdfs/internal/client", optional = true }
 sgx_cov              = { version = "0.1.0", optional = true }
 sgx_tstd             = { version = "1.0.9", features = ["net", "backtrace"], optional = true }
 sgx_types            = { version = "1.0.9" }
-gbdt                 = { git = "https://github.com/mesalock-linux/gbdt-rs", package = "gbdt_sgx", features = ["input", "enable_training"] }
+gbdt                 = { version = "0.1.0", features = ["input", "enable_training"] }
 rusty-machine =  { version = "0.5.4" }
