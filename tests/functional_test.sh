@@ -65,5 +65,5 @@ wait_service tms 5555 30
 wait_service fns 3444 30
 wait_service acs 5077 30
 
-./functional_test 2>&1 | tee functional_test.log
+../tests/functional_test 2>&1 | tee functional_test.log
 exit ${PIPESTATUS[0]}

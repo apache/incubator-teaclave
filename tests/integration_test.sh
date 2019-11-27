@@ -49,7 +49,7 @@ wait_service "tms" 5555 30
 wait_service "fns" 3444 30
 
 echo "[+] run integration_test"
-../examples/integration_test 2>&1 | tee integration_test.log
+../tests/integration_test 2>&1 | tee integration_test.log
 [ ${PIPESTATUS[0]} -eq 0 ] || exit ${PIPESTATUS[0]}
 
 echo "[+] run three_party_demo"
