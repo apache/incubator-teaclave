@@ -24,4 +24,4 @@ examples/**/*.log
 .vscode/*
 # ignore the build dir which usually for cmake
 /build
-
+/release
