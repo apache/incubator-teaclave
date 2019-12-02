@@ -25,7 +25,7 @@ fn main() {
     let src = PathBuf::from("src");
     let output = src.join("prost_generated");
     if !output.exists() {
-        let _ = std::fs::create_dir(&output).expect("failed to create prost_generated dir");
+        std::fs::create_dir(&output).expect("failed to create prost_generated dir");
     }
     let includes = &[src.clone()];
     let mut config = get_default_config();
