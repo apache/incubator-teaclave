@@ -92,7 +92,6 @@ impl EnclaveService<KMSRequest, KMSResponse> for KMSEnclave<KMSRequest, KMSRespo
     fn handle_invoke(&mut self, input: KMSRequest) -> Result<KMSResponse> {
         trace!("handle_invoke invoked!");
         trace!("incoming payload = {:?}", input);
-        let result = self.dispatch(input);
-        result
+        self.dispatch(input)
     }
 }
