@@ -149,7 +149,7 @@ impl TDFSClient {
         let key_config = key_resp.get_key_config()?;
         let key_config = match key_config {
             kms_proto::KeyConfig::Aead(config) => kms_proto::proto::AeadConfig::from(config),
-            kms_proto::KeyConfig::ProtectedFs(_config) => unimplemented!(),
+            kms_proto::KeyConfig::ProtectedFs(_config) => unimplemented!(), // ProtectedFS is not used by TDFS yet. Config of ProtectedFs will not be generated neither.
         };
         let access_path = &file_info.access_path;
         let mut f = fs::File::open(access_path)?;

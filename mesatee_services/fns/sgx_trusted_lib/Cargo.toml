@@ -16,7 +16,6 @@ mesalock_sgx = ["sgx_tstd", "mesatee_core/mesalock_sgx", "fns_proto/mesalock_sgx
 cov = ["sgx_cov"]
 
 [dependencies]
-prost = "*"
 cfg-if               = { version = "0.1.9" }
 lazy_static          = { version = "1.0.2", features = ["spin_no_std"] }
 serde                = { version = "1.0.92" }

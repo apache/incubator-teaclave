@@ -38,7 +38,7 @@ pub enum KeyConfig {
 pub struct AEADKeyConfig {
     pub key: [u8; 32],
     pub nonce: [u8; 12],
-    pub ad: [u8; 5], // Todo: removed ad;
+    pub ad: [u8; 5], // ToDo: removed ad; ad is the authentication tag for AEAD. It can be public and hardcoded.
 }
 
 impl KeyConfig {
@@ -75,7 +75,7 @@ impl TryFrom<proto::AeadConfig> for AEADKeyConfig {
     type Error = Error;
     fn try_from(config: proto::AeadConfig) -> Result<Self> {
         if config.key.len() != 32 || config.nonce.len() != 12 || config.ad.len() != 5 {
-            return Err(Error::from(ErrorKind::InvalidOutputError));
+            return Err(Error::from(ErrorKind::RpcProtocolError));
         }
         let mut result = AEADKeyConfig {
             key: [0; 32],
@@ -109,7 +109,7 @@ impl TryFrom<proto::KeyConfig> for KeyConfig {
     fn try_from(config: proto::KeyConfig) -> Result<Self> {
         let config = match config.config {
             Some(v) => v,
-            None => return Err(Error::from(ErrorKind::InvalidOutputError)),
+            None => return Err(Error::from(ErrorKind::RpcProtocolError)),
         };
         match config {
             proto::key_config::Config::Aead(config) => {
@@ -117,7 +117,7 @@ impl TryFrom<proto::KeyConfig> for KeyConfig {
             }
             proto::key_config::Config::ProtectedFs(config) => {
                 if config.key.len() != 16 {
-                    Err(Error::from(ErrorKind::InvalidOutputError))
+                    Err(Error::from(ErrorKind::RpcProtocolError))
                 } else {
                     let mut key = [0; 16];
                     key.copy_from_slice(&config.key[0..16]);

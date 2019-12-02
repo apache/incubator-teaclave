@@ -23,12 +23,12 @@ fn main() {
     let _ = env_logger::init();
 
     let src = PathBuf::from("src");
-    let _ = std::fs::create_dir("src/prost_generated");
-    let output = PathBuf::from("src/prost_generated");
+    let output = src.join("prost_generated");
+    let _ = std::fs::create_dir(output).expect("failed to create prost_generated directory");
 
-    let includes = &[src.clone()];
+    let includes = &[src];
     let mut config = get_default_config();
-    config.out_dir(output.clone());
+    config.out_dir(output);
     let base64_field = [
         "AeadConfig.key",
         "AeadConfig.nonce",

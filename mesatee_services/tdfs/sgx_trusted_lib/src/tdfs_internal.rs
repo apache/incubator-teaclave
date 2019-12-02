@@ -41,7 +41,7 @@ impl HandleRequest for CreateFileRequest {
         let key_config = resp.get_key_config()?;
         let key_config = match key_config {
             kms_proto::KeyConfig::Aead(config) => kms_proto::proto::AeadConfig::from(config),
-            kms_proto::KeyConfig::ProtectedFs(_config) => unimplemented!(),
+            kms_proto::KeyConfig::ProtectedFs(_config) => unimplemented!(), // ProtectedFS is not used by TDFS yet. Config of ProtectedFs will not be generated neither.
         };
 
         let file_id = Uuid::new_v4().to_string();

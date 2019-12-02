@@ -47,14 +47,12 @@ lazy_static! {
 }
 
 pub struct KMSEnclave<S, T> {
-    state: i32,
     x: PhantomData<(S, T)>,
 }
 
 impl<S, T> Default for KMSEnclave<S, T> {
     fn default() -> Self {
         KMSEnclave {
-            state: 0,
             x: PhantomData::<(S, T)>,
         }
     }
@@ -94,9 +92,7 @@ impl EnclaveService<KMSRequest, KMSResponse> for KMSEnclave<KMSRequest, KMSRespo
     fn handle_invoke(&mut self, input: KMSRequest) -> Result<KMSResponse> {
         trace!("handle_invoke invoked!");
         trace!("incoming payload = {:?}", input);
-        self.state += 1;
         let result = self.dispatch(input);
-        trace!("{}th round complete!", self.state);
         result
     }
 }
