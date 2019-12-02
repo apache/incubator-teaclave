@@ -167,6 +167,14 @@ impl SgxFile {
             .get_current_meta_gmac(meta_gmac)
             .map_err(Error::from_raw_os_error)
     }
+
+    pub fn rename_meta(&self, old_name: &Path, new_name: &Path) -> io::Result<()> {
+        let old = cstr(old_name)?;
+        let new = cstr(new_name)?;
+        self.0
+            .rename_meta(&old, &new)
+            .map_err(Error::from_raw_os_error)
+    }
 }
 
 pub fn remove(path: &Path) -> io::Result<()> {

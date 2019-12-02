@@ -77,6 +77,8 @@ extern "C" {
         stream: SGX_FILE,
         out_gmac: *mut sgx_aes_gcm_128bit_tag_t,
     ) -> int32_t;
+
+    pub fn sgx_rename_meta(stream: SGX_FILE, old: *const c_char, new: *const c_char) -> int32_t;
 }
 
 fn max_len() -> usize {
@@ -235,6 +237,18 @@ unsafe fn rsgx_get_current_meta_gmac(
     }
 
     let ret = sgx_get_current_meta_gmac(stream, out_gmac as *mut sgx_aes_gcm_128bit_tag_t);
+    if ret == 0 {
+        Ok(())
+    } else {
+        Err(rsgx_ferror(stream))
+    }
+}
+
+unsafe fn rsgx_rename_meta(stream: SGX_FILE, old: &CStr, new: &CStr) -> SysError {
+    if stream.is_null() {
+        return Err(libc::EINVAL);
+    }
+    let ret = sgx_rename_meta(stream, old.as_ptr(), new.as_ptr());
     if ret == 0 {
         Ok(())
     } else {
@@ -595,6 +609,10 @@ impl SgxFileStream {
 
     pub fn get_current_meta_gmac(&self, meta_gmac: &mut sgx_aes_gcm_128bit_tag_t) -> SysError {
         unsafe { rsgx_get_current_meta_gmac(self.stream, meta_gmac) }
+    }
+
+    pub fn rename_meta(&self, old_name: &CStr, new_name: &CStr) -> SysError {
+        unsafe { rsgx_rename_meta(self.stream, old_name, new_name) }
     }
 }
 
