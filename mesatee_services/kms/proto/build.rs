@@ -24,9 +24,10 @@ fn main() {
 
     let src = PathBuf::from("src");
     let output = src.join("prost_generated");
-    let _ = std::fs::create_dir(output).expect("failed to create prost_generated directory");
-
-    let includes = &[src];
+    if !output.exists() {
+        let _ = std::fs::create_dir(&output).expect("failed to create prost_generated dir");
+    }
+    let includes = &[src.clone()];
     let mut config = get_default_config();
     config.out_dir(output);
     let base64_field = [

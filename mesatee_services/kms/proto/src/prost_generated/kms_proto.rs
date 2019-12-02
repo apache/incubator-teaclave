@@ -64,8 +64,6 @@ pub struct DeleteKeyResponse {
     #[prost(message, required, tag = "1")]
     pub config: KeyConfig,
 }
-// This is a coment
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 #[derive(serde_derive::Serialize, serde_derive::Deserialize)]
