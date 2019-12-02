@@ -20,8 +20,6 @@ include!("../../common/prost_build_generator.rs");
 
 #[cfg(not(feature = "mesalock_sgx"))]
 fn main() {
-    let _ = env_logger::init();
-
     let src = PathBuf::from("src");
     let output = src.join("prost_generated");
     if !output.exists() {

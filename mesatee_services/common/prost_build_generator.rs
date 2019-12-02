@@ -26,38 +26,44 @@ pub struct MesaTEEServiceGenerator;
 /// 2. Define services. Prost will generate corresponding sevices and clients.
 /// 3. Include ```prost_build_generator.rs``` and modify ```main function``` in the ```build.rs``` of the target library.  
 /// 4. Todo: add support for automatic authentication
-
+const LINE_ENDING: &'static str = "\n";
 impl MesaTEEServiceGenerator {
     fn generate_structure(&mut self, service: &prost_build::Service, buf: &mut String) {
         let request_name = format!("{}{}", &service.proto_name, "Request");
         let response_name = format!("{}{}", &service.proto_name, "Response");
         // Generate request enum structure
-        buf.push_str(
-            "#[derive(Clone, serde_derive::Serialize, serde_derive::Deserialize, Debug)]\n",
-        );
-        buf.push_str("#[serde(tag = \"type\")]\n");
-        buf.push_str(&format!("pub enum {} {{\n", &request_name));
+        buf.push_str("#[derive(Clone, serde_derive::Serialize, serde_derive::Deserialize, Debug)]");
+        buf.push_str(LINE_ENDING);
+        buf.push_str(r#"#[serde(tag = "type")]"#);
+
+        buf.push_str(&format!("pub enum {} {{", &request_name));
+        buf.push_str(LINE_ENDING);
         for method in &service.methods {
             buf.push_str(&format!(
-                "    {}({}),\n",
+                "    {}({}),",
                 method.proto_name, method.input_type
             ));
+            buf.push_str(LINE_ENDING);
         }
-        buf.push_str(&format!("}}\n"));
+        buf.push_str("}");
+        buf.push_str(LINE_ENDING);
 
         // Generate response enum structure
-        buf.push_str(
-            "#[derive(Clone, serde_derive::Serialize, serde_derive::Deserialize, Debug)]\n",
-        );
-        buf.push_str("#[serde(tag = \"type\")]\n");
-        buf.push_str(&format!("pub enum {} {{\n", &response_name));
+        buf.push_str("#[derive(Clone, serde_derive::Serialize, serde_derive::Deserialize, Debug)]");
+        buf.push_str(LINE_ENDING);
+        buf.push_str(r#"#[serde(tag = "type")]"#);
+        buf.push_str(LINE_ENDING);
+        buf.push_str(&format!("pub enum {} {{", &response_name));
+        buf.push_str(LINE_ENDING);
         for method in &service.methods {
             buf.push_str(&format!(
-                "    {}({}),\n",
+                "    {}({}),",
                 method.proto_name, method.output_type
             ));
+            buf.push_str(LINE_ENDING);
         }
-        buf.push_str(&format!("}}\n"));
+        buf.push_str("}");
+        buf.push_str(LINE_ENDING);
     }
 
     fn generate_service(&mut self, service: &prost_build::Service, buf: &mut String) {
@@ -65,18 +71,21 @@ impl MesaTEEServiceGenerator {
         let response_name = format!("{}{}", &service.proto_name, "Response");
         let service_name = format!("{}{}", &service.proto_name, "Service");
         // Genreate trait
-        buf.push_str(&format!("pub trait {} {{\n", &service_name));
+        buf.push_str(&format!("pub trait {} {{", &service_name));
+        buf.push_str(LINE_ENDING);
         for method in &service.methods {
             buf.push_str(&format!(
-                "    fn {}(req: {}) -> mesatee_core::Result<{}>;\n",
+                "    fn {}(req: {}) -> mesatee_core::Result<{}>;",
                 method.name, method.input_type, method.output_type
             ));
+            buf.push_str(LINE_ENDING);
         }
         // Generate dispatch
         buf.push_str(&format!(
-            "    fn dispatch(&self, req: {}) -> mesatee_core::Result<{}> {{\n",
+            "    fn dispatch(&self, req: {}) -> mesatee_core::Result<{}> {{",
             &request_name, &response_name
         ));
+        buf.push_str(LINE_ENDING);
 
         // authentication
         let mut need_authentication: bool = false;
@@ -86,14 +95,16 @@ impl MesaTEEServiceGenerator {
             }
         }
         if need_authentication {
-            buf.push_str("        let authenticated = match req {\n");
+            buf.push_str("        let authenticated = match req {");
+            buf.push_str(LINE_ENDING);
             for method in &service.methods {
                 buf.push_str(&format!(
-                    "            {}::{}(ref req) => req.creds.auth(),\n",
+                    "            {}::{}(ref req) => req.creds.auth(),",
                     &request_name, &method.proto_name
                 ));
+                buf.push_str(LINE_ENDING);
             }
-            buf.push_str("        };\n");
+            buf.push_str("        };");
             buf.push_str(
                 r#"
         if !authenticated {
@@ -104,28 +115,35 @@ impl MesaTEEServiceGenerator {
         }
 
         // dispatch request
-        buf.push_str("        match req {\n");
+        buf.push_str("        match req {");
+        buf.push_str(LINE_ENDING);
         for method in &service.methods {
             buf.push_str(&format!(
-                "            {}::{}(req) => Self::{}(req).map({}::{}),\n",
+                "            {}::{}(req) => Self::{}(req).map({}::{}),",
                 &request_name, &method.proto_name, method.name, &response_name, &method.proto_name
             ));
         }
-        buf.push_str("        }\n");
+        buf.push_str("        }");
+        buf.push_str(LINE_ENDING);
         buf.push_str("    }\n");
-        buf.push_str("}\n");
+        buf.push_str(LINE_ENDING);
+        buf.push_str("}");
+        buf.push_str(LINE_ENDING);
     }
 
     fn generate_client(&mut self, service: &prost_build::Service, buf: &mut String) {
         let request_name = format!("{}{}", &service.proto_name, "Request");
         let response_name = format!("{}{}", &service.proto_name, "Response");
         let client_name = format!("{}{}", &service.proto_name, "Client");
-        buf.push_str(&format!("pub struct {} {{\n", &client_name));
+        buf.push_str(&format!("pub struct {} {{", &client_name));
+        buf.push_str(LINE_ENDING);
         buf.push_str(&format!(
-            "    channel: mesatee_core::rpc::channel::SgxTrustedChannel<{}, {}>,\n",
+            "    channel: mesatee_core::rpc::channel::SgxTrustedChannel<{}, {}>,",
             request_name, response_name
         ));
-        buf.push_str("}\n");
+        buf.push_str(LINE_ENDING);
+        buf.push_str("}");
+        buf.push_str(LINE_ENDING);
 
         // impl new
         buf.push_str(&format!(
@@ -168,7 +186,8 @@ impl {} {{
                 &method.proto_name
             ));
         }
-        buf.push_str("}\n");
+        buf.push_str("}");
+        buf.push_str(LINE_ENDING);
     }
 }
 

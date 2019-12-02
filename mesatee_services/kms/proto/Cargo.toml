@@ -29,4 +29,3 @@ sgx_types    = { version = "1.0.9" }
 
 [build-dependencies]
 prost-build = { version = "0.5.0" }
-env_logger = { version = "0.7.1" }
