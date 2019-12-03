@@ -122,6 +122,8 @@ pub enum ErrorKind {
     MsgSizeLimitExceedError,
     /// Unhandled MesaPy exception encountered
     MesaPyError,
+    /// RPC input/output is invalid.
+    RpcProtocolError,
     /// Others.
     Unknown,
 }
@@ -195,6 +197,7 @@ impl ErrorKind {
             ErrorKind::NoValidWorkerError => "no valid worker error",
             ErrorKind::MsgSizeLimitExceedError => "message size exceeds limit",
             ErrorKind::MesaPyError => "unhandled mesapy exception",
+            ErrorKind::RpcProtocolError => "invalid rpc protocol",
             ErrorKind::Unknown => "unknown error",
         }
     }
@@ -247,6 +250,7 @@ impl From<u32> for Error {
             0x0000_1012 => ErrorKind::NoValidWorkerError,
             0x0000_1013 => ErrorKind::MsgSizeLimitExceedError,
             0x0000_1014 => ErrorKind::MesaPyError,
+            0x0000_1015 => ErrorKind::RpcProtocolError,
             _ => ErrorKind::Unknown,
         };
 
@@ -295,6 +299,7 @@ impl Into<u32> for Error {
             ErrorKind::NoValidWorkerError => 0x0000_1012,
             ErrorKind::MsgSizeLimitExceedError => 0x0000_1013,
             ErrorKind::MesaPyError => 0x0000_1014,
+            ErrorKind::RpcProtocolError => 0x0000_1015,
             ErrorKind::Unknown => 0xffff_ffff,
         }
     }

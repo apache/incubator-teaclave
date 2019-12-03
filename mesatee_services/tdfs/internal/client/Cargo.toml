@@ -8,7 +8,7 @@ edition = "2018"
 
 [features]
 default = []
-mesalock_sgx = ["sgx_tstd", "mesatee_core/mesalock_sgx", "kms_client/mesalock_sgx", "tdfs_internal_proto/mesalock_sgx"]
+mesalock_sgx = ["sgx_tstd", "mesatee_core/mesalock_sgx", "kms_proto/mesalock_sgx", "tdfs_internal_proto/mesalock_sgx"]
 cov = ["sgx_cov"]
 
 [dependencies]
@@ -16,7 +16,7 @@ cfg-if       = { version = "0.1.9" }
 ring         = { version = "0.16.5" }
 net2         = { version = "0.2.33" }
 
-kms_client          = { path = "../../../kms/client", optional = true}
+kms_proto          = { path = "../../../kms/proto", optional = true}
 tdfs_internal_proto = { path = "../proto", optional = true}
 
 mesatee_core    = { version = "0.1.0" }

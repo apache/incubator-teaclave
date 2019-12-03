@@ -16,22 +16,27 @@
 // under the License.
 
 use super::common_setup::setup_kms_internal_client;
+use kms_proto::proto::{CreateKeyRequest, GetKeyRequest};
+use kms_proto::EncType;
 
 pub fn api_create_key() {
     trace!("Test kms: api_create_key.");
     let mut client = setup_kms_internal_client();
-    let resp = client.request_create_key().unwrap();
+    let req = CreateKeyRequest::new(EncType::Aead);
+    let resp = client.create_key(req).unwrap();
 
-    let key_id = resp.key_id;
-    let key_config = resp.config;
-    let resp = client.request_get_key(&key_id).unwrap();
+    let key_id = resp.get_key_id();
+    let key_config = resp.get_key_config().unwrap();
+    let req = GetKeyRequest::new(&key_id);
+    let resp = client.get_key(req).unwrap();
 
-    assert_eq!(key_config, resp.config);
+    assert_eq!(key_config, resp.get_key_config().unwrap());
 }
 
 pub fn api_get_deleted_key() {
     trace!("Test kms: api get deleted key.");
     let mut client = setup_kms_internal_client();
-    let resp = client.request_get_key("fake_kms_record_to_be_deleted");
+    let req = GetKeyRequest::new("fake_kms_record_to_be_deleted");
+    let resp = client.get_key(req);
     assert!(resp.is_err());
 }

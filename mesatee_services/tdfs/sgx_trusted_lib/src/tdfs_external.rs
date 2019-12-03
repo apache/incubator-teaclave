@@ -20,7 +20,8 @@
 use std::prelude::v1::*;
 
 use crate::data_store::{self, verify_user, FileMeta, FILE_STORE, USER_FILE_STORE};
-use kms_client::KMSClient;
+use kms_proto;
+use kms_proto::KMSClient;
 use mesatee_core::config;
 use mesatee_core::rpc::EnclaveService;
 use mesatee_core::{Error, ErrorKind, Result};
@@ -44,9 +45,14 @@ impl HandleRequest for CreateFileRequest {
 
         let target = config::Internal::target_kms();
         let mut client = KMSClient::new(target)?;
-        let resp = client.request_create_key()?;
-        let key_id = resp.key_id;
-        let key_config = resp.config;
+        let req = kms_proto::proto::CreateKeyRequest::new(kms_proto::EncType::Aead);
+        let resp = client.create_key(req)?;
+        let key_id = resp.get_key_id();
+        let key_config = resp.get_key_config()?;
+        let key_config = match key_config {
+            kms_proto::KeyConfig::Aead(config) => kms_proto::proto::AeadConfig::from(config),
+            kms_proto::KeyConfig::ProtectedFs(_config) => unimplemented!(), // ProtectedFS is not used by TDFS yet. Config of ProtectedFs will not be generated neither.
+        };
 
         let file_id = Uuid::new_v4().to_string();
         let file_meta = FileMeta {
@@ -93,9 +99,13 @@ impl HandleRequest for GetFileRequest {
 
         let target = config::Internal::target_kms();
         let mut client = KMSClient::new(target)?;
-        let key_resp = client.request_get_key(&file_meta.key_id)?;
-        let key_config = key_resp.config;
-
+        let key_request = kms_proto::proto::GetKeyRequest::new(&file_meta.key_id);
+        let key_resp = client.get_key(key_request)?;
+        let key_config = key_resp.get_key_config()?;
+        let key_config = match key_config {
+            kms_proto::KeyConfig::Aead(config) => kms_proto::proto::AeadConfig::from(config),
+            kms_proto::KeyConfig::ProtectedFs(_config) => unimplemented!(), // ProtectedFS is not used by TDFS yet. Config of ProtectedFs will not be generated neither.
+        };
         let access_path = file_meta.get_access_path();
         let file_info = tdfs_external_proto::FileInfo {
             user_id: file_meta.user_id,
@@ -135,8 +145,13 @@ impl HandleRequest for DeleteFileRequest {
 
         let target = config::Internal::target_kms();
         let mut client = KMSClient::new(target)?;
-        let key_resp = client.request_del_key(&file_meta.key_id)?;
-        let key_config = key_resp.config;
+        let key_req = kms_proto::proto::DeleteKeyRequest::new(&file_meta.key_id);
+        let key_resp = client.del_key(key_req)?;
+        let key_config = key_resp.get_key_config()?;
+        let key_config = match key_config {
+            kms_proto::KeyConfig::Aead(config) => kms_proto::proto::AeadConfig::from(config),
+            kms_proto::KeyConfig::ProtectedFs(_config) => unimplemented!(), // ProtectedFS is not used by TDFS yet. Config of ProtectedFs will not be generated neither.
+        };
 
         let access_path = file_meta.get_access_path();
         let file_info = tdfs_external_proto::FileInfo {

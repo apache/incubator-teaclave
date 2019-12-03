@@ -21,3 +21,6 @@ ctrlc           = { version = "3.1.2" }
 log             = { version = "0.4.6" }
 env_logger      = { version = "0.7.1" }
 threadpool      = { version = "1.0" }
+
+[build-dependencies]
+kms_proto       = { path = "../proto" }
