@@ -125,7 +125,7 @@ impl MesaTEEServiceGenerator {
         }
         buf.push_str("        }");
         buf.push_str(LINE_ENDING);
-        buf.push_str("    }\n");
+        buf.push_str("    }");
         buf.push_str(LINE_ENDING);
         buf.push_str("}");
         buf.push_str(LINE_ENDING);
