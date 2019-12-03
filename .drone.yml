@@ -1,26 +1,26 @@
 kind: pipeline
-name: sgx-debug
+name: sgx-debug-ubuntu-1804
 
 steps:
 - name: prepare
-  image: mesalocklinux/build-mesatee:0.1.5
+  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.1
   commands:
   - . /root/.cargo/env
   - mkdir -p build
   - cd build && cmake -DCMAKE_BUILD_TYPE=Debug ..
 - name: check
-  image: mesalocklinux/build-mesatee:0.1.5
+  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.1
   commands:
   - . /root/.cargo/env
   - cd build && make check
 - name: compile
-  image: mesalocklinux/build-mesatee:0.1.5
+  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.1
   commands:
   - . /root/.cargo/env
   - export RUSTFLAGS="-D warnings"
   - cd build && make VERBOSE=1 -j2
 - name: sgx-test
-  image: mesalocklinux/build-mesatee:0.1.5
+  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.1
   environment:
     IAS_KEY:
       from_secret: V5_KEY
@@ -50,28 +50,28 @@ node:
 ---
 
 kind: pipeline
-name: sgx-release
+name: sgx-release-ubuntu-1804
 
 steps:
 - name: prepare
-  image: mesalocklinux/build-mesatee:0.1.5
+  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.1
   commands:
   - . /root/.cargo/env
   - mkdir -p build
   - cd build && cmake ..
 - name: check
-  image: mesalocklinux/build-mesatee:0.1.5
+  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.1
   commands:
   - . /root/.cargo/env
   - cd build && make check
 - name: compile
-  image: mesalocklinux/build-mesatee:0.1.5
+  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.1
   commands:
   - . /root/.cargo/env
   - export RUSTFLAGS="-D warnings"
   - cd build && make VERBOSE=1 -j2
 - name: sgx-test
-  image: mesalocklinux/build-mesatee:0.1.5
+  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.1
   privileged: true
   environment:
     IAS_KEY:
@@ -101,27 +101,27 @@ node:
 ---
 
 kind: pipeline
-name: sim_debug
+name: sim-debug-ubuntu-1804
 
 steps:
 - name: prepare
-  image: mesalocklinux/build-mesatee:0.1.5
+  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.1
   commands:
   - . /root/.cargo/env
   - mkdir -p build
   - cd build && cmake ..
 - name: check
-  image: mesalocklinux/build-mesatee:0.1.5
+  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.1
   commands:
   - . /root/.cargo/env
   - cd build && make check
 - name: compile
-  image: mesalocklinux/build-mesatee:0.1.5
+  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.1
   commands:
   - . /root/.cargo/env
   - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DRUSTFLAGS="-D warnings" -DSGX_MODE=SW .. && make VERBOSE=1 -j2
 - name: sgx-test
-  image: mesalocklinux/build-mesatee:0.1.5
+  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.1
   commands:
   - . /root/.cargo/env
   - cd build && make sgx-test
@@ -146,27 +146,220 @@ node:
 ---
 
 kind: pipeline
-name: sim_release
+name: sim-release-ubuntu-1804
 
 steps:
 - name: prepare
-  image: mesalocklinux/build-mesatee:0.1.5
+  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.1
   commands:
   - . /root/.cargo/env
   - mkdir -p build
   - cd build && cmake ..
 - name: check
-  image: mesalocklinux/build-mesatee:0.1.5
+  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.1
   commands:
   - . /root/.cargo/env
   - cd build && make check
 - name: compile
-  image: mesalocklinux/build-mesatee:0.1.5
+  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.1
   commands:
   - . /root/.cargo/env
   - cd build && cmake -DRUSTFLAGS="-D warnings" -DSGX_MODE=SW .. && make VERBOSE=1 -j2
 - name: sgx-test
-  image: mesalocklinux/build-mesatee:0.1.5
+  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.1
+  commands:
+  - . /root/.cargo/env
+  - cd build && make sgx-test
+  privileged: true
+  volumes:
+  - name: isgx
+    path: /dev/isgx
+  - name: aesmd
+    path: /var/run/aesmd/aesm.socket
+
+volumes:
+- name: isgx
+  host:
+    path: /dev/isgx
+- name: aesmd
+  host:
+    path: /var/run/aesmd/aesm.socket
+
+
+node:
+  instance: mesatee-sgx
+
+---
+
+kind: pipeline
+name: sgx-debug-ubuntu-1604
+
+steps:
+- name: prepare
+  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.1
+  commands:
+  - . /root/.cargo/env
+  - mkdir -p build
+  - cd build && cmake -DCMAKE_BUILD_TYPE=Debug ..
+- name: check
+  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.1
+  commands:
+  - . /root/.cargo/env
+  - cd build && make check
+- name: compile
+  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.1
+  commands:
+  - . /root/.cargo/env
+  - export RUSTFLAGS="-D warnings"
+  - cd build && make VERBOSE=1 -j2
+- name: sgx-test
+  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.1
+  environment:
+    IAS_KEY:
+      from_secret: V5_KEY
+    IAS_SPID:
+      from_secret: V5_SPID
+  privileged: true
+  volumes:
+  - name: isgx
+    path: /dev/isgx
+  - name: aesmd
+    path: /var/run/aesmd/aesm.socket
+  commands:
+  - . /root/.cargo/env
+  - cd build && make sgx-test
+
+volumes:
+- name: isgx
+  host:
+    path: /dev/isgx
+- name: aesmd
+  host:
+    path: /var/run/aesmd/aesm.socket
+
+node:
+  instance: mesatee-sgx
+
+---
+
+kind: pipeline
+name: sgx-release-ubuntu-1604
+
+steps:
+- name: prepare
+  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.1
+  commands:
+  - . /root/.cargo/env
+  - mkdir -p build
+  - cd build && cmake ..
+- name: check
+  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.1
+  commands:
+  - . /root/.cargo/env
+  - cd build && make check
+- name: compile
+  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.1
+  commands:
+  - . /root/.cargo/env
+  - export RUSTFLAGS="-D warnings"
+  - cd build && make VERBOSE=1 -j2
+- name: sgx-test
+  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.1
+  privileged: true
+  environment:
+    IAS_KEY:
+      from_secret: V5_KEY
+    IAS_SPID:
+      from_secret: V5_SPID
+  volumes:
+  - name: isgx
+    path: /dev/isgx
+  - name: aesmd
+    path: /var/run/aesmd/aesm.socket
+  commands:
+  - . /root/.cargo/env
+  - cd build && make sgx-test
+
+volumes:
+- name: isgx
+  host:
+    path: /dev/isgx
+- name: aesmd
+  host:
+    path: /var/run/aesmd/aesm.socket
+
+node:
+  instance: mesatee-sgx
+
+---
+
+kind: pipeline
+name: sim-debug-ubuntu-1604
+
+steps:
+- name: prepare
+  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.1
+  commands:
+  - . /root/.cargo/env
+  - mkdir -p build
+  - cd build && cmake ..
+- name: check
+  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.1
+  commands:
+  - . /root/.cargo/env
+  - cd build && make check
+- name: compile
+  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.1
+  commands:
+  - . /root/.cargo/env
+  - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DRUSTFLAGS="-D warnings" -DSGX_MODE=SW .. && make VERBOSE=1 -j2
+- name: sgx-test
+  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.1
+  commands:
+  - . /root/.cargo/env
+  - cd build && make sgx-test
+  privileged: true
+  volumes:
+  - name: isgx
+    path: /dev/isgx
+  - name: aesmd
+    path: /var/run/aesmd/aesm.socket
+
+volumes:
+- name: isgx
+  host:
+    path: /dev/isgx
+- name: aesmd
+  host:
+    path: /var/run/aesmd/aesm.socket
+
+node:
+  instance: mesatee-sgx
+
+---
+
+kind: pipeline
+name: sim-release-ubuntu-1604
+
+steps:
+- name: prepare
+  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.1
+  commands:
+  - . /root/.cargo/env
+  - mkdir -p build
+  - cd build && cmake ..
+- name: check
+  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.1
+  commands:
+  - . /root/.cargo/env
+  - cd build && make check
+- name: compile
+  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.1
+  commands:
+  - . /root/.cargo/env
+  - cd build && cmake -DRUSTFLAGS="-D warnings" -DSGX_MODE=SW .. && make VERBOSE=1 -j2
+- name: sgx-test
+  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.1
   commands:
   - . /root/.cargo/env
   - cd build && make sgx-test
@@ -196,18 +389,18 @@ name: lint
 
 steps:
 - name: prepare
-  image: mesalocklinux/build-mesatee:0.1.5
+  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.1
   commands:
   - . /root/.cargo/env
   - mkdir -p build
   - cd build && cmake ..
 - name: check
-  image: mesalocklinux/build-mesatee:0.1.5
+  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.1
   commands:
   - . /root/.cargo/env
   - cd build && make check
 - name: clippy
-  image: mesalocklinux/build-mesatee:0.1.5
+  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.1
   commands:
   - . /root/.cargo/env
   - cd build && make CLP=1
@@ -222,24 +415,24 @@ name: coverage
 
 steps:
 - name: prepare
-  image: mesalocklinux/build-mesatee:0.1.5
+  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.1
   commands:
   - . /root/.cargo/env
   - mkdir -p build
   - cd build && cmake -DCMAKE_BUILD_TYPE=DEBUG -DCOV=1 ..
 - name: check
-  image: mesalocklinux/build-mesatee:0.1.5
+  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.1
   commands:
   - . /root/.cargo/env
   - cd build && make check
 - name: compile
-  image: mesalocklinux/build-mesatee:0.1.5
+  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.1
   commands:
   - . /root/.cargo/env
   - export RUSTFLAGS="-D warnings"
   - cd build && make VERBOSE=1 -j2
 - name: sgx-test
-  image: mesalocklinux/build-mesatee:0.1.5
+  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.1
   environment:
     IAS_KEY:
       from_secret: V5_KEY
@@ -256,7 +449,7 @@ steps:
   - cd build && make sgx-test
 - name: coverage
   failure: ignore
-  image: mesalocklinux/build-mesatee:0.1.5
+  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.1
   commands:
   - cd build && make cov
   - bash -c "bash <(curl -s https://codecov.io/bash) -f intermediate/cov.info"
@@ -288,13 +481,13 @@ name: doc
 
 steps:
 - name: prepare
-  image: mesalocklinux/build-mesatee:0.1.5
+  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.1
   commands:
   - . /root/.cargo/env
   - mkdir -p build
   - cd build && cmake ..
 - name: doc
-  image: mesalocklinux/build-mesatee:0.1.5
+  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.1
   failure: ignore
   commands:
   - . /root/.cargo/env
@@ -353,10 +546,14 @@ trigger:
       - hourly
 
 depends_on:
-  - sgx-debug
-  - sgx-release
-  - sim_debug
-  - sim_release
+  - sgx-debug-ubuntu-1804
+  - sgx-release-ubuntu-1804
+  - sim-debug-ubuntu-1804
+  - sim-release-ubuntu-1804
+  - sgx-debug-ubuntu-1604
+  - sgx-release-ubuntu-1604
+  - sim-debug-ubuntu-1604
+  - sim-release-ubuntu-1604
   - lint
 
 node:
