@@ -40,6 +40,6 @@ SOURCE_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 mkdir -p "${BUILD_DIR}"
 cd "${BUILD_DIR}"
 cmake "${MODE}" "${SOURCE_DIR}"
-cmake --build .
+make -j1
 
 # Final libraries will be installed to $BUILD_DIR/target

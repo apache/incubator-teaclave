@@ -4,7 +4,7 @@ services:
   mesatee-tms:
     build:
       context: ../
-      dockerfile: docker/Dockerfile.runtime.tms
+      dockerfile: docker/tms-rt.ubuntu-1604.Dockerfile
     ports:
       - 5554:5554
     expose:
@@ -29,7 +29,7 @@ services:
   mesatee-tdfs:
     build:
       context: ../
-      dockerfile: docker/Dockerfile.runtime.tdfs
+      dockerfile: docker/tdfs-rt.ubuntu-1604.Dockerfile
     ports:
       - 5065:5065
     expose:
@@ -58,7 +58,7 @@ services:
   mesatee-fns:
     build:
       context: ../
-      dockerfile: docker/Dockerfile.runtime.fns
+      dockerfile: docker/fns-rt.ubuntu-1604.Dockerfile
     ports:
       - 3444:3444
     volumes:
@@ -85,7 +85,7 @@ services:
   mesatee-kms:
     build:
       context: ../
-      dockerfile: docker/Dockerfile.runtime.kms
+      dockerfile: docker/kms-rt.ubuntu-1604.Dockerfile
     expose:
       - 6016
     volumes:

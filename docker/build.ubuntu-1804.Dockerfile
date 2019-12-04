@@ -28,31 +28,7 @@ RUN apt-get update && apt-get install -q -y \
     python \
     libssl-dev \
     libcurl4-openssl-dev \
-    protobuf-compiler \
-    libprotobuf-dev \
-    sudo \
-    kmod \
-    vim \
-    curl \
-    git-core \
-    libprotobuf-c0-dev \
-    libboost-thread-dev \
-    libboost-system-dev \
-    liblog4cpp5-dev \
-    libjsoncpp-dev \
-    alien \
-    uuid-dev \
-    libxml2-dev \
-    cmake \
-    pkg-config \
-    expect \
-    systemd-sysv \
-    gdb
-
-# install other dependencies
-RUN apt-get update && apt-get install -q -y \
-    pypy \
-    pypy-dev
+    libprotobuf-dev
 
 RUN mkdir ~/sgx                                                               && \
     mkdir /etc/init                                                           && \
@@ -70,16 +46,27 @@ RUN cd ~/sgx                                  && \
     echo -e 'no\n/opt' | ./$SGX_LINUX_X64_SDK && \
     echo 'source /opt/sgxsdk/environment' >> ~/.bashrc
 
-# install Rust
+RUN rm -rf ~/sgx
 
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
-    . $HOME/.cargo/env                                                      && \
-    rustup default $RUST_TOOLCHAIN                                          && \
-    rustup component add rust-src rls rust-analysis clippy rustfmt          && \
-    rustup target install aarch64-unknown-linux-gnu                         && \
-    cargo install xargo                                                     && \
-    cargo install sccache                                                   && \
+# install Rust and its dependencies
+
+RUN apt-get update && apt-get install -q -y curl pkg-config
+
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y   && \
+    . $HOME/.cargo/env                                                        && \
+    rustup default $RUST_TOOLCHAIN                                            && \
+    rustup component add rust-src rls rust-analysis clippy rustfmt            && \
+    echo 'source $HOME/.cargo/env' >> ~/.bashrc                               && \
+    cargo install xargo                                                       && \
     rm -rf /root/.cargo/registry && rm -rf /root/.cargo/git
+
+# install other dependencies for building
+
+RUN apt-get update && apt-get install -q -y \
+    git \
+    cmake \
+    pypy \
+    pypy-dev
 
 # install dependencies for testing and coverage
 
@@ -93,4 +80,4 @@ RUN apt-get update && apt-get install -q -y \
 # clean up apt caches
 
 RUN apt-get clean && \
-  rm -fr /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    rm -fr /var/lib/apt/lists/* /tmp/* /var/tmp/*
