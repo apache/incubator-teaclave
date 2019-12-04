@@ -21,6 +21,7 @@ services:
       - IAS_SPID
       - IAS_KEY
       - RUST_LOG
+      - MESATEE_CFG_DIR=.
     networks:
       front:
       mesatee_net:
@@ -49,6 +50,7 @@ services:
       - IAS_SPID
       - IAS_KEY
       - RUST_LOG
+      - MESATEE_CFG_DIR=.
       - MESATEE_STORAGE_DIR=/tmp/mesatee_storage
     networks:
       front:
@@ -76,6 +78,7 @@ services:
       - IAS_SPID
       - IAS_KEY
       - RUST_LOG
+      - MESATEE_CFG_DIR=.
       - MESATEE_STORAGE_DIR=/tmp/mesatee_storage
     networks:
       front:
@@ -100,6 +103,7 @@ services:
       - IAS_SPID
       - IAS_KEY
       - RUST_LOG
+      - MESATEE_CFG_DIR=.
     networks:
       mesatee_net:
         ipv4_address: 172.18.18.102
