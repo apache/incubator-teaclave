@@ -7,6 +7,7 @@ add_custom_target(format
 	COMMAND RUSTUP_TOOLCHAIN=${RUSTUP_TOOLCHAIN} find ${MESATEE_PROJECT_ROOT}
 		-path ${MESATEE_PROJECT_ROOT}/third_party -prune -o
 		-path ${MESATEE_PROJECT_ROOT}/.git -prune -o
+	 	-path *prost_generated -prune -o
         -name "*.rs" -exec rustfmt {} +
     COMMENT "Formating every .rs file"
     DEPENDS prep
@@ -17,6 +18,7 @@ add_custom_target(check
 	COMMAND RUSTUP_TOOLCHAIN=${RUSTUP_TOOLCHAIN} find ${MESATEE_PROJECT_ROOT}
         -path ${MESATEE_PROJECT_ROOT}/third_party -prune -o
         -path ${MESATEE_PROJECT_ROOT}/.git -prune -o
+        -path *prost_generated -prune -o
         -name "*.rs" -exec rustfmt --check {} +
     COMMENT "Checking the format of every .rs file"
     DEPENDS prep
