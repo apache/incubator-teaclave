@@ -20,7 +20,7 @@ include!("../../common/prost_build_generator.rs");
 
 #[cfg(not(feature = "mesalock_sgx"))]
 fn main() {
-    let src=PathBuf::from("src");
+    let src = PathBuf::from("src");
     let output = src.join("prost_generated");
     if !output.exists() {
         std::fs::create_dir(&output).expect("failed to create prost_generated dir");
