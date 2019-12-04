@@ -20,6 +20,7 @@ include!("../../common/prost_build_generator.rs");
 
 #[cfg(not(feature = "mesalock_sgx"))]
 fn main() {
+    println!("cargo:rerun-if-changed=src/kms.proto");
     let src = PathBuf::from("src");
     let output = src.join("prost_generated");
     if !output.exists() {
