@@ -24,7 +24,9 @@ use mesatee_core::config;
 use mesatee_core::rpc::EnclaveService;
 use mesatee_core::{Error, ErrorKind, Result};
 use std::marker::PhantomData;
-use tdfs_internal_proto::{CreateFileRequest, DFSRequest, DFSResponse, GetFileRequest};
+use tdfs_internal_proto::{
+    CheckUserPermissionRequest, CreateFileRequest, DFSRequest, DFSResponse, GetFileRequest,
+};
 use uuid::Uuid;
 
 pub trait HandleRequest {
@@ -91,6 +93,18 @@ impl HandleRequest for GetFileRequest {
     }
 }
 
+impl HandleRequest for CheckUserPermissionRequest {
+    fn handle_request(&self) -> Result<DFSResponse> {
+        let file_id = &self.file_id;
+        let user_id = &self.user_id;
+        let file_meta = FILE_STORE
+            .get(file_id)?
+            .ok_or_else(|| Error::from(ErrorKind::MissingValue))?;
+        let accessible = file_meta.check_permission(user_id);
+        Ok(DFSResponse::new_check_permission(accessible))
+    }
+}
+
 pub struct DFSInternalEnclave<S, T> {
     state: i32,
     x: PhantomData<S>,
@@ -115,6 +129,7 @@ impl EnclaveService<DFSRequest, DFSResponse> for DFSInternalEnclave<DFSRequest, 
         let response = match input {
             DFSRequest::Create(req) => req.handle_request()?,
             DFSRequest::Get(req) => req.handle_request()?,
+            DFSRequest::CheckUserPermission(req) => req.handle_request()?,
         };
         trace!("{}th round complete!", self.state);
         Ok(response)

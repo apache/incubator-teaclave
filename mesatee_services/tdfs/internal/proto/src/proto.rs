@@ -25,6 +25,7 @@ use serde_derive::*;
 pub enum DFSRequest {
     Create(CreateFileRequest),
     Get(GetFileRequest),
+    CheckUserPermission(CheckUserPermissionRequest),
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -32,6 +33,7 @@ pub enum DFSRequest {
 pub enum DFSResponse {
     Create(CreateFileResponse),
     Get(GetFileResponse),
+    CheckUserPermission(CheckUserPermissionResponse),
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -74,6 +76,17 @@ pub struct CreateFileResponse {
     pub key_config: AeadConfig,
 }
 
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct CheckUserPermissionRequest {
+    pub file_id: String,
+    pub user_id: String,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct CheckUserPermissionResponse {
+    pub accessible: bool,
+}
+
 impl DFSRequest {
     pub fn new_create_file(
         sha256: &str,
@@ -99,6 +112,14 @@ impl DFSRequest {
         };
         DFSRequest::Get(req)
     }
+
+    pub fn new_check_permission(file_id: &str, user_id: &str) -> DFSRequest {
+        let req = CheckUserPermissionRequest {
+            file_id: file_id.to_owned(),
+            user_id: user_id.to_owned(),
+        };
+        DFSRequest::CheckUserPermission(req)
+    }
 }
 
 impl DFSResponse {
@@ -116,5 +137,10 @@ impl DFSResponse {
             file_info: file_info.clone(),
         };
         DFSResponse::Get(resp)
+    }
+
+    pub fn new_check_permission(accessible: bool) -> DFSResponse {
+        let resp = CheckUserPermissionResponse { accessible };
+        DFSResponse::CheckUserPermission(resp)
     }
 }

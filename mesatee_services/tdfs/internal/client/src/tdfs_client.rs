@@ -174,9 +174,13 @@ impl TDFSClient {
     }
 
     pub fn check_access_permission(&mut self, file_id: &str, user_id: &str) -> Result<bool> {
-        let resp = self.request_get_file(file_id)?;
-        let file_info = resp.file_info;
-        let accessible = Self::check_permission(&file_info, &user_id);
-        Ok(accessible)
+        let req = DFSRequest::new_check_permission(file_id, user_id);
+        let resp = self.channel.invoke(req)?;
+        match resp {
+            DFSResponse::CheckUserPermission(resp) => Ok(resp.accessible),
+            _ => Err(mesatee_core::Error::from(
+                mesatee_core::ErrorKind::RPCResponseError,
+            )),
+        }
     }
 }
