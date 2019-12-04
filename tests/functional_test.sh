@@ -5,7 +5,7 @@ trap "pkill -2 -P $$; wait" SIGINT SIGTERM EXIT
 cd ../release/services
 
 # prepare test data
-cp -r ../../tests/integration_test/test_data ./
+cp -r ../../tests/integration_test/test_data ../tests/
 
 # check port
 if lsof -i :6016; then
@@ -65,5 +65,6 @@ wait_service tms 5555 30
 wait_service fns 3444 30
 wait_service acs 5077 30
 
-../tests/functional_test 2>&1 | tee functional_test.log
+cd ../tests
+./functional_test 2>&1 | tee functional_test.log
 exit ${PIPESTATUS[0]}
