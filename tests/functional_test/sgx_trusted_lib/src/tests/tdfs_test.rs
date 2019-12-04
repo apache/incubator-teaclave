@@ -24,7 +24,7 @@ use crate::log::trace;
 pub fn read_not_exist_file() {
     trace!("Test tdfs: read file.");
     let mut client = setup_tdfs_internal_client();
-    let resp = client.read_file("xx", None);
+    let resp = client.read_file("xx", "fake", "fake");
     assert!(resp.is_err());
 }
 
@@ -34,22 +34,23 @@ pub fn save_and_read() {
 
     let data = b"abc";
     let user_id = "user1";
-    let disallowed_user = "user2";
-    let task_id = "task1";
+    let disallowed_user = "disallowed_user";
+    let task_id = "fake";
+    let task_token = "fake";
     let allow_policy = 0;
 
     let file_id = client
         .save_file(data, user_id, task_id, &[], allow_policy)
         .unwrap();
 
-    let plaintxt = client.read_file(&file_id, None).unwrap();
+    let plaintxt = client.read_file(&file_id, task_id, task_token).unwrap();
     assert_eq!(plaintxt, b"abc");
 
-    let plaintxt = client.read_file(&file_id, Some(user_id)).unwrap();
-    assert_eq!(plaintxt, b"abc");
+    let accessible = client.check_access_permission(&file_id, user_id).unwrap();
+    assert_eq!(accessible, true);
 
-    let read_err = client.read_file(&file_id, Some(disallowed_user));
-    assert!(read_err.is_err());
+    let accessible = client.check_access_permission(&file_id, disallowed_user).unwrap();
+    assert_eq!(accessible, false);
 }
 
 pub fn check_file_permission() {
@@ -59,14 +60,15 @@ pub fn check_file_permission() {
     let data = b"abcd";
     let user_id = "user1";
     let disallowed_user = "user2";
-    let task_id = "task1";
+    let task_id = "fake";
+    let task_token = "fake";
     let allow_policy = 0;
 
     let file_id = client
         .save_file(data, user_id, task_id, &[], allow_policy)
         .unwrap();
 
-    let plaintxt = client.read_file(&file_id, None).unwrap();
+    let plaintxt = client.read_file(&file_id, task_id, task_token).unwrap();
     assert_eq!(plaintxt, b"abcd");
 
     let accessible = client
@@ -83,24 +85,25 @@ pub fn task_share_file() {
     let collorabor_list = vec!["user2"];
     let disallowed_user = "user3";
 
-    let task_id = "task1";
+    let task_id = "fake";
+    let task_token = "fake";
     let allow_policy = 1;
 
     let file_id = client
         .save_file(data, user_id, task_id, &collorabor_list, allow_policy)
         .unwrap();
 
-    let plaintxt = client.read_file(&file_id, None).unwrap();
+    let plaintxt = client.read_file(&file_id, task_id, task_token).unwrap();
     assert_eq!(plaintxt, b"bcd");
 
-    let plaintxt = client.read_file(&file_id, Some(user_id)).unwrap();
-    assert_eq!(plaintxt, b"bcd");
+    let accessible = client.check_access_permission(&file_id, user_id).unwrap();
+    assert_eq!(accessible, true);
 
-    let plaintxt = client.read_file(&file_id, Some("user2")).unwrap();
-    assert_eq!(plaintxt, b"bcd");
+    let accessible = client.check_access_permission(&file_id, "user2").unwrap();
+    assert_eq!(accessible, true);
 
-    let read_err = client.read_file(&file_id, Some(disallowed_user));
-    assert!(read_err.is_err());
+    let read_err = client.check_access_permission(&file_id, disallowed_user);
+    assert_eq!(accessible, false);
 }
 
 pub fn global_share_file() {
@@ -110,19 +113,20 @@ pub fn global_share_file() {
     let data = b"cde";
     let user_id = "user1";
     let another_user = "user2";
-    let task_id = "task1";
+    let task_id = "fake";
+    let task_token = "fake";
     let allow_policy = 2;
 
     let file_id = client
         .save_file(data, user_id, task_id, &[], allow_policy)
         .unwrap();
 
-    let plaintxt = client.read_file(&file_id, None).unwrap();
+    let plaintxt = client.read_file(&file_id, task_id, task_token).unwrap();
     assert_eq!(plaintxt, b"cde");
 
-    let plaintxt = client.read_file(&file_id, Some(user_id)).unwrap();
-    assert_eq!(plaintxt, b"cde");
+    let accessible = client.check_access_permission(&file_id, user_id).unwrap();
+    assert_eq!(accessible, true);
 
-    let plaintxt = client.read_file(&file_id, Some(another_user)).unwrap();
-    assert_eq!(plaintxt, b"cde");
+    let accessible = client.check_access_permission(&file_id, another_user).unwrap();
+    assert_eq!(accessible, true);
 }

@@ -22,6 +22,7 @@ use std::prelude::v1::*;
 use lazy_static::lazy_static;
 use mesatee_core::db::Memdb;
 use mesatee_core::{Error, ErrorKind, Result};
+use tms_internal_proto::TaskInfo;
 use std::collections::HashSet;
 use std::env;
 use std::path::Path;
@@ -188,4 +189,28 @@ pub fn add_test_infomation() {
         &"fake_file_to_be_deleted".to_string(),
         &fake_file_with_collaborator,
     );
+}
+
+pub fn check_task_read_permission(task_info: &TaskInfo, file_id: &str) -> bool {
+    // file is in the list of input files
+    for task_file in task_info.input_files.iter() {
+        if &task_file.file_id == file_id {
+            return true;
+        }
+    }
+
+    // file belongs to the task creator
+    let file_meta = match FILE_STORE.get(&file_id.to_owned()) {
+        Ok(value) => value,
+        Err(_) => return false,
+    };
+    let file_meta = match file_meta {
+        Some(value) => value,
+        None => return false,
+    };
+    file_meta.check_permission(&task_info.user_id)
+}
+
+pub fn check_task_write_permission(task_info: TaskInfo, file_id: &str) -> bool {
+    unimplemented!();
 }

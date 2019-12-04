@@ -235,19 +235,10 @@ impl RunningTask {
     }
 
     pub fn read_file(&mut self, file_id: &str) -> Result<Vec<u8>> {
-        // TMS already checked
-        let check_user_id = if self.file_owner_map.contains_key(file_id) {
-            None
-        } else {
-            Some(self.task_info.user_id.as_str())
-        };
-
-        // Todo: Enforce other policies
-
         // read and check permission
         let target = config::Internal::target_tdfs();
         let mut client = TDFSClient::new(target)?;
-        client.read_file(file_id, check_user_id)
+        client.read_file(file_id, &self.task_id, &self.task_info.task_token)
     }
 
     pub fn save_file_for_task_creator(&mut self, data: &[u8]) -> Result<String> {

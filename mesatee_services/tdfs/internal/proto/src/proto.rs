@@ -52,6 +52,8 @@ pub struct FileInfo {
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct GetFileRequest {
     pub file_id: String,
+    pub task_id: String,
+    pub task_token: String,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -106,9 +108,11 @@ impl DFSRequest {
         })
     }
 
-    pub fn new_get_file(file_id: &str) -> DFSRequest {
+    pub fn new_get_file(file_id: &str, task_id: &str, task_token: &str) -> DFSRequest {
         let req = GetFileRequest {
             file_id: file_id.to_owned(),
+            task_id: task_id.to_owned(),
+            task_token: task_token.to_owned(),
         };
         DFSRequest::Get(req)
     }

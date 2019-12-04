@@ -23,6 +23,7 @@ use kms_proto::{self, KMSClient};
 use mesatee_core::config;
 use mesatee_core::rpc::EnclaveService;
 use mesatee_core::{Error, ErrorKind, Result};
+use tms_internal_client::TMSClient;
 use std::marker::PhantomData;
 use tdfs_internal_proto::{
     CheckUserPermissionRequest, CreateFileRequest, DFSRequest, DFSResponse, GetFileRequest,
@@ -72,6 +73,15 @@ impl HandleRequest for CreateFileRequest {
 impl HandleRequest for GetFileRequest {
     fn handle_request(&self) -> Result<DFSResponse> {
         let file_id = &self.file_id;
+
+        let target = config::Internal::target_tms();
+        let mut client = TMSClient::new(target)?;
+        let resp = client.request_get_task(&self.task_id)?;
+        let task_info = resp.task_info;
+        if !data_store::check_task_read_permission(&task_info, file_id) {
+            return Err(Error::from(ErrorKind::PermissionDenied));
+        }
+
         let file_meta = FILE_STORE
             .get(file_id)?
             .ok_or_else(|| Error::from(ErrorKind::MissingValue))?;

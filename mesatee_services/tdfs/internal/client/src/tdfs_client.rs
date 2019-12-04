@@ -26,7 +26,7 @@ use mesatee_core::rpc::channel::SgxTrustedChannel;
 use mesatee_core::{self, Result};
 use std::io::{Read, Write};
 use std::untrusted::fs;
-use tdfs_internal_proto::{CreateFileResponse, DFSRequest, DFSResponse, FileInfo, GetFileResponse};
+use tdfs_internal_proto::{CreateFileResponse, DFSRequest, DFSResponse, GetFileResponse};
 
 pub struct TDFSClient {
     channel: SgxTrustedChannel<DFSRequest, DFSResponse>,
@@ -71,8 +71,8 @@ impl TDFSClient {
         }
     }
 
-    fn request_get_file(&mut self, file_id: &str) -> Result<GetFileResponse> {
-        let req = DFSRequest::new_get_file(file_id);
+    fn request_get_file(&mut self, file_id: &str, task_id: &str, task_token: &str) -> Result<GetFileResponse> {
+        let req = DFSRequest::new_get_file(file_id, task_id, task_token);
         let resp = self.channel.invoke(req)?;
         match resp {
             DFSResponse::Get(resp) => Ok(resp),
@@ -113,34 +113,9 @@ impl TDFSClient {
         Ok(file_id)
     }
 
-    fn check_permission(file_info: &FileInfo, user: &str) -> bool {
-        let file_owner = &file_info.user_id;
-        if (file_owner == user) || (file_info.allow_policy == 2) {
-            return true;
-        }
-        if file_info.allow_policy == 1 {
-            for collaborator_id in file_info.collaborator_list.iter() {
-                if user == collaborator_id {
-                    return true;
-                }
-            }
-        }
-        false
-    }
-
-    pub fn read_file(&mut self, file_id: &str, user_to_check: Option<&str>) -> Result<Vec<u8>> {
-        let resp = self.request_get_file(file_id)?;
+    pub fn read_file(&mut self, file_id: &str, task_id: &str, task_token: &str) -> Result<Vec<u8>> {        
+        let resp = self.request_get_file(file_id, task_id, task_token)?;
         let file_info = resp.file_info;
-
-        let accessible: bool = match user_to_check {
-            Some(ref user_id) => Self::check_permission(&file_info, user_id),
-            None => true,
-        };
-        if !accessible {
-            return Err(mesatee_core::Error::from(
-                mesatee_core::ErrorKind::PermissionDenied,
-            ));
-        }
 
         let target = config::Internal::target_kms();
         let mut client = KMSClient::new(target)?;
