@@ -5,7 +5,7 @@ trap "pkill -2 -P $$; wait" SIGINT SIGTERM EXIT
 cd ../release/services
 
 # prepare test data
-cp -r ../../tests/integration_test/test_data ./
+cp -r ../../tests/integration_test/test_data ../tests/
 
 # check ports
 for port in 5554 5555 3444 6016 5065 5066; do
@@ -49,7 +49,8 @@ wait_service "tms" 5555 30
 wait_service "fns" 3444 30
 
 echo "[+] run integration_test"
-../tests/integration_test 2>&1 | tee integration_test.log
+cd ../tests
+./integration_test 2>&1 | tee integration_test.log
 [ ${PIPESTATUS[0]} -eq 0 ] || exit ${PIPESTATUS[0]}
 
 echo "[+] run three_party_demo"

@@ -34,6 +34,7 @@ parse_cargo_packages(SGX_APPS
 
 parse_cargo_packages(SGX_LIBS
     CARGO_TOML_PATH ${PROJECT_SOURCE_DIR}/cmake/tomls/Cargo.sgx_trusted_lib.toml
+    CATEGORIES SGX_LIB_CATEGORIES
     PKG_PATHS SGX_LIB_PATHS
 )
 
@@ -106,9 +107,11 @@ math(EXPR SGX_LIB_LAST_INDEX "${SGX_LIB_LEN} - 1")
 foreach(_i RANGE ${SGX_LIB_LAST_INDEX})
     list(GET SGX_LIBS ${_i} _pkg_name)
     list(GET SGX_LIB_PATHS ${_i} _pkg_path)
+    list(GET SGX_LIB_CATEGORIES ${_i} _category)
     sgxlib_pkgname_2_modname(${_pkg_name} _mod_name)
     add_sgx_build_target(${_pkg_path} ${_pkg_name}
         DEPENDS prep ${TARGET_CONFIG_GEN} "${SGXAPP_PREFIX}-${_mod_name}" pycomponent
+        INSTALL_DIR ${MESATEE_INSTALL_DIR}/${_category}
     )
 endforeach()
 

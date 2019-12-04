@@ -124,11 +124,12 @@ endfunction()
 
 # add_sgx_build_target(sgx_lib_path
 # [DEPENDS [dep]...]
+# [INSTALL_DIR dir]
 # [EXTRA_CARGO_FLAGS flg...]
 # )
 function(add_sgx_build_target sgx_lib_path pkg_name)
     set(options)
-    set(oneValueArgs)
+    set(oneValueArgs INSTALL_DIR)
     set(multiValueArgs DEPENDS EXTRA_CARGO_FLAGS)
     cmake_parse_arguments(MTEE "${options}" "${oneValueArgs}"
         "${multiValueArgs}" ${ARGN})
@@ -137,6 +138,12 @@ function(add_sgx_build_target sgx_lib_path pkg_name)
         set(_depends DEPENDS ${MTEE_DEPENDS})
     else()
         set(_depends)
+    endif()
+
+    if (DEFINED MTEE_INSTALL_DIR)
+        set(_copy_dir ${MTEE_INSTALL_DIR})
+    else()
+        set(_copy_dir ${MESATEE_INSTALL_DIR})
     endif()
 
     # remove trailing "_enclave" to get _module_name
@@ -149,7 +156,7 @@ function(add_sgx_build_target sgx_lib_path pkg_name)
             ${MT_SCRIPT_DIR}/cargo_build_ex.sh -p ${pkg_name}
             --target-dir ${TRUSTED_TARGET_DIR} ${CARGO_BUILD_FLAGS} ${SGX_ENCLAVE_FEATURES} ${MTEE_EXTRA_CARGO_FLAGS}
         COMMAND ${CMAKE_COMMAND} -E env ${TARGET_SGXLIB_ENVS} SGX_COMMON_CFLAGS=${STR_SGX_COMMON_CFLAGS}
-            CUR_MODULE_NAME=${_module_name} CUR_MODULE_PATH=${sgx_lib_path} ${MT_SCRIPT_DIR}/sgx_link_sign.sh
+            CUR_MODULE_NAME=${_module_name} CUR_MODULE_PATH=${sgx_lib_path} CUR_INSTALL_DIR=${_copy_dir} ${MT_SCRIPT_DIR}/sgx_link_sign.sh
         ${_depends}
         COMMENT "Building ${_target_name}"
         WORKING_DIRECTORY ${MT_SGXLIB_TOML_DIR}
