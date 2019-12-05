@@ -47,7 +47,6 @@ services. You can use env vars or set them in the `docker-compose.yml` file.
 $ export IAS_SPID=xxxxxx
 $ export IAS_KEY=xxxxxx
 $ cd docker && docker-compose -f docker-compose-ubuntu-1804.yml up
-docker-compose -f docker-compose-ubuntu-1804.yml up
 Starting docker_mesatee-tms_1  ... done
 Starting docker_mesatee-tdfs_1 ... done
 Starting docker_mesatee-kms_1  ... done
