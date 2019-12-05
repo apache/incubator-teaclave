@@ -48,9 +48,9 @@ $ export IAS_SPID=xxxxxx
 $ export IAS_KEY=xxxxxx
 $ cd docker && docker-compose -f docker-compose-ubuntu-1804.yml up
 docker-compose -f docker-compose-ubuntu-1804.yml up
-Recreating docker_mesatee-tms_1  ... done
-Recreating docker_mesatee-tdfs_1 ... done
-Recreating docker_mesatee-fns_1  ... done
-Recreating docker_mesatee-kms_1  ... done
+Starting docker_mesatee-tms_1  ... done
+Starting docker_mesatee-tdfs_1 ... done
+Starting docker_mesatee-kms_1  ... done
+Starting docker_mesatee-fns_1  ... done
 Attaching to docker_mesatee-kms_1, docker_mesatee-tms_1, docker_mesatee-tdfs_1, docker_mesatee-fns_1
 ```
