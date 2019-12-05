@@ -23,10 +23,10 @@ use lazy_static::lazy_static;
 use mesatee_core::db::Memdb;
 use mesatee_core::{Error, ErrorKind, Result};
 use std::collections::HashSet;
-use tms_internal_proto::TaskInfo;
 use std::env;
 use std::path::Path;
 use std::sync::SgxMutex;
+use tms_internal_proto::TaskInfo;
 
 #[derive(Clone)]
 pub struct FileMeta {

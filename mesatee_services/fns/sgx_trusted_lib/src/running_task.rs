@@ -54,16 +54,12 @@ pub struct RunningTask {
 
 impl RunningTask {
     pub fn init(request: &InvokeTaskRequest) -> Result<Self> {
+        let task_id = request.task_id.to_owned();
+        let task_token = request.task_token.to_owned();
         let target = config::Internal::target_tms();
         let mut client = TMSClient::new(target)?;
-        let resp = client.request_get_task(&request.task_id)?;
+        let resp = client.request_get_task(&task_id, &task_token)?;
         let task_info = resp.task_info;
-        let task_id = request.task_id.to_owned();
-
-        // verify token
-        if task_info.task_token != request.task_token {
-            return Err(Error::from(ErrorKind::PermissionDenied));
-        }
 
         // verify function name
         if task_info.function_name != request.function_name {
@@ -112,7 +108,7 @@ impl RunningTask {
         }
         // Set task status to "running" in TMS
         let status = Some(&TaskStatus::Running);
-        let result = client.request_update_task(&task_id, None, &[], status);
+        let result = client.request_update_task(&task_id, &task_token, None, &[], status);
         match result {
             Ok(_) => Ok(running_task),
             Err(err) => {
@@ -158,6 +154,7 @@ impl RunningTask {
 
                 let _ = client.request_update_task(
                     &self.task_id,
+                    &self.task_info.task_token,
                     task_result_file_id.map(|s| s.as_str()),
                     &output_files,
                     status,
@@ -166,7 +163,13 @@ impl RunningTask {
             }
             None => {
                 let status = Some(&TaskStatus::Failed);
-                let _ = client.request_update_task(&self.task_id, None, &[], status)?;
+                let _ = client.request_update_task(
+                    &self.task_id,
+                    &self.task_info.task_token,
+                    None,
+                    &[],
+                    status,
+                )?;
                 Ok(())
             }
         }

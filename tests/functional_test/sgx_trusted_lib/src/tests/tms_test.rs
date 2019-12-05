@@ -23,7 +23,7 @@ use tms_internal_proto::{FunctionType, TaskFile, TaskStatus};
 pub fn get_task() {
     trace!("Test TMS: get_task.");
     let mut client = setup_tms_internal_client();
-    let resp = client.request_get_task("fake").unwrap();
+    let resp = client.request_get_task("fake", "fake").unwrap();
     let task_info = resp.task_info;
     assert_eq!("fake", task_info.user_id.as_str());
     assert_eq!("echo", task_info.function_name.as_str());
@@ -36,6 +36,9 @@ pub fn get_task() {
     assert!(task_info.collaborator_list.is_empty());
     assert!(task_info.task_result_file_id.is_none());
     assert!(task_info.output_files.is_empty());
+
+    let resp = client.request_get_task("fake", "wrong_token");
+    assert!(resp.is_err());
 }
 
 pub fn update_task_result() {
@@ -43,11 +46,11 @@ pub fn update_task_result() {
     let mut client = setup_tms_internal_client();
 
     let resp = client
-        .request_update_task("fake", Some("task_result"), &[], None)
+        .request_update_task("fake", "fake", Some("task_result"), &[], None)
         .unwrap();
     assert!(resp.success);
 
-    let resp = client.request_get_task("fake").unwrap();
+    let resp = client.request_get_task("fake", "fake").unwrap();
     let task_info = resp.task_info;
     assert_eq!(
         "task_result",
@@ -56,9 +59,14 @@ pub fn update_task_result() {
 
     // task not exists
     let resp = client
-        .request_update_task("NULL", Some("task_result"), &[], None)
+        .request_update_task("NULL", "NULL", Some("task_result"), &[], None)
         .unwrap();
     assert!(!resp.success);
+
+    // wrong token
+    let mut client = setup_tms_internal_client();
+    let resp = client.request_update_task("fake", "wrong", Some("task_result"), &[], None);
+    assert!(resp.is_err());
 }
 
 pub fn update_private_result() {
@@ -71,11 +79,11 @@ pub fn update_private_result() {
     };
     let update_input = [&task_file];
     let resp = client
-        .request_update_task("fake", None, &update_input, None)
+        .request_update_task("fake", "fake", None, &update_input, None)
         .unwrap();
     assert!(resp.success);
 
-    let resp = client.request_get_task("fake").unwrap();
+    let resp = client.request_get_task("fake", "fake").unwrap();
     let task_info = resp.task_info;
     assert_eq!(
         "client_private_result",
@@ -88,11 +96,11 @@ pub fn update_status() {
     let mut client = setup_tms_internal_client();
 
     let resp = client
-        .request_update_task("fake", None, &[], Some(&TaskStatus::Finished))
+        .request_update_task("fake", "fake", None, &[], Some(&TaskStatus::Finished))
         .unwrap();
     assert!(resp.success);
 
-    let resp = client.request_get_task("fake").unwrap();
+    let resp = client.request_get_task("fake", "fake").unwrap();
     let task_info = resp.task_info;
     assert_eq!(TaskStatus::Finished, task_info.status);
 }

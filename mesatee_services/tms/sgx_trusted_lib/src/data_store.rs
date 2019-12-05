@@ -65,6 +65,10 @@ pub fn check_get_permission(task_info: &TaskInfo, user_id: &str) -> bool {
     false
 }
 
+pub fn check_task_token(task_info: &TaskInfo, task_token: &str) -> bool {
+    task_info.task_token == task_token
+}
+
 pub fn gen_token() -> Result<String> {
     use rand::prelude::RngCore;
     let mut token: [u8; 16] = [0; 16];

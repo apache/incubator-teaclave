@@ -18,7 +18,7 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use crate::data_store::TASK_STORE;
+use crate::data_store::{check_task_token, TASK_STORE};
 use mesatee_core::rpc::EnclaveService;
 use mesatee_core::{Error, ErrorKind, Result};
 use std::marker::PhantomData;
@@ -36,6 +36,10 @@ impl HandleRequest for UpdateTaskRequest {
             Some(value) => value,
             None => return Ok(TaskResponse::new_update_task(false)),
         };
+
+        if !check_task_token(&old_info, &self.task_token) {
+            return Err(Error::from(ErrorKind::PermissionDenied));
+        }
 
         if self.task_result_file_id.is_some() {
             old_info.task_result_file_id = self.task_result_file_id.clone();
@@ -59,6 +63,9 @@ impl HandleRequest for GetTaskRequest {
         let task_info = TASK_STORE
             .get(&self.task_id)?
             .ok_or_else(|| Error::from(ErrorKind::MissingValue))?;
+        if !check_task_token(&task_info, &self.task_token) {
+            return Err(Error::from(ErrorKind::PermissionDenied));
+        }
         let resp = TaskResponse::new_get_task(&task_info);
         Ok(resp)
     }

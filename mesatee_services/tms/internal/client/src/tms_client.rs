@@ -44,11 +44,18 @@ impl TMSClient {
     pub fn request_update_task(
         &mut self,
         task_id: &str,
+        task_token: &str,
         task_result_file_id: Option<&str>,
         output_files: &[&TaskFile],
         status: Option<&TaskStatus>,
     ) -> Result<UpdateTaskResponse> {
-        let req = TaskRequest::new_update_task(task_id, task_result_file_id, output_files, status);
+        let req = TaskRequest::new_update_task(
+            task_id,
+            task_token,
+            task_result_file_id,
+            output_files,
+            status,
+        );
         let resp = self.channel.invoke(req)?;
         match resp {
             TaskResponse::Update(resp) => Ok(resp),
@@ -58,8 +65,8 @@ impl TMSClient {
         }
     }
 
-    pub fn request_get_task(&mut self, task_id: &str) -> Result<GetTaskResponse> {
-        let req = TaskRequest::new_get_task(task_id);
+    pub fn request_get_task(&mut self, task_id: &str, task_token: &str) -> Result<GetTaskResponse> {
+        let req = TaskRequest::new_get_task(task_id, task_token);
         let resp = self.channel.invoke(req)?;
         match resp {
             TaskResponse::Get(resp) => Ok(resp),

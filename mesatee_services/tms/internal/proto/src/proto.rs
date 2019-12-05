@@ -38,6 +38,7 @@ pub enum TaskResponse {
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct GetTaskRequest {
     pub task_id: String,
+    pub task_token: String,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -48,6 +49,7 @@ pub struct GetTaskResponse {
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct UpdateTaskRequest {
     pub task_id: String,
+    pub task_token: String,
     pub task_result_file_id: Option<String>,
     pub output_files: Vec<TaskFile>,
     pub status: Option<TaskStatus>,
@@ -59,21 +61,24 @@ pub struct UpdateTaskResponse {
 }
 
 impl TaskRequest {
-    pub fn new_get_task(task_id: &str) -> TaskRequest {
+    pub fn new_get_task(task_id: &str, task_token: &str) -> TaskRequest {
         let req = GetTaskRequest {
             task_id: task_id.to_owned(),
+            task_token: task_token.to_owned(),
         };
         TaskRequest::Get(req)
     }
 
     pub fn new_update_task(
         task_id: &str,
+        task_token: &str,
         task_result_file_id: Option<&str>,
         output_files: &[&TaskFile],
         status: Option<&TaskStatus>,
     ) -> TaskRequest {
         let req = UpdateTaskRequest {
             task_id: task_id.to_owned(),
+            task_token: task_token.to_owned(),
             task_result_file_id: task_result_file_id.map(|s| s.to_string()),
             output_files: output_files
                 .iter()

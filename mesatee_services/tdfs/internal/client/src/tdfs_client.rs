@@ -74,7 +74,12 @@ impl TDFSClient {
         }
     }
 
-    fn request_get_file(&mut self, file_id: &str, task_id: &str, task_token: &str) -> Result<GetFileResponse> {
+    fn request_get_file(
+        &mut self,
+        file_id: &str,
+        task_id: &str,
+        task_token: &str,
+    ) -> Result<GetFileResponse> {
         let req = DFSRequest::new_get_file(file_id, task_id, task_token);
         let resp = self.channel.invoke(req)?;
         match resp {
@@ -118,7 +123,7 @@ impl TDFSClient {
         Ok(file_id)
     }
 
-    pub fn read_file(&mut self, file_id: &str, task_id: &str, task_token: &str) -> Result<Vec<u8>> {        
+    pub fn read_file(&mut self, file_id: &str, task_id: &str, task_token: &str) -> Result<Vec<u8>> {
         let resp = self.request_get_file(file_id, task_id, task_token)?;
         let file_info = resp.file_info;
 
