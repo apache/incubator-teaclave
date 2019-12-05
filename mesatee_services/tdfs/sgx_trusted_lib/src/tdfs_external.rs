@@ -91,7 +91,7 @@ impl HandleRequest for GetFileRequest {
             .get(file_id)?
             .ok_or_else(|| Error::from(ErrorKind::MissingValue))?;
 
-        if !file_meta.check_permission(&self.user_id) {
+        if !file_meta.check_user_permission(&self.user_id) {
             return Err(mesatee_core::Error::from(
                 mesatee_core::ErrorKind::PermissionDenied,
             ));

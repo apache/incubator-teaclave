@@ -33,16 +33,18 @@ pub fn save_and_read() {
     let mut client = setup_tdfs_internal_client();
 
     let data = b"abc";
-    let user_id = "user1";
+    let user_id = "fake";
     let disallowed_user = "disallowed_user";
     let task_id = "fake";
     let task_token = "fake";
     let allow_policy = 0;
 
+    
     let file_id = client
-        .save_file(data, user_id, task_id, &[], allow_policy)
+        .save_file(data, user_id, task_id, task_token, &[], allow_policy)
         .unwrap();
 
+    
     let plaintxt = client.read_file(&file_id, task_id, task_token).unwrap();
     assert_eq!(plaintxt, b"abc");
 
@@ -53,57 +55,90 @@ pub fn save_and_read() {
     assert_eq!(accessible, false);
 }
 
-pub fn check_file_permission() {
-    trace!("Test tdfs: check file permission file.");
+pub fn check_user_permission() {
+    trace!("Test tdfs: check user permission.");
     let mut client = setup_tdfs_internal_client();
 
     let data = b"abcd";
-    let user_id = "user1";
+    let user_id = "fake";
     let disallowed_user = "user2";
     let task_id = "fake";
     let task_token = "fake";
     let allow_policy = 0;
 
     let file_id = client
-        .save_file(data, user_id, task_id, &[], allow_policy)
+        .save_file(data, user_id, task_id, task_token, &[], allow_policy)
         .unwrap();
 
+    
     let plaintxt = client.read_file(&file_id, task_id, task_token).unwrap();
     assert_eq!(plaintxt, b"abcd");
+
+    let accessible = client
+        .check_access_permission(&file_id, &user_id)
+        .unwrap();
+    assert!(accessible);
 
     let accessible = client
         .check_access_permission(&file_id, &disallowed_user)
         .unwrap();
     assert!(!accessible);
 }
+
+pub fn check_write_permission() {
+    trace!("Test tdfs: check write permission");
+    let data = b"bcd";
+    let task_id = "fake_multi_task";
+    let task_token = "fake";
+    let allow_policy = 1;
+
+    let mut client = setup_tdfs_internal_client();
+    let user_id = "fake";
+    let collaborator = "fake_file_owner";
+    let collorabor_list = vec![collaborator];
+    let disallowed_user = "user3";
+    let disallowed_collorabor_list = vec![disallowed_user];
+
+    let result = client.save_file(data, user_id, task_id, task_token, &collorabor_list, allow_policy);
+    assert!(result.is_ok());
+
+    let mut client = setup_tdfs_internal_client();
+    let result = client.save_file(data, disallowed_user, task_id, task_token, &collorabor_list, allow_policy);
+    assert!(result.is_err());
+
+    let mut client = setup_tdfs_internal_client();
+    let result = client.save_file(data, user_id, task_id, task_token, &disallowed_collorabor_list, allow_policy);
+    assert!(result.is_err());
+}
 pub fn task_share_file() {
     trace!("Test tdfs: save a file for user and collaborator.");
     let mut client = setup_tdfs_internal_client();
 
     let data = b"bcd";
-    let user_id = "user1";
-    let collorabor_list = vec!["user2"];
+    let user_id = "fake";
+    let collaborator = "fake_file_owner";
+    let collorabor_list = vec![collaborator];
     let disallowed_user = "user3";
 
-    let task_id = "fake";
+    let task_id = "fake_multi_task";
     let task_token = "fake";
     let allow_policy = 1;
 
     let file_id = client
-        .save_file(data, user_id, task_id, &collorabor_list, allow_policy)
+        .save_file(data, user_id, task_id, task_token, &collorabor_list, allow_policy)
         .unwrap();
 
     let plaintxt = client.read_file(&file_id, task_id, task_token).unwrap();
     assert_eq!(plaintxt, b"bcd");
 
     let accessible = client.check_access_permission(&file_id, user_id).unwrap();
-    assert_eq!(accessible, true);
+    assert!(accessible);
 
-    let accessible = client.check_access_permission(&file_id, "user2").unwrap();
-    assert_eq!(accessible, true);
+    let accessible = client.check_access_permission(&file_id, collaborator).unwrap();
+    assert!(accessible);
 
-    let read_err = client.check_access_permission(&file_id, disallowed_user);
-    assert_eq!(accessible, false);
+    let accessible = client.check_access_permission(&file_id, disallowed_user).unwrap();
+    assert!(!accessible);
 }
 
 pub fn global_share_file() {
@@ -111,14 +146,14 @@ pub fn global_share_file() {
     let mut client = setup_tdfs_internal_client();
 
     let data = b"cde";
-    let user_id = "user1";
+    let user_id = "fake";
     let another_user = "user2";
     let task_id = "fake";
     let task_token = "fake";
     let allow_policy = 2;
 
     let file_id = client
-        .save_file(data, user_id, task_id, &[], allow_policy)
+        .save_file(data, user_id, task_id, task_token, &[], allow_policy)
         .unwrap();
 
     let plaintxt = client.read_file(&file_id, task_id, task_token).unwrap();

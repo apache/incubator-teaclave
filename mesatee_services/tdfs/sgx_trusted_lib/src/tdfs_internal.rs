@@ -36,6 +36,20 @@ pub trait HandleRequest {
 
 impl HandleRequest for CreateFileRequest {
     fn handle_request(&self) -> Result<DFSResponse> {
+        let target = config::Internal::target_tms();
+        let mut client = TMSClient::new(target)?;
+        let resp = client.request_get_task(&self.task_id)?;
+        let task_info = resp.task_info;
+
+        let mut user_list: Vec<&str> = Vec::new();
+        user_list.push(&self.user_id);
+        for collaborator in self.collaborator_list.iter() {
+            user_list.push(collaborator);
+        }
+        if !data_store::check_task_write_permission(&task_info, &user_list) {
+            return Err(Error::from(ErrorKind::PermissionDenied));
+        }
+
         let target = config::Internal::target_kms();
         let mut client = KMSClient::new(target)?;
         let req = kms_proto::proto::CreateKeyRequest::new(kms_proto::EncType::Aead);
@@ -110,7 +124,7 @@ impl HandleRequest for CheckUserPermissionRequest {
         let file_meta = FILE_STORE
             .get(file_id)?
             .ok_or_else(|| Error::from(ErrorKind::MissingValue))?;
-        let accessible = file_meta.check_permission(user_id);
+        let accessible = file_meta.check_user_permission(user_id);
         Ok(DFSResponse::new_check_permission(accessible))
     }
 }

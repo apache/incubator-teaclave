@@ -22,8 +22,8 @@ use std::prelude::v1::*;
 use lazy_static::lazy_static;
 use mesatee_core::db::Memdb;
 use mesatee_core::{Error, ErrorKind, Result};
-use tms_internal_proto::TaskInfo;
 use std::collections::HashSet;
+use tms_internal_proto::TaskInfo;
 use std::env;
 use std::path::Path;
 use std::sync::SgxMutex;
@@ -63,7 +63,7 @@ impl FileMeta {
             .to_string()
     }
 
-    pub fn check_permission(&self, user_id: &str) -> bool {
+    pub fn check_user_permission(&self, user_id: &str) -> bool {
         let file_owner = &self.user_id;
         let allow_policy = self.allow_policy;
         if (file_owner == user_id) || (allow_policy == 2) {
@@ -194,7 +194,7 @@ pub fn add_test_infomation() {
 pub fn check_task_read_permission(task_info: &TaskInfo, file_id: &str) -> bool {
     // file is in the list of input files
     for task_file in task_info.input_files.iter() {
-        if &task_file.file_id == file_id {
+        if task_file.file_id == file_id {
             return true;
         }
     }
@@ -208,9 +208,19 @@ pub fn check_task_read_permission(task_info: &TaskInfo, file_id: &str) -> bool {
         Some(value) => value,
         None => return false,
     };
-    file_meta.check_permission(&task_info.user_id)
+    file_meta.check_user_permission(&task_info.user_id)
 }
 
-pub fn check_task_write_permission(task_info: TaskInfo, file_id: &str) -> bool {
-    unimplemented!();
+pub fn check_task_write_permission(task_info: &TaskInfo, user_list: &[&str]) -> bool {
+    let mut list: HashSet<&str> = HashSet::new();
+    list.insert(&task_info.user_id);
+    for collaborator in task_info.collaborator_list.iter() {
+        list.insert(&collaborator.user_id);
+    }
+    for uid in user_list.iter() {
+        if !list.contains(uid) {
+            return false;
+        }
+    }
+    true
 }

@@ -28,7 +28,7 @@ impl Internal {
         ServiceConfig::new(
             MESATEE_CONFIG.tms_internal_listen_addr,
             MESATEE_CONFIG.tms_internal_port,
-            InboundDesc::Sgx(get_trusted_enclave_attr(vec!["fns"])),
+            InboundDesc::Sgx(get_trusted_enclave_attr(vec!["fns", "tdfs"])),
         )
     }
 

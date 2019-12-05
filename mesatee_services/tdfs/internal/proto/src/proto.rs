@@ -67,6 +67,7 @@ pub struct CreateFileRequest {
     pub file_size: u32,
     pub user_id: String,
     pub task_id: String,
+    pub task_token: String,
     pub collaborator_list: Vec<String>,
     pub allow_policy: u32,
 }
@@ -95,6 +96,7 @@ impl DFSRequest {
         file_size: u32,
         user_id: &str,
         task_id: &str,
+        task_token: &str,
         collaborator_list: &[&str],
         allow_policy: u32,
     ) -> DFSRequest {
@@ -103,6 +105,7 @@ impl DFSRequest {
             file_size,
             user_id: user_id.to_owned(),
             task_id: task_id.to_owned(),
+            task_token: task_token.to_owned(),
             collaborator_list: collaborator_list.iter().map(|s| s.to_string()).collect(),
             allow_policy,
         })

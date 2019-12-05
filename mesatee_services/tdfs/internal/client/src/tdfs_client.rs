@@ -45,12 +45,14 @@ impl TDFSClient {
         Ok(TDFSClient { channel })
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn request_create_file(
         &mut self,
         sha256: &str,
         file_size: u32,
         user_id: &str,
         task_id: &str,
+        task_token: &str,
         collaborator_list: &[&str],
         allow_policy: u32,
     ) -> Result<CreateFileResponse> {
@@ -59,6 +61,7 @@ impl TDFSClient {
             file_size,
             user_id,
             task_id,
+            task_token,
             collaborator_list,
             allow_policy,
         );
@@ -87,6 +90,7 @@ impl TDFSClient {
         data: &[u8],
         user_id: &str,
         task_id: &str,
+        task_token: &str,
         collaborator_list: &[&str],
         allow_policy: u32,
     ) -> Result<String> {
@@ -98,6 +102,7 @@ impl TDFSClient {
             file_size,
             user_id,
             task_id,
+            task_token,
             collaborator_list,
             allow_policy,
         )?;

@@ -218,6 +218,7 @@ impl RunningTask {
             data,
             user_id,
             &self.task_id,
+            &self.task_info.task_token,
             &collaborator_list,
             allow_policy,
         )?;
