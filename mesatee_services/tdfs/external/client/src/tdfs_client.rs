@@ -92,7 +92,7 @@ impl TDFSClient {
         let file_size = data.len() as u32;
         let resp = self.request_create_file(file_name, &sha256, file_size)?;
         let file_id = resp.file_id;
-        let access_path = resp.access_path;
+        let access_path = file_util::get_local_access_path(&resp.access_path);
         let key_config = resp.key_config;
         let encrypted_data =
             file_util::encrypt_data(data, &key_config.key, &key_config.nonce, &key_config.ad)?;
@@ -106,8 +106,8 @@ impl TDFSClient {
         let resp = self.request_get_file(file_id)?;
         let file_info = resp.file_info;
         let key_config = &file_info.key_config;
-        let access_path = &file_info.access_path;
-        let ciphertxt = fs::read(access_path)
+        let access_path = file_util::get_local_access_path(&file_info.access_path);
+        let ciphertxt = fs::read(&access_path)
             .map_err(|_| mesatee_core::Error::from(mesatee_core::ErrorKind::IoError))?;
 
         let plaintxt = file_util::decrypt_data(
