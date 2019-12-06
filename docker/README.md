@@ -1,3 +1,5 @@
+# MesaTEE Docker
+
 This directory contains the docker infrastructure for build and runtime
 environment. Both Ubuntu 16.04 and 18.04 images are provided. Note that
 you must mount SGX device and ASEM domain socket into the container
@@ -7,7 +9,7 @@ environment to use SGX feature.
 
 The build dockerfile (`build.ubuntu-{1604,1804}.Dockerfile`) only contains
 minimal dependencies to build and test the project. To use them, you can
-directly use images from Docker Hub with:
+directly use pre-built docker images from Docker Hub with:
 
 ```
 $ docker run --rm \
@@ -37,11 +39,13 @@ $ docker run --rm \
 ## Runtime
 
 MesaTEE contains many services, we have put each service, config and related
-resources into different docker image. To make the deployment simpler, we
-recommend to use [docker-compose](https://docs.docker.com/compose/) to manage
-all services. Since the remote attestation is required for all services, you
-should setup the Intel Attestation Service ID (SPID) and key before start the
-services. You can use env vars or set them in the `docker-compose.yml` file.
+resources into different docker image
+(`{tms,tdfs,kms,fns}-rt.ubuntu-{1604,1804}.Dockerfile`). To make the deployment
+simpler, we recommend to use [docker-compose](https://docs.docker.com/compose/)
+to manage all services. Since the remote attestation is required for all
+services, you should setup the Intel Attestation Service ID (SPID) and key
+before start the services. You can use env vars or set them in the
+`docker-compose-ubuntu-{1604,1804}.yml` file.
 
 ```
 $ export IAS_SPID=xxxxxx
