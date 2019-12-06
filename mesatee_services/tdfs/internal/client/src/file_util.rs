@@ -22,7 +22,9 @@ use std::prelude::v1::*;
 use mesatee_core::{Error, ErrorKind, Result};
 use ring::aead::{self, Aad, BoundKey, Nonce, UnboundKey};
 use ring::digest;
+use std::env;
 use std::fmt::Write;
+use std::path::{Path, PathBuf};
 
 struct OneNonceSequence(Option<aead::Nonce>);
 
@@ -95,4 +97,9 @@ pub fn cal_hash(data: &[u8]) -> Result<String> {
         write!(&mut digest_hex, "{:02x}", byte).map_err(|_| Error::from(ErrorKind::Unknown))?;
     }
     Ok(digest_hex)
+}
+
+pub fn get_local_access_path(relative_path: &str) -> PathBuf {
+    let storage_dir = env::var("MESATEE_STORAGE_DIR").unwrap_or_else(|_| "/tmp".into());
+    Path::new(&storage_dir).join(relative_path)
 }

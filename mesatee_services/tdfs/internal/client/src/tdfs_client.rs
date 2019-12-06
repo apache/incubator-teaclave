@@ -102,7 +102,7 @@ impl TDFSClient {
             allow_policy,
         )?;
         let file_id = resp.file_id;
-        let access_path = resp.access_path;
+        let access_path = file_util::get_local_access_path(&resp.access_path);
         let key_config = resp.key_config;
         let encrypted_data =
             file_util::encrypt_data(data, &key_config.key, &key_config.nonce, &key_config.ad)?;
@@ -151,7 +151,7 @@ impl TDFSClient {
             kms_proto::KeyConfig::Aead(config) => kms_proto::proto::AeadConfig::from(config),
             kms_proto::KeyConfig::ProtectedFs(_config) => unimplemented!(), // ProtectedFS is not used by TDFS yet. Config of ProtectedFs will not be generated neither.
         };
-        let access_path = &file_info.access_path;
+        let access_path = file_util::get_local_access_path(&file_info.access_path);
         let mut f = fs::File::open(access_path)?;
         let capacity: usize = file_info.file_size.try_into().unwrap_or(1024 * 1024) + 1024;
         let mut ciphertxt: Vec<u8> = Vec::with_capacity(capacity);
