@@ -84,11 +84,11 @@ impl Worker for PrivateJoinAndComputeWorker {
         for file_id in input.file_list.iter() {
             let plaintext = context.read_file(file_id)?;
             let records = parse_input(plaintext)?;
-            for (indentity, amount) in records.into_iter() {
-                let value = counter_map.get(&indentity).cloned().unwrap_or(0);
-                counter_map.insert(indentity.to_owned(), value + 1);
-                let value = add_map.get(&indentity).cloned().unwrap_or(0);
-                add_map.insert(indentity, value + amount);
+            for (identity, amount) in records.into_iter() {
+                let value = counter_map.get(&identity).cloned().unwrap_or(0);
+                counter_map.insert(identity.to_owned(), value + 1);
+                let value = add_map.get(&identity).cloned().unwrap_or(0);
+                add_map.insert(identity, value + amount);
             }
         }
 
