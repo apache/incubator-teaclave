@@ -47,7 +47,8 @@ set_property(DIRECTORY PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
 # doc target
 add_custom_target(doc
     COMMAND cd ${PROJECT_BINARY_DIR}/cmake_tomls/unix_app &&
-        ${MESATEE_COMMON_ENVS} cargo doc --all ${CARGO_BUILD_FLAGS} ${MTEE_EXTRA_CARGO_FLAGS}
+        ${MESATEE_COMMON_ENVS} cargo doc --all ${CARGO_BUILD_FLAGS} ${MTEE_EXTRA_CARGO_FLAGS} &&
+        cp -RT ${PROJECT_BINARY_DIR}/cmake_tomls/unix_app/target/doc ${MESATEE_DOC_INSTALL_DIR}
     DEPENDS prep ${TARGET_CONFIG_GEN}
 )
 
