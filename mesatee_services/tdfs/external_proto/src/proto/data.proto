@@ -1,0 +1,67 @@
+syntax = "proto2";
+import "kms.proto";
+import "cred.proto";
+import "data_common.proto";
+package data_proto;
+
+message AllocDataRequest {
+  required kms_proto.EncType enc_type = 1;
+  required data_common.DataStorageInfo storage_info = 2; 
+  required cred_proto.Credential creds = 99;
+}
+
+message AllocDataResponse {
+  required string data_id = 1;
+  required kms_proto.KeyConfig config = 2;
+}
+
+message RegisterSharedOutputRequest {
+  required kms_proto.EncType enc_type = 1;
+  repeated string owners = 2;
+  required cred_proto.Credential creds = 99;
+}
+
+message RegisterSharedOutputResponse {
+  required string data_id = 1;
+}
+
+message SaveDataRequest {
+  required string data_id = 1;
+  required data_common.DataMeta meta = 2;
+  required data_common.DataStorageInfo storage_info = 3;
+  required cred_proto.Credential creds = 99;
+}
+
+message SaveDataResponse {
+  required bool success = 1;
+}
+
+message ReadDataRequest {
+  required string data_id = 1; 
+  required cred_proto.Credential creds = 99;
+}
+
+message ReadDataResponse {
+  required string data_id = 1; 
+  repeated string owners = 2; // SharedOutput will have muliple owners
+  optional data_common.DataMeta meta = 3; // Output data doesn't have meta
+  optional data_common.DataStorageInfo storage_info = 4; // SharedOutput doesn't have storage info 
+}
+
+message DeleteDataRequest {
+  required string data_id = 1;
+  required cred_proto.Credential creds = 99;
+}
+
+message DeleteDataResponse {
+  required bool success = 1;
+}
+
+// @need_authentication
+service TDFSExternal {
+  rpc AllocData(AllocDataRequest) returns (AllocDataResponse);
+  rpc RegisterSharedOutput(RegisterSharedOutputRequest) returns (RegisterSharedOutputResponse);
+  rpc ReadData(ReadDataRequest) returns (ReadDataResponse);
+  rpc SaveData(SaveDataRequest) returns (SaveDataResponse);
+  rpc DeleteData(DeleteDataRequest) returns (DeleteDataResponse);
+}

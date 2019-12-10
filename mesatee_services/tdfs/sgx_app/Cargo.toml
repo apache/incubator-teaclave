@@ -20,4 +20,6 @@ log             = { version = "0.4.6" }
 env_logger      = { version = "0.7.1" }
 threadpool      = { version = "1.0" }
 
-
+[build-dependencies]
+tdfs_external_proto_wip       = { path = "../external_proto" }
+tdfs_internal_proto_wip       = { path = "../internal_proto" }

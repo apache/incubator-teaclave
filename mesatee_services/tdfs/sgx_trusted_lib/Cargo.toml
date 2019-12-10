@@ -10,7 +10,7 @@ crate-type = ["staticlib"]
 
 [features]
 default = []
-mesalock_sgx = ["sgx_tstd", "mesatee_core/mesalock_sgx", "tdfs_internal_proto/mesalock_sgx", "tdfs_external_proto/mesalock_sgx", "kms_proto/mesalock_sgx"]
+mesalock_sgx = ["sgx_tstd", "mesatee_core/mesalock_sgx", "tdfs_internal_proto/mesalock_sgx", "tdfs_internal_proto_wip/mesalock_sgx", "tdfs_external_proto/mesalock_sgx", "tdfs_external_proto_wip/mesalock_sgx", "kms_proto/mesalock_sgx"]
 cov = ["sgx_cov"]
 
 [dependencies]
@@ -24,6 +24,9 @@ mesatee_core        = { version = "0.1.0" }
 
 tdfs_internal_proto = { path = "../internal/proto", optional = true }
 tdfs_external_proto = { path = "../external/proto", optional = true }
+tdfs_external_proto_wip = { path = "../external_proto", optional = true}
+tdfs_internal_proto_wip = { path = "../internal_proto", optional = true}
+
 kms_proto           = { path = "../../kms/proto", optional = true}
 
 

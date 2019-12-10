@@ -1,0 +1,24 @@
+syntax = "proto2";
+package kms_proto;
+
+enum EncType {
+  Aead = 0;
+  ProtectedFs = 1;
+}
+
+message AeadConfig {
+  required bytes key = 1;
+  required bytes nonce = 2;
+  required bytes ad = 3;
+}
+
+message ProtectedFsConfig {
+  required bytes key = 1;
+}
+
+message KeyConfig {
+  oneof config {
+    AeadConfig Aead = 1;
+    ProtectedFsConfig ProtectedFs = 2;
+  }
+}

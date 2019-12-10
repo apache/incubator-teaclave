@@ -99,7 +99,7 @@ impl MesaTEEServiceGenerator {
             buf.push_str(LINE_ENDING);
             for method in &service.methods {
                 buf.push_str(&format!(
-                    "            {}::{}(ref req) => req.creds.auth(),",
+                    "            {}::{}(ref req) => req.creds.get_creds().auth(),",
                     &request_name, &method.proto_name
                 ));
                 buf.push_str(LINE_ENDING);

@@ -1,0 +1,7 @@
+syntax = "proto2";
+package cred_proto;
+
+message Credential {
+  required string user_id = 1;
+  required string user_token = 2;
+}

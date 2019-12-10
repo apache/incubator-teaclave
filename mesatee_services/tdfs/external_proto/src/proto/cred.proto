@@ -1,0 +1,6 @@
+syntax = "proto2";
+package cred_proto;
+
+message Credential {
+    // don't need to prvoide the fields 
+}

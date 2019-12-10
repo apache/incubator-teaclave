@@ -1,0 +1,12 @@
+syntax = "proto2";
+package data_common;
+message DataMeta {
+    required string hash = 1;
+    required uint64 size= 2;
+    required string plaintxt_hash = 3;
+    required uint64 plaintext_size = 4;
+}
+
+message DataStorageInfo {
+    required string uri = 1;
+}
