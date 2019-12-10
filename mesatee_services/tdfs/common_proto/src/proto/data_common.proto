@@ -1,12 +1,22 @@
 syntax = "proto2";
 package data_common;
+// Meta information of a data
 message DataMeta {
+    // Hash of the encrypted file
+    // It can be use to check the integrity of the encrypted file without key
     required string hash = 1;
+    // Size of the encrypted file
     required uint64 size= 2;
+    // Hash of the original file
+    // It can be use to check the integrity of the file after file is decrypted
     required string plaintxt_hash = 3;
+    // Size of the original file
     required uint64 plaintext_size = 4;
 }
 
+// Where to access the data
+// The uri can contains the scheme, path, token and so on.
+// For example, internal://user_id/file1 or s3://bucket_id/path?access_id=xxx&access_token=xxx
 message DataStorageInfo {
     required string uri = 1;
 }

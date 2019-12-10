@@ -4,60 +4,96 @@ import "cred.proto";
 import "data_common.proto";
 package data_proto;
 
+// Request for allocing a data. 
+// The data can be used as input or output.
+// And we need this request to obtain a config for file encryption
+// Storage info is needed, as the data may be used as output.
 message AllocDataRequest {
+  // Encryption type: AEAD, ProtectedFS
   required kms_proto.EncType enc_type = 1;
+  // Where to save/read the data
   required data_common.DataStorageInfo storage_info = 2; 
+  // Used for authentication
   required cred_proto.Credential creds = 99;
 }
 
+// Response for allocing a data
+// Config is used for file encryption
 message AllocDataResponse {
+  // Data identifier
   required string data_id = 1;
+  // Key config: AEAD, ProtectedFS
   required kms_proto.KeyConfig config = 2;
 }
 
+// Request for registering a shared output
+// The output can be used for data fusion
+// No need to provide a storage_info, it will be saved into internal storage.
+// Only platform knows the storage info and can access the data.
+// If result is saved to this data, it can be used as input in other tasks
+// But all the owners need to agree the task
 message RegisterSharedOutputRequest {
+  // Encryption type: AEAD, ProtectedFS
   required kms_proto.EncType enc_type = 1;
+  // muliple owners
   repeated string owners = 2;
+  // Used for authentication
   required cred_proto.Credential creds = 99;
 }
 
+// Response for registering a shared output
+// Key config will not be returned
 message RegisterSharedOutputResponse {
   required string data_id = 1;
 }
 
+// Request for saving data.
+// Update the meta information so the data can be used as input
+// After this request, the data is fixed and can't be changed. 
+// And platform can use storage info and key config to read the data.
 message SaveDataRequest {
   required string data_id = 1;
+  // meta information
   required data_common.DataMeta meta = 2;
-  required data_common.DataStorageInfo storage_info = 3;
   required cred_proto.Credential creds = 99;
 }
 
+// Response for saving data
 message SaveDataResponse {
   required bool success = 1;
 }
 
+// Request for reading data
 message ReadDataRequest {
   required string data_id = 1; 
   required cred_proto.Credential creds = 99;
 }
 
+// Response for reading data
 message ReadDataResponse {
   required string data_id = 1; 
-  repeated string owners = 2; // SharedOutput will have muliple owners
-  optional data_common.DataMeta meta = 3; // Output data doesn't have meta
-  optional data_common.DataStorageInfo storage_info = 4; // SharedOutput doesn't have storage info 
+  // SharedOutput will have muliple owners
+  repeated string owners = 2;
+  // Output data doesn't have meta
+  optional data_common.DataMeta meta = 3; 
+  // Storage info of SharedOutput will not be returned.
+  optional data_common.DataStorageInfo storage_info = 4; 
+  // The key config of SharedOutput is only visible to platform
+  optional kms_proto.KeyConfig config = 5;    
 }
 
+// Request for deleting a data
 message DeleteDataRequest {
   required string data_id = 1;
   required cred_proto.Credential creds = 99;
 }
 
+// Response for deleting a data
 message DeleteDataResponse {
   required bool success = 1;
 }
 
-// @need_authentication
+// @need_authentication # automatic authentication
 service TDFSExternal {
   rpc AllocData(AllocDataRequest) returns (AllocDataResponse);
   rpc RegisterSharedOutput(RegisterSharedOutputRequest) returns (RegisterSharedOutputResponse);

@@ -1,3 +1,5 @@
+/// Request for saving Output
+/// Update the meta information of the data
 #[derive(Clone, PartialEq, ::prost::Message)]
 #[derive(serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct SaveDataRequest {
@@ -12,15 +14,20 @@ pub struct SaveDataResponse {
     #[prost(bool, required, tag="1")]
     pub success: bool,
 }
+/// Request for accessing data
+/// TMS can use the request to prepare inputs and outputs
 #[derive(Clone, PartialEq, ::prost::Message)]
 #[derive(serde_derive::Serialize, serde_derive::Deserialize)]
-pub struct ReadDataRequest {
+pub struct AccessDataRequest {
     #[prost(string, required, tag="1")]
     pub data_id: std::string::String,
 }
+/// Response for accessing data
+/// The response includes the storage_info and key_config, 
+/// so the worker can read/write the data.
 #[derive(Clone, PartialEq, ::prost::Message)]
 #[derive(serde_derive::Serialize, serde_derive::Deserialize)]
-pub struct ReadDataResponse {
+pub struct AccessDataResponse {
     #[prost(string, required, tag="1")]
     pub data_id: std::string::String,
     /// SharedOutput will have muliple owners
@@ -32,24 +39,27 @@ pub struct ReadDataResponse {
     /// SharedOutput have internal storage info 
     #[prost(message, required, tag="4")]
     pub storage_info: tdfs_common_proto::data_common_proto::DataStorageInfo,
+    /// The config for encryption/decryption
+    #[prost(message, required, tag="5")]
+    pub config: kms_proto::proto::KeyConfig,
 }
 #[derive(Clone, serde_derive::Serialize, serde_derive::Deserialize, Debug)]
 #[serde(tag = "type")]pub enum TDFSInternalRequest {
-    ReadData(ReadDataRequest),
+    AccessData(AccessDataRequest),
     SaveData(SaveDataRequest),
 }
 #[derive(Clone, serde_derive::Serialize, serde_derive::Deserialize, Debug)]
 #[serde(tag = "type")]
 pub enum TDFSInternalResponse {
-    ReadData(ReadDataResponse),
+    AccessData(AccessDataResponse),
     SaveData(SaveDataResponse),
 }
 pub trait TDFSInternalService {
-    fn read_data(req: ReadDataRequest) -> mesatee_core::Result<ReadDataResponse>;
+    fn access_data(req: AccessDataRequest) -> mesatee_core::Result<AccessDataResponse>;
     fn save_data(req: SaveDataRequest) -> mesatee_core::Result<SaveDataResponse>;
     fn dispatch(&self, req: TDFSInternalRequest) -> mesatee_core::Result<TDFSInternalResponse> {
         match req {
-            TDFSInternalRequest::ReadData(req) => Self::read_data(req).map(TDFSInternalResponse::ReadData),            TDFSInternalRequest::SaveData(req) => Self::save_data(req).map(TDFSInternalResponse::SaveData),        }
+            TDFSInternalRequest::AccessData(req) => Self::access_data(req).map(TDFSInternalResponse::AccessData),            TDFSInternalRequest::SaveData(req) => Self::save_data(req).map(TDFSInternalResponse::SaveData),        }
     }
 }
 pub struct TDFSInternalClient {
@@ -68,11 +78,11 @@ impl TDFSInternalClient {
     }
 }
 impl TDFSInternalClient {
-    pub fn read_data(&mut self, req: ReadDataRequest) -> mesatee_core::Result<ReadDataResponse> {
-        let req = TDFSInternalRequest::ReadData(req);
+    pub fn access_data(&mut self, req: AccessDataRequest) -> mesatee_core::Result<AccessDataResponse> {
+        let req = TDFSInternalRequest::AccessData(req);
         let resp = self.channel.invoke(req)?;
         match resp {
-            TDFSInternalResponse::ReadData(resp) => Ok(resp),
+            TDFSInternalResponse::AccessData(resp) => Ok(resp),
             _ => Err(mesatee_core::Error::from(mesatee_core::ErrorKind::RPCResponseError)),
         }
     }

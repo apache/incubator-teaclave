@@ -1,55 +1,82 @@
+/// Request for allocing a data. 
+/// The data can be used as input or output.
+/// And we need this request to obtain a config for file encryption
+/// Storage info is needed, as the data may be used as output.
 #[derive(Clone, PartialEq, ::prost::Message)]
 #[derive(serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct AllocDataRequest {
+    /// Encryption type: AEAD, ProtectedFS
     #[prost(enumeration="kms_proto::proto::EncType", required, tag="1")]
     pub enc_type: i32,
+    /// Where to save/read the data
     #[prost(message, required, tag="2")]
     pub storage_info: tdfs_common_proto::data_common_proto::DataStorageInfo,
+    /// Used for authentication
     #[prost(message, required, tag="99")]
     pub creds: authentication_proto::proto::Credential,
 }
+/// Response for allocing a data
+/// Config is used for file encryption
 #[derive(Clone, PartialEq, ::prost::Message)]
 #[derive(serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct AllocDataResponse {
+    /// Data identifier
     #[prost(string, required, tag="1")]
     pub data_id: std::string::String,
+    /// Key config: AEAD, ProtectedFS
     #[prost(message, required, tag="2")]
     pub config: kms_proto::proto::KeyConfig,
 }
+/// Request for registering a shared output
+/// The output can be used for data fusion
+/// No need to provide a storage_info, it will be saved into internal storage.
+/// Only platform knows the storage info and can access the data.
+/// If result is saved to this data, it can be used as input in other tasks
+/// But all the owners need to agree the task
 #[derive(Clone, PartialEq, ::prost::Message)]
 #[derive(serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct RegisterSharedOutputRequest {
+    /// Encryption type: AEAD, ProtectedFS
     #[prost(enumeration="kms_proto::proto::EncType", required, tag="1")]
     pub enc_type: i32,
+    /// muliple owners
     #[prost(string, repeated, tag="2")]
     pub owners: ::std::vec::Vec<std::string::String>,
+    /// Used for authentication
     #[prost(message, required, tag="99")]
     pub creds: authentication_proto::proto::Credential,
 }
+/// Response for registering a shared output
+/// Key config will not be returned
 #[derive(Clone, PartialEq, ::prost::Message)]
 #[derive(serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct RegisterSharedOutputResponse {
     #[prost(string, required, tag="1")]
     pub data_id: std::string::String,
 }
+/// Request for saving data.
+/// Update the meta information so the data can be used as input
+/// After this request, the data is fixed and can't be changed. 
+/// And platform can use storage info and key config to read the data.
 #[derive(Clone, PartialEq, ::prost::Message)]
 #[derive(serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct SaveDataRequest {
     #[prost(string, required, tag="1")]
     pub data_id: std::string::String,
+    /// meta information
     #[prost(message, required, tag="2")]
     pub meta: tdfs_common_proto::data_common_proto::DataMeta,
-    #[prost(message, required, tag="3")]
-    pub storage_info: tdfs_common_proto::data_common_proto::DataStorageInfo,
     #[prost(message, required, tag="99")]
     pub creds: authentication_proto::proto::Credential,
 }
+/// Response for saving data
 #[derive(Clone, PartialEq, ::prost::Message)]
 #[derive(serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct SaveDataResponse {
     #[prost(bool, required, tag="1")]
     pub success: bool,
 }
+/// Request for reading data
 #[derive(Clone, PartialEq, ::prost::Message)]
 #[derive(serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct ReadDataRequest {
@@ -58,6 +85,7 @@ pub struct ReadDataRequest {
     #[prost(message, required, tag="99")]
     pub creds: authentication_proto::proto::Credential,
 }
+/// Response for reading data
 #[derive(Clone, PartialEq, ::prost::Message)]
 #[derive(serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct ReadDataResponse {
@@ -69,10 +97,14 @@ pub struct ReadDataResponse {
     /// Output data doesn't have meta
     #[prost(message, optional, tag="3")]
     pub meta: ::std::option::Option<tdfs_common_proto::data_common_proto::DataMeta>,
-    /// SharedOutput doesn't have storage info 
+    /// Storage info of SharedOutput will not be returned.
     #[prost(message, optional, tag="4")]
     pub storage_info: ::std::option::Option<tdfs_common_proto::data_common_proto::DataStorageInfo>,
+    /// The key config of SharedOutput is only visible to platform
+    #[prost(message, optional, tag="5")]
+    pub config: ::std::option::Option<kms_proto::proto::KeyConfig>,
 }
+/// Request for deleting a data
 #[derive(Clone, PartialEq, ::prost::Message)]
 #[derive(serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct DeleteDataRequest {
@@ -81,6 +113,7 @@ pub struct DeleteDataRequest {
     #[prost(message, required, tag="99")]
     pub creds: authentication_proto::proto::Credential,
 }
+/// Response for deleting a data
 #[derive(Clone, PartialEq, ::prost::Message)]
 #[derive(serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct DeleteDataResponse {

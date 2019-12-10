@@ -1,5 +1,11 @@
+// This file is copied from kms. 
+// It's just used for reference. 
+// It will not be used to generage rust files. 
+// Message bodies can be removed or inconsistent with the original ones
+
 syntax = "proto2";
 package data_common;
+
 message DataMeta {
     required string hash = 1;
     required uint64 size= 2;

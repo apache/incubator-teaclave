@@ -1,6 +1,7 @@
 syntax = "proto2";
 package cred_proto;
 
+// The credential can be changed to other forms
 message Credential {
   required string user_id = 1;
   required string user_token = 2;

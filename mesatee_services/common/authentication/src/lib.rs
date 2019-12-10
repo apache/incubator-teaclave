@@ -44,6 +44,10 @@ impl Credential {
     pub fn auth(&self) -> bool {
         true
     }
+
+    pub fn get_user_id(&self) -> String {
+        self.user_id.to_owned()
+    }
 }
 
 impl From<proto::Credential> for Credential {

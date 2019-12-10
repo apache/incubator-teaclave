@@ -1,3 +1,4 @@
+/// The credential can be changed to other forms
 #[derive(Clone, PartialEq, ::prost::Message)]
 #[derive(serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct Credential {
