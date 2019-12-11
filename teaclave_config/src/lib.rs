@@ -103,5 +103,13 @@ mod tests {
     #[test]
     fn test_runtime_config() {
         println!("{:?}", runtime_config::RUNTIME_CONFIG.api_endpoints);
+        println!("{:?}", runtime_config::RUNTIME_CONFIG.internal_endpoints);
+        println!("{:?}", runtime_config::RUNTIME_CONFIG.audit);
+        println!("{:?}", runtime_config::RUNTIME_CONFIG.env);
+    }
+
+    #[test]
+    fn test_build_config() {
+        println!("{:?}", build_config::BUILD_CONFIG);
     }
 }

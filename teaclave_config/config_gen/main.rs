@@ -65,6 +65,7 @@ fn main() {
     let mut build_config_generated = String::new();
     build_config_generated.push_str(&format!(
         r#"
+    #[derive(Debug)]
     pub struct BuildConfig<'a> {{
         pub sp_root_ca_cert: &'a [u8],
         pub ias_root_ca_cert: &'a [u8],
