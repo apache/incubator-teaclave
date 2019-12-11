@@ -29,8 +29,8 @@
 
 [api_endpoints]
 tms  = { listen_address = "0.0.0.0:5554" }
-tdfs = { listen_address= "0.0.0.0:5065" }
-fns  = { listen_address= "0.0.0.0:3444", advertised_address = "127.0.0.1:3444"}
+tdfs = { listen_address = "0.0.0.0:5065" }
+fns  = { listen_address = "0.0.0.0:3444", advertised_address = "127.0.0.1:3444"}
 
 [internal_endpoints]
 tms  = { listen_address = "0.0.0.0:5555", advertised_address = "127.0.0.1:5555" }
