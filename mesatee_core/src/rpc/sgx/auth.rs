@@ -34,7 +34,7 @@ use std::untrusted::time::SystemTimeEx;
 
 use uuid::Uuid;
 
-use mesatee_config::MESATEE_SECURITY_CONSTANTS;
+use teaclave_config::build_config::BUILD_CONFIG;
 
 type SignatureAlgorithms = &'static [&'static webpki::SignatureAlgorithm];
 static SUPPORTED_SIG_ALGS: SignatureAlgorithms = &[
@@ -264,7 +264,7 @@ pub(crate) fn extract_sgx_quote_from_mra_cert(
         .map_err(|_| CertVerificationError::InvalidCertFormat)?;
 
     // Verify if the signing cert is issued by Intel CA
-    let ias_report_ca = MESATEE_SECURITY_CONSTANTS.ias_report_ca;
+    let ias_report_ca = BUILD_CONFIG.ias_root_ca_cert;
     let mut ias_ca_stripped = ias_report_ca.to_vec();
     ias_ca_stripped.retain(|&x| x != 0x0d && x != 0x0a);
     let head_len = "-----BEGIN CERTIFICATE-----".len();

@@ -24,7 +24,6 @@ wabt = "0.4.0"
 nan-preserving-float = "0.1.0"
 base64 = "0.10.1"
 mesatee_core = "0.1.0"
-mesatee_config = "0.1.0"
 
 tdfs_external_client = { path = "../../mesatee_services/tdfs/external/client" }
 tms_external_client = { path = "../../mesatee_services/tms/external/client" }

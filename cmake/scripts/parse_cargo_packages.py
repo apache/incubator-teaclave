@@ -57,7 +57,7 @@ def pkg_path_2_category(pkg_path):
     """
     if pkg_path.startswith('mesatee_services/'):
         return 'services'
-    elif pkg_path.startswith('examples/') or pkg_path.startswith('mesatee_config/'):
+    elif pkg_path.startswith('examples/'):
         return 'examples'
     elif pkg_path.startswith('tests/'):
         return 'tests'

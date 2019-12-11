@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-REQUIRED_ENVS=("CMAKE_SOURCE_DIR" "CMAKE_BINARY_DIR" 
+REQUIRED_ENVS=("CMAKE_SOURCE_DIR" "CMAKE_BINARY_DIR"
 "MESATEE_OUT_DIR" "MESATEE_TARGET_DIR" "RUSTUP_TOOLCHAIN" "MESAPY_VERSION"
 "SGX_EDGER8R" "MT_EDL_FILE" "SGX_SDK" "RUST_SGX_SDK" "CMAKE_C_COMPILER"
 "CMAKE_AR" "SGX_UNTRUSTED_CFLAGS" "SGX_TRUSTED_CFLAGS" "MT_SCRIPT_DIR"
@@ -13,13 +13,15 @@ for var in "${REQUIRED_ENVS[@]}"; do
     [ -z "${!var}" ] && echo "Please set ${var}" && exit -1
 done
 
-${MT_SCRIPT_DIR}/setup_cmake_tomls ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR} 
+${MT_SCRIPT_DIR}/setup_cmake_tomls ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}
 mkdir -p ${MESATEE_OUT_DIR} ${MESATEE_TARGET_DIR} ${MESATEE_SERVICE_INSTALL_DIR} \
     ${MESATEE_EXAMPLE_INSTALL_DIR} ${MESATEE_BIN_INSTALL_DIR} ${MESATEE_LIB_INSTALL_DIR} \
     ${MESATEE_DOC_INSTALL_DIR} ${MESATEE_TEST_INSTALL_DIR} ${MESATEE_AUDITORS_DIR} \
     ${MESATEE_EXAMPLE_AUDITORS_DIR}
 # copy auditors to install directory to make it easy to package all built things
 cp -RT ${CMAKE_SOURCE_DIR}/auditors/ ${MESATEE_AUDITORS_DIR}/
+cp ${CMAKE_SOURCE_DIR}/teaclave_config/runtime.config.toml ${MESATEE_SERVICE_INSTALL_DIR}
+cp ${CMAKE_SOURCE_DIR}/teaclave_config/runtime.config.toml ${MESATEE_TEST_INSTALL_DIR}
 # create the following symlinks to make remapped paths accessible and avoid repeated building
 mkdir -p /tmp/mesatee_symlinks
 ln -snf ${HOME}/.cargo /tmp/mesatee_symlinks/cargo_home

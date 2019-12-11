@@ -20,70 +20,62 @@ use super::InboundDesc;
 use super::OutboundDesc;
 use super::ServiceConfig;
 use super::TargetDesc;
-use mesatee_config::MESATEE_CONFIG;
+use teaclave_config::runtime_config::RUNTIME_CONFIG;
 
 pub struct Internal;
 impl Internal {
     pub fn tms() -> ServiceConfig {
         ServiceConfig::new(
-            MESATEE_CONFIG.tms_internal_listen_addr,
-            MESATEE_CONFIG.tms_internal_port,
+            RUNTIME_CONFIG.internal_endpoints.tms.listen_address,
             InboundDesc::Sgx(get_trusted_enclave_attr(vec!["fns"])),
         )
     }
 
     pub fn kms() -> ServiceConfig {
         ServiceConfig::new(
-            MESATEE_CONFIG.kms_internal_listen_addr,
-            MESATEE_CONFIG.kms_internal_port,
+            RUNTIME_CONFIG.internal_endpoints.kms.listen_address,
             InboundDesc::Sgx(get_trusted_enclave_attr(vec!["fns", "tdfs"])),
         )
     }
 
     pub fn tdfs() -> ServiceConfig {
         ServiceConfig::new(
-            MESATEE_CONFIG.tdfs_internal_listen_addr,
-            MESATEE_CONFIG.tdfs_internal_port,
+            RUNTIME_CONFIG.internal_endpoints.tdfs.listen_address,
             InboundDesc::Sgx(get_trusted_enclave_attr(vec!["fns", "tms"])),
         )
     }
 
     pub fn acs() -> ServiceConfig {
         ServiceConfig::new(
-            MESATEE_CONFIG.acs_internal_listen_addr,
-            MESATEE_CONFIG.acs_internal_port,
+            RUNTIME_CONFIG.internal_endpoints.acs.listen_address,
             InboundDesc::Sgx(get_trusted_enclave_attr(vec!["kms", "tms", "tdfs"])),
         )
     }
 
     pub fn target_tms() -> TargetDesc {
         TargetDesc::new(
-            MESATEE_CONFIG.tms_internal_connect_addr,
-            MESATEE_CONFIG.tms_internal_port,
+            RUNTIME_CONFIG.internal_endpoints.tms.advertised_address,
             OutboundDesc::Sgx(get_trusted_enclave_attr(vec!["tms"])),
         )
     }
 
     pub fn target_kms() -> TargetDesc {
         TargetDesc::new(
-            MESATEE_CONFIG.kms_internal_connect_addr,
-            MESATEE_CONFIG.kms_internal_port,
+            RUNTIME_CONFIG.internal_endpoints.kms.advertised_address,
             OutboundDesc::Sgx(get_trusted_enclave_attr(vec!["kms"])),
         )
     }
 
     pub fn target_tdfs() -> TargetDesc {
         TargetDesc::new(
-            MESATEE_CONFIG.tdfs_internal_connect_addr,
-            MESATEE_CONFIG.tdfs_internal_port,
+            RUNTIME_CONFIG.internal_endpoints.tdfs.advertised_address,
             OutboundDesc::Sgx(get_trusted_enclave_attr(vec!["tdfs"])),
         )
     }
 
     pub fn target_acs() -> TargetDesc {
         TargetDesc::new(
-            MESATEE_CONFIG.acs_internal_connect_addr,
-            MESATEE_CONFIG.acs_internal_port,
+            RUNTIME_CONFIG.internal_endpoints.acs.advertised_address,
             OutboundDesc::Sgx(get_trusted_enclave_attr(vec!["acs"])),
         )
     }

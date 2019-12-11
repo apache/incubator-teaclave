@@ -16,16 +16,12 @@
 // under the License.
 
 use crate::error::{ErrorKind, Result};
-use mesatee_config::MESATEE_CONFIG;
 
 // check prerequisites to make the launching process smoother
 // the launching may still fail even after passing the check
 pub fn sgx_launch_check() -> Result<()> {
     // check the existence of env var specified in config.toml
-    if !cfg!(sgx_sim)
-        && (std::env::var(&MESATEE_CONFIG.ias_client_spid_envvar).is_ok()
-            || std::env::var(&MESATEE_CONFIG.ias_client_key_envvar).is_ok())
-    {
+    if !cfg!(sgx_sim) && (std::env::var("IAS_SPID").is_err() || std::env::var("IAS_KEY").is_err()) {
         error!("SGX launch check failed: Env var for IAS SPID or IAS KEY does NOT exist. Please follow \"How to Run (SGX)\" in README to obtain, and specify the value in environment variables and put the names of environment variables in config.toml.");
         return Err(ErrorKind::IASClientKeyCertError.into());
     }

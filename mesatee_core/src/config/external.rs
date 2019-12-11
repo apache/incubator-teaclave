@@ -18,38 +18,34 @@
 use super::get_trusted_enclave_attr;
 use super::ServiceConfig;
 use super::{InboundDesc, OutboundDesc, TargetDesc};
-use mesatee_config::MESATEE_CONFIG;
+use teaclave_config::runtime_config::RUNTIME_CONFIG;
 
 pub struct External;
 impl External {
     pub fn tms() -> ServiceConfig {
         ServiceConfig::new(
-            MESATEE_CONFIG.tms_external_listen_addr,
-            MESATEE_CONFIG.tms_external_port,
+            RUNTIME_CONFIG.api_endpoints.tms.listen_address,
             InboundDesc::External,
         )
     }
 
     pub fn fns() -> ServiceConfig {
         ServiceConfig::new(
-            MESATEE_CONFIG.fns_external_listen_addr,
-            MESATEE_CONFIG.fns_external_port,
+            RUNTIME_CONFIG.api_endpoints.fns.listen_address,
             InboundDesc::External,
         )
     }
 
     pub fn tdfs() -> ServiceConfig {
         ServiceConfig::new(
-            MESATEE_CONFIG.tdfs_external_listen_addr,
-            MESATEE_CONFIG.tdfs_external_port,
+            RUNTIME_CONFIG.api_endpoints.tdfs.listen_address,
             InboundDesc::External,
         )
     }
 
     pub fn target_fns() -> TargetDesc {
         TargetDesc::new(
-            MESATEE_CONFIG.fns_external_connect_addr,
-            MESATEE_CONFIG.fns_external_port,
+            RUNTIME_CONFIG.api_endpoints.fns.advertised_address,
             OutboundDesc::Sgx(get_trusted_enclave_attr(vec!["fns"])),
         )
     }

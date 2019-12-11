@@ -30,7 +30,6 @@ exclude = [
 [patch.crates-io]
 # mesatee crates
 mesatee_core      = { path = "./mesatee_core" }
-mesatee_config    = { path = "./mesatee_config" }
 
 # Rust SGX SDK
 sgx_alloc         = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.9" }

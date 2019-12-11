@@ -23,7 +23,7 @@ use std::sync::RwLock;
 use std::sync::SgxRwLock as RwLock;
 use std::vec::Vec;
 
-use mesatee_config::MESATEE_SECURITY_CONSTANTS;
+use teaclave_config::build_config::BUILD_CONFIG;
 
 use crate::rpc::sgx::EnclaveAttr;
 use crate::Error;
@@ -83,7 +83,7 @@ pub(crate) fn get_tls_config(
         }
     }
 
-    let root_ca_bin = MESATEE_SECURITY_CONSTANTS.root_ca_bin;
+    let root_ca_bin = BUILD_CONFIG.sp_root_ca_cert;
     let mut ca_reader = std::io::BufReader::new(&root_ca_bin[..]);
     let mut rc_store = rustls::RootCertStore::empty();
 
@@ -113,7 +113,7 @@ pub(crate) fn get_tls_config(
         Ok(final_arc)
     } else {
         // Build a default authenticator which allow every authenticated client
-        let authenticator = rustls::AllowAnyAuthenticatedClient::new(rc_store);
+        let authenticator = rustls::NoClientAuth::new();
         let mut cfg = rustls::ServerConfig::new(authenticator);
         cfg.set_single_cert(certs, privkey)
             .map_err(|_| Error::from(ErrorKind::TLSError))?;

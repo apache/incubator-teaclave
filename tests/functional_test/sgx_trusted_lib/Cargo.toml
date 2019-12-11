@@ -29,7 +29,6 @@ tms_internal_proto = { path = "../../../mesatee_services/tms/internal/proto", op
 protected_fs_rs    = { path = "../../../mesatee_utils/protected_fs_rs", default-features = false, optional = true }
 
 mesatee_core           = { version = "0.1.0" }
-mesatee_config         = { version = "0.1.0" }
 sgx_cov         = { version = "0.1.0", optional = true }
 sgx_tstd        = { version = "1.0.9", features = ["net", "backtrace"], optional = true }
 sgx_types       = { version = "1.0.9" }

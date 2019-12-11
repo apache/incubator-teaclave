@@ -14,7 +14,7 @@ default = []
 sgx_types = "1.0.9"
 sgx_urts = "1.0.9"
 mesatee_core = { version = "0.1.0" }
-mesatee_config = { version = "0.1.0" }
+# mesatee_config = { version = "0.1.0" }
 mesatee_binder = { version = "0.1.0" }
 ctrlc = "3.1.2"
 log = { version = "0.4.6" }
