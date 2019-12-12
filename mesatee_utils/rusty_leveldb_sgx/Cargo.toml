@@ -15,7 +15,7 @@ default = []
 mesalock_sgx = ["protected_fs_rs/mesalock_sgx", "sgx_libc", "sgx_tstd", "sgx_types", "sgx_trts"]
 
 [dependencies]
-crc 		= { version = "2.0", git = "https://github.com/mesalock-linux/crc-rs-sgx" }
+crc 		= { version = "2.0" }
 rand 		= { version = "0.7" }
 snap 		= { version = "0.2" }
 cfg-if 		= { version = "0.1.9" }
@@ -27,10 +27,3 @@ sgx_tstd 	= { version = "1.0.9", optional = true }
 sgx_trts 	= { version = "1.0.9", optional = true }
 sgx_types 	= { version = "1.0.9", optional = true }
 sgx_libc	= { version = "1.0.9", optional = true }
-
-[[bench]]
-name = "maps_bench"
-harness = false
-path = "src/benches/maps_bench.rs"
-
-
