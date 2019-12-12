@@ -262,14 +262,37 @@ int32_t SGXAPI sgx_fimport_auto_key(const char* filename, const sgx_key_128bit_t
 */
 int32_t SGXAPI sgx_fclear_cache(SGX_FILE* stream);
 
-/*
-*
-*
-*/
+
 #define SGX_AESGCM_MAC_SIZE             16
 typedef uint8_t aead_128bit_tag_t[SGX_AESGCM_MAC_SIZE];
 typedef aead_128bit_tag_t sgx_aes_gcm_128bit_tag_t;
+
+
+/* sgx_get_current_meta_gmac
+* Purpose: 
+*
+* Parameters:
+*     stream - [IN] the file handle
+*     out_gmac - [OUT] the current meta_data_gmac of the file
+*
+* Return value: 
+*     int32_t  - result, 0 - success, 1 - there was an error, check sgx_ferror for error code
+*/
 int32_t SGXAPI sgx_get_current_meta_gmac(SGX_FILE* stream, sgx_aes_gcm_128bit_tag_t out_gmac);
+
+
+/* sgx_rename_meta
+* Purpose: 
+*
+* Parameters:
+*     stream - [IN] the file handle
+*     old_name - [IN] the existing file name
+*     new_name - [IN] the new name
+*
+* Return value: 
+*     int32_t  - result, 0 - success, 1 - there was an error, check sgx_ferror for error code
+*/
+int32_t SGXAPI sgx_rename_meta(SGX_FILE* stream, const char* old_name, const char* new_name);
 
 #ifdef __cplusplus
 }

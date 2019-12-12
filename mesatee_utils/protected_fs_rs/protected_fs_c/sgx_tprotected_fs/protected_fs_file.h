@@ -232,6 +232,7 @@ public:
 
 	// Add for MesaTEE
 	int32_t get_current_meta_gmac(sgx_aes_gcm_128bit_tag_t out_gmac);
+	int32_t rename_meta(const char* old_name, const char* new_name);
 };
 
 #pragma pack(pop)
