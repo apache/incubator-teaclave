@@ -60,7 +60,7 @@ foreach(_i RANGE ${UNIX_APP_LAST_INDEX})
         TARGET_DIR ${UNIX_TARGET_DIR}
         INSTALL_DIR ${MESATEE_INSTALL_DIR}/${_category}
         EXTRA_CARGO_FLAGS ${EXTRA_CARGO_FLAGS}
-        DEPENDS prep ${TARGET_CONFIG_GEN}
+        DEPENDS prep
     )
 endforeach()
 
@@ -76,7 +76,7 @@ foreach(_i RANGE ${SGX_APP_LAST_INDEX})
         TARGET_DIR ${UNTRUSTED_TARGET_DIR}
         INSTALL_DIR ${MESATEE_INSTALL_DIR}/${_category}
         EXTRA_CARGO_FLAGS ${EXTRA_CARGO_FLAGS}
-        DEPENDS prep ${TARGET_CONFIG_GEN}
+        DEPENDS prep
     )
 endforeach()
 
@@ -110,7 +110,7 @@ foreach(_i RANGE ${SGX_LIB_LAST_INDEX})
     list(GET SGX_LIB_CATEGORIES ${_i} _category)
     sgxlib_pkgname_2_modname(${_pkg_name} _mod_name)
     add_sgx_build_target(${_pkg_path} ${_pkg_name}
-        DEPENDS prep ${TARGET_CONFIG_GEN} "${SGXAPP_PREFIX}-${_mod_name}" pycomponent
+        DEPENDS prep "${SGXAPP_PREFIX}-${_mod_name}" pycomponent
         INSTALL_DIR ${MESATEE_INSTALL_DIR}/${_category}
     )
 endforeach()
@@ -120,13 +120,13 @@ add_cargo_build_dylib_target(mesatee_sdk_c
     TARGET_NAME "${UNIXLIB_PREFIX}-mesatee_sdk_c"
     TOML_DIR ${MT_UNIX_TOML_DIR}
     TARGET_DIR ${UNIX_TARGET_DIR}
-    DEPENDS prep ${TARGET_CONFIG_GEN}
+    DEPENDS prep
 )
 
 # example/quickstart_c
 link_directories(${MESATEE_LIB_INSTALL_DIR})
 add_executable(quickstart_c ${MESATEE_PROJECT_ROOT}/examples/quickstart_c/main.c)
-add_dependencies(quickstart_c prep ${TARGET_CONFIG_GEN} ${UNIXLIB_PREFIX}-mesatee_sdk_c)
+add_dependencies(quickstart_c prep ${UNIXLIB_PREFIX}-mesatee_sdk_c)
 target_include_directories(quickstart_c
     PUBLIC ${MESATEE_PROJECT_ROOT}/mesatee_sdk/c_sdk/include/)
 target_link_libraries(quickstart_c mesatee_sdk_c)

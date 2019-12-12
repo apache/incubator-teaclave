@@ -49,7 +49,7 @@ add_custom_target(doc
     COMMAND cd ${PROJECT_BINARY_DIR}/cmake_tomls/unix_app &&
         ${MESATEE_COMMON_ENVS} cargo doc --all ${CARGO_BUILD_FLAGS} ${MTEE_EXTRA_CARGO_FLAGS} &&
         cp -RT ${PROJECT_BINARY_DIR}/cmake_tomls/unix_app/target/doc ${MESATEE_DOC_INSTALL_DIR}
-    DEPENDS prep ${TARGET_CONFIG_GEN}
+    DEPENDS prep
 )
 
 # add clippy-${sgxlib} targets separately
@@ -58,7 +58,7 @@ foreach(sgxlib_pkg ${SGXLIB_PKGS})
     add_custom_target(clippy-${sgxlib_pkg}
         COMMAND cd ${PROJECT_BINARY_DIR}/cmake_tomls/sgx_trusted_lib && 
             ${MESATEE_COMMON_ENVS} cargo clippy -p ${sgxlib_pkg} ${CARGO_BUILD_FLAGS} ${SGX_ENCLAVE_FEATURES}
-        DEPENDS prep ${TARGET_CONFIG_GEN})
+        DEPENDS prep)
     dbg_message("adding target clippy-${sgxlib_pkg}")
     list(APPEND SGXLIB_CLIPPY_TARGETS clippy-${sgxlib_pkg})
 endforeach()
@@ -70,7 +70,7 @@ add_custom_target(clippy
         ${MESATEE_COMMON_ENVS} cargo clippy --all ${CARGO_BUILD_FLAGS} ${MTEE_EXTRA_CARGO_FLAGS}
     COMMAND cd ${PROJECT_BINARY_DIR}/cmake_tomls/sgx_untrusted_app && 
         ${MESATEE_COMMON_ENVS} cargo clippy --all ${CARGO_BUILD_FLAGS} ${MTEE_EXTRA_CARGO_FLAGS}
-    DEPENDS prep ${TARGET_CONFIG_GEN} ${SGXLIB_CLIPPY_TARGETS}
+    DEPENDS prep ${SGXLIB_CLIPPY_TARGETS}
 )
 
 gen_convenience_targets()
