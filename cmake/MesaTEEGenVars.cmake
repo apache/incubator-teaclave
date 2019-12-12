@@ -87,22 +87,6 @@ set(SGX_MODULES ${SGX_APPS})
 # generate SGXLIB_TARGETS (sgxlib-fns sgxlib-kms ...)
 new_list_with_prefix(SGXLIB_TARGETS "${SGXLIB_PREFIX}-" ${SGX_MODULES})
 
-# generate SGXAPP_TARGETS (sgxapp-fns sgxapp-kms ...)
-new_list_with_prefix(SGXAPP_TARGETS "${SGXAPP_PREFIX}-" ${SGX_APPS})
-
-# generate UNIXAPP_TARGETS (unixapp-integration_test ...)
-new_list_with_prefix(UNIXAPP_TARGETS "${UNIXAPP_PREFIX}-" ${UNIX_APPS})
-
-# SGXLIB_PKGS, SGXAPP_PKGS, UNIXLIB_PKGS, UNIXAPP_PKGS
-# SGXLIB_PKGS_P, SGXAPP_PKGS_P, UNIXLIB_PKGS_P, UNIXAPP_PKGS_P
-# _P version is like -p;kms;-p;tms
-gen_cargo_package_lists()
-
-dbg_message("SGXLIB_PKGS_P=${SGXLIB_PKGS_P}")
-dbg_message("SGXAPP_PKGS_P=${SGXAPP_PKGS_P}")
-dbg_message("UNIXLIB_PKGS_P=${UNIXLIB_PKGS_P}")
-dbg_message("UNIXAPP_PKGS_P=${UNIXAPP_PKGS_P}")
-
 set(MESATEE_COMMON_ENVS
     MESATEE_PROJECT_ROOT=${MESATEE_PROJECT_ROOT}
     MESATEE_BUILD_ROOT=${MESATEE_BUILD_ROOT}
