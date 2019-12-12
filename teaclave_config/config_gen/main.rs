@@ -24,7 +24,7 @@ enum ConfigSource {
 fn display_config_source(config: &ConfigSource) -> String {
     match config {
         ConfigSource::Path(p) => {
-            let content = &fs::read(p).unwrap();
+            let content = &fs::read(p).expect(&format!("Failed to read file: {}", p.display()));
             let mut output = String::new();
             output.push_str("&[");
             for b in content {
@@ -43,7 +43,7 @@ fn main() {
         panic!("Please specify the path of build config toml and output path.");
     }
     let contents = fs::read_to_string(&args[1]).expect("Something went wrong reading the file");
-    let config: BuildConfigToml = toml::from_str(&contents).unwrap();
+    let config: BuildConfigToml = toml::from_str(&contents).expect("Failed to parse the config.");
 
     let sp_root_ca_cert = display_config_source(&config.sp_root_ca_cert);
     let ias_root_ca_cert = display_config_source(&config.ias_root_ca_cert);
@@ -81,6 +81,8 @@ fn main() {
     ));
 
     let dest_path = Path::new(&args[2]);
-    let mut f = File::create(&dest_path).unwrap();
-    f.write_all(build_config_generated.as_bytes()).unwrap();
+    let mut f =
+        File::create(&dest_path).expect(&format!("Failed to create file: {}", dest_path.display()));
+    f.write_all(build_config_generated.as_bytes())
+        .expect(&format!("Failed to write file: {}", dest_path.display()));
 }

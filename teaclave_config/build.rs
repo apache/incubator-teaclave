@@ -1,6 +1,7 @@
 use std::env;
 use std::path::Path;
 use std::process::Command;
+use std::str;
 
 fn main() {
     let is_sim = env::var("SGX_MODE").unwrap_or_else(|_| "HW".to_string());
@@ -22,5 +23,11 @@ fn main() {
         ])
         .output()
         .expect("Cannot generate build_config.rs");
-    assert!(c.status.success());
+    if !c.status.success() {
+        panic!(
+            "stdout: {:?}, stderr: {:?}",
+            str::from_utf8(&c.stderr).unwrap(),
+            str::from_utf8(&c.stderr).unwrap()
+        );
+    }
 }
