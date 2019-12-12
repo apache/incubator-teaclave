@@ -1,0 +1,117 @@
+kind: pipeline
+name: leveldb-sgx-1604-sw
+
+steps:
+- name: sim-compile
+  image: baiduxlab/sgx-rust:1604-1.0.9
+  commands:
+  - . /opt/sgxsdk/environment
+  - . /root/.cargo/env
+  - SGX_MODE=SW make -C sgx/leveldb-sgx-test
+
+- name: sim-test
+  image: baiduxlab/sgx-rust:1604-1.0.9
+  commands:
+  - . /opt/sgxsdk/environment
+  - cd sgx/leveldb-sgx-test/bin && ./app | tee result.txt && grep " 0 failed" result.txt
+
+node:
+  instance: sgx
+
+---
+
+kind: pipeline
+name: leveldb-sgx-1604-hw
+
+steps:
+- name: hw-compile
+  image: baiduxlab/sgx-rust:1604-1.0.9
+  commands:
+  - . /opt/sgxsdk/environment
+  - . /root/.cargo/env
+  - make -C sgx/leveldb-sgx-test
+
+- name: hw-test
+  image: baiduxlab/sgx-rust:1604-1.0.9
+  privileged: true
+  volumes:
+  - name: isgx
+    path: /dev/isgx
+  - name: aesmd
+    path: /var/run/aesmd/aesm.socket
+  commands:
+  - . /opt/sgxsdk/environment
+  - ls -l /dev/isgx
+  - ls -l /var/run/aesmd/aesm.socket
+  - cd sgx/leveldb-sgx-test/bin && ./app | tee result.txt && grep " 0 failed" result.txt
+
+volumes:
+- name: isgx
+  host:
+    path: /dev/isgx
+- name: aesmd
+  host:
+    path: /var/run/aesmd/aesm.socket
+
+node:
+  instance: sgx
+
+---
+
+kind: pipeline
+name: leveldb-sgx-1804-sw
+
+steps:
+- name: sim-compile
+  image: baiduxlab/sgx-rust:1804-1.0.9
+  commands:
+  - . /opt/sgxsdk/environment
+  - . /root/.cargo/env
+  - SGX_MODE=SW make -C sgx/leveldb-sgx-test
+
+- name: sim-test
+  image: baiduxlab/sgx-rust:1804-1.0.9
+  commands:
+  - . /opt/sgxsdk/environment
+  - cd sgx/leveldb-sgx-test/bin && ./app | tee result.txt && grep " 0 failed" result.txt
+
+node:
+  instance: sgx
+
+---
+
+kind: pipeline
+name: leveldb-sgx-1804-hw
+
+steps:
+- name: hw-compile
+  image: baiduxlab/sgx-rust:1804-1.0.9
+  commands:
+  - . /opt/sgxsdk/environment
+  - . /root/.cargo/env
+  - make -C sgx/leveldb-sgx-test
+
+- name: hw-test
+  image: baiduxlab/sgx-rust:1804-1.0.9
+  privileged: true
+  volumes:
+  - name: isgx
+    path: /dev/isgx
+  - name: aesmd
+    path: /var/run/aesmd/aesm.socket
+  commands:
+  - . /opt/sgxsdk/environment
+  - ls -l /dev/isgx
+  - ls -l /var/run/aesmd/aesm.socket
+  - cd sgx/leveldb-sgx-test/bin && ./app | tee result.txt && grep " 0 failed" result.txt
+
+volumes:
+- name: isgx
+  host:
+    path: /dev/isgx
+- name: aesmd
+  host:
+    path: /var/run/aesmd/aesm.socket
+
+node:
+  instance: sgx
