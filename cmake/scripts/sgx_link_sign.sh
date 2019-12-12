@@ -33,7 +33,7 @@ ${CMAKE_C_COMPILER} libEnclave_t.o -o \
     -Wl,--defsym,__ImageBase=0 \
     -Wl,--gc-sections \
     -Wl,--version-script=${MESATEE_PROJECT_ROOT}/cmake/scripts/Enclave.lds
-${SGX_ENCLAVE_SIGNER} sign -key ${MESATEE_PROJECT_ROOT}/cert/Enclave_private.pem \
+${SGX_ENCLAVE_SIGNER} sign -key ${MESATEE_PROJECT_ROOT}/keys/enclave_signing_key.pem \
     -enclave ${CUR_MODULE_NAME}.enclave.so \
     -out ${CUR_INSTALL_DIR}/${CUR_MODULE_NAME}.enclave.signed.so \
     -config ${MESATEE_PROJECT_ROOT}/${CUR_MODULE_PATH}/Enclave.config.xml \

@@ -18,7 +18,7 @@ mkdir -p ${MESATEE_OUT_DIR} ${MESATEE_TARGET_DIR} ${MESATEE_SERVICE_INSTALL_DIR}
     ${MESATEE_EXAMPLE_INSTALL_DIR} ${MESATEE_BIN_INSTALL_DIR} ${MESATEE_LIB_INSTALL_DIR} \
     ${MESATEE_TEST_INSTALL_DIR} ${MESATEE_AUDITORS_DIR} ${MESATEE_EXAMPLE_AUDITORS_DIR}
 # copy auditors to install directory to make it easy to package all built things
-cp -RT ${CMAKE_SOURCE_DIR}/auditors/ ${MESATEE_AUDITORS_DIR}/
+cp -RT ${CMAKE_SOURCE_DIR}/keys/auditors/ ${MESATEE_AUDITORS_DIR}/
 cp ${CMAKE_SOURCE_DIR}/teaclave_config/runtime.config.toml ${MESATEE_SERVICE_INSTALL_DIR}
 cp ${CMAKE_SOURCE_DIR}/teaclave_config/runtime.config.toml ${MESATEE_TEST_INSTALL_DIR}
 # create the following symlinks to make remapped paths accessible and avoid repeated building
