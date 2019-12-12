@@ -1,26 +1,14 @@
-**/ias_*
 **/Cargo.lock
 **/target
-**/Enclave_u*
-**/Enclave_t*
 **/*.o
 **/*.pyc
 **/*.a
 **/*.so
 **/*.swp
 **/.DS_Store
-bin
-out
 cov.info
 cov_report
-# Makefile will help use to prepare a proper Cargo.toml and .cargo/config
-/Cargo.toml
-.cargo
 /**/pkg_name
-examples/**/*.log
-*.sha256
-/examples/image_resizing/logo.jpg
-/cert/spid.txt
 .vscode/*
 # ignore the build dir which usually for cmake
 /build
