@@ -24,7 +24,6 @@ use base64;
 use bit_vec;
 use chrono;
 use httparse;
-use mesatee_config;
 use num_bigint;
 use rustls;
 use webpki;
@@ -51,7 +50,7 @@ use crate::Error;
 use crate::ErrorKind;
 use crate::Result;
 
-use mesatee_config::MESATEE_CONFIG;
+use teaclave_config::runtime_config::RUNTIME_CONFIG;
 
 pub const CERT_VALID_DAYS: i64 = 90i64;
 
@@ -264,7 +263,7 @@ fn talk_to_intel_ias(fd: c_int, req: String) -> Result<Vec<u8>> {
 }
 
 fn get_sigrl_from_intel(fd: c_int, gid: u32) -> Result<Vec<u8>> {
-    let ias_key = load_ias_key(&MESATEE_CONFIG.ias_client_key_envvar)?;
+    let ias_key = load_ias_key(&RUNTIME_CONFIG.env.ias_key)?;
 
     let req = format!(
         "GET {}{:08x} HTTP/1.1\r\nHOST: {}\r\nOcp-Apim-Subscription-Key: {}\r\nConnection: Close\r\n\r\n",
@@ -280,7 +279,7 @@ fn get_sigrl_from_intel(fd: c_int, gid: u32) -> Result<Vec<u8>> {
 
 // TODO: support pse
 fn get_report_from_intel(fd: c_int, quote: Vec<u8>) -> Result<AttnReport> {
-    let ias_key = load_ias_key(&MESATEE_CONFIG.ias_client_key_envvar)?;
+    let ias_key = load_ias_key(&RUNTIME_CONFIG.env.ias_key)?;
 
     let encoded_quote = base64::encode(&quote[..]);
     let encoded_json = format!("{{\"isvEnclaveQuote\":\"{}\"}}\r\n", encoded_quote);
@@ -410,7 +409,7 @@ fn create_attestation_report(pub_k: &sgx_ec256_public_t) -> Result<AttnReport> {
     let p_report = &rep as *const sgx_report_t;
     let quote_type = sgx_quote_sign_type_t::SGX_LINKABLE_SIGNATURE;
 
-    let spid_vec = load_spid(&MESATEE_CONFIG.ias_client_spid_envvar)?;
+    let spid_vec = load_spid(&RUNTIME_CONFIG.env.ias_spid)?;
 
     let spid_str = std::str::from_utf8(&spid_vec)?;
     let spid: sgx_spid_t = decode_spid(spid_str)?;

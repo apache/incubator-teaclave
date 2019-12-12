@@ -18,8 +18,6 @@
 use std::sync::Arc;
 
 use crate::rpc::sgx::EnclaveAttr;
-#[cfg(not(feature = "mesalock_sgx"))]
-use mesatee_config::MESATEE_SECURITY_CONSTANTS;
 
 #[cfg(not(feature = "mesalock_sgx"))]
 use std::sync::RwLock;
@@ -47,17 +45,6 @@ pub(crate) fn get_tls_config(server_attr: EnclaveAttr) -> Arc<rustls::ClientConf
     }
 
     let mut client_cfg = rustls::ClientConfig::new();
-
-    let client_cert = MESATEE_SECURITY_CONSTANTS.client_cert;
-    let mut cc_reader = std::io::BufReader::new(&client_cert[..]);
-
-    let client_pkcs8_key = MESATEE_SECURITY_CONSTANTS.client_pkcs8_key;
-    let mut client_key_reader = std::io::BufReader::new(&client_pkcs8_key[..]);
-
-    let certs = rustls::internal::pemfile::certs(&mut cc_reader);
-    let privk = rustls::internal::pemfile::pkcs8_private_keys(&mut client_key_reader);
-
-    client_cfg.set_single_client_cert(certs.unwrap(), privk.unwrap()[0].clone());
 
     client_cfg
         .dangerous()

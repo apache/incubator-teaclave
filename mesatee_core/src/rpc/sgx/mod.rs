@@ -36,8 +36,8 @@ use crate::rpc::{EnclaveService, RpcServer};
 use crate::rpc::RpcClient;
 use crate::Result;
 
-use mesatee_config::MESATEE_CONFIG;
-use mesatee_config::MESATEE_SECURITY_CONSTANTS;
+use teaclave_config::build_config::BUILD_CONFIG;
+use teaclave_config::runtime_config::RUNTIME_CONFIG;
 
 #[macro_use]
 mod fail;
@@ -64,24 +64,33 @@ pub fn prelude() {
 
 pub type SgxMeasure = [u8; SGX_HASH_SIZE];
 
+// TODO: We hardcoded THREE auditors for now. Later we need to support arbitrary numbers of auditors.
 pub(crate) fn load_presigned_enclave_info() -> HashMap<String, (SgxMeasure, SgxMeasure)> {
-    let enclave_info_path = MESATEE_CONFIG.audited_enclave_info_path.as_path();
+    use teaclave_config::ConfigSource;
+    let ConfigSource::Path(ref enclave_info_path) = RUNTIME_CONFIG.audit.enclave_info;
+    let ConfigSource::Path(ref auditor_0_signature_path) =
+        RUNTIME_CONFIG.audit.auditor_signatures[0];
+    let ConfigSource::Path(ref auditor_1_signature_path) =
+        RUNTIME_CONFIG.audit.auditor_signatures[1];
+    let ConfigSource::Path(ref auditor_2_signature_path) =
+        RUNTIME_CONFIG.audit.auditor_signatures[2];
+
     let enclave_signers: Vec<(&'static [u8], &std::path::Path)> = vec![
         (
-            MESATEE_SECURITY_CONSTANTS.audited_enclave_pubkey_a,
-            &MESATEE_CONFIG.auditor_a_signature_path,
+            BUILD_CONFIG.auditor_public_keys[0],
+            &auditor_0_signature_path,
         ),
         (
-            MESATEE_SECURITY_CONSTANTS.audited_enclave_pubkey_b,
-            &MESATEE_CONFIG.auditor_b_signature_path,
+            BUILD_CONFIG.auditor_public_keys[1],
+            &auditor_1_signature_path,
         ),
         (
-            MESATEE_SECURITY_CONSTANTS.audited_enclave_pubkey_c,
-            &MESATEE_CONFIG.auditor_c_signature_path,
+            BUILD_CONFIG.auditor_public_keys[2],
+            &auditor_2_signature_path,
         ),
     ];
 
-    utils::load_and_verify_enclave_info(enclave_info_path, enclave_signers.as_slice())
+    utils::load_and_verify_enclave_info(&enclave_info_path, enclave_signers.as_slice())
 }
 
 #[derive(Clone)]

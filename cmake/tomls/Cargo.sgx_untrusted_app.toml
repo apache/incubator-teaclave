@@ -11,13 +11,12 @@ members = [
 
 exclude = [
   "mesatee_core",
-  "mesatee_config"
+  "teaclave_config",
 ]
 
 [patch.crates-io]
 # mesatee_core
 mesatee_core = { path = "./mesatee_core" }
-mesatee_config = { path = "./mesatee_config" }
 mesatee_binder = { path = "./mesatee_binder" }
 
 # We cannot remove these crates, because proto crates depend on them

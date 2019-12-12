@@ -99,7 +99,7 @@ macro_rules! generate_runner_for {
         ) -> Result<(), ExitFailure> {
             let outbound_desc =
                 OutboundDesc::new(*enclave_info.get(stringify!($endpoint)).unwrap());
-            let target_desc = TargetDesc::new(addr.ip(), addr.port(), outbound_desc);
+            let target_desc = TargetDesc::new(addr, outbound_desc);
 
             let mut channel = match &target_desc.desc {
                 OutboundDesc::Sgx(enclave_attrs) => channel::SgxTrustedChannel::<

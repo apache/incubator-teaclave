@@ -132,17 +132,7 @@ fn create_wildcard_regex(pattern: &str) -> Result<Regex, ExitFailure> {
 }
 
 fn get_tls_config() -> ClientConfig {
-    use mesatee_config::MESATEE_SECURITY_CONSTANTS;
     let mut client_cfg = ClientConfig::new();
-    let client_cert = MESATEE_SECURITY_CONSTANTS.client_cert;
-    let mut cc_reader = std::io::BufReader::new(&client_cert[..]);
-    let client_pkcs8_key = MESATEE_SECURITY_CONSTANTS.client_pkcs8_key;
-    let mut client_key_reader = std::io::BufReader::new(&client_pkcs8_key[..]);
-
-    let certs = rustls::internal::pemfile::certs(&mut cc_reader);
-    let privk = rustls::internal::pemfile::pkcs8_private_keys(&mut client_key_reader);
-
-    client_cfg.set_single_client_cert(certs.unwrap(), privk.unwrap()[0].clone());
 
     client_cfg
         .dangerous()

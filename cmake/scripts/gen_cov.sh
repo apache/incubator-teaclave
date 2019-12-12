@@ -29,7 +29,7 @@ find . \( -name "*.gcda" -and \( ! -name "sgx_cov*" \
     -and ! -name "neural_net*"\
     -and ! -name "naive_bayes*"\
     -and ! -name "gbdt*"\
-    -and ! -name "mesatee_core*" -and ! -name "mesatee_config*" \) \) \
+    -and ! -name "mesatee_core*" -and ! -name "teaclave_config*" \) \) \
     -exec rm {} \;
 cd ${MESATEE_PROJECT_ROOT} && \
     for tag in `find ${MESATEE_PROJECT_ROOT} -name sgx_cov*.gcda | cut -d'.' -f2`; \

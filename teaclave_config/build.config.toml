@@ -1,0 +1,17 @@
+# Teaclave Build Config
+
+# Service provider's root CA certificate to verify clients
+sp_root_ca_cert = { path = "../cert/ca.crt" }
+
+# Intel Attestation Service root CA certificate to verify attestation report
+ias_root_ca_cert = { path = "../cert/AttestationReportSigningCACert.pem" }
+
+# Auditors' public keys to verify their endorsement signatures
+auditor_public_keys = [
+    { path = "../auditors/godzilla/godzilla.public.der" },
+    { path = "../auditors/optimus_prime/optimus_prime.public.der" },
+    { path = "../auditors/albus_dumbledore/albus_dumbledore.public.der"},
+]
+
+# RPC max message size
+rpc_max_message_size = 409600

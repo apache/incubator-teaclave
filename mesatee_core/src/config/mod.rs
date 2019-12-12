@@ -21,7 +21,7 @@
 use crate::rpc::sgx::load_presigned_enclave_info;
 use crate::rpc::sgx::{EnclaveAttr, SgxMeasure};
 use std::collections::HashMap;
-use std::net::{IpAddr, SocketAddr};
+use std::net::SocketAddr;
 use std::prelude::v1::*;
 
 #[derive(Clone)]
@@ -31,11 +31,8 @@ pub struct TargetDesc {
 }
 
 impl TargetDesc {
-    pub fn new(ip: IpAddr, port: u16, desc: OutboundDesc) -> TargetDesc {
-        TargetDesc {
-            addr: SocketAddr::new(ip, port),
-            desc,
-        }
+    pub fn new(addr: SocketAddr, desc: OutboundDesc) -> TargetDesc {
+        TargetDesc { addr, desc }
     }
 }
 
@@ -69,11 +66,8 @@ pub struct ServiceConfig {
 }
 
 impl ServiceConfig {
-    pub fn new(ip: IpAddr, port: u16, inbound_desc: InboundDesc) -> ServiceConfig {
-        ServiceConfig {
-            addr: SocketAddr::new(ip, port),
-            inbound_desc,
-        }
+    pub fn new(addr: SocketAddr, inbound_desc: InboundDesc) -> ServiceConfig {
+        ServiceConfig { addr, inbound_desc }
     }
 }
 

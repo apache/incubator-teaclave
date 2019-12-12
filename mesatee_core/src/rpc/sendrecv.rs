@@ -25,8 +25,7 @@ use std::mem::transmute;
 
 use crate::{Error, ErrorKind, Result};
 
-// max_msg_size is configured in build.toml
-use mesatee_config::MESATEE_SECURITY_CONSTANTS;
+use teaclave_config::build_config::BUILD_CONFIG;
 
 fn get_send_vec(mut to_send: &mut Vec<u8>) -> Vec<u8> {
     let buf_len: u64 = to_send.len() as u64;
@@ -41,7 +40,7 @@ pub fn send_vec<T>(sock: &mut T, mut buff: Vec<u8>) -> Result<()>
 where
     T: Write,
 {
-    if buff.len() as u64 > MESATEE_SECURITY_CONSTANTS.max_msg_size {
+    if buff.len() as u64 > BUILD_CONFIG.rpc_max_message_size {
         return Err(Error::from(ErrorKind::MsgSizeLimitExceedError));
     }
     let send_vec = get_send_vec(&mut buff);
@@ -62,7 +61,7 @@ where
     br.read_exact(&mut lbuf)?;
 
     let buf_len: u64 = u64::from_be(unsafe { transmute::<[u8; 8], u64>(lbuf) });
-    if buf_len > MESATEE_SECURITY_CONSTANTS.max_msg_size {
+    if buf_len > BUILD_CONFIG.rpc_max_message_size {
         return Err(Error::from(ErrorKind::MsgSizeLimitExceedError));
     }
 

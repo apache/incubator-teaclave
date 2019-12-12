@@ -390,14 +390,14 @@ impl Mesatee {
                 .get("tms")
                 .ok_or_else(|| Error::from(ErrorKind::MissingValue))?,
         );
-        let tms_desc = TargetDesc::new(tms_addr.ip(), tms_addr.port(), tms_outbound_desc);
+        let tms_desc = TargetDesc::new(tms_addr, tms_outbound_desc);
 
         let tdfs_outbound_desc = OutboundDesc::new(
             *enclave_identities
                 .get("tdfs")
                 .ok_or_else(|| Error::from(ErrorKind::MissingValue))?,
         );
-        let tdfs_desc = TargetDesc::new(tdfs_addr.ip(), tdfs_addr.port(), tdfs_outbound_desc);
+        let tdfs_desc = TargetDesc::new(tdfs_addr, tdfs_outbound_desc);
 
         let fns_outbound_desc = OutboundDesc::new(
             *enclave_identities
@@ -520,7 +520,10 @@ impl Mesatee {
 
         let mut tms_client = TMSClient::new(&self.tms_desc, &self.user_id, &self.user_token)?;
         let response = tms_client.request_create_task(function_name, collaborator_list, files)?;
-        let fns_desc = TargetDesc::new(response.ip, response.port, self.fns_outbound_desc.clone());
+        let fns_desc = TargetDesc::new(
+            SocketAddr::new(response.ip, response.port),
+            self.fns_outbound_desc.clone(),
+        );
 
         Ok(MesateeTask {
             task_id: response.task_id,
@@ -558,8 +561,10 @@ impl Mesatee {
             .map(|c| (c.user_id, c.approved))
             .collect();
 
-        let fns_desc =
-            TargetDesc::new(task_info.ip, task_info.port, self.fns_outbound_desc.clone());
+        let fns_desc = TargetDesc::new(
+            SocketAddr::new(task_info.ip, task_info.port),
+            self.fns_outbound_desc.clone(),
+        );
 
         Ok(MesateeTask {
             task_id: task_id.to_owned(),

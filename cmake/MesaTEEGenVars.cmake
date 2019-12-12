@@ -82,7 +82,6 @@ set(UNIXAPP_PREFIX "unixapp")
 set(UNIXLIB_PREFIX "unixlib")
 set(SGXAPP_PREFIX "sgxapp")
 set(SGXLIB_PREFIX "sgxlib")
-set(TARGET_CONFIG_GEN "${UNIXAPP_PREFIX}-config_gen")
 set(SGX_MODULES ${SGX_APPS})
 
 # generate SGXLIB_TARGETS (sgxlib-fns sgxlib-kms ...)

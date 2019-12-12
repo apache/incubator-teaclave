@@ -18,7 +18,7 @@
 use crate::config::User;
 use fns_client::FNSClient;
 use mesatee_core::config::{get_trusted_enclave_attr, OutboundDesc, TargetDesc};
-use std::net::{IpAddr, Ipv4Addr};
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use tdfs_external_client::TDFSClient;
 use tms_external_client::TMSClient;
 use tms_external_proto::{FunctionType, TaskStatus};
@@ -26,8 +26,7 @@ use tms_external_proto::{FunctionType, TaskStatus};
 #[inline]
 fn target_tms() -> TargetDesc {
     TargetDesc::new(
-        IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
-        5554,
+        SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 5554),
         OutboundDesc::Sgx(get_trusted_enclave_attr(vec!["tms"])),
     )
 }
@@ -35,8 +34,7 @@ fn target_tms() -> TargetDesc {
 #[inline]
 fn target_tdfs() -> TargetDesc {
     TargetDesc::new(
-        IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
-        5065,
+        SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 5065),
         OutboundDesc::Sgx(get_trusted_enclave_attr(vec!["tdfs"])),
     )
 }
@@ -58,7 +56,7 @@ pub(crate) fn setup_tdfs_client(user: &User) -> TDFSClient {
 
 pub(crate) fn setup_fns_client(ip: IpAddr, port: u16) -> FNSClient {
     let desc = outbound_default();
-    let target = TargetDesc::new(ip, port, desc);
+    let target = TargetDesc::new(SocketAddr::new(ip, port), desc);
     FNSClient::new(&target).unwrap()
 }
 
