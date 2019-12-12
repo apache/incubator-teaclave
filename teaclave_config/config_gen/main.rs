@@ -21,26 +21,20 @@ enum ConfigSource {
     Path(PathBuf),
 }
 
-fn display_as_source(slice: &[u8]) -> String {
-    let mut output = String::new();
-    output.push_str("&[");
-    for b in slice {
-        output.push_str(&format!("{}, ", b));
-    }
-    output.push_str("]");
-
-    output
-}
-
-macro_rules! display {
-    ($config:expr) => {
-        match $config {
-            ConfigSource::Path(p) => {
-                let content = &fs::read(p).unwrap();
-                display_as_source(&content)
+fn display_config_source(config: &ConfigSource) -> String {
+    match config {
+        ConfigSource::Path(p) => {
+            let content = &fs::read(p).unwrap();
+            let mut output = String::new();
+            output.push_str("&[");
+            for b in content {
+                output.push_str(&format!("{}, ", b));
             }
+            output.push_str("]");
+
+            output
         }
-    };
+    }
 }
 
 fn main() {
@@ -51,13 +45,13 @@ fn main() {
     let contents = fs::read_to_string(&args[1]).expect("Something went wrong reading the file");
     let config: BuildConfigToml = toml::from_str(&contents).unwrap();
 
-    let sp_root_ca_cert = display!(config.sp_root_ca_cert);
-    let ias_root_ca_cert = display!(config.ias_root_ca_cert);
+    let sp_root_ca_cert = display_config_source(&config.sp_root_ca_cert);
+    let ias_root_ca_cert = display_config_source(&config.ias_root_ca_cert);
 
     let mut auditor_public_keys = String::new();
     auditor_public_keys.push_str("&[");
     for key in &config.auditor_public_keys {
-        let auditor_pulic_key = display!(key);
+        let auditor_pulic_key = display_config_source(key);
         auditor_public_keys.push_str(&format!("{}, ", auditor_pulic_key));
     }
     auditor_public_keys.push_str("]");
