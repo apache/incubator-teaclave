@@ -3,36 +3,74 @@ import "kms.proto";
 import "data_common.proto";
 package data_proto;
 
-// Request for saving Output
-// Update the meta information of the data
-message SaveDataRequest {
+// Request for writing output
+// Update the meta information for the output
+message WriteOutputRequest {
+  // data identifier
   required string data_id = 1;
+  // meta information of the data
   required data_common.DataMeta meta = 2;
 }
 
-message SaveDataResponse {
+// Response for writing output
+message WriteOutputResponse {
   required bool success = 1;
 }
 
-// Request for accessing data
-// TMS can use the request to prepare inputs and outputs
-message AccessDataRequest {
-  required string data_id = 1; 
+// Request for fetching input
+message FetchInputRequest {
+  // data indentifier
+  required string data_id = 1;
 }
 
-// Response for accessing data
+// Response for fetching input
+// TMS can use the request to prepare inputs
+message FetchInputResponse {
+  // meta information of the input, for checking integrity
+  required data_common.DataMeta meta = 1; 
+  // storage information for reading the data
+  required data_common.DataStorageInfo storage_info = 2;
+  // key config for file decryption
+  required kms_proto.KeyConfig config = 3; 
+}
+
+// Request for fetching output
+message FetchOutputRequest {
+  // data indentifier
+  required string data_id = 1;
+}
+
+// Response for fetching output
+// TMS can use the request to prepare outputs
+message FetchOutputResponse {
+  // storage information for writing the data
+  required data_common.DataStorageInfo storage_info = 1; 
+  // key config for file encryption
+  required kms_proto.KeyConfig config = 2; 
+}
+
+// Request for registering shared output (data fusion)
+message RegisterSharedOutputRequest {
+  // owners of fused data 
+  repeated string owners = 1; 
+}
+
+// Response for registing shared output
 // The response includes the storage_info and key_config, 
 // so the worker can read/write the data.
-message AccessDataResponse {
+// Data id should be returned to the task participants.
+message RegisterSharedOutputResponse {
   required string data_id = 1; 
-  repeated string owners = 2; // SharedOutput will have muliple owners
-  optional data_common.DataMeta meta = 3; // Output data doesn't have meta
-  required data_common.DataStorageInfo storage_info = 4; // SharedOutput have internal storage info 
-  required kms_proto.KeyConfig config = 5; // The config for encryption/decryption
+  // internal storage info for writing output
+  required data_common.DataStorageInfo storage_info = 2; 
+  // key config for file encryption
+  required kms_proto.KeyConfig config = 3; 
 }
 
 
 service TDFSInternal {
-  rpc AccessData(AccessDataRequest) returns (AccessDataResponse);
-  rpc SaveData(SaveDataRequest) returns (SaveDataResponse);
+  rpc FetchInput(FetchInputRequest) returns (FetchInputResponse);
+  rpc FetchOutput(FetchOutputRequest) returns (FetchOutputResponse);
+  rpc RegisterSharedOutput(RegisterSharedOutputRequest) returns (RegisterSharedOutputResponse);
+  rpc WriteOutput(WriteOutputRequest) returns (WriteOutputResponse);
 }

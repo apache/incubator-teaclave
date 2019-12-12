@@ -4,82 +4,56 @@ import "cred.proto";
 import "data_common.proto";
 package data_proto;
 
-// Request for allocing a data. 
-// The data can be used as input or output.
-// And we need this request to obtain a config for file encryption
-// Storage info is needed, as the data may be used as output.
-message AllocDataRequest {
+
+// Request for registering an input
+// The input contains: the logical access info (key config), physical access info (storage path)
+// and meta information to check the integrity before and after encryption
+message RegisterInputRequest {
+  // Key config for file decryption
+  required kms_proto.KeyConfig config = 1;
+  // Meta information
+  required data_common.DataMeta meta = 2;
+  // Storage information: where to access the input
+  required data_common.DataStorageInfo storage_info = 3; 
+  // Used for authentication
+  required cred_proto.Credential creds = 99;
+}
+
+// Response for registering an input
+message RegisterInputResponse {
+  // data identifier
+  required string data_id = 1;
+}
+
+// Request for registering a private output
+message RegisterOutputRequest {
   // Encryption type: AEAD, ProtectedFS
   required kms_proto.EncType enc_type = 1;
-  // Where to save/read the data
+  // storage information
   required data_common.DataStorageInfo storage_info = 2; 
   // Used for authentication
   required cred_proto.Credential creds = 99;
 }
 
-// Response for allocing a data
-// Config is used for file encryption
-message AllocDataResponse {
+// Request for registering a private output
+message RegisterOutputResponse {
+  // data identifier
+  required string data_id = 1;
+}
+
+// Request for reading the private output
+message ReadOutputRequest {
   // Data identifier
   required string data_id = 1;
-  // Key config: AEAD, ProtectedFS
-  required kms_proto.KeyConfig config = 2;
-}
-
-// Request for registering a shared output
-// The output can be used for data fusion
-// No need to provide a storage_info, it will be saved into internal storage.
-// Only platform knows the storage info and can access the data.
-// If result is saved to this data, it can be used as input in other tasks
-// But all the owners need to agree the task
-message RegisterSharedOutputRequest {
-  // Encryption type: AEAD, ProtectedFS
-  required kms_proto.EncType enc_type = 1;
-  // muliple owners
-  repeated string owners = 2;
-  // Used for authentication
   required cred_proto.Credential creds = 99;
 }
 
-// Response for registering a shared output
-// Key config will not be returned
-message RegisterSharedOutputResponse {
-  required string data_id = 1;
-}
-
-// Request for saving data.
-// Update the meta information so the data can be used as input
-// After this request, the data is fixed and can't be changed. 
-// And platform can use storage info and key config to read the data.
-message SaveDataRequest {
-  required string data_id = 1;
-  // meta information
-  required data_common.DataMeta meta = 2;
-  required cred_proto.Credential creds = 99;
-}
-
-// Response for saving data
-message SaveDataResponse {
-  required bool success = 1;
-}
-
-// Request for reading data
-message ReadDataRequest {
-  required string data_id = 1; 
-  required cred_proto.Credential creds = 99;
-}
-
-// Response for reading data
-message ReadDataResponse {
-  required string data_id = 1; 
-  // SharedOutput will have muliple owners
-  repeated string owners = 2;
-  // Output data doesn't have meta
-  optional data_common.DataMeta meta = 3; 
-  // Storage info of SharedOutput will not be returned.
-  optional data_common.DataStorageInfo storage_info = 4; 
-  // The key config of SharedOutput is only visible to platform
-  optional kms_proto.KeyConfig config = 5;    
+// Response for reading the output.
+message ReadOutputResponse {
+  // Meta information. If output is not written, the meta infomation is None. 
+  optional data_common.DataMeta meta = 1; 
+  // Key config for file decryption. If output is not written, the key config won't be returned. 
+  optional kms_proto.KeyConfig config = 2;
 }
 
 // Request for deleting a data
@@ -95,9 +69,8 @@ message DeleteDataResponse {
 
 // @need_authentication # automatic authentication
 service TDFSExternal {
-  rpc AllocData(AllocDataRequest) returns (AllocDataResponse);
-  rpc RegisterSharedOutput(RegisterSharedOutputRequest) returns (RegisterSharedOutputResponse);
-  rpc ReadData(ReadDataRequest) returns (ReadDataResponse);
-  rpc SaveData(SaveDataRequest) returns (SaveDataResponse);
+  rpc RegisterInput(RegisterInputRequest) returns (RegisterInputResponse);
+  rpc RegisterOutput(RegisterOutputRequest) returns (RegisterOutputResponse);
+  rpc ReadOutput(ReadOutputRequest) returns (ReadOutputResponse);
   rpc DeleteData(DeleteDataRequest) returns (DeleteDataResponse);
 }
