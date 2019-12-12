@@ -22,7 +22,6 @@ cfg_if! {
     }
 }
 
-
 const KB: usize = 1 << 10;
 const MB: usize = KB * KB;
 
@@ -68,7 +67,6 @@ pub struct Options {
     pub reuse_manifest: bool,
     pub filter_policy: filter::BoxedFilterPolicy,
 }
-
 
 cfg_if! {
     if #[cfg(feature = "mesalock_sgx")] {

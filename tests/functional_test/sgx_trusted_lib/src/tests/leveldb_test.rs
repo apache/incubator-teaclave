@@ -1,8 +1,8 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use rand::Rng;
 use rand::distributions::Alphanumeric;
+use rand::Rng;
 use std::iter;
 #[cfg(feature = "mesalock_sgx")]
 use std::string::String;
@@ -51,8 +51,10 @@ fn fill_db(db: &mut DB, entries: usize) -> Result<(), Box<dyn Error>> {
 }
 
 pub fn test_write_a_lot() {
-    let key = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
-               0x0f, 0x0e, 0x0d, 0x0c, 0x0b, 0x0a, 0x09, 0x08,];
+    let key = [
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x0f, 0x0e, 0x0d, 0x0c, 0x0b, 0x0a, 0x09,
+        0x08,
+    ];
     let mut opt = Options::new_disk_db_with(key);
     opt.compression_type = CompressionType::CompressionSnappy;
     let mut db = DB::open("test1", opt).unwrap();

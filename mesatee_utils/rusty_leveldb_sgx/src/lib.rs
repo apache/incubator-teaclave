@@ -21,7 +21,6 @@
 //! ```
 //!
 #![cfg_attr(feature = "mesalock_sgx", no_std)]
-
 #![allow(dead_code)]
 
 #[cfg(feature = "mesalock_sgx")]

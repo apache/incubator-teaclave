@@ -13,7 +13,7 @@ cfg_if! {
         use std::untrusted::path::PathEx;
         use protected_fs;
         use std::io::{Seek, SeekFrom};
-        
+
         pub type DBPersistKey = [u8; 16];
     } else {
         use std::fs;
@@ -42,22 +42,23 @@ pub struct PosixDiskEnv {
 }
 
 impl PosixDiskEnv {
-cfg_if! {
-    if #[cfg(feature = "mesalock_sgx")]  {
-        pub fn new_with(key: DBPersistKey) -> PosixDiskEnv {
-            PosixDiskEnv {
-                locks: Arc::new(Mutex::new(HashMap::new())),
-                key
+    cfg_if! {
+        if #[cfg(feature = "mesalock_sgx")]  {
+            pub fn new_with(key: DBPersistKey) -> PosixDiskEnv {
+                PosixDiskEnv {
+                    locks: Arc::new(Mutex::new(HashMap::new())),
+                    key
+                }
             }
-        }
-    } else {
-        pub fn new() -> PosixDiskEnv {
-            PosixDiskEnv {
-                locks: Arc::new(Mutex::new(HashMap::new())),
+        } else {
+            pub fn new() -> PosixDiskEnv {
+                PosixDiskEnv {
+                    locks: Arc::new(Mutex::new(HashMap::new())),
+                }
             }
         }
     }
-}}
+}
 
 /// map_err_with_name annotates an io::Error with information about the operation and the file.
 fn map_err_with_name(method: &'static str, f: &Path, e: io::Error) -> Status {
