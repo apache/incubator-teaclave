@@ -22,5 +22,7 @@ fn main() {
         ])
         .output()
         .expect("Cannot generate build_config.rs");
-    assert!(c.status.success());
+    if !c.status.success() {
+        panic!("stdout: {:?}, stderr: {:?}", c.stdout, c.stderr);
+    }
 }
