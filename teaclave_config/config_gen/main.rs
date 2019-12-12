@@ -81,6 +81,8 @@ fn main() {
     ));
 
     let dest_path = Path::new(&args[2]);
-    let mut f = File::create(&dest_path).expect(&format!("Failed to create file: {}", dest_path.display()));
-    f.write_all(build_config_generated.as_bytes()).expect(&format!("Failed to write file: {}", dest_path.display()));
+    let mut f =
+        File::create(&dest_path).expect(&format!("Failed to create file: {}", dest_path.display()));
+    f.write_all(build_config_generated.as_bytes())
+        .expect(&format!("Failed to write file: {}", dest_path.display()));
 }
