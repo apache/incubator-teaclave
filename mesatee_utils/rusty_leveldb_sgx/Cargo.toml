@@ -1,0 +1,29 @@
+[package]
+name = "rusty-leveldb"
+version = "0.3.0"
+authors = ["Lewin Bormann <lbo@spheniscida.de>"]
+description = "A compatible re-implementation of LevelDB in Rust"
+homepage = "https://github.com/dermesser/leveldb-rs"
+repository = "https://borgac.net/lbo/hg/"
+readme = "README.md"
+keywords = ["LevelDB", "key-value", "database", "SSTable", "Google"]
+license = "MIT"
+publish = true
+
+[features]
+default = []
+mesalock_sgx = ["protected_fs_rs/mesalock_sgx", "sgx_libc", "sgx_tstd", "sgx_types", "sgx_trts"]
+
+[dependencies]
+crc 		= { version = "2.0" }
+rand 		= { version = "0.7" }
+snap 		= { version = "0.2" }
+cfg-if 		= { version = "0.1.9" }
+integer-encoding = { version = "1.0" }
+
+protected_fs_rs = { path = "../protected_fs_rs", optional = true }
+
+sgx_tstd 	= { version = "1.0.9", optional = true }
+sgx_trts 	= { version = "1.0.9", optional = true }
+sgx_types 	= { version = "1.0.9", optional = true }
+sgx_libc	= { version = "1.0.9", optional = true }
