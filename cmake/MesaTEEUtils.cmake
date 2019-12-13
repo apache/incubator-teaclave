@@ -227,24 +227,6 @@ function(new_list_with_prefix new_list_name prefix)
     set(${new_list_name} ${_new_list} PARENT_SCOPE)
 endfunction()
 
-function(new_list_with_suffix new_list_name suffix)
-    set(_new_list)
-    foreach(item ${ARGN})
-        string(APPEND item ${suffix})
-        set(_new_list ${_new_list} ${item})
-    endforeach()
-    set(${new_list_name} ${_new_list} PARENT_SCOPE)
-endfunction()
-
-function(new_list_with_insert_prefix new_list_name insert_prefix)
-    set(_new_list)
-    foreach(item ${ARGN})
-        set(_new_list ${_new_list} ${insert_prefix} ${item})
-    endforeach()
-    set(${new_list_name} ${_new_list} PARENT_SCOPE)
-endfunction()
-
-
 function(check_exe_dependencies)
     foreach(exe ${ARGN})
         execute_process(COMMAND bash -c "type ${exe}"
@@ -304,18 +286,3 @@ function(parse_cargo_packages pkg_names)
     set(${pkg_names} ${_pkg_names} PARENT_SCOPE)
     dbg_message("${pkg_names}=${_pkg_names}\n")
 endfunction()
-
-# SGXLIB_PKGS, SGXAPP_PKGS, UNIXLIB_PKGS, UNIXAPP_PKGS
-# SGXLIB_PKGS_P, SGXAPP_PKGS_P, UNIXLIB_PKGS_P, UNIXAPP_PKGS_P
-# _P version is like -p;kms;-p;tms
-macro(gen_cargo_package_lists)
-    new_list_with_suffix(SGXLIB_PKGS "_enclave" ${SGX_MODULES})
-    new_list_with_insert_prefix(SGXLIB_PKGS_P "-p" ${SGXLIB_PKGS})
-    set(SGXAPP_PKGS ${SGX_APPS})
-    new_list_with_insert_prefix(SGXAPP_PKGS_P "-p" ${SGXAPP_PKGS})
-    set(UNIXLIB_PKGS ${UNIX_LIBS})
-    new_list_with_insert_prefix(UNIXLIB_PKGS_P "-p" ${UNIXLIB_PKGS})
-    set(UNIXAPP_PKGS ${UNIX_APPS})
-    new_list_with_insert_prefix(UNIXAPP_PKGS_P "-p" ${UNIXAPP_PKGS})
-endmacro()
-
