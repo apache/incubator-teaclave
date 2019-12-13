@@ -10,7 +10,7 @@ services:
     expose:
       - 5555
     volumes:
-      - ./config.toml:/mesatee/config.toml
+      - ./runtime.config.toml:/mesatee/runtime.config.toml
       - type: bind
         source: /var/run/aesmd/aesm.socket
         target: /var/run/aesmd/aesm.socket
@@ -36,7 +36,7 @@ services:
     expose:
       - 5066
     volumes:
-      - ./config.toml:/mesatee/config.toml
+      - ./runtime.config.toml:/mesatee/runtime.config.toml
       - type: bind
         source: /tmp/mesatee_storage
         target: /tmp/mesatee_storage
@@ -64,7 +64,7 @@ services:
     ports:
       - 3444:3444
     volumes:
-      - ./config.toml:/mesatee/config.toml
+      - ./runtime.config.toml:/mesatee/runtime.config.toml
       - type: bind
         source: /tmp/mesatee_storage
         target: /tmp/mesatee_storage
@@ -92,7 +92,7 @@ services:
     expose:
       - 6016
     volumes:
-      - ./config.toml:/mesatee/config.toml
+      - ./runtime.config.toml:/mesatee/runtime.config.toml
       - type: bind
         source: /var/run/aesmd/aesm.socket
         target: /var/run/aesmd/aesm.socket
