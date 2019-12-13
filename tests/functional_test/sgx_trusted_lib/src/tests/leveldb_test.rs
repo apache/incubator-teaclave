@@ -19,11 +19,10 @@ const VAL_LEN: usize = 48;
 
 fn gen_string(len: usize) -> String {
     let mut rng = rand::thread_rng();
-    let value = iter::repeat(())
+    iter::repeat(())
         .map(|()| rng.sample(Alphanumeric))
         .take(len)
-        .collect();
-    value
+        .collect()
 }
 
 fn fill_db(db: &mut DB, entries: usize) -> Result<(), Box<dyn Error>> {
@@ -33,10 +32,9 @@ fn fill_db(db: &mut DB, entries: usize) -> Result<(), Box<dyn Error>> {
         if i % 1000 == 0 {
             db.flush()?;
 
-            let v2 = db.get(k.as_bytes()).ok_or(Box::new(io::Error::new(
-                ErrorKind::NotFound,
-                "Key not found",
-            )))?;
+            let v2 = db
+                .get(k.as_bytes())
+                .ok_or_else(|| Box::new(io::Error::new(ErrorKind::NotFound, "Key not found")))?;
             assert_eq!(&v.as_bytes()[..], &v2[..]);
 
             db.delete(k.as_bytes())?;

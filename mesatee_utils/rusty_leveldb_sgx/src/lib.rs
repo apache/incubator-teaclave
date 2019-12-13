@@ -22,6 +22,7 @@
 //!
 #![cfg_attr(feature = "mesalock_sgx", no_std)]
 #![allow(dead_code)]
+#![allow(clippy::all)]
 
 #[cfg(feature = "mesalock_sgx")]
 #[macro_use]
