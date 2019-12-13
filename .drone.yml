@@ -125,20 +125,6 @@ steps:
   commands:
   - . /root/.cargo/env
   - cd build && make sgx-test
-  privileged: true
-  volumes:
-  - name: isgx
-    path: /dev/isgx
-  - name: aesmd
-    path: /var/run/aesmd/aesm.socket
-
-volumes:
-- name: isgx
-  host:
-    path: /dev/isgx
-- name: aesmd
-  host:
-    path: /var/run/aesmd/aesm.socket
 
 node:
   instance: mesatee-sgx
@@ -170,21 +156,6 @@ steps:
   commands:
   - . /root/.cargo/env
   - cd build && make sgx-test
-  privileged: true
-  volumes:
-  - name: isgx
-    path: /dev/isgx
-  - name: aesmd
-    path: /var/run/aesmd/aesm.socket
-
-volumes:
-- name: isgx
-  host:
-    path: /dev/isgx
-- name: aesmd
-  host:
-    path: /var/run/aesmd/aesm.socket
-
 
 node:
   instance: mesatee-sgx
@@ -318,20 +289,6 @@ steps:
   commands:
   - . /root/.cargo/env
   - cd build && make sgx-test
-  privileged: true
-  volumes:
-  - name: isgx
-    path: /dev/isgx
-  - name: aesmd
-    path: /var/run/aesmd/aesm.socket
-
-volumes:
-- name: isgx
-  host:
-    path: /dev/isgx
-- name: aesmd
-  host:
-    path: /var/run/aesmd/aesm.socket
 
 node:
   instance: mesatee-sgx
@@ -363,21 +320,6 @@ steps:
   commands:
   - . /root/.cargo/env
   - cd build && make sgx-test
-  privileged: true
-  volumes:
-  - name: isgx
-    path: /dev/isgx
-  - name: aesmd
-    path: /var/run/aesmd/aesm.socket
-
-volumes:
-- name: isgx
-  host:
-    path: /dev/isgx
-- name: aesmd
-  host:
-    path: /var/run/aesmd/aesm.socket
-
 
 node:
   instance: mesatee-sgx
