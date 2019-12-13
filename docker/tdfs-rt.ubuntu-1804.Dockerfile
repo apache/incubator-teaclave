@@ -6,16 +6,17 @@ ENV LIBSGX_ENCLAVE_COMMON_URL    "$SGX_DOWNLOAD_URL_BASE/$LIBSGX_ENCLAVE_COMMON"
 
 RUN apt-get update && apt-get install -q -y \
     libcurl4-openssl-dev \
-    libprotobuf-dev
+    libprotobuf-dev \
+    wget
 
 RUN wget -O $LIBSGX_ENCLAVE_COMMON "$LIBSGX_ENCLAVE_COMMON_URL" && \
     mkdir /etc/init                                             && \
     dpkg -i $LIBSGX_ENCLAVE_COMMON                              && \
     rm $LIBSGX_ENCLAVE_COMMON
 
-ADD release/service/tdfs /mesatee/
-ADD release/service/tdfs.enclave.signed.so /mesatee/
-ADD release/service/enclave_info.txt /mesatee/
-ADD release/service/auditors /mesatee/auditors
+ADD release/services/tdfs /mesatee/
+ADD release/services/tdfs.enclave.signed.so /mesatee/
+ADD release/services/enclave_info.txt /mesatee/
+ADD release/services/auditors /mesatee/auditors
 
 ENTRYPOINT ["/mesatee/tdfs"]

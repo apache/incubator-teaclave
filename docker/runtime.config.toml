@@ -1,11 +1,11 @@
-# MesaTEE Runtime Configuration
+# Teaclave Runtime Config
 #
 # Note that this config is loaded at running time. We don't have to trust the
 # content though. Maliciously crafted config from this file will not break data
 # confidentiality/integrity.
-
-# Topology of MesaTEE Services
-
+#
+# Topology of Services
+#
 #      ┌───────────────────────────────────────────────────┐
 #      │                                                   │FNS API Endpoint
 #      │                                                   ▼
@@ -27,42 +27,21 @@
 #      │                                                   │ TDFS API Endpoint
 #      └───────────────────────────────────────────────────┘
 
-# This section configures the MesaTEE API endpoints where a user MUST connect to.
-# `listen_ip` specifies the IPv4/6 address that the service should listen on;
-# `connect_ip` is a required field for FNS only. The user is not required to
-# know this address; instead the user SHOULD expect to get this address from TMS.
-
-# This is a required section.
 [api_endpoints]
-tms  = { listen_ip = "0.0.0.0", port = 5554 }
-tdfs = { listen_ip = "0.0.0.0", port = 5065 }
-fns  = { listen_ip = "0.0.0.0", connect_ip = "127.0.0.1", port = 3444 }
+tms  = { listen_address = "0.0.0.0:5554" }
+tdfs = { listen_address = "0.0.0.0:5065" }
+fns  = { listen_address = "0.0.0.0:3444", advertised_address = "127.0.0.1:3444"}
 
-
-# This section configures the internal endpoints used by MesaTEE services.
-# `listen_ip` specifies the IPv4/6 address that the service should listen on;
-# `connect_ip` specifies the IPv4/6 address that the other services should connect to;
-# A user SHOULD NOT connect to these endpoints.
-# This is a required section.
 [internal_endpoints]
-tms  = { listen_ip = "0.0.0.0", connect_ip = "172.18.18.100", port = 5555 }
-tdfs = { listen_ip = "0.0.0.0", connect_ip = "172.18.18.101", port = 5066 }
-kms  = { listen_ip = "0.0.0.0", connect_ip = "172.18.18.102", port = 6016 }
-acs  = { listen_ip = "0.0.0.0", connect_ip = "172.18.18.103", port = 5077 }
+tms  = { listen_address = "0.0.0.0:5555", advertised_address = "172.18.18.100:5555" }
+tdfs = { listen_address = "0.0.0.0:5066", advertised_address = "172.18.18.101:5066" }
+kms  = { listen_address = "0.0.0.0:6016", advertised_address = "172.18.18.102:6016" }
+acs  = { listen_address = "0.0.0.0:5077", advertised_address = "172.18.18.103:5077" }
 
-
-# This section configures the IAS API key/spid which are used to connect to
-# Intel® Attestation Service (IAS).
-# This is a required section.
-[ias_client_config]
-spid = { env = "IAS_SPID" }
-key = { env = "IAS_KEY" }
-
-
-# This section configures the auditors.
-# This is a required section.
-[audited_enclave_config]
+[audit]
 enclave_info = { path = "enclave_info.txt" }
-signature_a = { path = "auditors/godzilla/godzilla.sign.sha256" }
-signature_b = { path = "auditors/optimus_prime/optimus_prime.sign.sha256" }
-signature_c = { path = "auditors/albus_dumbledore/albus_dumbledore.sign.sha256" }
+auditor_signatures = [
+    { path = "auditors/godzilla/godzilla.sign.sha256" },
+    { path = "auditors/optimus_prime/optimus_prime.sign.sha256" },
+    { path = "auditors/albus_dumbledore/albus_dumbledore.sign.sha256" },
+]
