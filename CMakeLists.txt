@@ -9,12 +9,23 @@ init_submodules()
 
 # ====== VARIABLES FOR CMAKE -D{VAR}=VAL CONFIGURATION BEGIN ======
 SET_STRVAR_FROM_ENV_OR(SGX_SDK "/opt/sgxsdk" "Path of SGX SDK")
-SET_STRVAR_FROM_ENV_OR(SGX_MODE "HW" "Mode of SGX, HW or SW")
 SET_STRVAR_FROM_ENV_OR(RUSTFLAGS "" "Rust flags")
 SET_STRVAR_FROM_ENV_OR(MESATEE_CMAKE_DBG "" "set to turn on debug message for cmake")
 set(MESAPY_VERSION 2b7ea38773d337d106c613a239661a60a4fa7528)
 option(COV "Turn on/off coverage" OFF)
 option(OFFLINE "Turn on/off cargo offline" ON)
+option(TEST_MODE "Turn on/off test mode" OFF)
+option(SGX_SIM_MODE "Turn on/off sgx simulation mode" OFF)
+
+if(TEST_MODE)
+    set(RUSTFLAGS "${RUSTFLAGS} --cfg test_mode")
+endif()
+if(SGX_SIM_MODE)
+    set(RUSTFLAGS "${RUSTFLAGS} --cfg sgx_sim")
+    set(SGX_MODE "SW")
+else()
+    set(SGX_MODE "HW")
+endif()
 # ======= VARIABLES FOR CMAKE -D{VAR}=VAL CONFIGURATION END =======
 
 # =============== VARIABLES FOR MANUAL CHANGE BEGIN ===============
