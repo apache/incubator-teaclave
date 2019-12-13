@@ -24,8 +24,13 @@ add_custom_target(check
     DEPENDS prep
 )
 
-add_custom_target(sgx-test
-    COMMAND ${MESATEE_COMMON_ENVS} ${MT_SCRIPT_DIR}/sgx_test.sh)
+if(TEST_MODE)
+    add_custom_target(sgx-test
+        COMMAND ${MESATEE_COMMON_ENVS} ${MT_SCRIPT_DIR}/sgx_test.sh)
+else()
+    add_custom_target(sgx-test
+        COMMAND echo "Note: Testing is not enabled in this build. Run cmake again with -DTEST_MODE=ON")
+endif()
 
 add_custom_target(cov
     COMMAND ${MESATEE_COMMON_ENVS} ${MT_SCRIPT_DIR}/gen_cov.sh

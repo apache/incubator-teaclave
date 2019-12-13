@@ -38,6 +38,3 @@ ${SGX_ENCLAVE_SIGNER} sign -key ${MESATEE_PROJECT_ROOT}/keys/enclave_signing_key
     -out ${CUR_INSTALL_DIR}/${CUR_MODULE_NAME}.enclave.signed.so \
     -config ${MESATEE_PROJECT_ROOT}/${CUR_MODULE_PATH}/Enclave.config.xml \
     -dumpfile ${CUR_MODULE_NAME}.enclave.meta.txt > /dev/null 2>&1
-echo ${CUR_MODULE_NAME} > ${CUR_MODULE_NAME}_enclave_info.txt
-grep -m1 -A2 "mrsigner->value" ${CUR_MODULE_NAME}.enclave.meta.txt >> ${CUR_MODULE_NAME}_enclave_info.txt
-grep -m1 -A2 "body.enclave_hash" ${CUR_MODULE_NAME}.enclave.meta.txt >> ${CUR_MODULE_NAME}_enclave_info.txt

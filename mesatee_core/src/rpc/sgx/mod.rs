@@ -149,6 +149,12 @@ impl EnclaveAttr {
             Ok(quote) => quote,
         };
 
+        // Enclave measures are not tested in test mode since we have
+        // a dedicated test enclave not known to production enclaves
+        if cfg!(test_mode) {
+            return (self.quote_checker)(&quote);
+        }
+
         let this_mr_signer = &quote.body.report_body.mr_signer;
         let this_mr_enclave = &quote.body.report_body.mr_enclave;
 
@@ -156,24 +162,7 @@ impl EnclaveAttr {
             mr_signer == this_mr_signer && mr_enclave == this_mr_enclave
         });
 
-        if !checksum_match {
-            info!("sgx enclave measure mismatch. try matching with functional_test");
-
-            use crate::config::ENCLAVE_IDENTITIES;
-
-            // TODO: For testing, an enclave called functional_test will communicate
-            // with each MesaTEE component. We have to explicitly add its measures into
-            // the whitelist. Ideally, this piece of code should not materialize in
-            // release build. Find a way to make this configurable.
-            let (test_mr_signer, test_mr_enclave) =
-                ENCLAVE_IDENTITIES.get("functional_test").unwrap();
-            if this_mr_signer != test_mr_signer || this_mr_enclave != test_mr_enclave {
-                error!("sgx enclave measure mismatch");
-                return false;
-            }
-        }
-
-        (self.quote_checker)(&quote)
+        checksum_match && (self.quote_checker)(&quote)
     }
 }
 

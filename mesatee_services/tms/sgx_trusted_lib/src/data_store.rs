@@ -106,7 +106,7 @@ pub fn add_task(task_id: &str, task_info: &TaskInfo) -> Result<()> {
 }
 
 // For API Test, called by enclave_init
-pub fn add_test_infomation() {
+pub fn add_test_information() {
     let fake_task = TaskInfo {
         user_id: "fake".to_string(),
         collaborator_list: Vec::new(),
