@@ -21,4 +21,4 @@ clap_flags = "0.2.0"
 tms_external_proto = { path = "../mesatee_services/tms/external/proto" }
 tdfs_external_proto = { path = "../mesatee_services/tdfs/external/proto" }
 fns_proto = { path = "../mesatee_services/fns/proto" }
-teaclave_utils = { path = "../mesatee_utils/teaclave_utils" }
+teaclave_utils = { path = "../teaclave_utils" }

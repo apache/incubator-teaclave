@@ -26,8 +26,8 @@ acs_client      = { path = "../../../mesatee_services/acs/client", optional = tr
 tdfs_internal_client = { path = "../../../mesatee_services/tdfs/internal/client", optional = true }
 tms_internal_client = { path = "../../../mesatee_services/tms/internal/client", optional = true }
 tms_internal_proto = { path = "../../../mesatee_services/tms/internal/proto", optional = true }
-protected_fs_rs    = { path = "../../../mesatee_utils/protected_fs_rs", default-features = false, optional = true }
-rusty-leveldb = { path = "../../../mesatee_utils/rusty_leveldb_sgx", default-features = false, optional = true }
+protected_fs_rs    = { path = "../../../teaclave_common/protected_fs_rs", default-features = false, optional = true }
+rusty-leveldb = { path = "../../../teaclave_common/rusty_leveldb_sgx", default-features = false, optional = true }
 
 mesatee_core           = { version = "0.1.0" }
 sgx_cov         = { version = "0.1.0", optional = true }
