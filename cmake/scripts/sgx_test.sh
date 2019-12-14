@@ -9,7 +9,7 @@ fi
 source ${SGX_SDK}/environment
 if [ "${SGX_MODE}" = "HW" ]; then
 	if [ -z ${IAS_SPID} ] || [ -z ${IAS_KEY} ] ; then
-        echo "SGX launch check failed: Env var for IAS SPID or IAS KEY does NOT exist. Please follow \"How to Run (SGX)\" in README to obtain, and specify the value in environment variables and put the names of environment variables in config.toml. The default variables are IAS_SPID and IAS_KEY."
+        echo "Please set IAS_SPID and IAS_KEY environment variables."
         exit 1;
     fi
 fi
