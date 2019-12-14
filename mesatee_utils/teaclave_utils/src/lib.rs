@@ -1,42 +1,31 @@
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// "License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
-//
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
-
+#![cfg_attr(feature = "mesalock_sgx", no_std)]
+#[cfg(feature = "mesalock_sgx")]
+extern crate sgx_tstd as std;
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use crate::Error;
-use crate::ErrorKind;
-use crate::Result;
-
-use super::SgxMeasure;
+#[macro_use] extern crate log;
 use serde::Deserializer;
 use serde_derive::Deserialize;
 use std::collections::HashMap;
+
+type Result<T> = std::result::Result<T, UtilsError>;
+type SgxMeasure = [u8;32];
+
+pub enum UtilsError {
+    ParseError,
+}
 
 fn decode_hex_digit(digit: char) -> Result<u8> {
     match digit {
         '0'..='9' => Ok(digit as u8 - b'0'),
         'a'..='f' => Ok(digit as u8 - b'a' + 10),
         'A'..='F' => Ok(digit as u8 - b'A' + 10),
-        _ => Err(Error::from(ErrorKind::ParseError)),
+        _ => Err(UtilsError::ParseError),
     }
 }
 
-pub(crate) fn decode_hex(hex: &str) -> Result<Vec<u8>> {
+pub fn decode_hex(hex: &str) -> Result<Vec<u8>> {
     let mut r: Vec<u8> = Vec::new();
     let mut chars = hex.chars().enumerate();
     loop {
@@ -49,14 +38,13 @@ pub(crate) fn decode_hex(hex: &str) -> Result<Vec<u8>> {
         }
         let (_, second) = chars
             .next()
-            .ok_or_else(|| Error::from(ErrorKind::ParseError))?;
+            .ok_or_else(|| UtilsError::ParseError)?;
         r.push((decode_hex_digit(first)? << 4) | decode_hex_digit(second)?);
     }
     Ok(r)
 }
 
-#[cfg(feature = "mesalock_sgx")]
-pub(crate) fn decode_spid(hex: &str) -> Result<sgx_types::sgx_spid_t> {
+pub fn decode_spid(hex: &str) -> Result<sgx_types::sgx_spid_t> {
     let mut spid = sgx_types::sgx_spid_t::default();
     let hex = hex.trim();
 
@@ -72,15 +60,14 @@ pub(crate) fn decode_spid(hex: &str) -> Result<sgx_types::sgx_spid_t> {
     Ok(spid)
 }
 
-#[cfg(feature = "mesalock_sgx")]
-pub(crate) fn percent_decode(orig: String) -> Result<String> {
+pub fn percent_decode(orig: String) -> Result<String> {
     let v: Vec<&str> = orig.split('%').collect();
     let mut ret = String::new();
     ret.push_str(v[0]);
     if v.len() > 1 {
         for s in v[1..].iter() {
             let digit =
-                u8::from_str_radix(&s[0..2], 16).map_err(|_| Error::from(ErrorKind::ParseError))?;
+                u8::from_str_radix(&s[0..2], 16).map_err(|_| UtilsError::ParseError)?;
             ret.push(digit as char);
             ret.push_str(&s[2..]);
         }
@@ -96,7 +83,7 @@ where
     use serde::de::Error;
     use serde::Deserialize;
     String::deserialize(deserializer).and_then(|string| {
-        let v = decode_hex(&string).map_err(|err| Error::custom(err.to_string()))?;
+        let v = decode_hex(&string).map_err(|_| Error::custom("ParseError"))?;
         let mut array: SgxMeasure = [0; 32];
         let bytes = &v[..array.len()]; // panics if not enough data
         array.copy_from_slice(bytes);

@@ -1,0 +1,20 @@
+[package]
+name = "teaclave_utils"
+version = "0.1.0"
+authors = ["MesaTEE Authors <developers@mesatee.org>"]
+description = "MesaTEE utilities."
+license = "Apache-2.0"
+edition = "2018"
+
+[features]
+default = []
+mesalock_sgx = ["sgx_tstd"]
+
+[dependencies]
+log          = { version = "0.4.6" }
+ring         = { version = "0.16.5" }
+serde        = { version = "1.0.92" }
+serde_derive = { version = "1.0.92" }
+sgx_tstd     = { version = "1.0.9", optional = true }
+sgx_types    = { version = "1.0.9" }
+toml         = { version = "0.5.3" }

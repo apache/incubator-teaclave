@@ -31,7 +31,6 @@ extern crate ring;
 
 pub mod db;
 pub mod rpc; // Syntax sugar for monadic error handling, defined in mayfail.rs
-#[cfg(not(feature = "mesalock_sgx"))]
 pub mod utils;
 
 // MesaTEE Error is defined in error.rs

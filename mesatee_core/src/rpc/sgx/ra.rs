@@ -45,12 +45,12 @@ use std::untrusted::time::SystemTimeEx;
 use lazy_static::lazy_static;
 
 use super::fail::MayfailTrace;
-use super::utils::*;
 use crate::Error;
 use crate::ErrorKind;
 use crate::Result;
 
 use teaclave_config::runtime_config::RUNTIME_CONFIG;
+use teaclave_utils;
 
 pub const CERT_VALID_DAYS: i64 = 90i64;
 
@@ -197,7 +197,7 @@ fn parse_response_attn_report(resp: &[u8]) -> Result<AttnReport> {
                     // Remove %0A from cert, and only obtain the signing cert
                     let cert = cert_str.to_string().replace("%0A", "");
                     // We should get two concatenated PEM files at this step
-                    decoded_cert =<< percent_decode(cert);
+                    decoded_cert =<< teaclave_utils::percent_decode(cert);
                     let cert_content: Vec<&str> = decoded_cert.split("-----").collect();
                     _ =<< if cert_content.len() != 9 { None } else { Some(()) };
                     ret cert_content[2].to_string()
@@ -412,7 +412,7 @@ fn create_attestation_report(pub_k: &sgx_ec256_public_t) -> Result<AttnReport> {
     let spid_vec = load_spid(&RUNTIME_CONFIG.env.ias_spid)?;
 
     let spid_str = std::str::from_utf8(&spid_vec)?;
-    let spid: sgx_spid_t = decode_spid(spid_str)?;
+    let spid: sgx_spid_t = teaclave_utils::decode_spid(spid_str)?;
 
     let p_spid = &spid as *const sgx_spid_t;
     let p_nonce = &quote_nonce as *const sgx_quote_nonce_t;

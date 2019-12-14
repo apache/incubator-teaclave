@@ -200,7 +200,6 @@
 
 use fns_client::FNSClient;
 use mesatee_core::config::{OutboundDesc, TargetDesc};
-use mesatee_core::rpc::sgx;
 pub use mesatee_core::{Error, ErrorKind, Result};
 use std::fs;
 use std::net::SocketAddr;
@@ -209,6 +208,7 @@ use std::str::FromStr;
 use tdfs_external_client::TDFSClient;
 use tms_external_client::TMSClient;
 pub use tms_external_proto::TaskStatus;
+use teaclave_utils;
 
 const SGX_HASH_SIZE: usize = 32;
 
@@ -380,7 +380,7 @@ impl Mesatee {
         for (der, hash) in enclave_info.enclave_signers.iter() {
             enclave_signers.push((&der, hash.as_path()));
         }
-        let enclave_identities = sgx::load_and_verify_enclave_info(
+        let enclave_identities = teaclave_utils::load_and_verify_enclave_info(
             &enclave_info.enclave_info_file_path,
             &enclave_signers,
         );

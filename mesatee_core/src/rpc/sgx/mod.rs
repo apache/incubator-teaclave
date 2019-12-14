@@ -38,12 +38,10 @@ use crate::Result;
 
 use teaclave_config::build_config::BUILD_CONFIG;
 use teaclave_config::runtime_config::RUNTIME_CONFIG;
+use teaclave_utils;
 
 #[macro_use]
 mod fail;
-
-mod utils;
-pub use utils::load_and_verify_enclave_info;
 
 pub mod client;
 #[cfg(feature = "mesalock_sgx")]
@@ -90,7 +88,7 @@ pub(crate) fn load_presigned_enclave_info() -> HashMap<String, (SgxMeasure, SgxM
         ),
     ];
 
-    utils::load_and_verify_enclave_info(&enclave_info_path, enclave_signers.as_slice())
+    teaclave_utils::load_and_verify_enclave_info(&enclave_info_path, enclave_signers.as_slice())
 }
 
 #[derive(Clone)]
