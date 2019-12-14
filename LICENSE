@@ -222,11 +222,11 @@ third-party/crates-sgx
 BSD 3-Clause License
 --------------------
 
-mesatee_utils/protected_fs_rs/protected_fs_c
+teaclave_common/protected_fs_rs/protected_fs_c
 
 
 MIT License
 -----------
 
 third_party/mesapy
-mesatee_utils/rusty_leveldb_sgx
+teaclave_common/rusty_leveldb_sgx

@@ -26,7 +26,7 @@ members = [
   "examples/gbdt",
   "mesatee_sdk", # ignore
   "mesatee_sdk/c_sdk", # ignore
-  "mesatee_utils/protected_fs_rs", # ignore
+  "teaclave_common/protected_fs_rs", # ignore
   "mesatee_cli"
 ]
 
