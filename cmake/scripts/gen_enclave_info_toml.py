@@ -2,9 +2,9 @@ import sys
 
 def find_hex_value(content, section):
     index = content.index(section)
-    content = content[index+1:index+3]
-    content = content[0].split() + content[1].split()
-    return ''.join([x[2:4] for x in content])
+    # assume each element in content is ending with '\n'
+    hex_bytes = ''.join(content[index+1:index+3]).split()
+    return ''.join(['%02x' % int(x, 16) for x in hex_bytes])
 
 mrsigner = "mrsigner->value:\n"
 enclave_hash = "metadata->enclave_css.body.enclave_hash.m:\n"
