@@ -34,6 +34,7 @@ bit-vec      = { version = "0.6.1", default-features = false }
 httparse     = { version = "1.3.2", default-features = false }
 uuid         = { version = "0.7.4", features = ["v4"] }
 net2         = { version = "0.2.33" }
+toml         = { version = "0.5.3" }
 
 sgx_tstd  = { version = "1.0.9", features = ["net"], optional = true }
 sgx_types = { version = "1.0.9" }

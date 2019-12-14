@@ -66,7 +66,7 @@ Here we give an example of using `mesatee_cli`:
 ```shell
 $ cd mesatee
 $ ./service.sh start
-$ ./bin/mesatee_cli 127.0.0.1:5554 -k auditors/albus_dumbledore/albus_dumbledore.public.der -k auditors/godzilla/godzilla.public.der -k auditors/optimus_prime/optimus_prime.public.der -s auditors/albus_dumbledore/albus_dumbledore.sign.sha256 -s auditors/godzilla/godzilla.sign.sha256 -s auditors/optimus_prime/optimus_prime.sign.sha256 -c out/enclave_info.txt --endpoint tms -i ~/tms_payload
+$ ./bin/mesatee_cli 127.0.0.1:5554 -k auditors/albus_dumbledore/albus_dumbledore.public.der -k auditors/godzilla/godzilla.public.der -k auditors/optimus_prime/optimus_prime.public.der -s auditors/albus_dumbledore/albus_dumbledore.sign.sha256 -s auditors/godzilla/godzilla.sign.sha256 -s auditors/optimus_prime/optimus_prime.sign.sha256 -c out/enclave_info.toml --endpoint tms -i ~/tms_payload
 
 {"type":"Create","task_id":"7216dd3e-ab3a-4974-b03e-3833891bbb26","task_token":"08e0d4c807700ff24d31ca01d8695b61","ip":"127.0.0.1","port":3444}
 ```

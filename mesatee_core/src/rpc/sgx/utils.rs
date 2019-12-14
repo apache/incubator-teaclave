@@ -22,6 +22,11 @@ use crate::Error;
 use crate::ErrorKind;
 use crate::Result;
 
+use super::SgxMeasure;
+use serde::Deserializer;
+use serde_derive::Deserialize;
+use std::collections::HashMap;
+
 fn decode_hex_digit(digit: char) -> Result<u8> {
     match digit {
         '0'..='9' => Ok(digit as u8 - b'0'),
@@ -31,7 +36,6 @@ fn decode_hex_digit(digit: char) -> Result<u8> {
     }
 }
 
-#[cfg(feature = "mesalock_sgx")]
 pub(crate) fn decode_hex(hex: &str) -> Result<Vec<u8>> {
     let mut r: Vec<u8> = Vec::new();
     let mut chars = hex.chars().enumerate();
@@ -84,32 +88,32 @@ pub(crate) fn percent_decode(orig: String) -> Result<String> {
     Ok(ret)
 }
 
-use super::SgxMeasure;
+/// Deserializes a hex string to a `SgxMeasure` (i.e., [0; 32]).
+pub fn from_hex<'de, D>(deserializer: D) -> std::result::Result<SgxMeasure, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    use serde::de::Error;
+    use serde::Deserialize;
+    String::deserialize(deserializer).and_then(|string| {
+        let v = decode_hex(&string).map_err(|err| Error::custom(err.to_string()))?;
+        let mut array: SgxMeasure = [0; 32];
+        let bytes = &v[..array.len()]; // panics if not enough data
+        array.copy_from_slice(bytes);
+        Ok(array)
+    })
+}
 
-fn decode_sgx_measure(lines: [&str; 2]) -> Result<SgxMeasure> {
-    let decoded_hash: Vec<u8> = lines
-        .iter()
-        .map(|line| line.trim().split(' '))
-        .flatten()
-        .try_fold(Vec::<u8>::new(), |mut r, hex| -> Result<Vec<u8>> {
-            // skip "0x"
-            let mut hex = hex.chars().skip(2);
+#[derive(Debug, Deserialize)]
+#[serde(transparent)]
+struct EnclaveInfoToml(HashMap<String, EnclaveInfo>);
 
-            use super::fail::MayfailNop;
-            let byte = mayfail! {
-                first =<< hex.next();
-                second =<< hex.next();
-                first_digit =<< decode_hex_digit(first);
-                second_digit =<< decode_hex_digit(second);
-                ret first_digit * 16 + second_digit
-            }?;
-            r.push(byte);
-            Ok(r)
-        })?;
-    let mut sgx_measure = [0u8; 32];
-    sgx_measure[..].copy_from_slice(decoded_hash.as_slice());
-
-    Ok(sgx_measure)
+#[derive(Debug, Deserialize)]
+struct EnclaveInfo {
+    #[serde(deserialize_with = "from_hex")]
+    mrsigner: SgxMeasure,
+    #[serde(deserialize_with = "from_hex")]
+    enclave_hash: SgxMeasure,
 }
 
 // This function fails when enclave info signatures mismatch hard-coded
@@ -117,22 +121,18 @@ fn decode_sgx_measure(lines: [&str; 2]) -> Result<SgxMeasure> {
 pub fn load_and_verify_enclave_info(
     enclave_info_file_path: &std::path::Path,
     // A vector of signer meta info, each tuple is
-    // (harded-coded public key, file path to signature of enclave_info.txt)
+    // (harded-coded public key, file path to signature of enclave_info.toml)
     enclave_signers: &[(&[u8], &std::path::Path)],
 ) -> std::collections::HashMap<String, (SgxMeasure, SgxMeasure)> {
     #[cfg(not(feature = "mesalock_sgx"))]
-    use std::fs::File;
+    use std::fs::{self, File};
     #[cfg(feature = "mesalock_sgx")]
-    use std::untrusted::fs::File;
+    use std::untrusted::fs::{self, File};
 
     use std::io::Read;
 
-    let mut content = String::new();
-    let mut f_enclave_info = File::open(enclave_info_file_path)
+    let content = fs::read_to_string(enclave_info_file_path)
         .unwrap_or_else(|_| panic!("cannot find enclave info at {:?}", enclave_info_file_path));
-    f_enclave_info
-        .read_to_string(&mut content)
-        .expect("cannot read from enclave info file");
 
     // verify autenticity of enclave identity info
     for signer in enclave_signers {
@@ -150,23 +150,12 @@ pub fn load_and_verify_enclave_info(
             .verify(content.as_bytes(), sig.as_slice())
             .expect("invalid signature for enclave info file");
     }
-
-    let lines: Vec<&str> = content.split('\n').collect();
+    let config: EnclaveInfoToml =
+        toml::from_str(&content).expect("Content not correct, unable to load enclave info.");
     let mut info_map = std::collections::HashMap::new();
-    lines
-        .as_slice()
-        .chunks_exact(7)
-        .try_for_each(|group| -> Result<()> {
-            let name = String::from(group[0]);
-
-            let mr_signer = decode_sgx_measure([group[2], group[3]])?;
-            let mr_enclave = decode_sgx_measure([group[5], group[6]])?;
-
-            info_map.insert(name, (mr_signer, mr_enclave));
-
-            Ok(())
-        })
-        .expect("malformed enclave info file");
+    for (k, v) in config.0 {
+        info_map.insert(k, (v.mrsigner, v.enclave_hash));
+    }
 
     info_map
 }

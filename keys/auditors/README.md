@@ -6,10 +6,10 @@ Each auditor has his/her own asymmetric key pair and will sign MesaTEE enclaves
 only if the enclaves can pass the audting process:
 
 ```
-openssl dgst -sha256 -sign private.pem -out sign.sha256 enclave_info.txt
+openssl dgst -sha256 -sign private.pem -out sign.sha256 enclave_info.toml
 ```
 
-The enclave_info.txt above contains the MRSIGNER (enclave signer's identity)
+The enclave_info.toml above contains the MRSIGNER (enclave signer's identity)
 and MRENCLAVE (enclave's measurement) value pairs of all MesaTEE enclaves. A
 sample entry looks like:
 

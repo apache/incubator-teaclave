@@ -71,7 +71,7 @@ int main() {
   assert(auditors != NULL);
 
   mesatee_enclave_info_t *enclave_info =
-      mesatee_enclave_info_load(auditors, "../services/enclave_info.txt");
+      mesatee_enclave_info_load(auditors, "../services/enclave_info.toml");
 
   assert(enclave_info != NULL);
 
