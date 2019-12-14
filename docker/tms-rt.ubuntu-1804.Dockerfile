@@ -16,7 +16,7 @@ RUN wget -O $LIBSGX_ENCLAVE_COMMON "$LIBSGX_ENCLAVE_COMMON_URL" && \
 
 ADD release/services/tms /mesatee/
 ADD release/services/tms.enclave.signed.so /mesatee/
-ADD release/services/enclave_info.txt /mesatee/
+ADD release/services/enclave_info.toml /mesatee/
 ADD release/services/auditors /mesatee/auditors
 
 ENTRYPOINT ["/mesatee/tms"]

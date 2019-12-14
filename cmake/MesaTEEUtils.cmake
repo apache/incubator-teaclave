@@ -154,7 +154,7 @@ function(add_sgx_build_target sgx_lib_path pkg_name)
     if(_module_name STREQUAL "functional_test")
         set(_enclave_info "/dev/null")
     else()
-        set(_enclave_info "${MESATEE_OUT_DIR}/${_module_name}_enclave_info.txt")
+        set(_enclave_info "${MESATEE_OUT_DIR}/${_module_name}_enclave_info.toml")
     endif()
 
     add_custom_target(${_target_name} ALL
@@ -164,10 +164,8 @@ function(add_sgx_build_target sgx_lib_path pkg_name)
         COMMAND ${CMAKE_COMMAND} -E env ${TARGET_SGXLIB_ENVS} SGX_COMMON_CFLAGS=${STR_SGX_COMMON_CFLAGS}
             CUR_MODULE_NAME=${_module_name} CUR_MODULE_PATH=${sgx_lib_path} CUR_INSTALL_DIR=${_copy_dir} ${MT_SCRIPT_DIR}/sgx_link_sign.sh
         ${_depends}
-        COMMAND echo ${_module_name} > ${_enclave_info}
-        COMMAND grep -m1 -A2 "mrsigner->value" ${MESATEE_OUT_DIR}/${_module_name}.enclave.meta.txt >> ${_enclave_info}
-        COMMAND grep -m1 -A2 "body.enclave_hash" ${MESATEE_OUT_DIR}/${_module_name}.enclave.meta.txt >> ${_enclave_info}
-        COMMENT "Building ${_target_name}, enclave info to ${ENCLAVE_INFO}"
+        COMMAND cat ${MESATEE_OUT_DIR}/${_module_name}.enclave.meta.txt | python ${MT_SCRIPT_DIR}/gen_enclave_info_toml.py ${_module_name} > ${_enclave_info}
+        COMMENT "Building ${_target_name}, enclave info to ${_enclave_info}"
         WORKING_DIRECTORY ${MT_SGXLIB_TOML_DIR}
     )
 endfunction()

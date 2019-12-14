@@ -39,7 +39,7 @@ kms  = { listen_address = "0.0.0.0:6016", advertised_address = "172.18.18.102:60
 acs  = { listen_address = "0.0.0.0:5077", advertised_address = "172.18.18.103:5077" }
 
 [audit]
-enclave_info = { path = "enclave_info.txt" }
+enclave_info = { path = "enclave_info.toml" }
 auditor_signatures = [
     { path = "auditors/godzilla/godzilla.sign.sha256" },
     { path = "auditors/optimus_prime/optimus_prime.sign.sha256" },

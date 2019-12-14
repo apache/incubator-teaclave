@@ -12,3 +12,4 @@ tms_external_client  = { path = "../mesatee_services/tms/external/client" }
 tms_external_proto   = { path = "../mesatee_services/tms/external/proto" }
 fns_client           = { path = "../mesatee_services/fns/client" }
 mesatee_core = { version = "0.1.0" }
+teaclave_utils = { path = "../mesatee_utils/teaclave_utils" }

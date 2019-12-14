@@ -21,6 +21,7 @@ use std::prelude::v1::*;
 
 use std::fmt;
 use std::{io, net};
+use teaclave_utils;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -433,6 +434,15 @@ impl From<sgx_types::sgx_status_t> for Error {
     #[inline]
     fn from(status: sgx_types::sgx_status_t) -> Error {
         Error::new(ErrorKind::SgxError, SgxStatus::from(status))
+    }
+}
+
+impl From<teaclave_utils::UtilsError> for Error {
+    #[inline]
+    fn from(err: teaclave_utils::UtilsError) -> Error {
+        match err {
+            teaclave_utils::UtilsError::ParseError => Error::from(ErrorKind::ParseError),
+        }
     }
 }
 

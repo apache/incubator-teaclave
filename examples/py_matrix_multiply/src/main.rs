@@ -44,7 +44,7 @@ fn main() {
             "../services/auditors/albus_dumbledore/albus_dumbledore.sign.sha256",
         ),
     ];
-    let enclave_info_file_path = "../services/enclave_info.txt";
+    let enclave_info_file_path = "../services/enclave_info.toml";
     let info = MesateeEnclaveInfo::load(auditors, enclave_info_file_path).unwrap();
 
     let args_string: Vec<String> = env::args().collect();
