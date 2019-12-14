@@ -4,13 +4,14 @@ extern crate sgx_tstd as std;
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-#[macro_use] extern crate log;
+#[macro_use]
+extern crate log;
 use serde::Deserializer;
 use serde_derive::Deserialize;
 use std::collections::HashMap;
 
 type Result<T> = std::result::Result<T, UtilsError>;
-type SgxMeasure = [u8;32];
+type SgxMeasure = [u8; 32];
 
 pub enum UtilsError {
     ParseError,
@@ -36,9 +37,7 @@ pub fn decode_hex(hex: &str) -> Result<Vec<u8>> {
         if first == ' ' {
             continue;
         }
-        let (_, second) = chars
-            .next()
-            .ok_or_else(|| UtilsError::ParseError)?;
+        let (_, second) = chars.next().ok_or_else(|| UtilsError::ParseError)?;
         r.push((decode_hex_digit(first)? << 4) | decode_hex_digit(second)?);
     }
     Ok(r)
@@ -66,8 +65,7 @@ pub fn percent_decode(orig: String) -> Result<String> {
     ret.push_str(v[0]);
     if v.len() > 1 {
         for s in v[1..].iter() {
-            let digit =
-                u8::from_str_radix(&s[0..2], 16).map_err(|_| UtilsError::ParseError)?;
+            let digit = u8::from_str_radix(&s[0..2], 16).map_err(|_| UtilsError::ParseError)?;
             ret.push(digit as char);
             ret.push_str(&s[2..]);
         }

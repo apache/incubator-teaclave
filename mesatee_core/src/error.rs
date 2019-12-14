@@ -441,7 +441,7 @@ impl From<teaclave_utils::UtilsError> for Error {
     #[inline]
     fn from(err: teaclave_utils::UtilsError) -> Error {
         match err {
-            teaclave_utils::UtilsError::ParseError => Error::from(ErrorKind::ParseError)
+            teaclave_utils::UtilsError::ParseError => Error::from(ErrorKind::ParseError),
         }
     }
 }

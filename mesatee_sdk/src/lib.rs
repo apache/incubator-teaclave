@@ -206,9 +206,9 @@ use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use tdfs_external_client::TDFSClient;
+use teaclave_utils;
 use tms_external_client::TMSClient;
 pub use tms_external_proto::TaskStatus;
-use teaclave_utils;
 
 const SGX_HASH_SIZE: usize = 32;
 

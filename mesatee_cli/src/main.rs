@@ -27,6 +27,7 @@ use fns_proto::{InvokeTaskRequest, InvokeTaskResponse};
 use mesatee_core::config::{OutboundDesc, TargetDesc};
 use mesatee_core::rpc::{channel, sgx};
 use tdfs_external_proto::{DFSRequest, DFSResponse};
+use teaclave_utils;
 use tms_external_proto::{TaskRequest, TaskResponse};
 
 type EnclaveInfo = std::collections::HashMap<String, (sgx::SgxMeasure, sgx::SgxMeasure)>;
@@ -141,8 +142,10 @@ fn main() -> CliResult {
         let (key, sig_path) = auditor;
         enclave_signers.push((key.as_slice(), sig_path.as_path()));
     }
-    let enclave_info =
-        sgx::load_and_verify_enclave_info(&args.enclave_info, enclave_signers.as_slice());
+    let enclave_info = teaclave_utils::load_and_verify_enclave_info(
+        &args.enclave_info,
+        enclave_signers.as_slice(),
+    );
 
     let reader: Box<dyn Read> = match args.input {
         Some(i) => Box::new(io::BufReader::new(fs::File::open(i)?)),
