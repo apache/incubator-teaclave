@@ -31,7 +31,7 @@ use mesatee_core::ipc::protos::ecall::{FinalizeEnclaveInput, FinalizeEnclaveOutp
 use mesatee_core::ipc::protos::ecall::{InitEnclaveInput, InitEnclaveOutput};
 use mesatee_core::ipc::protos::ECallCommand;
 use mesatee_core::ipc::IpcSender;
-use mesatee_core::{utils::sgx_launch_check, Error, ErrorKind, Result};
+use mesatee_core::{Error, ErrorKind, Result};
 
 static ENCLAVE_FILE_SUFFIX: &str = "enclave.signed.so";
 static ENCLAVE_TOKEN_SUFFIX: &str = "enclave.token";
@@ -54,7 +54,6 @@ pub struct TeeBinder {
 
 impl TeeBinder {
     pub fn new(name: &str, debug_launch: i32) -> Result<TeeBinder> {
-        sgx_launch_check()?;
         let name = name.to_string();
         let enclave = init_enclave(&name, debug_launch)?;
         let enclave_id = enclave.geteid();
