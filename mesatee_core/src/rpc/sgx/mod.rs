@@ -83,16 +83,12 @@ pub(crate) fn load_presigned_enclave_info() -> HashMap<String, EnclaveMeasuremen
         signatures.push(signature);
     }
 
-    for k in BUILD_CONFIG.auditor_public_keys {
-        let mut verified = false;
-        for s in &signatures {
-            if teaclave_utils::verify_enclave_info(enclave_info_content.as_bytes(), k, s) {
-                verified = true;
-            }
-        }
-        if !verified {
-            panic!("Failed to verify the signatures of enclave info.");
-        }
+    if !teaclave_utils::verify_enclave_info(
+        enclave_info_content.as_bytes(),
+        BUILD_CONFIG.auditor_public_keys,
+        &signatures,
+    ) {
+        panic!("Failed to verify the signatures of enclave info.");
     }
 
     teaclave_utils::load_enclave_info(&enclave_info_content)

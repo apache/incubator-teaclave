@@ -81,7 +81,7 @@ where
     use serde::Deserialize;
     String::deserialize(deserializer).and_then(|string| {
         let v = decode_hex(&string).map_err(|_| Error::custom("ParseError"))?;
-        let mut array = [0; 32];
+        let mut array = [0; SGX_HASH_SIZE];
         let bytes = &v[..array.len()]; // panics if not enough data
         array.copy_from_slice(bytes);
         Ok(array)
@@ -109,12 +109,29 @@ impl EnclaveMeasurement {
     }
 }
 
-pub fn verify_enclave_info(enclave_info: &[u8], public_key: &[u8], signature: &[u8]) -> bool {
+pub fn verify_enclave_info(
+    enclave_info: &[u8],
+    public_keys: &[&[u8]],
+    signatures: &[Vec<u8>],
+) -> bool {
     use ring::signature;
 
-    signature::UnparsedPublicKey::new(&signature::RSA_PKCS1_2048_8192_SHA256, public_key)
-        .verify(enclave_info, signature)
-        .is_ok()
+    for k in public_keys {
+        let mut verified = false;
+        for s in signatures {
+            if signature::UnparsedPublicKey::new(&signature::RSA_PKCS1_2048_8192_SHA256, k)
+                .verify(enclave_info, &s)
+                .is_ok()
+            {
+                verified = true;
+            }
+        }
+        if !verified {
+            return false;
+        }
+    }
+
+    true
 }
 
 pub fn load_enclave_info(content: &str) -> std::collections::HashMap<String, EnclaveMeasurement> {
