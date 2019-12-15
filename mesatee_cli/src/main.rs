@@ -25,12 +25,13 @@ use std::{net, path};
 
 use fns_proto::{InvokeTaskRequest, InvokeTaskResponse};
 use mesatee_core::config::{OutboundDesc, TargetDesc};
-use mesatee_core::rpc::{channel, sgx};
+use mesatee_core::rpc::channel;
 use tdfs_external_proto::{DFSRequest, DFSResponse};
 use teaclave_utils;
+use teaclave_utils::EnclaveMeasurement;
 use tms_external_proto::{TaskRequest, TaskResponse};
 
-type EnclaveInfo = std::collections::HashMap<String, (sgx::SgxMeasure, sgx::SgxMeasure)>;
+type EnclaveInfo = std::collections::HashMap<String, EnclaveMeasurement>;
 
 #[derive(Debug, PartialEq)]
 enum Endpoint {
@@ -142,10 +143,9 @@ fn main() -> CliResult {
         let (key, sig_path) = auditor;
         enclave_signers.push((key.as_slice(), sig_path.as_path()));
     }
-    let enclave_info = teaclave_utils::load_and_verify_enclave_info(
-        &args.enclave_info,
-        enclave_signers.as_slice(),
-    );
+    let enclave_info_content = fs::read_to_string(&args.enclave_info)
+        .unwrap_or_else(|_| panic!("Cannot find enclave info at {:?}.", args.enclave_info));
+    let enclave_info = teaclave_utils::load_enclave_info(&enclave_info_content);
 
     let reader: Box<dyn Read> = match args.input {
         Some(i) => Box::new(io::BufReader::new(fs::File::open(i)?)),

@@ -21,7 +21,6 @@
 use serde::{de::DeserializeOwned, Serialize};
 #[cfg(feature = "mesalock_sgx")]
 use sgx_types::c_int;
-use sgx_types::SGX_HASH_SIZE;
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use std::io::{self, Read, Write};
@@ -39,6 +38,7 @@ use crate::Result;
 use teaclave_config::build_config::BUILD_CONFIG;
 use teaclave_config::runtime_config::RUNTIME_CONFIG;
 use teaclave_utils;
+use teaclave_utils::EnclaveMeasurement;
 
 #[macro_use]
 mod fail;
@@ -60,40 +60,47 @@ pub fn prelude() {
     ra::get_ra_cert();
 }
 
-pub type SgxMeasure = [u8; SGX_HASH_SIZE];
-
-// TODO: We hardcoded THREE auditors for now. Later we need to support arbitrary numbers of auditors.
-pub(crate) fn load_presigned_enclave_info() -> HashMap<String, (SgxMeasure, SgxMeasure)> {
+pub(crate) fn load_presigned_enclave_info() -> HashMap<String, EnclaveMeasurement> {
     use teaclave_config::ConfigSource;
+
+    #[cfg(not(feature = "mesalock_sgx"))]
+    use std::fs;
+    #[cfg(feature = "mesalock_sgx")]
+    use std::untrusted::fs;
+
     let ConfigSource::Path(ref enclave_info_path) = RUNTIME_CONFIG.audit.enclave_info;
-    let ConfigSource::Path(ref auditor_0_signature_path) =
-        RUNTIME_CONFIG.audit.auditor_signatures[0];
-    let ConfigSource::Path(ref auditor_1_signature_path) =
-        RUNTIME_CONFIG.audit.auditor_signatures[1];
-    let ConfigSource::Path(ref auditor_2_signature_path) =
-        RUNTIME_CONFIG.audit.auditor_signatures[2];
+    let enclave_info_content = fs::read_to_string(enclave_info_path)
+        .unwrap_or_else(|_| panic!("Cannot find enclave info at {:?}.", enclave_info_path));
 
-    let enclave_signers: Vec<(&'static [u8], &std::path::Path)> = vec![
-        (
-            BUILD_CONFIG.auditor_public_keys[0],
-            &auditor_0_signature_path,
-        ),
-        (
-            BUILD_CONFIG.auditor_public_keys[1],
-            &auditor_1_signature_path,
-        ),
-        (
-            BUILD_CONFIG.auditor_public_keys[2],
-            &auditor_2_signature_path,
-        ),
-    ];
+    if RUNTIME_CONFIG.audit.auditor_signatures.len() < BUILD_CONFIG.auditor_public_keys.len() {
+        panic!("Number of auditor signatures is not enough for verification.")
+    }
 
-    teaclave_utils::load_and_verify_enclave_info(&enclave_info_path, enclave_signers.as_slice())
+    let mut signatures: Vec<Vec<u8>> = vec![];
+    for ConfigSource::Path(ref path) in &RUNTIME_CONFIG.audit.auditor_signatures {
+        let signature =
+            fs::read(path).unwrap_or_else(|_| panic!("Cannot find signature file {:?}.", path));
+        signatures.push(signature);
+    }
+
+    for k in BUILD_CONFIG.auditor_public_keys {
+        let mut verified = false;
+        for s in &signatures {
+            if teaclave_utils::verify_enclave_info(enclave_info_content.as_bytes(), k, s) {
+                verified = true;
+            }
+        }
+        if !verified {
+            panic!("Failed to verify the signatures of enclave info.");
+        }
+    }
+
+    teaclave_utils::load_enclave_info(&enclave_info_content)
 }
 
 #[derive(Clone)]
 pub struct EnclaveAttr {
-    pub measures: Vec<(SgxMeasure, SgxMeasure)>,
+    pub measures: Vec<EnclaveMeasurement>,
     pub quote_checker: fn(&SgxQuote) -> bool,
 }
 
@@ -108,9 +115,9 @@ impl Eq for EnclaveAttr {}
 
 impl Hash for EnclaveAttr {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        for (m1, m2) in &self.measures {
-            m1.hash(state);
-            m2.hash(state);
+        for m in &self.measures {
+            m.mr_enclave.hash(state);
+            m.mr_signer.hash(state);
         }
         (self.quote_checker as usize).hash(state);
     }
@@ -156,9 +163,10 @@ impl EnclaveAttr {
         let this_mr_signer = &quote.body.report_body.mr_signer;
         let this_mr_enclave = &quote.body.report_body.mr_enclave;
 
-        let checksum_match = self.measures.iter().any(|(mr_signer, mr_enclave)| {
-            mr_signer == this_mr_signer && mr_enclave == this_mr_enclave
-        });
+        let checksum_match = self
+            .measures
+            .iter()
+            .any(|m| &m.mr_signer == this_mr_signer && &m.mr_enclave == this_mr_enclave);
 
         checksum_match && (self.quote_checker)(&quote)
     }
