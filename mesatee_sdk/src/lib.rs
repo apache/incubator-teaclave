@@ -210,11 +210,6 @@ use teaclave_utils;
 use tms_external_client::TMSClient;
 pub use tms_external_proto::TaskStatus;
 
-const SGX_HASH_SIZE: usize = 32;
-
-/// `SgxMeasure` stores the value of MRENCLAVE and MRSIGNER.
-pub type SgxMeasure = [u8; SGX_HASH_SIZE];
-
 /// `Mesatee` stands for a connection to MesaTEE Service
 ///
 /// To connect to a MesaTEE Service, one should be clear about:
@@ -380,10 +375,14 @@ impl Mesatee {
         for (der, hash) in enclave_info.enclave_signers.iter() {
             enclave_signers.push((&der, hash.as_path()));
         }
-        let enclave_identities = teaclave_utils::load_and_verify_enclave_info(
-            &enclave_info.enclave_info_file_path,
-            &enclave_signers,
-        );
+        let enclave_info_content = fs::read_to_string(&enclave_info.enclave_info_file_path)
+            .unwrap_or_else(|_| {
+                panic!(
+                    "Cannot find enclave info at {:?}.",
+                    enclave_info.enclave_info_file_path
+                )
+            });
+        let enclave_identities = teaclave_utils::load_enclave_info(&enclave_info_content);
 
         let tms_outbound_desc = OutboundDesc::new(
             *enclave_identities

@@ -19,10 +19,11 @@
 // we cannot use the &'static str in this struct.
 
 use crate::rpc::sgx::load_presigned_enclave_info;
-use crate::rpc::sgx::{EnclaveAttr, SgxMeasure};
+use crate::rpc::sgx::EnclaveAttr;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::prelude::v1::*;
+use teaclave_utils::EnclaveMeasurement;
 
 #[derive(Clone)]
 pub struct TargetDesc {
@@ -52,7 +53,7 @@ impl OutboundDesc {
         OutboundDesc::Sgx(get_trusted_enclave_attr(vec!["fns"]))
     }
 
-    pub fn new(measures: (SgxMeasure, SgxMeasure)) -> OutboundDesc {
+    pub fn new(measures: EnclaveMeasurement) -> OutboundDesc {
         OutboundDesc::Sgx(EnclaveAttr {
             measures: vec![measures],
             quote_checker: universal_quote_check,
@@ -74,7 +75,7 @@ impl ServiceConfig {
 use lazy_static::lazy_static;
 
 lazy_static! {
-    pub static ref ENCLAVE_IDENTITIES: HashMap<String, (SgxMeasure, SgxMeasure)> =
+    pub static ref ENCLAVE_IDENTITIES: HashMap<String, EnclaveMeasurement> =
         load_presigned_enclave_info();
 }
 
