@@ -15,8 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use structopt::StructOpt;
 use exitfailure::ExitFailure;
+use structopt::StructOpt;
 
 use std::fs;
 use std::io::{self, Read, Write};
