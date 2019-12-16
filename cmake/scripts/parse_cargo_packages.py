@@ -61,7 +61,7 @@ def pkg_path_2_category(pkg_path):
         return 'examples'
     elif pkg_path.startswith('tests/'):
         return 'tests'
-    elif pkg_path == 'mesatee_cli':
+    elif pkg_path == 'teaclave_cli':
         return 'bin'
     else:
         sys.stderr.write('[Error]: Unknown category for package_path {}\n'.format(pkg_path))

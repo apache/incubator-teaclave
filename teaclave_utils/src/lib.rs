@@ -109,18 +109,18 @@ impl EnclaveMeasurement {
     }
 }
 
-pub fn verify_enclave_info(
-    enclave_info: &[u8],
-    public_keys: &[&[u8]],
-    signatures: &[Vec<u8>],
-) -> bool {
+pub fn verify_enclave_info<T, U>(enclave_info: &[u8], public_keys: &[T], signatures: &[U]) -> bool
+where
+    T: AsRef<[u8]>,
+    U: AsRef<[u8]>,
+{
     use ring::signature;
 
     for k in public_keys {
         let mut verified = false;
         for s in signatures {
             if signature::UnparsedPublicKey::new(&signature::RSA_PKCS1_2048_8192_SHA256, k)
-                .verify(enclave_info, &s)
+                .verify(enclave_info, s.as_ref())
                 .is_ok()
             {
                 verified = true;

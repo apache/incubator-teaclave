@@ -37,8 +37,8 @@ use crate::rpc::sendrecv::*;
 // and V.
 pub trait RpcServer<U, V, X>: Read + Write
 where
-    U: DeserializeOwned,
-    V: Serialize,
+    U: DeserializeOwned + std::fmt::Debug,
+    V: Serialize + std::fmt::Debug,
     X: EnclaveService<U, V>,
     Self: Sized,
 {
@@ -65,12 +65,14 @@ where
             // recv_buf should be a serialized incoming request U
             // The server needs deser it into U first
             let request: U = serde_json::from_slice(&recv_buf)?;
+            debug!("request: {:?}", request);
             let result: V = x.handle_invoke(request)?;
-            let ret: Vec<u8> = serde_json::to_vec(&result)?;
+            let response: Vec<u8> = serde_json::to_vec(&result)?;
+            debug!("response {:?}", response);
 
             // Now the result is stored in ret and we need to sent it back.
             // `ret` is cleared here. Performance is not very good.
-            send_vec(self, ret)?;
+            send_vec(self, response)?;
         }
     }
 }

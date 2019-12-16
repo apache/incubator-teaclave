@@ -15,7 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use exitfailure::ExitFailure;
 use quicli::prelude::*;
 use structopt::StructOpt;
 
@@ -54,41 +53,58 @@ impl std::str::FromStr for Endpoint {
 }
 
 #[derive(Debug, StructOpt)]
-/// MeasTEE client
-struct Cli {
-    #[structopt(short = "o", long, name = "IN_FILE", parse(from_os_str))]
-    /// Write to FILE instead of stdout
-    output: Option<path::PathBuf>,
-
-    #[structopt(short = "i", long, name = "OUT_FILE", parse(from_os_str))]
-    /// Read from FILE instead of stdin
-    input: Option<path::PathBuf>,
-
-    #[structopt(flatten)]
-    verbosity: clap_flags::Verbosity,
-
-    #[structopt(flatten)]
-    logger: clap_flags::Log,
-
-    #[structopt(short = "e", long, required = true)]
-    /// MesaTEE endpoint to connect to. Possible values are: tms, tdfs, fns.
-    endpoint: Endpoint,
-
-    #[structopt(name = "SOCKET_ADDRESS", name = "IP_ADDRESS:PORT")]
-    /// Address and port of the MeasTEE endpoint
-    addr: net::SocketAddr,
-
+struct AuditOpt {
     #[structopt(short = "k", long, required = true)]
-    /// SPACE seperated paths of MesaTEE auditor public keys
-    auditor_keys: Vec<path::PathBuf>,
+    /// SPACE separated paths of Teaclave auditor public keys
+    auditor_public_keys: Vec<path::PathBuf>,
 
     #[structopt(short = "s", long, required = true)]
-    /// SPACE seperated paths of MesaTEE auditor endorsement signatures.
-    auditor_sigs: Vec<path::PathBuf>,
+    /// SPACE separated paths of Teaclave auditor endorsement signatures.
+    auditor_signatures: Vec<path::PathBuf>,
 
-    #[structopt(short = "c", long)]
-    /// Path to Enclave info file
+    #[structopt(short = "c", long, required = true, name = "ENCLAVE_INFO_FILE")]
+    /// Path to Enclave info file.
     enclave_info: path::PathBuf,
+}
+
+#[derive(Debug, StructOpt)]
+struct ConnectOpt {
+    #[structopt(short = "o", long, name = "INPUT_FILE", parse(from_os_str))]
+    /// Write to FILE instead of stdout.
+    output: Option<path::PathBuf>,
+
+    #[structopt(short = "i", long, name = "OUTPUT_FILE", parse(from_os_str))]
+    /// Read from FILE instead of stdin.
+    input: Option<path::PathBuf>,
+
+    #[structopt(short = "e", long, required = true)]
+    /// Teaclave endpoint to connect to. Possible values are: tms, tdfs, fns.
+    endpoint: Endpoint,
+
+    #[structopt(name = "IP_ADDRESS:PORT", required = true)]
+    /// Address and port of the Teaclave endpoint.
+    addr: net::SocketAddr,
+
+    #[structopt(short = "c", long, required = true, name = "ENCLAVE_INFO_FILE")]
+    /// Path to Enclave info file.
+    enclave_info: path::PathBuf,
+}
+
+#[derive(Debug, StructOpt)]
+enum Command {
+    /// Audit enclave info with auditors' public keys and signatures.
+    #[structopt(name = "audit")]
+    Audit(AuditOpt),
+    /// Connect and send messages to Teaclave services
+    #[structopt(name = "connect")]
+    Connect(ConnectOpt),
+}
+
+#[derive(Debug, StructOpt)]
+/// Teaclave command line tool
+struct Cli {
+    #[structopt(subcommand)]
+    command: Command,
 }
 
 macro_rules! generate_runner_for {
@@ -98,7 +114,7 @@ macro_rules! generate_runner_for {
             addr: net::SocketAddr,
             reader: R,
             writer: W,
-        ) -> Result<(), ExitFailure> {
+        ) -> Result<(), failure::Error> {
             let outbound_desc =
                 OutboundDesc::new(*enclave_info.get(stringify!($endpoint)).unwrap());
             let target_desc = TargetDesc::new(addr, outbound_desc);
@@ -121,30 +137,8 @@ generate_runner_for!(tms, TaskRequest, TaskResponse);
 generate_runner_for!(tdfs, DFSRequest, DFSResponse);
 generate_runner_for!(fns, InvokeTaskRequest, InvokeTaskResponse);
 
-fn main() -> CliResult {
-    let args = Cli::from_args();
-    if args.auditor_keys.len() != args.auditor_sigs.len() {
-        return Err(
-            failure::err_msg("auditor_keys auditor_sigs have different sizes".to_string()).into(),
-        );
-    }
-
-    args.logger.log_all(args.verbosity.log_level())?;
-
-    let mut keys = vec![];
-    for key_path in args.auditor_keys.iter() {
-        let mut buf = vec![];
-        let mut f = fs::File::open(key_path)?;
-        let _ = f.read_to_end(&mut buf)?;
-        keys.push(buf);
-    }
-    let mut enclave_signers = vec![];
-    for auditor in keys.iter().zip(args.auditor_sigs.iter()) {
-        let (key, sig_path) = auditor;
-        enclave_signers.push((key.as_slice(), sig_path.as_path()));
-    }
-    let enclave_info_content = fs::read_to_string(&args.enclave_info)
-        .unwrap_or_else(|_| panic!("Cannot find enclave info at {:?}.", args.enclave_info));
+fn connect(args: ConnectOpt) -> Result<(), failure::Error> {
+    let enclave_info_content = fs::read_to_string(&args.enclave_info)?;
     let enclave_info = teaclave_utils::load_enclave_info(&enclave_info_content);
 
     let reader: Box<dyn Read> = match args.input {
@@ -160,5 +154,34 @@ fn main() -> CliResult {
         Endpoint::TMS => tms(&enclave_info, args.addr, reader, writer),
         Endpoint::TDFS => tdfs(&enclave_info, args.addr, reader, writer),
         Endpoint::FNS => fns(&enclave_info, args.addr, reader, writer),
+    }
+}
+
+fn audit(args: AuditOpt) -> Result<(), failure::Error> {
+    let enclave_info_content = fs::read_to_string(&args.enclave_info)?;
+    let mut keys: Vec<Vec<u8>> = vec![];
+    for key_path in args.auditor_public_keys.iter() {
+        let buf = fs::read(key_path)?;
+        keys.push(buf);
+    }
+    let mut signatures: Vec<Vec<u8>> = vec![];
+    for path in &args.auditor_signatures {
+        let signature = fs::read(path)?;
+        signatures.push(signature);
+    }
+
+    if teaclave_utils::verify_enclave_info(enclave_info_content.as_bytes(), &keys, &signatures) {
+        println!("Enclave info is successfully verified.");
+        Ok(())
+    } else {
+        Err(failure::err_msg("Cannot verify the enclave info."))
+    }
+}
+
+fn main() -> CliResult {
+    let args = Cli::from_args();
+    match args.command {
+        Command::Audit(audit_args) => Ok(audit(audit_args)?),
+        Command::Connect(connect_args) => Ok(connect(connect_args)?),
     }
 }
