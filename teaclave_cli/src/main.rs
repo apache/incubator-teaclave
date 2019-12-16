@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use quicli::prelude::*;
+use exitfailure::ExitFailure;
 use structopt::StructOpt;
 
 use std::fs;
@@ -31,6 +31,7 @@ use teaclave_utils::EnclaveMeasurement;
 use tms_external_proto::{TaskRequest, TaskResponse};
 
 type EnclaveInfo = std::collections::HashMap<String, EnclaveMeasurement>;
+type CliResult = Result<(), ExitFailure>;
 
 #[derive(Debug, PartialEq)]
 enum Endpoint {
