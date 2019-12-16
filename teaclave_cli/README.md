@@ -89,8 +89,8 @@ $ cat create_task.json | ./teaclave_cli connect 127.0.0.1:5554 -c enclave_info.t
 {"type":"Create","task_id":"20937006-2718-4f33-bae2-567933807436","task_token":"d20ce53ab743d69320712fd98555f5e5","ip":"127.0.0.1","port":3444}
 ```
 
-Compose a invoke task request with `task_id` and `task_token` in the previous
-response.
+Compose a invoke task request with `task_id`, `task_token`, `ip` and `port` in
+the previous response.
 
 ```
 # invoke the "echo" function
