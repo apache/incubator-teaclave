@@ -107,8 +107,8 @@ impl<U, V, X> Write for Pipe<U, V, X> {
 
 impl<U, V, X> RpcServer<U, V, X> for Pipe<U, V, X>
 where
-    U: DeserializeOwned,
-    V: Serialize,
+    U: DeserializeOwned + std::fmt::Debug,
+    V: Serialize + std::fmt::Debug,
     X: EnclaveService<U, V>,
 {
     type Config = PipeConfig;
