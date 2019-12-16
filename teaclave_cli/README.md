@@ -69,7 +69,7 @@ $ ./teaclave_cli audit \
   -s auditors/albus_dumbledore/albus_dumbledore.sign.sha256 \
      auditors/godzilla/godzilla.sign.sha256 \
      auditors/optimus_prime/optimus_prime.sign.sha256
-Enclave info are successfully verified.
+Enclave info is successfully verified.
 ```
 
 This example is to create a task and invoke the "echo" function.

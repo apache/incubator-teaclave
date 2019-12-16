@@ -171,7 +171,7 @@ fn audit(args: AuditOpt) -> Result<(), failure::Error> {
     }
 
     if teaclave_utils::verify_enclave_info(enclave_info_content.as_bytes(), &keys, &signatures) {
-        println!("Enclave info are successfully verified.");
+        println!("Enclave info is successfully verified.");
         Ok(())
     } else {
         Err(failure::err_msg("Cannot verify the enclave info."))
