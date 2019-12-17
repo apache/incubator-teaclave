@@ -17,7 +17,7 @@ exclude = [
 [patch.crates-io]
 # mesatee_core
 mesatee_core = { path = "./mesatee_core" }
-mesatee_binder = { path = "./mesatee_binder" }
+teaclave_binder = { path = "./teaclave_binder" }
 
 # We cannot remove these crates, because proto crates depend on them
 sgx_cov = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.9" }

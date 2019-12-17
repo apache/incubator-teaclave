@@ -28,7 +28,7 @@ mod tests;
 mod unittest;
 use unittest::*;
 
-use mesatee_binder::TeeBinder;
+use teaclave_binder::TeeBinder;
 use std::sync::Arc;
 
 fn run_test_in_tee(tee: &TeeBinder) -> Result<()> {
@@ -75,7 +75,7 @@ fn test_in_tee() -> Result<()> {
         let ref_tee = tee.clone();
         ctrlc::set_handler(move || {
             info!("\nCTRL+C pressed. Destroying server enclave");
-            let _ = ref_tee.finalize();
+            ref_tee.finalize();
             std::process::exit(0);
         })
         .expect("Error setting Ctrl-C handler");

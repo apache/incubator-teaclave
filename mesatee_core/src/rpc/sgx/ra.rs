@@ -56,25 +56,31 @@ pub const CERT_VALID_DAYS: i64 = 90i64;
 
 extern "C" {
     fn ocall_sgx_init_quote(
-        ret_val: *mut sgx_status_t,
-        ret_ti: *mut sgx_target_info_t,
-        ret_gid: *mut sgx_epid_group_id_t,
+        p_retval: *mut sgx_status_t,
+        p_target_info: *mut sgx_target_info_t,
+        p_gid: *mut sgx_epid_group_id_t,
     ) -> sgx_status_t;
 
-    fn ocall_get_ias_socket(ret_val: *mut sgx_status_t, ret_fd: *mut i32) -> sgx_status_t;
+    fn ocall_sgx_get_ias_socket(p_retval: *mut i32) -> sgx_status_t;
 
-    fn ocall_get_quote(
-        ret_val: *mut sgx_status_t,
-        p_sigrl: *const u8,
-        sigrl_len: u32,
+    fn ocall_sgx_calc_quote_size(
+        p_retval: *mut sgx_status_t,
+        p_sig_rl: *const u8,
+        sig_rl_size: u32,
+        p_quote_size: *mut u32,
+    ) -> sgx_status_t;
+
+    fn ocall_sgx_get_quote(
+        p_retval: *mut sgx_status_t,
         p_report: *const sgx_report_t,
         quote_type: sgx_quote_sign_type_t,
         p_spid: *const sgx_spid_t,
         p_nonce: *const sgx_quote_nonce_t,
+        p_sig_rl: *const u8,
+        sig_rl_size: u32,
         p_qe_report: *mut sgx_report_t,
         p_quote: *mut u8,
-        maxlen: u32,
-        p_quote_len: *mut u32,
+        quote_size: u32,
     ) -> sgx_status_t;
 }
 
@@ -263,11 +269,9 @@ fn talk_to_intel_ias(fd: c_int, req: String) -> Result<Vec<u8>> {
 }
 
 fn get_sigrl_from_intel(fd: c_int, gid: u32) -> Result<Vec<u8>> {
-    let ias_key = load_ias_key(&RUNTIME_CONFIG.env.ias_key)?;
-
     let req = format!(
         "GET {}{:08x} HTTP/1.1\r\nHOST: {}\r\nOcp-Apim-Subscription-Key: {}\r\nConnection: Close\r\n\r\n",
-        SIGRL_SUFFIX, gid, DEV_HOSTNAME, ias_key.trim_end()
+        SIGRL_SUFFIX, gid, DEV_HOSTNAME, &RUNTIME_CONFIG.env.ias_key
     );
 
     mayfail! {
@@ -279,15 +283,13 @@ fn get_sigrl_from_intel(fd: c_int, gid: u32) -> Result<Vec<u8>> {
 
 // TODO: support pse
 fn get_report_from_intel(fd: c_int, quote: Vec<u8>) -> Result<AttnReport> {
-    let ias_key = load_ias_key(&RUNTIME_CONFIG.env.ias_key)?;
-
     let encoded_quote = base64::encode(&quote[..]);
     let encoded_json = format!("{{\"isvEnclaveQuote\":\"{}\"}}\r\n", encoded_quote);
 
     let req = format!("POST {} HTTP/1.1\r\nHOST: {}\r\nOcp-Apim-Subscription-Key: {}\r\nConnection: Close\r\nContent-Length:{}\r\nContent-Type: application/json\r\n\r\n{}",
                            REPORT_SUFFIX,
                            DEV_HOSTNAME,
-                           ias_key.trim_end(),
+                           &RUNTIME_CONFIG.env.ias_key,
                            encoded_json.len(),
                            encoded_json);
 
@@ -335,13 +337,11 @@ fn create_attestation_report(pub_k: &sgx_ec256_public_t) -> Result<AttnReport> {
     let mut sigrl_vec: Vec<u8> = Vec::new();
     let mut sigrl_acquired: bool = false;
     for _ in 0..3 {
-        let res = unsafe {
-            ocall_get_ias_socket(&mut rt as *mut sgx_status_t, &mut ias_sock as *mut i32)
-        };
+        let res = unsafe { ocall_sgx_get_ias_socket(&mut ias_sock as *mut i32) };
 
         debug!("got ias_sock = {}", ias_sock);
 
-        if res != sgx_status_t::SGX_SUCCESS || rt != res {
+        if res != sgx_status_t::SGX_SUCCESS || ias_sock < 0 {
             return Err(Error::unknown());
         }
 
@@ -386,9 +386,6 @@ fn create_attestation_report(pub_k: &sgx_ec256_public_t) -> Result<AttnReport> {
 
     os_rng.fill_bytes(&mut quote_nonce.rand);
     let mut qe_report = sgx_report_t::default();
-    const RET_QUOTE_BUF_LEN: u32 = 2048;
-    let mut return_quote_buf: [u8; RET_QUOTE_BUF_LEN as usize] = [0; RET_QUOTE_BUF_LEN as usize];
-    let mut quote_len: u32 = 0;
 
     // (3) Generate the quote
     // Args:
@@ -408,32 +405,34 @@ fn create_attestation_report(pub_k: &sgx_ec256_public_t) -> Result<AttnReport> {
     };
     let p_report = &rep as *const sgx_report_t;
     let quote_type = sgx_quote_sign_type_t::SGX_LINKABLE_SIGNATURE;
-
-    let spid_vec = load_spid(&RUNTIME_CONFIG.env.ias_spid)?;
-
-    let spid_str = std::str::from_utf8(&spid_vec)?;
-    let spid: sgx_spid_t = teaclave_utils::decode_spid(spid_str)?;
-
+    let spid: sgx_spid_t = teaclave_utils::decode_spid(&RUNTIME_CONFIG.env.ias_spid)?;
     let p_spid = &spid as *const sgx_spid_t;
     let p_nonce = &quote_nonce as *const sgx_quote_nonce_t;
     let p_qe_report = &mut qe_report as *mut sgx_report_t;
-    let p_quote = return_quote_buf.as_mut_ptr();
-    let maxlen = RET_QUOTE_BUF_LEN;
-    let p_quote_len = &mut quote_len as *mut u32;
+    let mut quote_len: u32 = 0;
+
+    let res =
+        unsafe { ocall_sgx_calc_quote_size(&mut rt as _, p_sigrl, sigrl_len, &mut quote_len as _) };
+
+    if res != sgx_status_t::SGX_SUCCESS || rt != res {
+        return Err(Error::unknown());
+    }
+
+    let mut quote = vec![0; quote_len as usize];
+    let p_quote = quote.as_mut_ptr();
 
     let res = unsafe {
-        ocall_get_quote(
-            &mut rt as *mut sgx_status_t,
-            p_sigrl,
-            sigrl_len,
+        ocall_sgx_get_quote(
+            &mut rt as _,
             p_report,
             quote_type,
             p_spid,
             p_nonce,
+            p_sigrl,
+            sigrl_len,
             p_qe_report,
             p_quote,
-            maxlen,
-            p_quote_len,
+            quote_len,
         )
     };
 
@@ -461,38 +460,21 @@ fn create_attestation_report(pub_k: &sgx_ec256_public_t) -> Result<AttnReport> {
     // p_qe_report and report.data to confirm the QUOTE has not be modified and
     // is not a replay. It is optional.
     let mut rhs_vec: Vec<u8> = quote_nonce.rand.to_vec();
-    rhs_vec.extend(&return_quote_buf[..quote_len as usize]);
+    rhs_vec.extend(&quote);
     let rhs_hash = rsgx_sha256_slice(&rhs_vec[..]).to_mt_result(file!(), line!())?;
     let lhs_hash = &qe_report.body.report_data.d[..32];
     if rhs_hash != lhs_hash {
         return Err(Error::unknown());
     }
 
-    let quote_vec: Vec<u8> = return_quote_buf[..quote_len as usize].to_vec();
-    let res =
-        unsafe { ocall_get_ias_socket(&mut rt as *mut sgx_status_t, &mut ias_sock as *mut i32) };
+    let quote_vec: Vec<u8> = quote.to_vec();
+    let res = unsafe { ocall_sgx_get_ias_socket(&mut ias_sock as _) };
 
-    if res != sgx_status_t::SGX_SUCCESS || rt != res {
+    if res != sgx_status_t::SGX_SUCCESS || ias_sock < 0 {
         return Err(Error::unknown());
     }
 
     get_report_from_intel(ias_sock, quote_vec)
-}
-
-fn load_ias_key(envvar: &str) -> Result<String> {
-    if envvar.len() == 32 {
-        Ok(envvar.into())
-    } else {
-        Err(Error::from(ErrorKind::RAInternalError))
-    }
-}
-
-fn load_spid(envvar: &str) -> Result<Vec<u8>> {
-    if envvar.len() == 32 {
-        Ok(envvar.as_bytes().into())
-    } else {
-        Err(Error::from(ErrorKind::RAInternalError))
-    }
 }
 
 fn is_tls_config_updated(gen_time: &SystemTime) -> bool {

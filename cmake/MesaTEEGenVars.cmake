@@ -23,7 +23,7 @@ set(MT_SCRIPT_DIR ${PROJECT_SOURCE_DIR}/cmake/scripts)
 set(MT_UNIX_TOML_DIR ${PROJECT_BINARY_DIR}/cmake_tomls/unix_app)
 set(MT_SGXLIB_TOML_DIR ${PROJECT_BINARY_DIR}/cmake_tomls/sgx_trusted_lib)
 set(MT_SGXAPP_TOML_DIR ${PROJECT_BINARY_DIR}/cmake_tomls/sgx_untrusted_app)
-set(MT_EDL_FILE ${PROJECT_SOURCE_DIR}/mesatee_binder/Enclave.edl)
+set(MT_EDL_FILE ${PROJECT_SOURCE_DIR}/teaclave_binder/Enclave.edl)
 
 set(SGX_EDGER8R ${SGX_SDK}/bin/x64/sgx_edger8r)
 set(SGX_ENCLAVE_SIGNER  ${SGX_SDK}/bin/x64/sgx_sign)
