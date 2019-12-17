@@ -68,16 +68,24 @@ pub(crate) fn load_presigned_enclave_info() -> HashMap<String, EnclaveMeasuremen
     #[cfg(feature = "mesalock_sgx")]
     use std::untrusted::fs;
 
-    let ConfigSource::Path(ref enclave_info_path) = RUNTIME_CONFIG.audit.enclave_info;
+    let ConfigSource::Path(ref enclave_info_path) =
+        RUNTIME_CONFIG.as_ref().unwrap().audit.enclave_info;
     let enclave_info_content = fs::read_to_string(enclave_info_path)
         .unwrap_or_else(|_| panic!("Cannot find enclave info at {:?}.", enclave_info_path));
 
-    if RUNTIME_CONFIG.audit.auditor_signatures.len() < BUILD_CONFIG.auditor_public_keys.len() {
+    if RUNTIME_CONFIG
+        .as_ref()
+        .unwrap()
+        .audit
+        .auditor_signatures
+        .len()
+        < BUILD_CONFIG.auditor_public_keys.len()
+    {
         panic!("Number of auditor signatures is not enough for verification.")
     }
 
     let mut signatures: Vec<Vec<u8>> = vec![];
-    for ConfigSource::Path(ref path) in &RUNTIME_CONFIG.audit.auditor_signatures {
+    for ConfigSource::Path(ref path) in &RUNTIME_CONFIG.as_ref().unwrap().audit.auditor_signatures {
         let signature =
             fs::read(path).unwrap_or_else(|_| panic!("Cannot find signature file {:?}.", path));
         signatures.push(signature);

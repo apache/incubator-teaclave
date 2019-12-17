@@ -2,6 +2,8 @@
 #![cfg_attr(feature = "mesalock_sgx", no_std)]
 #[cfg(feature = "mesalock_sgx")]
 extern crate sgx_tstd as std;
+#[macro_use]
+extern crate log;
 
 pub use runtime_config::ConfigSource;
 
@@ -79,25 +81,43 @@ pub mod runtime_config {
     }
 
     lazy_static! {
-        pub static ref RUNTIME_CONFIG: RuntimeConfig = {
+        pub static ref RUNTIME_CONFIG: Option<RuntimeConfig> = {
             #[cfg(feature = "mesalock_sgx")]
             use std::prelude::v1::*;
-            let contents = fs::read_to_string("runtime.config.toml")
-                .expect("Something went wrong reading the runtime config file.");
-            let mut config: RuntimeConfig = toml::from_str(&contents).unwrap();
+            let contents = match fs::read_to_string("runtime.config.toml") {
+                Ok(c) => c,
+                Err(_) => {
+                    error!("Something went wrong reading the runtime config file.");
+                    return None;
+                }
+            };
+            let mut config: RuntimeConfig = match toml::from_str(&contents) {
+                Ok(c) => c,
+                Err(_) => {
+                    error!("Something went wrong reading the runtime config file.");
+                    return None;
+                }
+            };
             if !cfg!(sgx_sim) {
-                let ias_spid = env::var("IAS_SPID")
-                    .expect("Cannot find IAS_SPID from environment variables.")
-                    .trim()
-                    .to_string();
-                let ias_key = env::var("IAS_KEY")
-                    .expect("Cannot find IAS_KEY from environment variables.")
-                    .trim()
-                    .to_string();
+                let ias_spid = match env::var("IAS_SPID") {
+                    Ok(e) => e.trim().to_string(),
+                    Err(_) => {
+                        error!("Cannot find IAS_SPID from environment variables.");
+                        return None;
+                    }
+                };
+                let ias_key = match env::var("IAS_KEY") {
+                    Ok(e) => e.trim().to_string(),
+                    Err(_) => {
+                        error!("Cannot find IAS_KEY from environment variables.");
+                        return None;
+                    }
+                };
+
                 config.env = EnvConfig { ias_spid, ias_key };
             }
 
-            config
+            Some(config)
         };
     }
 }

@@ -24,28 +24,48 @@ pub struct External;
 impl External {
     pub fn tms() -> ServiceConfig {
         ServiceConfig::new(
-            RUNTIME_CONFIG.api_endpoints.tms.listen_address,
+            RUNTIME_CONFIG
+                .as_ref()
+                .unwrap()
+                .api_endpoints
+                .tms
+                .listen_address,
             InboundDesc::External,
         )
     }
 
     pub fn fns() -> ServiceConfig {
         ServiceConfig::new(
-            RUNTIME_CONFIG.api_endpoints.fns.listen_address,
+            RUNTIME_CONFIG
+                .as_ref()
+                .unwrap()
+                .api_endpoints
+                .fns
+                .listen_address,
             InboundDesc::External,
         )
     }
 
     pub fn tdfs() -> ServiceConfig {
         ServiceConfig::new(
-            RUNTIME_CONFIG.api_endpoints.tdfs.listen_address,
+            RUNTIME_CONFIG
+                .as_ref()
+                .unwrap()
+                .api_endpoints
+                .tdfs
+                .listen_address,
             InboundDesc::External,
         )
     }
 
     pub fn target_fns() -> TargetDesc {
         TargetDesc::new(
-            RUNTIME_CONFIG.api_endpoints.fns.advertised_address,
+            RUNTIME_CONFIG
+                .as_ref()
+                .unwrap()
+                .api_endpoints
+                .fns
+                .advertised_address,
             OutboundDesc::Sgx(get_trusted_enclave_attr(vec!["fns"])),
         )
     }

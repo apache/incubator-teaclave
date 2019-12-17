@@ -30,3 +30,4 @@ kms_proto           = { path = "../../kms/proto", optional = true}
 sgx_cov             = { version = "0.1.0", optional = true }
 sgx_tstd            = { version = "1.0.9", features = ["net", "backtrace"], optional = true }
 sgx_types           = { version = "1.0.9" }
+teaclave_config = { path = "../../../teaclave_config" }

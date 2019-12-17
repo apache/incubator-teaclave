@@ -21,7 +21,8 @@ use std::prelude::v1::*;
 
 use mesatee_core::config;
 use mesatee_core::prelude::*;
-use mesatee_core::Result;
+use mesatee_core::{Error, ErrorKind, Result};
+use teaclave_config::runtime_config::RUNTIME_CONFIG;
 
 use env_logger;
 use std::backtrace::{self, PrintFormat};
@@ -78,6 +79,10 @@ fn handle_init_enclave(_args: &InitEnclaveInput) -> Result<InitEnclaveOutput> {
         PrintFormat::Full,
     );
     mesatee_core::rpc::sgx::prelude();
+
+    if RUNTIME_CONFIG.is_none() {
+        return Err(Error::from(ErrorKind::ECallError));
+    }
 
     Ok(InitEnclaveOutput::default())
 }

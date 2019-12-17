@@ -28,6 +28,7 @@ use mesatee_core::{Error, ErrorKind, Result};
 
 use env_logger;
 use std::backtrace::{self, PrintFormat};
+use teaclave_config::runtime_config::RUNTIME_CONFIG;
 
 use crate::acs::ACSEnclave;
 
@@ -87,6 +88,10 @@ fn handle_init_enclave(_args: &InitEnclaveInput) -> Result<InitEnclaveOutput> {
         PrintFormat::Full,
     );
     mesatee_core::rpc::sgx::prelude();
+
+    if RUNTIME_CONFIG.is_none() {
+        return Err(Error::from(ErrorKind::ECallError));
+    }
 
     eprintln!("setting up acs model");
 

@@ -26,56 +26,96 @@ pub struct Internal;
 impl Internal {
     pub fn tms() -> ServiceConfig {
         ServiceConfig::new(
-            RUNTIME_CONFIG.internal_endpoints.tms.listen_address,
+            RUNTIME_CONFIG
+                .as_ref()
+                .unwrap()
+                .internal_endpoints
+                .tms
+                .listen_address,
             InboundDesc::Sgx(get_trusted_enclave_attr(vec!["fns"])),
         )
     }
 
     pub fn kms() -> ServiceConfig {
         ServiceConfig::new(
-            RUNTIME_CONFIG.internal_endpoints.kms.listen_address,
+            RUNTIME_CONFIG
+                .as_ref()
+                .unwrap()
+                .internal_endpoints
+                .kms
+                .listen_address,
             InboundDesc::Sgx(get_trusted_enclave_attr(vec!["fns", "tdfs"])),
         )
     }
 
     pub fn tdfs() -> ServiceConfig {
         ServiceConfig::new(
-            RUNTIME_CONFIG.internal_endpoints.tdfs.listen_address,
+            RUNTIME_CONFIG
+                .as_ref()
+                .unwrap()
+                .internal_endpoints
+                .tdfs
+                .listen_address,
             InboundDesc::Sgx(get_trusted_enclave_attr(vec!["fns", "tms"])),
         )
     }
 
     pub fn acs() -> ServiceConfig {
         ServiceConfig::new(
-            RUNTIME_CONFIG.internal_endpoints.acs.listen_address,
+            RUNTIME_CONFIG
+                .as_ref()
+                .unwrap()
+                .internal_endpoints
+                .acs
+                .listen_address,
             InboundDesc::Sgx(get_trusted_enclave_attr(vec!["kms", "tms", "tdfs"])),
         )
     }
 
     pub fn target_tms() -> TargetDesc {
         TargetDesc::new(
-            RUNTIME_CONFIG.internal_endpoints.tms.advertised_address,
+            RUNTIME_CONFIG
+                .as_ref()
+                .unwrap()
+                .internal_endpoints
+                .tms
+                .advertised_address,
             OutboundDesc::Sgx(get_trusted_enclave_attr(vec!["tms"])),
         )
     }
 
     pub fn target_kms() -> TargetDesc {
         TargetDesc::new(
-            RUNTIME_CONFIG.internal_endpoints.kms.advertised_address,
+            RUNTIME_CONFIG
+                .as_ref()
+                .unwrap()
+                .internal_endpoints
+                .kms
+                .advertised_address,
             OutboundDesc::Sgx(get_trusted_enclave_attr(vec!["kms"])),
         )
     }
 
     pub fn target_tdfs() -> TargetDesc {
         TargetDesc::new(
-            RUNTIME_CONFIG.internal_endpoints.tdfs.advertised_address,
+            RUNTIME_CONFIG
+                .as_ref()
+                .unwrap()
+                .internal_endpoints
+                .tdfs
+                .advertised_address,
             OutboundDesc::Sgx(get_trusted_enclave_attr(vec!["tdfs"])),
         )
     }
 
     pub fn target_acs() -> TargetDesc {
         TargetDesc::new(
-            RUNTIME_CONFIG.internal_endpoints.acs.advertised_address,
+            RUNTIME_CONFIG
+                .as_ref()
+                .unwrap()
+                .internal_endpoints
+                .acs
+                .advertised_address,
             OutboundDesc::Sgx(get_trusted_enclave_attr(vec!["acs"])),
         )
     }
