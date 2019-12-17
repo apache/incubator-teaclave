@@ -28,8 +28,8 @@ mod tests;
 mod unittest;
 use unittest::*;
 
-use teaclave_binder::TeeBinder;
 use std::sync::Arc;
+use teaclave_binder::TeeBinder;
 
 fn run_test_in_tee(tee: &TeeBinder) -> Result<()> {
     trace!("Running as Functional Test Client ...");

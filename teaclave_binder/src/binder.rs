@@ -78,8 +78,8 @@ impl TeeBinder {
             ECallCommand::FinalizeEnclave.into(),
             args_info,
         ) {
-            Ok(_) => {},
-            Err(e) => info!("{:?}", e)
+            Ok(_) => {}
+            Err(e) => info!("{:?}", e),
         }
     }
 }
@@ -92,8 +92,8 @@ impl Drop for TeeBinder {
 }
 
 fn init_enclave(enclave_name: &str, debug_launch: i32) -> Result<SgxEnclave> {
-    let mut launch_token: sgx_launch_token_t = [0; 1024];    // launch_token is deprecated
-    let mut launch_token_updated: i32 = 0;    // launch_token is deprecated
+    let mut launch_token: sgx_launch_token_t = [0; 1024]; // launch_token is deprecated
+    let mut launch_token_updated: i32 = 0; // launch_token is deprecated
 
     let mut misc_attr = sgx_misc_attribute_t {
         secs_attr: sgx_attributes_t { flags: 0, xfrm: 0 },
@@ -105,8 +105,8 @@ fn init_enclave(enclave_name: &str, debug_launch: i32) -> Result<SgxEnclave> {
     let enclave = SgxEnclave::create(
         enclave_file,
         debug_launch,
-        &mut launch_token,    // launch_token is deprecated
-        &mut launch_token_updated,   // launch_token is deprecated
+        &mut launch_token,         // launch_token is deprecated
+        &mut launch_token_updated, // launch_token is deprecated
         &mut misc_attr,
     )?;
 

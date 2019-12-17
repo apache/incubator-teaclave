@@ -25,8 +25,8 @@ use std::net::TcpListener;
 use std::os::unix::io::IntoRawFd;
 use threadpool::ThreadPool;
 
-use teaclave_binder::TeeBinder;
 use std::sync::Arc;
+use teaclave_binder::TeeBinder;
 
 use std::thread;
 
