@@ -30,7 +30,8 @@ use webpki;
 use webpki_roots;
 use yasna;
 
-use sgx_rand::*;
+use sgx_rand::os::SgxRng;
+use sgx_rand::Rng;
 use sgx_tcrypto::*;
 use sgx_tse::*;
 use sgx_types::*;
@@ -39,15 +40,13 @@ use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::ptr;
 use std::sync::{Arc, SgxRwLock};
-use std::time::*;
+use std::time::{SystemTime, UNIX_EPOCH};
 use std::untrusted::time::SystemTimeEx;
 
 use lazy_static::lazy_static;
 
 use super::fail::MayfailTrace;
-use crate::Error;
-use crate::ErrorKind;
-use crate::Result;
+use crate::{Error, ErrorKind, Result};
 
 use teaclave_config::runtime_config::RUNTIME_CONFIG;
 use teaclave_utils;
@@ -176,7 +175,7 @@ fn parse_response_attn_report(resp: &[u8]) -> Result<AttnReport> {
         match header.name {
             "Content-Length" => {
                 let len_num = mayfail! {
-                    len_str =<< String::from_utf8(header.value.to_vec());
+                    len_str =<< std::str::from_utf8(header.value);
                     n =<< len_str.parse::<u32>();
                     ret n
                 };
@@ -234,7 +233,7 @@ fn parse_response_sigrl(resp: &[u8]) -> Result<Vec<u8>> {
 
     let len_num = mayfail! {
         header =<< respp.headers.iter().find(|&&header| header.name == "Content-Length");
-        len_str =<< String::from_utf8(header.value.to_vec());
+        len_str =<< std::str::from_utf8(header.value);
         len_num =<< len_str.parse::<u32>();
         ret len_num
     };
@@ -282,8 +281,8 @@ fn get_sigrl_from_intel(fd: c_int, gid: u32) -> Result<Vec<u8>> {
 }
 
 // TODO: support pse
-fn get_report_from_intel(fd: c_int, quote: Vec<u8>) -> Result<AttnReport> {
-    let encoded_quote = base64::encode(&quote[..]);
+fn get_report_from_intel(fd: c_int, quote: &[u8]) -> Result<AttnReport> {
+    let encoded_quote = base64::encode(quote);
     let encoded_json = format!("{{\"isvEnclaveQuote\":\"{}\"}}\r\n", encoded_quote);
 
     let req = format!("POST {} HTTP/1.1\r\nHOST: {}\r\nOcp-Apim-Subscription-Key: {}\r\nConnection: Close\r\nContent-Length:{}\r\nContent-Type: application/json\r\n\r\n{}",
@@ -325,8 +324,8 @@ fn create_attestation_report(pub_k: &sgx_ec256_public_t) -> Result<AttnReport> {
         )
     };
 
-    if res != sgx_status_t::SGX_SUCCESS || rt != res {
-        return Err(Error::unknown());
+    if res != sgx_status_t::SGX_SUCCESS || rt != sgx_status_t::SGX_SUCCESS {
+        return Err(Error::from(ErrorKind::OCallError));
     }
 
     let eg_num = u32::from_le_bytes(eg);
@@ -342,7 +341,7 @@ fn create_attestation_report(pub_k: &sgx_ec256_public_t) -> Result<AttnReport> {
         debug!("got ias_sock = {}", ias_sock);
 
         if res != sgx_status_t::SGX_SUCCESS || ias_sock < 0 {
-            return Err(Error::unknown());
+            return Err(Error::from(ErrorKind::OCallError));
         }
 
         // Now sigrl_vec is the revocation list, a vec<u8>
@@ -380,7 +379,7 @@ fn create_attestation_report(pub_k: &sgx_ec256_public_t) -> Result<AttnReport> {
 
     let mut quote_nonce = sgx_quote_nonce_t { rand: [0; 16] };
     let mut os_rng = mayfail! {
-        rng =<< os::SgxRng::new();
+        rng =<< SgxRng::new();
         ret rng
     }?;
 
@@ -414,8 +413,8 @@ fn create_attestation_report(pub_k: &sgx_ec256_public_t) -> Result<AttnReport> {
     let res =
         unsafe { ocall_sgx_calc_quote_size(&mut rt as _, p_sigrl, sigrl_len, &mut quote_len as _) };
 
-    if res != sgx_status_t::SGX_SUCCESS || rt != res {
-        return Err(Error::unknown());
+    if res != sgx_status_t::SGX_SUCCESS || rt != sgx_status_t::SGX_SUCCESS {
+        return Err(Error::from(ErrorKind::OCallError));
     }
 
     let mut quote = vec![0; quote_len as usize];
@@ -436,8 +435,8 @@ fn create_attestation_report(pub_k: &sgx_ec256_public_t) -> Result<AttnReport> {
         )
     };
 
-    if res != sgx_status_t::SGX_SUCCESS || rt != res {
-        return Err(Error::unknown());
+    if res != sgx_status_t::SGX_SUCCESS || rt != sgx_status_t::SGX_SUCCESS {
+        return Err(Error::from(ErrorKind::OCallError));
     }
 
     // Perform a check on qe_report to verify if the qe_report is valid
@@ -461,20 +460,19 @@ fn create_attestation_report(pub_k: &sgx_ec256_public_t) -> Result<AttnReport> {
     // is not a replay. It is optional.
     let mut rhs_vec: Vec<u8> = quote_nonce.rand.to_vec();
     rhs_vec.extend(&quote);
-    let rhs_hash = rsgx_sha256_slice(&rhs_vec[..]).to_mt_result(file!(), line!())?;
+    let rhs_hash = rsgx_sha256_slice(&rhs_vec).to_mt_result(file!(), line!())?;
     let lhs_hash = &qe_report.body.report_data.d[..32];
     if rhs_hash != lhs_hash {
         return Err(Error::unknown());
     }
 
-    let quote_vec: Vec<u8> = quote.to_vec();
     let res = unsafe { ocall_sgx_get_ias_socket(&mut ias_sock as _) };
 
     if res != sgx_status_t::SGX_SUCCESS || ias_sock < 0 {
-        return Err(Error::unknown());
+        return Err(Error::from(ErrorKind::OCallError));
     }
 
-    get_report_from_intel(ias_sock, quote_vec)
+    get_report_from_intel(ias_sock, &quote)
 }
 
 fn is_tls_config_updated(gen_time: &SystemTime) -> bool {
