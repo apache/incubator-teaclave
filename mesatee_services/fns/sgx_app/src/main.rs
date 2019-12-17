@@ -25,8 +25,8 @@ use std::net::TcpListener;
 use std::os::unix::io::IntoRawFd;
 use threadpool::ThreadPool;
 
-use mesatee_binder::TeeBinder;
 use std::sync::Arc;
+use teaclave_binder::TeeBinder;
 
 fn main() -> Result<()> {
     env_logger::init();
@@ -48,7 +48,7 @@ fn main() -> Result<()> {
         let ref_tee = tee.clone();
         ctrlc::set_handler(move || {
             info!("\nCTRL+C pressed. Destroying server enclave");
-            let _ = ref_tee.finalize();
+            ref_tee.finalize();
             std::process::exit(0);
         })
         .expect("Error setting Ctrl-C handler");

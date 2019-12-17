@@ -80,14 +80,20 @@ pub mod runtime_config {
 
     lazy_static! {
         pub static ref RUNTIME_CONFIG: RuntimeConfig = {
+            #[cfg(feature = "mesalock_sgx")]
+            use std::prelude::v1::*;
             let contents = fs::read_to_string("runtime.config.toml")
                 .expect("Something went wrong reading the runtime config file.");
             let mut config: RuntimeConfig = toml::from_str(&contents).unwrap();
             if !cfg!(sgx_sim) {
-                let ias_spid =
-                    env::var("IAS_SPID").expect("Cannot find IAS_SPID from environment variables.");
-                let ias_key =
-                    env::var("IAS_KEY").expect("Cannot find IAS_KEY from environment variables.");
+                let ias_spid = env::var("IAS_SPID")
+                    .expect("Cannot find IAS_SPID from environment variables.")
+                    .trim()
+                    .to_string();
+                let ias_key = env::var("IAS_KEY")
+                    .expect("Cannot find IAS_KEY from environment variables.")
+                    .trim()
+                    .to_string();
                 config.env = EnvConfig { ias_spid, ias_key };
             }
 

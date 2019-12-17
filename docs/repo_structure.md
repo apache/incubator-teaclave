@@ -12,7 +12,7 @@
 		- documentations
 	+ [examples](../examples)
 		- examples
-	+ [mesatee_binder](../mesatee_binder)
+	+ [teaclave_binder](../teaclave_binder)
 		- abstract communication interfaces between TEE untrusted/trusted worlds
 	+ [mesatee_config](../mesatee_config)
 		- compile-time and runtime configuration utilities
