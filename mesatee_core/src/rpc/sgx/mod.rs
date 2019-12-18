@@ -21,7 +21,6 @@
 use serde::{de::DeserializeOwned, Serialize};
 #[cfg(feature = "mesalock_sgx")]
 use sgx_types::c_int;
-use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use std::io::{self, Read, Write};
 use std::marker::PhantomData;
@@ -35,8 +34,6 @@ use crate::rpc::{EnclaveService, RpcServer};
 use crate::rpc::RpcClient;
 use crate::Result;
 
-use teaclave_config::build_config::BUILD_CONFIG;
-use teaclave_config::runtime_config;
 use teaclave_utils;
 use teaclave_utils::EnclaveMeasurement;
 
@@ -58,42 +55,6 @@ mod ra;
 #[cfg(feature = "mesalock_sgx")]
 pub fn prelude() {
     ra::get_ra_cert();
-}
-
-pub(crate) fn load_presigned_enclave_info() -> HashMap<String, EnclaveMeasurement> {
-    use teaclave_config::ConfigSource;
-
-    #[cfg(not(feature = "mesalock_sgx"))]
-    use std::fs;
-    #[cfg(feature = "mesalock_sgx")]
-    use std::untrusted::fs;
-
-    let ConfigSource::Path(ref enclave_info_path) = runtime_config::config().audit.enclave_info;
-    let enclave_info_content = fs::read_to_string(enclave_info_path)
-        .unwrap_or_else(|_| panic!("Cannot find enclave info at {:?}.", enclave_info_path));
-
-    if runtime_config::config().audit.auditor_signatures.len()
-        < BUILD_CONFIG.auditor_public_keys.len()
-    {
-        panic!("Number of auditor signatures is not enough for verification.")
-    }
-
-    let mut signatures: Vec<Vec<u8>> = vec![];
-    for ConfigSource::Path(ref path) in &runtime_config::config().audit.auditor_signatures {
-        let signature =
-            fs::read(path).unwrap_or_else(|_| panic!("Cannot find signature file {:?}.", path));
-        signatures.push(signature);
-    }
-
-    if !teaclave_utils::verify_enclave_info(
-        enclave_info_content.as_bytes(),
-        BUILD_CONFIG.auditor_public_keys,
-        &signatures,
-    ) {
-        panic!("Failed to verify the signatures of enclave info.");
-    }
-
-    teaclave_utils::load_enclave_info(&enclave_info_content)
 }
 
 #[derive(Clone)]
