@@ -21,7 +21,7 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use crate::Result;
+use crate::{Error, ErrorKind, Result};
 use serde::{de::DeserializeOwned, Serialize};
 use std::io::{Read, Write};
 
@@ -65,10 +65,18 @@ where
             // recv_buf should be a serialized incoming request U
             // The server needs deser it into U first
             let request: U = serde_json::from_slice(&recv_buf)?;
-            debug!("request: {:?}", request);
-            let result: V = x.handle_invoke(request)?;
-            let response: Vec<u8> = serde_json::to_vec(&result)?;
-            debug!("response {:?}", response);
+            debug!("SERVER get request: {:?}", request);
+            let result: Result<V> = x.handle_invoke(request).map_err(|e| e.into_simple_error());
+            debug!("SERVER handle_invoke result: {:?}", result);
+
+            let response = match serde_json::to_vec(&result) {
+                Ok(resp) => resp,
+                Err(_) => {
+                    let r: Result<V> = Err(Error::from(ErrorKind::InternalRPCError));
+                    serde_json::to_vec(&r).expect("infallable")
+                }
+            };
+            debug!("SERVER send response {:?}", response);
 
             // Now the result is stored in ret and we need to sent it back.
             // `ret` is cleared here. Performance is not very good.
@@ -89,10 +97,16 @@ where
 
     fn invoke(&mut self, input: U) -> Result<V> {
         let request_payload: Vec<u8> = serde_json::to_vec(&input)?;
+
+        debug!("CLIENT: sending req: {:?}", request_payload);
         send_vec(self, request_payload)?;
+
         let result_buf: Vec<u8> = receive_vec(self)?;
-        let response: V = serde_json::from_slice(&result_buf)?;
-        Ok(response)
+        debug!("CLIENT: receiving resp: {:?}", result_buf);
+
+        let resp: Result<V> = serde_json::from_slice(&result_buf)?;
+
+        resp
     }
 }
 

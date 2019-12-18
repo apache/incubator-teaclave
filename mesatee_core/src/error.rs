@@ -23,6 +23,8 @@ use std::fmt;
 use std::{io, net};
 use teaclave_utils;
 
+use serde_derive;
+
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// Status for Ecall
@@ -32,6 +34,7 @@ pub struct EnclaveStatus(u32);
 /// Status for Ocall
 pub type UntrustedStatus = EnclaveStatus;
 
+#[derive(serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct Error {
     repr: Repr,
 }
@@ -42,8 +45,10 @@ impl fmt::Debug for Error {
     }
 }
 
+#[derive(serde_derive::Serialize, serde_derive::Deserialize)]
 enum Repr {
     Simple(ErrorKind),
+    #[serde(skip)]
     Custom(Box<Custom>),
 }
 
@@ -53,7 +58,18 @@ struct Custom {
     error: Box<dyn std::error::Error + Send + Sync>,
 }
 
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[derive(
+    serde_derive::Serialize,
+    serde_derive::Deserialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
 pub enum ErrorKind {
     /// The operation lacked the necessary privileges to complete.
     PermissionDenied,
@@ -338,6 +354,13 @@ impl Error {
         match self.repr {
             Repr::Simple(..) => None,
             Repr::Custom(c) => Some(c.error),
+        }
+    }
+
+    pub fn into_simple_error(self) -> Error {
+        match self.repr {
+            Repr::Simple(_) => self,
+            Repr::Custom(c) => Error::from(c.kind),
         }
     }
 
