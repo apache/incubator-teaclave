@@ -56,14 +56,23 @@ pub mod config;
 
 #[cfg(feature = "mesalock_sgx")]
 pub fn init_service(name: &str) -> Result<()> {
+    use std::backtrace;
     use teaclave_config::runtime_config;
 
     debug!("Enclave [{}]: Initializing...", name);
 
     env_logger::init();
-    #[cfg(debug_assertions)]
-    let _ = backtrace::enable_backtrace(format!("{}.enclave.signed.so", name), PrintFormat::Full);
-    if runtime_config::is_initialized() {
+    if backtrace::enable_backtrace(
+        format!("{}.enclave.signed.so", name),
+        backtrace::PrintFormat::Full,
+    )
+    .is_err()
+    {
+        error!("Cannot enable backtrace");
+        return Err(Error::from(ErrorKind::ECallError));
+    }
+    if !runtime_config::is_initialized() {
+        error!("Runtime config is not initialized");
         return Err(Error::from(ErrorKind::ECallError));
     }
     crate::rpc::sgx::prelude();
