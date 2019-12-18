@@ -80,8 +80,18 @@ pub mod runtime_config {
         pub ias_key: String,
     }
 
+    pub fn is_initialized() -> bool {
+        RUNTIME_CONFIG.is_some()
+    }
+
+    pub fn config() -> &'static RuntimeConfig {
+        RUNTIME_CONFIG
+            .as_ref()
+            .expect("Invalid runtime config, should gracefully exit during enclave_init!!")
+    }
+
     lazy_static! {
-        pub static ref RUNTIME_CONFIG: Option<RuntimeConfig> = {
+        static ref RUNTIME_CONFIG: Option<RuntimeConfig> = {
             #[cfg(feature = "mesalock_sgx")]
             use std::prelude::v1::*;
             let contents = match fs::read_to_string("runtime.config.toml") {
@@ -113,6 +123,10 @@ pub mod runtime_config {
                         return None;
                     }
                 };
+                if ias_spid.len() != 32 || ias_key.len() != 32 {
+                    error!("IAS_SPID or IAS_KEY format error.");
+                    return None;
+                }
 
                 config.env = EnvConfig { ias_spid, ias_key };
             }

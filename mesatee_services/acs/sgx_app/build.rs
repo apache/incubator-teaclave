@@ -16,7 +16,6 @@
 // under the License.
 
 use std::env;
-use std::io::Write;
 use std::path::PathBuf;
 
 fn choose_sgx_dylib(is_sim: bool) {
@@ -32,18 +31,6 @@ fn choose_sgx_dylib(is_sim: bool) {
 fn main() {
     let sdk_dir = env::var("SGX_SDK").unwrap_or("/opt/intel/sgxsdk".into());
     println!("cargo:rustc-link-search=native={}/lib64", sdk_dir);
-
-    // This would triggers `unwrap()` which results in panic, if no such env
-    // var found. Cargo documents say that this env variable is provided by
-    // cargo. See
-    // https://doc.rust-lang.org/cargo/reference/environment-variables.html
-    let enclave_name = env!("CARGO_PKG_NAME");
-
-    // Once we enclave_name ready, write it to `../pkg_name`
-    std::fs::File::create("../pkg_name")
-        .unwrap()
-        .write_all(enclave_name.as_bytes())
-        .unwrap();
 
     let out_path = env::var_os("ENCLAVE_OUT_DIR").unwrap_or("out".into());
     let out_dir = &PathBuf::from(out_path);

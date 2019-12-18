@@ -22,9 +22,6 @@ use mesatee_core::ipc::protos::ecall::{RunFunctionalTestInput, RunFunctionalTest
 use mesatee_core::prelude::*;
 use mesatee_core::Result;
 
-use env_logger;
-use std::backtrace::{self, PrintFormat};
-
 use crate::tests;
 use sgx_tunittest::*;
 
@@ -59,14 +56,7 @@ fn handle_run_functional_test(_args: &RunFunctionalTestInput) -> Result<RunFunct
 
 #[handle_ecall]
 fn handle_init_enclave(_args: &InitEnclaveInput) -> Result<InitEnclaveOutput> {
-    info!("Enclave [Functional Test]: Initialized.");
-
-    env_logger::init();
-    let _ = backtrace::enable_backtrace(
-        concat!(include_str!("../../pkg_name"), ".enclave.signed.so"),
-        PrintFormat::Full,
-    );
-    mesatee_core::rpc::sgx::prelude();
+    mesatee_core::init_service(env!("CARGO_PKG_NAME"))?;
 
     Ok(InitEnclaveOutput::default())
 }

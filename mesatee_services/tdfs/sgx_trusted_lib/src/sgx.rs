@@ -19,11 +19,7 @@ use std::prelude::v1::*;
 
 use mesatee_core::config;
 use mesatee_core::prelude::*;
-use mesatee_core::{Error, ErrorKind, Result};
-
-use env_logger;
-use std::backtrace::{self, PrintFormat};
-use teaclave_config::runtime_config::RUNTIME_CONFIG;
+use mesatee_core::Result;
 
 use crate::data_store::add_test_infomation;
 use crate::tdfs_external::DFSExternalEnclave;
@@ -93,18 +89,7 @@ fn handle_serve_connection(args: &ServeConnectionInput) -> Result<ServeConnectio
 
 #[handle_ecall]
 fn handle_init_enclave(_args: &InitEnclaveInput) -> Result<InitEnclaveOutput> {
-    debug!("Enclave [TDFS]: Initializing...");
-
-    env_logger::init();
-    let _ = backtrace::enable_backtrace(
-        concat!(include_str!("../../pkg_name"), ".enclave.signed.so"),
-        PrintFormat::Full,
-    );
-    mesatee_core::rpc::sgx::prelude();
-
-    if RUNTIME_CONFIG.is_none() {
-        return Err(Error::from(ErrorKind::ECallError));
-    }
+    mesatee_core::init_service(env!("CARGO_PKG_NAME"))?;
 
     add_test_infomation();
 

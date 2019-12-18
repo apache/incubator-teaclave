@@ -20,15 +20,13 @@ use super::InboundDesc;
 use super::OutboundDesc;
 use super::ServiceConfig;
 use super::TargetDesc;
-use teaclave_config::runtime_config::RUNTIME_CONFIG;
+use teaclave_config::runtime_config;
 
 pub struct Internal;
 impl Internal {
     pub fn tms() -> ServiceConfig {
         ServiceConfig::new(
-            RUNTIME_CONFIG
-                .as_ref()
-                .unwrap()
+            runtime_config::config()
                 .internal_endpoints
                 .tms
                 .listen_address,
@@ -38,9 +36,7 @@ impl Internal {
 
     pub fn kms() -> ServiceConfig {
         ServiceConfig::new(
-            RUNTIME_CONFIG
-                .as_ref()
-                .unwrap()
+            runtime_config::config()
                 .internal_endpoints
                 .kms
                 .listen_address,
@@ -50,9 +46,7 @@ impl Internal {
 
     pub fn tdfs() -> ServiceConfig {
         ServiceConfig::new(
-            RUNTIME_CONFIG
-                .as_ref()
-                .unwrap()
+            runtime_config::config()
                 .internal_endpoints
                 .tdfs
                 .listen_address,
@@ -62,9 +56,7 @@ impl Internal {
 
     pub fn acs() -> ServiceConfig {
         ServiceConfig::new(
-            RUNTIME_CONFIG
-                .as_ref()
-                .unwrap()
+            runtime_config::config()
                 .internal_endpoints
                 .acs
                 .listen_address,
@@ -74,9 +66,7 @@ impl Internal {
 
     pub fn target_tms() -> TargetDesc {
         TargetDesc::new(
-            RUNTIME_CONFIG
-                .as_ref()
-                .unwrap()
+            runtime_config::config()
                 .internal_endpoints
                 .tms
                 .advertised_address,
@@ -86,9 +76,7 @@ impl Internal {
 
     pub fn target_kms() -> TargetDesc {
         TargetDesc::new(
-            RUNTIME_CONFIG
-                .as_ref()
-                .unwrap()
+            runtime_config::config()
                 .internal_endpoints
                 .kms
                 .advertised_address,
@@ -98,9 +86,7 @@ impl Internal {
 
     pub fn target_tdfs() -> TargetDesc {
         TargetDesc::new(
-            RUNTIME_CONFIG
-                .as_ref()
-                .unwrap()
+            runtime_config::config()
                 .internal_endpoints
                 .tdfs
                 .advertised_address,
@@ -110,9 +96,7 @@ impl Internal {
 
     pub fn target_acs() -> TargetDesc {
         TargetDesc::new(
-            RUNTIME_CONFIG
-                .as_ref()
-                .unwrap()
+            runtime_config::config()
                 .internal_endpoints
                 .acs
                 .advertised_address,

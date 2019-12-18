@@ -31,7 +31,7 @@ use teaclave_binder::TeeBinder;
 fn main() -> Result<()> {
     env_logger::init();
 
-    let tee = match TeeBinder::new("kms", 1) {
+    let tee = match TeeBinder::new(env!("CARGO_PKG_NAME"), 1) {
         Ok(r) => {
             info!("Init TEE Successfully!");
             r
