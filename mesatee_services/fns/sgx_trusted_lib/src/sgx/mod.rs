@@ -23,9 +23,6 @@ use mesatee_core::config;
 use mesatee_core::prelude::*;
 use mesatee_core::Result;
 
-use env_logger;
-use std::backtrace::{self, PrintFormat};
-
 use crate::fns::FNSEnclave;
 use crate::global::register_trusted_worker_statically;
 
@@ -38,15 +35,8 @@ register_ecall_handler!(
 
 #[handle_ecall]
 fn handle_init_enclave(_args: &InitEnclaveInput) -> Result<InitEnclaveOutput> {
-    debug!("Enclave [FNS]: Initializing...");
+    mesatee_core::init_service(env!("CARGO_PKG_NAME"))?;
 
-    env_logger::init();
-    let _ = backtrace::enable_backtrace(
-        concat!(include_str!("../../../pkg_name"), ".enclave.signed.so"),
-        PrintFormat::Full,
-    );
-
-    mesatee_core::rpc::sgx::prelude();
     register_trusted_worker_statically();
     Ok(InitEnclaveOutput::default())
 }

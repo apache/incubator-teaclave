@@ -17,12 +17,13 @@ ipc = []
 
 [dependencies]
 cfg-if       = { version = "0.1.9" }
+env_logger   = { version = "0.7.1" }
+lazy_static  = { version = "1.0.2", features = ["spin_no_std"] }
 log          = { version = "0.4.6" }
+rustls       = { version = "0.16.0", features = ["dangerous_configuration"] }
 serde        = { version = "1.0.92" }
 serde_derive = { version = "1.0.92" }
 serde_json   = { version = "1.0.39" }
-rustls       = { version = "0.16.0", features = ["dangerous_configuration"] }
-lazy_static  = { version = "1.0.2", features = ["spin_no_std"] }
 chrono       = { version = "0.4.6" }
 ring         = { version = "0.16.5" }
 webpki       = { version = "0.21.0" }
@@ -36,7 +37,7 @@ uuid         = { version = "0.7.4", features = ["v4"] }
 net2         = { version = "0.2.33" }
 toml         = { version = "0.5.3" }
 
-sgx_tstd  = { version = "1.0.9", features = ["net"], optional = true }
+sgx_tstd  = { version = "1.0.9", features = ["net", "backtrace"], optional = true }
 sgx_types = { version = "1.0.9" }
 sgx_urts  = { version = "1.0.9" }
 sgx_tcrypto = { version = "1.0.9", optional = true }

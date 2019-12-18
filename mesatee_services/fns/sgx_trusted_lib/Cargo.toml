@@ -43,3 +43,4 @@ sgx_tstd             = { version = "1.0.9", features = ["net", "backtrace"], opt
 sgx_types            = { version = "1.0.9" }
 gbdt                 = { version = "0.1.0", features = ["input", "enable_training"] }
 rusty-machine        = { version = "0.5.4" }
+teaclave_config = { path = "../../../teaclave_config" }

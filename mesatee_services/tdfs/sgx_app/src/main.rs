@@ -33,7 +33,7 @@ use std::thread;
 fn main() -> Result<()> {
     env_logger::init();
 
-    let tee = match TeeBinder::new("tdfs", 1) {
+    let tee = match TeeBinder::new(env!("CARGO_PKG_NAME"), 1) {
         Ok(r) => {
             info!("Init TEE Successfully!");
             r
