@@ -19,7 +19,6 @@ fn main() {
             "run",
             "--manifest-path",
             "config_gen/Cargo.toml",
-            "--offline",
             "--",
             "build.config.toml",
             &dest_file.to_string_lossy(),

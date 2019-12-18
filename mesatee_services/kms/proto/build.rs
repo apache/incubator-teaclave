@@ -28,7 +28,6 @@ fn main() {
             "run",
             "--manifest-path",
             "../../proto_gen/Cargo.toml",
-            "--offline",
             "--",
             "-p",
             "src/kms.proto",
