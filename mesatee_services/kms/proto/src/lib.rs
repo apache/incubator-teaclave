@@ -19,34 +19,14 @@
 #[macro_use]
 extern crate sgx_tstd as std;
 
+#[cfg(feature = "mesalock_sgx")]
+use std::prelude::v1::*;
+
+mod kms;
 pub use crate::kms::*;
 pub use crate::proto::KMSClient;
-mod kms;
+
 pub mod proto {
-    #![allow(warnings)]
-    #![allow(clippy)]
-    #![allow(unknown_lints)]
-    include!("prost_generated/kms_proto.rs");
-}
-
-mod base64_coder {
-    use base64;
-    use serde::{de, Deserialize, Deserializer, Serializer};
-    #[cfg(feature = "mesalock_sgx")]
-    use std::prelude::v1::*;
-
-    pub fn serialize<S>(bytes: &[u8], serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(&base64::encode(bytes))
-    }
-
-    pub fn deserialize<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = <&str>::deserialize(deserializer)?;
-        base64::decode(s).map_err(de::Error::custom)
-    }
+    #![allow(clippy::all)]
+    include!(concat!(env!("OUT_DIR"), "/kms_proto.rs"));
 }

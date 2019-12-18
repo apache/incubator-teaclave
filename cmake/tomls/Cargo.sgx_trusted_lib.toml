@@ -87,7 +87,6 @@ webpki            = { git = "https://github.com/mesalock-linux/webpki", branch =
 webpki-roots      = { git = "https://github.com/mesalock-linux/webpki-roots", branch = "mesalock_sgx" }
 yasna             = { git = "https://github.com/mesalock-linux/yasna.rs-sgx" }
 rusty-machine     = { git = "https://github.com/mesalock-linux/rusty-machine-sgx" }
-prost-build       = { git = "https://github.com/mesalock-linux/prost-build-sgx-fake"}
 bytes        = { git = "https://github.com/mesalock-linux/bytes-sgx" }
 prost        = { git = "https://github.com/mesalock-linux/prost-sgx" }
 prost-types  = { git = "https://github.com/mesalock-linux/prost-sgx" }

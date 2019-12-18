@@ -16,15 +16,18 @@
 // under the License.
 
 use prost_build;
-use std::path::PathBuf;
+use std::path;
+use structopt::StructOpt;
 
 #[derive(Debug)]
 pub struct MesaTEEServiceGenerator;
 
 /// How to use prost. See kms as an example.
-/// 1. Define rpc messages with protobuf 2/3 syntax. protobuf 2 is recommended because we can avoid unneccessary option.
+/// 1. Define rpc messages with protobuf 2/3 syntax. protobuf 2 is recommended
+/// because we can avoid unneccessary option.
 /// 2. Define services. Prost will generate corresponding sevices and clients.
-/// 3. Include ```prost_build_generator.rs``` and modify ```main function``` in the ```build.rs``` of the target library.  
+/// 3. Include ```${OUT_DIR}/kms_proto.rs``` and provide serializer and
+/// deserializer if needed..
 /// 4. Todo: add support for automatic authentication
 const LINE_ENDING: &'static str = "\n";
 impl MesaTEEServiceGenerator {
@@ -207,4 +210,29 @@ pub fn get_default_config() -> prost_build::Config {
         "#[derive(serde_derive::Serialize, serde_derive::Deserialize)]",
     );
     config
+}
+
+#[derive(Debug, StructOpt)]
+struct Cli {
+    #[structopt(short = "p", required = true)]
+    /// Paths to .proto files to compile. Any transitively imported .proto files
+    /// are automatically be included.
+    protos: Vec<path::PathBuf>,
+
+    #[structopt(short = "i", required = true)]
+    /// Paths to directories in which to search for imports. Directories are
+    /// searched in order. The .proto files passed in protos must be found in
+    /// one of the provided include directories.
+    includes: Vec<path::PathBuf>,
+
+    #[structopt(short = "d", required = true)]
+    /// Configures the output directory where generated Rust files will be written.
+    out_dir: path::PathBuf,
+}
+
+fn main() {
+    let args = Cli::from_args();
+    let mut config = get_default_config();
+    config.out_dir(args.out_dir);
+    config.compile_protos(&args.protos, &args.includes).unwrap();
 }
