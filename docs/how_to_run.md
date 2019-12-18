@@ -13,7 +13,7 @@ The ``api_endpoints`` and ``internal_endpoints``  of
 services. Please configure them accordingly.
 
 Then, please set SPID and key (either primary or secondary) from Intel Trusted
-Service API portal by ``export IAS_KEY=YOUR_SPID && export IAS_SPID=YOUR_KEY``.
+Service API portal by ``export IAS_KEY=YOUR_KEY && export IAS_SPID=YOUR_SPID``.
 Next, please edit [config.toml](../config.toml) to tell MesaTEE where to find
 IAS API key and SPID:
 
