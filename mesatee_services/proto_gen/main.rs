@@ -16,11 +16,7 @@
 // under the License.
 
 use prost_build;
-use std::env;
-use std::fs;
 use std::path;
-use std::path::Path;
-use std::path::PathBuf;
 use structopt::StructOpt;
 
 #[derive(Debug)]

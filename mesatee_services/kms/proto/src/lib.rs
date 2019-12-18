@@ -19,16 +19,12 @@
 #[macro_use]
 extern crate sgx_tstd as std;
 
-use base64;
-use serde::{de, Deserialize, Deserializer, Serializer};
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
 mod kms;
 pub use crate::kms::*;
 pub use crate::proto::KMSClient;
-
-use serde::ser::Serialize;
 
 pub mod proto {
     #![allow(clippy::all)]
