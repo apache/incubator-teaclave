@@ -117,6 +117,8 @@ impl Runner {
         if pattern.is_match(&response) {
             Ok(())
         } else {
+            println!("response: {}", response);
+            println!("expected: {}", expected_response);
             Err(failure::err_msg("Mismatched response").into())
         }
     }

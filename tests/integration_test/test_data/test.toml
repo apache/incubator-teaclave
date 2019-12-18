@@ -53,7 +53,7 @@ payload = """
 {"type":"Create","file_name":"file1","sha256":"this_is_a_hash","file_size":7,"user_id":"user1","user_token":"token1"}
 """
 expected = """
-{"type":"Create","file_id":"*","access_path":"*","key_config":{"key":"*","nonce":"*","ad":"*"}}
+{"type":"Create","file_id":"*","access_path":"*","key_config":{"key":*,"nonce":*,"ad":*}}
 """
 
 [[step]]
@@ -63,7 +63,7 @@ payload = """
 {"type":"Get","file_id":"fake_file_record","user_id":"fake_file_owner","user_token":"token"}
 """
 expected = """
-{"type":"Get","file_info":{"user_id":"fake_file_owner","file_name":"fake_file","sha256":"aaa","file_size":100,"access_path":"fake_file","task_id":null,"collaborator_list":[],"key_config":{"key":"QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE=","nonce":"QUFBQUFBQUFBQUFB","ad":"QUFBQUE="}}}
+{"type":"Get","file_info":{"user_id":"fake_file_owner","file_name":"fake_file","sha256":"aaa","file_size":100,"access_path":"fake_file","task_id":null,"collaborator_list":[],"key_config":{"key":*,"nonce":*,"ad":*}}}
 """
 
 [[step]]

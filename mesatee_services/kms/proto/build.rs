@@ -15,33 +15,34 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#[cfg(not(feature = "mesalock_sgx"))]
-include!("../../common/prost_build_generator.rs");
+use std::env;
+use std::process::Command;
+use std::str;
 
-#[cfg(not(feature = "mesalock_sgx"))]
 fn main() {
+    let out_dir = env::var("OUT_DIR").expect("$OUT_DIR not set. Please build with cargo");
     println!("cargo:rerun-if-changed=src/kms.proto");
-    let src = PathBuf::from("src");
-    let output = src.join("prost_generated");
-    if !output.exists() {
-        std::fs::create_dir(&output).expect("failed to create prost_generated dir");
+    println!("cargo:rerun-if-changed=build.rs");
+    let c = Command::new("cargo")
+        .args(&[
+            "run",
+            "--manifest-path",
+            "../../proto_gen/Cargo.toml",
+            "--",
+            "-p",
+            "src/kms.proto",
+            "-i",
+            ".",
+            "-d",
+            &out_dir,
+        ])
+        .output()
+        .expect("Cannot generate kms_proto.rs");
+    if !c.status.success() {
+        panic!(
+            "stdout: {:?}, stderr: {:?}",
+            str::from_utf8(&c.stderr).unwrap(),
+            str::from_utf8(&c.stderr).unwrap()
+        );
     }
-    let includes = &[src.clone()];
-    let mut config = get_default_config();
-    config.out_dir(output);
-    let base64_field = [
-        "AeadConfig.key",
-        "AeadConfig.nonce",
-        "AeadConfig.ad",
-        "ProtectedFsConfig.key",
-    ];
-    for field_name in base64_field.iter() {
-        config.field_attribute(field_name, "#[serde(with = \"crate::base64_coder\")]");
-    }
-    config
-        .compile_protos(&[src.join("kms.proto")], includes)
-        .unwrap();
 }
-
-#[cfg(feature = "mesalock_sgx")]
-fn main() {}

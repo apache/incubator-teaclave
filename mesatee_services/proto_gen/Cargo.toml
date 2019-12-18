@@ -1,0 +1,17 @@
+[package]
+name = "proto_gen"
+version = "0.1.0"
+authors = ["MesaTEE Authors <developers@mesatee.org>"]
+description = "Generating Rust protocols from protobuf."
+license = "Apache-2.0"
+edition = "2018"
+
+[[bin]]
+name = "proto_gen"
+path = "main.rs"
+
+[dependencies]
+structopt = { version = "0.3" }
+prost-build = { version = "0.5.0" }
+prost = { version = "0.5.0" }
+prost-types = { version = "0.5.0" }
