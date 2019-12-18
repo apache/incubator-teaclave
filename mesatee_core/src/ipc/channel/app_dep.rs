@@ -66,6 +66,8 @@ impl ECallChannel {
         let in_len: usize = request_payload.len();
 
         let mut retried = false;
+        let mut handle_power_transition = false;
+
         let out_buf = loop {
             let out_max: usize = self.curr_out_buf_size;
             let mut out_buf: Vec<u8> = Vec::with_capacity(out_max);
@@ -89,8 +91,15 @@ impl ECallChannel {
 
             /* Check sgx return values */
             if sgx_status != sgx_status_t::SGX_SUCCESS {
-                error!("ecall_ipc_entry_point, app sgx_error:{}", sgx_status);
-                return Err(Error::from(sgx_status));
+                /* If sgx return SGX_ERROR_ENCLAVE_LOST, retry only once */
+                if sgx_status == sgx_status_t::SGX_ERROR_ENCLAVE_LOST && !handle_power_transition {
+                    handle_power_transition = true;
+                    debug!("ecall_ipc_entry_point, sgx_status_t is SGX_ERROR_ENCLAVE_LOST, retry");
+                    continue;
+                } else {
+                    error!("ecall_ipc_entry_point, app sgx_error:{}", sgx_status);
+                    return Err(Error::from(sgx_status));
+                }
             }
 
             /*
