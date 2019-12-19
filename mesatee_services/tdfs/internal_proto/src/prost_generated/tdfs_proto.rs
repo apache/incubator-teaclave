@@ -118,6 +118,25 @@ pub struct FetchFusionDataResponse {
     #[prost(bool, required, tag="5")]
     pub is_complete: bool,
 }
+/// Request for writing a fusion output
+/// Update the meta information for the output
+#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde_derive::Serialize, serde_derive::Deserialize)]
+pub struct WriteFusionOutputRequest {
+    /// data identifier
+    #[prost(string, required, tag="1")]
+    pub data_id: std::string::String,
+    /// meta information of the data
+    #[prost(message, required, tag="2")]
+    pub meta: tdfs_common_proto::data_common_proto::DataMeta,
+}
+/// Response for writing a fusion output
+#[derive(Clone, PartialEq, ::prost::Message)]
+#[derive(serde_derive::Serialize, serde_derive::Deserialize)]
+pub struct WriteFusionOutputResponse {
+    #[prost(bool, required, tag="1")]
+    pub success: bool,
+}
 #[derive(Clone, serde_derive::Serialize, serde_derive::Deserialize, Debug)]
 #[serde(tag = "type")]pub enum DataStoreServiceRequest {
     WritePrivateOutput(WritePrivateOutputRequest),
@@ -186,20 +205,23 @@ impl DataStoreServiceClient {
 #[derive(Clone, serde_derive::Serialize, serde_derive::Deserialize, Debug)]
 #[serde(tag = "type")]pub enum FusionDataServiceRequest {
     RegisterFusionOutput(RegisterFusionOutputRequest),
+    WriteFusionOutput(WriteFusionOutputRequest),
     FetchFusionData(FetchFusionDataRequest),
 }
 #[derive(Clone, serde_derive::Serialize, serde_derive::Deserialize, Debug)]
 #[serde(tag = "type")]
 pub enum FusionDataServiceResponse {
     RegisterFusionOutput(RegisterFusionOutputResponse),
+    WriteFusionOutput(WriteFusionOutputResponse),
     FetchFusionData(FetchFusionDataResponse),
 }
 pub trait FusionDataServiceService {
     fn register_fusion_output(req: RegisterFusionOutputRequest) -> mesatee_core::Result<RegisterFusionOutputResponse>;
+    fn write_fusion_output(req: WriteFusionOutputRequest) -> mesatee_core::Result<WriteFusionOutputResponse>;
     fn fetch_fusion_data(req: FetchFusionDataRequest) -> mesatee_core::Result<FetchFusionDataResponse>;
     fn dispatch(&self, req: FusionDataServiceRequest) -> mesatee_core::Result<FusionDataServiceResponse> {
         match req {
-            FusionDataServiceRequest::RegisterFusionOutput(req) => Self::register_fusion_output(req).map(FusionDataServiceResponse::RegisterFusionOutput),            FusionDataServiceRequest::FetchFusionData(req) => Self::fetch_fusion_data(req).map(FusionDataServiceResponse::FetchFusionData),        }
+            FusionDataServiceRequest::RegisterFusionOutput(req) => Self::register_fusion_output(req).map(FusionDataServiceResponse::RegisterFusionOutput),            FusionDataServiceRequest::WriteFusionOutput(req) => Self::write_fusion_output(req).map(FusionDataServiceResponse::WriteFusionOutput),            FusionDataServiceRequest::FetchFusionData(req) => Self::fetch_fusion_data(req).map(FusionDataServiceResponse::FetchFusionData),        }
     }
 }
 pub struct FusionDataServiceClient {
@@ -223,6 +245,15 @@ impl FusionDataServiceClient {
         let resp = self.channel.invoke(req)?;
         match resp {
             FusionDataServiceResponse::RegisterFusionOutput(resp) => Ok(resp),
+            _ => Err(mesatee_core::Error::from(mesatee_core::ErrorKind::RPCResponseError)),
+        }
+    }
+
+    pub fn write_fusion_output(&mut self, req: WriteFusionOutputRequest) -> mesatee_core::Result<WriteFusionOutputResponse> {
+        let req = FusionDataServiceRequest::WriteFusionOutput(req);
+        let resp = self.channel.invoke(req)?;
+        match resp {
+            FusionDataServiceResponse::WriteFusionOutput(resp) => Ok(resp),
             _ => Err(mesatee_core::Error::from(mesatee_core::ErrorKind::RPCResponseError)),
         }
     }

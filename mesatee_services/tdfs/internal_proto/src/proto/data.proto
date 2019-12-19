@@ -92,6 +92,20 @@ message FetchFusionDataResponse {
   required bool is_complete = 5;
 }
 
+// Request for writing a fusion output
+// Update the meta information for the output
+message WriteFusionOutputRequest {
+  // data identifier
+  required string data_id = 1;
+  // meta information of the data
+  required data_common.DataMeta meta = 2;
+}
+
+// Response for writing a fusion output
+message WriteFusionOutputResponse {
+  required bool success = 1;
+}
+
 service DataStoreService {
   rpc WritePrivateOutput(WritePrivateOutputRequest) returns (WritePrivateOutputResponse);
   rpc FetchPrivateInput(FetchPrivateInputRequest) returns (FetchPrivateInputResponse);
@@ -100,5 +114,6 @@ service DataStoreService {
 
 service FusionDataService {
   rpc RegisterFusionOutput(RegisterFusionOutputRequest) returns (RegisterFusionOutputResponse);
+  rpc WriteFusionOutput(WriteFusionOutputRequest) returns (WriteFusionOutputResponse);
   rpc FetchFusionData(FetchFusionDataRequest) returns (FetchFusionDataResponse);
 }
