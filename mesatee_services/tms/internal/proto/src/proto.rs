@@ -74,7 +74,7 @@ impl TaskRequest {
     ) -> TaskRequest {
         let req = UpdateTaskRequest {
             task_id: task_id.to_owned(),
-            task_result_file_id: task_result_file_id.map(|s| s.to_string()),
+            task_result_file_id: task_result_file_id.map(|s| (*s).to_string()),
             output_files: output_files
                 .iter()
                 .map(|&task_file| task_file.clone())

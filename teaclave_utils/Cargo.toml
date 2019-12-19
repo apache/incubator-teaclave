@@ -14,6 +14,6 @@ mesalock_sgx = ["sgx_tstd"]
 ring         = { version = "0.16.5" }
 serde        = { version = "1.0.92" }
 serde_derive = { version = "1.0.92" }
-sgx_tstd     = { version = "1.0.9", optional = true }
-sgx_types    = { version = "1.0.9" }
+sgx_tstd     = { version = "1.1.0", optional = true }
+sgx_types    = { version = "1.1.0" }
 toml         = { version = "0.5.3" }

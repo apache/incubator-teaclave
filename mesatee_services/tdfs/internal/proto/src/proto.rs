@@ -88,7 +88,7 @@ impl DFSRequest {
             file_size,
             user_id: user_id.to_owned(),
             task_id: task_id.to_owned(),
-            collaborator_list: collaborator_list.iter().map(|s| s.to_string()).collect(),
+            collaborator_list: collaborator_list.iter().map(|s| (*s).to_string()).collect(),
             allow_policy,
         })
     }

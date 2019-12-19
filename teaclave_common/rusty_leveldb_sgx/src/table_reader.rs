@@ -43,17 +43,11 @@ pub struct Table {
 impl Table {
     /// Creates a new table reader operating on unformatted keys (i.e., UserKey).
     fn new_raw(opt: Options, file: Rc<Box<dyn RandomAccess>>, size: usize) -> Result<Table> {
-        let footer = try!(read_footer(file.as_ref().as_ref(), size));
-        let indexblock = try!(table_block::read_table_block(
-            opt.clone(),
-            file.as_ref().as_ref(),
-            &footer.index
-        ));
-        let metaindexblock = try!(table_block::read_table_block(
-            opt.clone(),
-            file.as_ref().as_ref(),
-            &footer.meta_index
-        ));
+        let footer = read_footer(file.as_ref().as_ref(), size)?;
+        let indexblock =
+            table_block::read_table_block(opt.clone(), file.as_ref().as_ref(), &footer.index)?;
+        let metaindexblock =
+            table_block::read_table_block(opt.clone(), file.as_ref().as_ref(), &footer.meta_index)?;
 
         let filter_block_reader =
             Table::read_filter_block(&metaindexblock, file.as_ref().as_ref(), &opt)?;
@@ -129,11 +123,8 @@ impl Table {
         }
 
         // Two times as_ref(): First time to get a ref from Rc<>, then one from Box<>.
-        let b = try!(table_block::read_table_block(
-            self.opt.clone(),
-            self.file.as_ref().as_ref(),
-            location
-        ));
+        let b =
+            table_block::read_table_block(self.opt.clone(), self.file.as_ref().as_ref(), location)?;
 
         // insert a cheap copy (Rc).
         self.opt
