@@ -20,7 +20,7 @@ endfunction()
 
 function(init_submodules)
     execute_process (
-    COMMAND bash -c "if git submodule status | egrep -q '^[-]|^[+]'; then echo 'INFO: Need to reinitialize git submodules' && git submodule update --init --recursive; fi"
+    COMMAND bash -c "if [[ $(git submodule summary) ]]; then echo INFO: Need to reinitialize git submodules && git submodule update --init --recursive; fi"
     )
 endfunction()
 
