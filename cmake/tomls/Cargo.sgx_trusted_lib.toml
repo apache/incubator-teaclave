@@ -32,19 +32,19 @@ exclude = [
 mesatee_core      = { path = "./mesatee_core" }
 
 # Rust SGX SDK
-sgx_alloc         = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.9" }
-sgx_build_helper  = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.9" }
-sgx_cov           = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.9" }
-sgx_libc          = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.9" }
-sgx_rand          = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.9" }
-sgx_tcrypto       = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.9" }
-sgx_tprotected_fs = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.9" }
-sgx_trts          = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.9" }
-sgx_tse           = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.9" }
-sgx_tstd          = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.9" }
-sgx_tunittest     = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.9" }
-sgx_types         = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.9" }
-sgx_unwind        = { git = "https://github.com/baidu/rust-sgx-sdk", rev = "v1.0.9" }
+sgx_alloc         = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.0" }
+sgx_build_helper  = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.0" }
+sgx_cov           = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.0" }
+sgx_libc          = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.0" }
+sgx_rand          = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.0" }
+sgx_tcrypto       = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.0" }
+sgx_tprotected_fs = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.0" }
+sgx_trts          = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.0" }
+sgx_tse           = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.0" }
+sgx_tstd          = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.0" }
+sgx_tunittest     = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.0" }
+sgx_types         = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.0" }
+sgx_unwind        = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.0" }
 
 # SGX crates
 adler32           = { git = "https://github.com/mesalock-linux/adler32-rs-sgx" }
@@ -70,7 +70,7 @@ parity-wasm       = { git = "https://github.com/mesalock-linux/parity-wasm-sgx" 
 png               = { git = "https://github.com/mesalock-linux/image-png-sgx" }
 profiler_builtins = { git = "https://github.com/mesalock-linux/sgx-fake-profiler-builtins" }
 quick-error       = { git = "https://github.com/mesalock-linux/quick-error-sgx" }
-rand              = { git = "https://github.com/mesalock-linux/rand-sgx", tag = "v0.6.5_sgx1.0.9" }
+rand              = { git = "https://github.com/mesalock-linux/rand-sgx", tag = "v0.6.5_sgx1.1.0" }
 regex             = { git = "https://github.com/mesalock-linux/regex-sgx" }
 ring              = { git = "https://github.com/mesalock-linux/ring-sgx", tag = "v0.16.5" }
 rustls            = { git = "https://github.com/mesalock-linux/rustls", branch = "mesalock_sgx" }
@@ -81,7 +81,7 @@ serde_json        = { git = "https://github.com/mesalock-linux/serde-json-sgx" }
 tiff              = { git = "https://github.com/mesalock-linux/image-tiff-sgx" }
 toml              = { git = "https://github.com/mesalock-linux/toml-rs-sgx" }
 uuid              = { git = "https://github.com/mesalock-linux/uuid-sgx" }
-wabt              = { git = "https://github.com/mesalock-linux/wabt-rs-sgx", branch = "v0.6.0-core" }
+wabt              = { git = "https://github.com/mesalock-linux/wabt-rs-sgx", branch = "v0.9-core" }
 wasmi             = { git = "https://github.com/mesalock-linux/wasmi-sgx" }
 webpki            = { git = "https://github.com/mesalock-linux/webpki", branch = "mesalock_sgx" }
 webpki-roots      = { git = "https://github.com/mesalock-linux/webpki-roots", branch = "mesalock_sgx" }

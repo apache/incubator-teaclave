@@ -12,7 +12,7 @@ ENV LIBSGX_ENCLAVE_COMMON_DEV_URL    "$SGX_DOWNLOAD_URL_BASE/$LIBSGX_ENCLAVE_COM
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-ENV RUST_TOOLCHAIN nightly-2019-08-01
+ENV RUST_TOOLCHAIN nightly-2019-11-25
 
 # install SGX dependencies
 RUN apt-get update && apt-get install -q -y \
