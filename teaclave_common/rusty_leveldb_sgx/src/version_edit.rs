@@ -194,7 +194,7 @@ impl VersionEdit {
             if let Some(tag) = tag_to_enum(tag) {
                 match tag {
                     EditTag::Comparator => {
-                        let buf = try!(read_length_prefixed(&mut reader));
+                        let buf = read_length_prefixed(&mut reader)?;
                         if let Ok(c) = String::from_utf8(buf) {
                             ve.comparator = Some(c);
                         } else {
@@ -237,7 +237,7 @@ impl VersionEdit {
                     EditTag::CompactPointer => {
                         // Monads by indentation...
                         if let Ok(lvl) = reader.read_varint() {
-                            let key = try!(read_length_prefixed(&mut reader));
+                            let key = read_length_prefixed(&mut reader)?;
 
                             ve.compaction_ptrs.push(CompactionPointer {
                                 level: lvl,
@@ -264,8 +264,8 @@ impl VersionEdit {
                         if let Ok(lvl) = reader.read_varint() {
                             if let Ok(num) = reader.read_varint() {
                                 if let Ok(size) = reader.read_varint() {
-                                    let smallest = try!(read_length_prefixed(&mut reader));
-                                    let largest = try!(read_length_prefixed(&mut reader));
+                                    let smallest = read_length_prefixed(&mut reader)?;
+                                    let largest = read_length_prefixed(&mut reader)?;
                                     ve.new_files.push((
                                         lvl,
                                         FileMetaData {
