@@ -1,11 +1,11 @@
 FROM ubuntu:18.04
 
-ENV SGX_DOWNLOAD_URL_BASE "https://download.01.org/intel-sgx/linux-2.6/ubuntu18.04-server"
+ENV SGX_DOWNLOAD_URL_BASE "https://download.01.org/intel-sgx/sgx-linux/2.7.1/distro/ubuntu18.04-server"
 
-ENV SGX_LINUX_X64_SDK            sgx_linux_x64_sdk_2.6.100.51363.bin
-ENV LIBSGX_ENCLAVE_COMMON        libsgx-enclave-common_2.6.100.51363-bionic1_amd64.deb
-ENV LIBSGX_ENCLAVE_COMMON_DEV    libsgx-enclave-common-dev_2.6.100.51363-bionic1_amd64.deb
-ENV LIBSGX_ENCLAVE_COMMON_DBGSYM libsgx-enclave-common-dbgsym_2.6.100.51363-bionic1_amd64.ddeb
+ENV SGX_LINUX_X64_SDK            sgx_linux_x64_sdk_2.7.101.3.bin
+ENV LIBSGX_ENCLAVE_COMMON        libsgx-enclave-common_2.7.101.3-bionic1_amd64.deb
+ENV LIBSGX_ENCLAVE_COMMON_DEV    libsgx-enclave-common-dev_2.7.101.3-bionic1_amd64.deb
+ENV LIBSGX_ENCLAVE_COMMON_DBGSYM libsgx-enclave-common-dbgsym_2.7.101.3-bionic1_amd64.ddeb
 
 ENV SGX_LINUX_X64_SDK_URL            "$SGX_DOWNLOAD_URL_BASE/$SGX_LINUX_X64_SDK"
 ENV LIBSGX_ENCLAVE_COMMON_URL        "$SGX_DOWNLOAD_URL_BASE/$LIBSGX_ENCLAVE_COMMON"
