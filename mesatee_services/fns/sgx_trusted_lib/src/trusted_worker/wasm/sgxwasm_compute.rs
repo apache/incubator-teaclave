@@ -53,7 +53,7 @@ pub fn sgxwasm_run_action(
             response = result_covert(r);
         }
         sgxwasm::SgxWasmAction::LoadModule { name, module } => {
-            let r = wasm_load_module(spec_driver, name.clone(), module);
+            let r = wasm_load_module(spec_driver, name, module);
             response = r.map(|_| Option::<BoundaryValue>::None);
         }
         sgxwasm::SgxWasmAction::TryLoad { module } => {
@@ -61,7 +61,7 @@ pub fn sgxwasm_run_action(
             response = r.map(|_| Option::<BoundaryValue>::None);
         }
         sgxwasm::SgxWasmAction::Register { name, as_name } => {
-            let r = wasm_register(spec_driver, &name, as_name.clone());
+            let r = wasm_register(spec_driver, &name, as_name);
             response = r.map(|_| Option::<BoundaryValue>::None);
         }
     }
@@ -139,7 +139,7 @@ fn wasm_load_module(
             ))
         })?;
 
-    spec_driver.add_module(name, instance.clone());
+    spec_driver.add_module(name, instance);
 
     Ok(())
 }

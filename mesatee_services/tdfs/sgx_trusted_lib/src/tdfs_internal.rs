@@ -50,7 +50,7 @@ impl HandleRequest for CreateFileRequest {
             file_name: self.task_id.clone(),
             sha256: self.sha256.clone(),
             file_size: self.file_size,
-            key_id: key_id.clone(),
+            key_id,
             storage_path: file_id.clone(),
             task_id: Some(self.task_id.clone()),
             allow_policy: self.allow_policy,

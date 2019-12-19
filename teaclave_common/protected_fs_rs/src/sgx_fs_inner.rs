@@ -136,7 +136,7 @@ impl SgxFile {
 
         self.0
             .seek(offset, whence)
-            .map_err(|err| Error::from_raw_os_error(err))?;
+            .map_err(Error::from_raw_os_error)?;
 
         let offset = self.tell()?;
         Ok(offset as u64)
