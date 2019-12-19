@@ -30,7 +30,7 @@ protected_fs_rs    = { path = "../../../teaclave_common/protected_fs_rs", defaul
 rusty-leveldb = { path = "../../../teaclave_common/rusty_leveldb_sgx", default-features = false, optional = true }
 
 mesatee_core           = { version = "0.1.0" }
-sgx_cov         = { version = "0.1.0", optional = true }
-sgx_tstd        = { version = "1.0.9", features = ["net", "backtrace"], optional = true }
-sgx_types       = { version = "1.0.9" }
-sgx_tunittest   = { version = "1.0.9", optional = true }
+sgx_cov         = { version = "1.1.0", optional = true }
+sgx_tstd        = { version = "1.1.0", features = ["net", "backtrace"], optional = true }
+sgx_types       = { version = "1.1.0" }
+sgx_tunittest   = { version = "1.1.0", optional = true }

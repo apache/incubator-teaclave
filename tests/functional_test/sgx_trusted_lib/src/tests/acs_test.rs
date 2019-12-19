@@ -119,7 +119,7 @@ pub fn access_control_model() {
 
     assert_eq!(
         client
-            .enforce_task_launch(FUSION_TASK.to_string(), participants.clone(),)
+            .enforce_task_launch(FUSION_TASK.to_string(), participants,)
             .unwrap(),
         true,
     );

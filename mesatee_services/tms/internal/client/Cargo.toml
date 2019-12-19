@@ -23,6 +23,6 @@ log          = { version = "0.4.6" }
 tms_internal_proto = { path = "../proto", optional = true}
 mesatee_core    = { version = "0.1.0" }
 
-sgx_cov   = { version = "0.1.0", optional = true }
-sgx_tstd  = { version = "1.0.9", optional = true }
-sgx_types = { version = "1.0.9" }
+sgx_cov   = { version = "1.1.0", optional = true }
+sgx_tstd  = { version = "1.1.0", optional = true }
+sgx_types = { version = "1.1.0" }

@@ -102,7 +102,7 @@ impl Worker for LogisticRegPredictWorker {
         let test_data_str = String::from_utf8(test_data_bytes)
             .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
 
-        let test_data_matrix = parse_input_to_matrix(&test_data_str.to_string())?;
+        let test_data_matrix = parse_input_to_matrix(&test_data_str)?;
         //info!("model json:\n{:}",model_json);
         //let mut predict = LogisticRegressor::default();
         let mut alg_alpha: f64 = 0.3;
@@ -258,8 +258,8 @@ impl Worker for LogisticRegTrainWorker {
         let target_data_str = String::from_utf8(target_data_bytes)
             .map_err(|_| Error::from(ErrorKind::InvalidInputError))?;
 
-        let train_data_matrix = parse_input_to_matrix(&train_data_str.to_string())?;
-        let target_data_vector = parse_input_to_vector(&target_data_str.to_string())?;
+        let train_data_matrix = parse_input_to_matrix(&train_data_str)?;
+        let target_data_vector = parse_input_to_vector(&target_data_str)?;
 
         let gd = GradientDesc::new(input.train_alg_alpha, input.train_alg_iters);
         let mut logisticreg_train_mod = LogisticRegressor::new(gd);

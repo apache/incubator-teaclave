@@ -169,7 +169,7 @@ impl DFSResponse {
 
     pub fn new_list_file(list: &[&str]) -> DFSResponse {
         DFSResponse::List(ListFileResponse {
-            list: list.iter().map(|s| s.to_string()).collect(),
+            list: list.iter().map(|s| (*s).to_string()).collect(),
         })
     }
 

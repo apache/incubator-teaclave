@@ -121,7 +121,7 @@ fn universal_quote_check(quote: &crate::rpc::sgx::auth::SgxQuote) -> bool {
 pub fn get_trusted_enclave_attr(service_names: Vec<&str>) -> EnclaveAttr {
     let measures = service_names
         .iter()
-        .map(|name| *ENCLAVE_IDENTITIES.get(&name.to_string()).unwrap())
+        .map(|name| *ENCLAVE_IDENTITIES.get(&(*name).to_string()).unwrap())
         .collect();
     EnclaveAttr {
         measures,
