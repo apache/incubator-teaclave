@@ -108,19 +108,17 @@ pub mod runtime_config {
             };
 
             config.audit.enclave_info = match &config.audit.enclave_info_source {
-                ConfigSource::Path(ref enclave_info_path) => {
-                    fs::read_to_string(enclave_info_path)
-                    .unwrap_or_else(|_| panic!("Cannot find enclave info at {:?}.", enclave_info_path))
-                },
+                ConfigSource::Path(ref enclave_info_path) => fs::read_to_string(enclave_info_path)
+                    .unwrap_or_else(|_| {
+                        panic!("Cannot find enclave info at {:?}.", enclave_info_path)
+                    }),
             };
 
             let mut signatures: Vec<Vec<u8>> = vec![];
             for source in &config.audit.auditor_signatures_source {
                 let signature = match source {
-                    ConfigSource::Path(ref path) => {
-                        fs::read(path)
-                            .unwrap_or_else(|_| panic!("Cannot find signature file {:?}.", path))
-                    },
+                    ConfigSource::Path(ref path) => fs::read(path)
+                        .unwrap_or_else(|_| panic!("Cannot find signature file {:?}.", path)),
                 };
                 signatures.push(signature);
             }
