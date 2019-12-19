@@ -37,7 +37,10 @@ fn main() {
     config.extern_path(".kms_proto", "kms_proto::proto");
     config.extern_path(".cred_proto", "authentication_proto::proto");
     config.extern_path(".data_common", "tdfs_common_proto::data_common_proto");
-    config.extern_path(".function_common", "tdfs_common_proto::function_common_proto");
+    config.extern_path(
+        ".function_common",
+        "tdfs_common_proto::function_common_proto",
+    );
     config.out_dir(output);
     config
         .compile_protos(&to_compiled_protos, includes)
