@@ -1,0 +1,64 @@
+syntax = "proto2";
+import "function_common.proto";
+import "cred.proto";
+package function_proto;
+
+// Request for registering a function
+message RegisterFunctionRequest {
+    // function description
+    required string description = 1;
+    // script content
+    required bytes script = 2;
+    // whether the function is private or public. 
+    // if the function is private, the task need the owner's approval.  
+    required bool public = 3;
+    // input arguments
+    repeated function_common.Arg input_args = 4;
+    // output arguments
+    repeated function_common.Arg output_args = 5;
+    // relationship between input and output
+    repeated function_common.ArgRelationship arg_relationships = 6;
+    // user credential
+    required cred_proto.Credential creds = 99;
+}
+
+// Response for registering a function
+message RegisterFunctionResponse {
+    // function identifier
+    required string function_id = 1; 
+}
+
+// Request for reading a function
+message ReadFunctionRequest {
+    // function identifier
+    required string function_id = 1;
+    // user credential
+    required cred_proto.Credential creds = 99;
+}
+
+// Response for reading a function
+message ReadFunctionResponse {
+    // function definition
+    // only the owner can read the function, unless the function is public
+    required function_common.FunctionDefinition function = 1;
+}
+
+// Request for deleting a function. Only the owner can delete it.
+message DeleteFunctionRequest {
+    // function identifier
+    required string function_id = 1;
+    // user credential
+    required cred_proto.Credential creds = 99;
+}
+
+// Response for deleting a function
+message DeleteFunctionResponse {
+    // success or not
+    required bool success = 1;
+}
+
+service FunctionStoreService {
+    rpc RegisterFunction(RegisterFunctionRequest) returns (RegisterFunctionResponse);
+    rpc ReadFunction(ReadFunctionRequest) returns (ReadFunctionResponse);
+    rpc DeleteFunction(DeleteFunctionRequest) returns (DeleteFunctionResponse);
+}

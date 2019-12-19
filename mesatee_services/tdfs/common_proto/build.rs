@@ -20,7 +20,7 @@ include!("../../common/prost_build_generator.rs");
 
 #[cfg(not(feature = "mesalock_sgx"))]
 fn main() {
-    let proto_files = ["data_common.proto"];;
+    let proto_files = ["data_common.proto", "function_common.proto"];;
     let src = PathBuf::from("src").join("proto");
     let mut to_compiled_protos = Vec::new();
     for proto in proto_files.iter() {

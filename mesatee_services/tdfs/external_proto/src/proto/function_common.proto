@@ -1,0 +1,49 @@
+// This file is copied from function_common. 
+// It's just used for reference. 
+// It will not be used to generage rust files. 
+// Message bodies can be removed or inconsistent with the original ones
+
+syntax = "proto2";
+package function_common;
+
+// Argument Defintion
+message Arg {
+    // argument name
+    required string name = 1;
+    // argument type
+    required string arg_type = 2;
+    // argument description
+    optional string description = 3;
+}
+
+// Argument relationship: input and output should have same owner.
+// This is a reminder for the users and later the developer may check the relationship in the script.
+message ArgRelationship {
+    required string input_name = 1;
+    required string output_name = 2;
+}
+
+// The defintion of the function.
+message FunctionDefinition {
+    // function identifier. 
+    required string function_id = 1;
+    // the description of the function
+    required string description = 2;
+    // function owner
+    required string owner = 3;
+    // script content
+    required bytes script = 4;
+    // hash of the script
+    required string script_hash = 5;
+    // whether the function is public or private.
+    // if the function is private, the task need the owner's approval.  
+    required bool public = 6;
+    // input arguments
+    repeated Arg input_args = 7;
+    // output arguments
+    repeated Arg output_args = 8;
+    // relationship between input and output
+    repeated ArgRelationship arg_relationships = 9;
+    // hash of the function defintion (script content and signatures are not included). 
+    required string function_hash = 10;
+}

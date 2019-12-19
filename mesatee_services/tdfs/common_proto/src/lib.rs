@@ -23,3 +23,10 @@ pub mod data_common_proto {
     #![allow(unknown_lints)]
     include!("prost_generated/data_common.rs");
 }
+
+pub mod function_common_proto {
+    #![allow(warnings)]
+    #![allow(clippy)]
+    #![allow(unknown_lints)]
+    include!("prost_generated/function_common.rs");
+}

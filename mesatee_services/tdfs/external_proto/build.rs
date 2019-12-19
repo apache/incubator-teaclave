@@ -20,7 +20,7 @@ include!("../../common/prost_build_generator.rs");
 
 #[cfg(not(feature = "mesalock_sgx"))]
 fn main() {
-    let proto_files = ["data.proto"];;
+    let proto_files = ["data.proto", "function.proto"];;
     let src = PathBuf::from("src").join("proto");
     let mut to_compiled_protos = Vec::new();
     for proto in proto_files.iter() {
@@ -37,6 +37,7 @@ fn main() {
     config.extern_path(".kms_proto", "kms_proto::proto");
     config.extern_path(".cred_proto", "authentication_proto::proto");
     config.extern_path(".data_common", "tdfs_common_proto::data_common_proto");
+    config.extern_path(".function_common", "tdfs_common_proto::function_common_proto");
     config.out_dir(output);
     config
         .compile_protos(&to_compiled_protos, includes)

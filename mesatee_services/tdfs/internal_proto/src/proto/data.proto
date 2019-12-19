@@ -1,31 +1,31 @@
 syntax = "proto2";
 import "kms.proto";
 import "data_common.proto";
-package data_proto;
+package tdfs_proto;
 
-// Request for writing output
+// Request for writing a private output
 // Update the meta information for the output
-message WriteOutputRequest {
+message WritePrivateOutputRequest {
   // data identifier
   required string data_id = 1;
   // meta information of the data
   required data_common.DataMeta meta = 2;
 }
 
-// Response for writing output
-message WriteOutputResponse {
+// Response for writing a private output
+message WritePrivateOutputResponse {
   required bool success = 1;
 }
 
-// Request for fetching input
-message FetchInputRequest {
+// Request for fetching a private input
+message FetchPrivateInputRequest {
   // data indentifier
   required string data_id = 1;
 }
 
-// Response for fetching input
+// Response for fetching a private input
 // TMS can use the request to prepare inputs
-message FetchInputResponse {
+message FetchPrivateInputResponse {
   // meta information of the input, for checking integrity
   required data_common.DataMeta meta = 1; 
   // storage information for reading the data
@@ -34,32 +34,37 @@ message FetchInputResponse {
   required kms_proto.KeyConfig config = 3; 
 }
 
-// Request for fetching output
-message FetchOutputRequest {
+// Request for fetching a private output
+message FetchPrivateOutputRequest {
   // data indentifier
   required string data_id = 1;
 }
 
-// Response for fetching output
+// Response for fetching a private output
 // TMS can use the request to prepare outputs
-message FetchOutputResponse {
+message FetchPrivateOutputResponse {
   // storage information for writing the data
   required data_common.DataStorageInfo storage_info = 1; 
   // key config for file encryption
-  required kms_proto.KeyConfig config = 2; 
+  required kms_proto.KeyConfig config = 2;
+  // whether the output is already written by a task
+  required bool is_complete = 3; 
 }
 
-// Request for registering shared output (data fusion)
-message RegisterSharedOutputRequest {
+
+// Request for registering fusion output
+message RegisterFusionOutputRequest {
   // owners of fused data 
   repeated string owners = 1; 
+  // source task id
+  required string task_id = 2;
 }
 
-// Response for registing shared output
+// Response for registing fusion output
 // The response includes the storage_info and key_config, 
 // so the worker can read/write the data.
 // Data id should be returned to the task participants.
-message RegisterSharedOutputResponse {
+message RegisterFusionOutputResponse {
   required string data_id = 1; 
   // internal storage info for writing output
   required data_common.DataStorageInfo storage_info = 2; 
@@ -67,10 +72,33 @@ message RegisterSharedOutputResponse {
   required kms_proto.KeyConfig config = 3; 
 }
 
+// Request for feching a fusion data as an input
+message FetchFusionDataRequest {
+  // Data identifier
+  required string data_id = 1;
+}
 
-service TDFSInternal {
-  rpc FetchInput(FetchInputRequest) returns (FetchInputResponse);
-  rpc FetchOutput(FetchOutputRequest) returns (FetchOutputResponse);
-  rpc RegisterSharedOutput(RegisterSharedOutputRequest) returns (RegisterSharedOutputResponse);
-  rpc WriteOutput(WriteOutputRequest) returns (WriteOutputResponse);
+// Response for fetching a fusion data as an input
+message FetchFusionDataResponse {
+  // Meta information. If output is not written, the meta infomation is None. 
+  optional data_common.DataMeta meta = 1;
+  // key config for file decryption
+  required kms_proto.KeyConfig config = 2; 
+  // Owners of the data
+  repeated string owners = 3;
+  // Which task generates the fustion data
+  required string source_task_id = 4;
+  // Whether the output has been written by a task. 
+  required bool is_complete = 5;
+}
+
+service DataStoreService {
+  rpc WritePrivateOutput(WritePrivateOutputRequest) returns (WritePrivateOutputResponse);
+  rpc FetchPrivateInput(FetchPrivateInputRequest) returns (FetchPrivateInputResponse);
+  rpc FetchPrivateOutput(FetchPrivateOutputRequest) returns (FetchPrivateOutputResponse);
+}
+
+service FusionDataService {
+  rpc RegisterFusionOutput(RegisterFusionOutputRequest) returns (RegisterFusionOutputResponse);
+  rpc FetchFusionData(FetchFusionDataRequest) returns (FetchFusionDataResponse);
 }

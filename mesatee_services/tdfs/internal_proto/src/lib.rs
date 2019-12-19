@@ -22,5 +22,5 @@ pub mod proto {
     #![allow(clippy)]
     #![allow(unknown_lints)]
     use kms_proto;
-    include!("prost_generated/data_proto.rs");
+    include!("prost_generated/tdfs_proto.rs");
 }

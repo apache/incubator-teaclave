@@ -2,13 +2,13 @@ syntax = "proto2";
 import "kms.proto";
 import "cred.proto";
 import "data_common.proto";
-package data_proto;
+package tdfs_proto;
 
 
-// Request for registering an input
-// The input contains: the logical access info (key config), physical access info (storage path)
+// Request for registering a private input
+// The input includes: the logical access info (key config), physical access info (storage path)
 // and meta information to check the integrity before and after encryption
-message RegisterInputRequest {
+message RegisterPrivateInputRequest {
   // Key config for file decryption
   required kms_proto.KeyConfig config = 1;
   // Meta information
@@ -19,16 +19,16 @@ message RegisterInputRequest {
   required cred_proto.Credential creds = 99;
 }
 
-// Response for registering an input
-message RegisterInputResponse {
+// Response for registering a private input
+message RegisterPrivateInputResponse {
   // data identifier
   required string data_id = 1;
 }
 
 // Request for registering a private output
-message RegisterOutputRequest {
-  // Encryption type: AEAD, ProtectedFS
-  required kms_proto.EncType enc_type = 1;
+message RegisterPrivateOutputRequest {
+  // Key config for file encrytpion
+  required kms_proto.KeyConfig config = 1;
   // storage information
   required data_common.DataStorageInfo storage_info = 2; 
   // Used for authentication
@@ -36,41 +36,83 @@ message RegisterOutputRequest {
 }
 
 // Request for registering a private output
-message RegisterOutputResponse {
+message RegisterPrivateOutputResponse {
   // data identifier
   required string data_id = 1;
 }
 
-// Request for reading the private output
-message ReadOutputRequest {
+// Request for reading the meta and status of a private output
+message ReadPrivateOutputRequest {
   // Data identifier
   required string data_id = 1;
+  // Used for authentication
   required cred_proto.Credential creds = 99;
 }
 
-// Response for reading the output.
-message ReadOutputResponse {
+// Response for reading the meta and status of a private output
+message ReadPrivateOutputResponse {
   // Meta information. If output is not written, the meta infomation is None. 
-  optional data_common.DataMeta meta = 1; 
-  // Key config for file decryption. If output is not written, the key config won't be returned. 
-  optional kms_proto.KeyConfig config = 2;
+  optional data_common.DataMeta meta = 1;
+  // Whether the output has been written by a task. 
+  required bool is_complete = 2;
 }
 
-// Request for deleting a data
-message DeleteDataRequest {
+// Request for deleting a private data
+message DeletePrivateDataRequest {
+  // Data identifier
   required string data_id = 1;
+  // Used for authentication
   required cred_proto.Credential creds = 99;
 }
 
-// Response for deleting a data
-message DeleteDataResponse {
+// Response for deleting a private data
+message DeletePrivateDataResponse {
+  required bool success = 1;
+}
+
+// Request for reading the meta and status of a fusion data
+message ReadFusionDataRequest {
+  // Data identifier
+  required string data_id = 1;
+  // Used for authentication
+  required cred_proto.Credential creds = 99;
+}
+
+// Response for reading the meta and status of a fusion data
+message ReadFusionDataResponse {
+  // Meta information. If output is not written, the meta infomation is None. 
+  optional data_common.DataMeta meta = 1;
+  // Owners of the data
+  repeated string owners = 2;
+  // Which task generates the fustion data
+  required string source_task_id = 3;
+  // Whether the output has been written by a task. 
+  required bool is_complete = 4;
+}
+
+// Request for deleting a fusion data
+message DeleteFusionDataRequest {
+  // Data identifier
+  required string data_id = 1;
+  // Used for authentication
+  required cred_proto.Credential creds = 99;
+}
+
+// Response for deleting a fusion data
+message DeleteFusionDataResponse {
   required bool success = 1;
 }
 
 // @need_authentication # automatic authentication
-service TDFSExternal {
-  rpc RegisterInput(RegisterInputRequest) returns (RegisterInputResponse);
-  rpc RegisterOutput(RegisterOutputRequest) returns (RegisterOutputResponse);
-  rpc ReadOutput(ReadOutputRequest) returns (ReadOutputResponse);
-  rpc DeleteData(DeleteDataRequest) returns (DeleteDataResponse);
+service DataStoreService {
+  rpc RegisterPrivateInput(RegisterPrivateInputRequest) returns (RegisterPrivateInputResponse);
+  rpc RegisterPrivateOutput(RegisterPrivateOutputRequest) returns (RegisterPrivateOutputResponse);
+  rpc ReadPrivateOutput(ReadPrivateOutputRequest) returns (ReadPrivateOutputResponse);
+  rpc DeletePrivateData(DeletePrivateDataRequest) returns (DeletePrivateDataResponse);
+}
+
+// @need_authentication # automatic authentication
+service FusionDataService {
+  rpc ReadFusionData(ReadFusionDataRequest) returns (ReadFusionDataResponse);
+  rpc DeleteFusionData(DeleteFusionDataRequest) returns (DeleteFusionDataResponse);
 }

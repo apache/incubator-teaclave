@@ -1,0 +1,15 @@
+syntax = "proto2";
+import "function_common.proto";
+package tdfs_proto;
+
+message FetchFunctionRequest {
+    required string function_id = 1;
+}
+
+message FetchFunctionResponse {
+    required function_common.FunctionDefinition function = 1;
+}
+
+service FunctionStoreService {
+    rpc FetchFunction(FetchFunctionRequest) returns (FetchFunctionResponse);
+}
