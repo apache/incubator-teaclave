@@ -152,8 +152,7 @@ impl<R: Read> LogReader<R> {
         loop {
             if self.blocksize - self.blk_off < HEADER_SIZE {
                 // skip to next block
-                self
-                    .src
+                self.src
                     .read(&mut self.head_scratch[0..self.blocksize - self.blk_off])?;
                 self.blk_off = 0;
             }
