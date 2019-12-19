@@ -16,39 +16,36 @@
 // under the License.
 
 use super::get_trusted_enclave_attr;
+use super::runtime_config;
 use super::ServiceConfig;
 use super::{InboundDesc, OutboundDesc, TargetDesc};
-use teaclave_config::runtime_config;
 
 pub struct External;
 impl External {
     pub fn tms() -> ServiceConfig {
         ServiceConfig::new(
-            runtime_config::config().api_endpoints.tms.listen_address,
+            runtime_config().api_endpoints.tms.listen_address,
             InboundDesc::External,
         )
     }
 
     pub fn fns() -> ServiceConfig {
         ServiceConfig::new(
-            runtime_config::config().api_endpoints.fns.listen_address,
+            runtime_config().api_endpoints.fns.listen_address,
             InboundDesc::External,
         )
     }
 
     pub fn tdfs() -> ServiceConfig {
         ServiceConfig::new(
-            runtime_config::config().api_endpoints.tdfs.listen_address,
+            runtime_config().api_endpoints.tdfs.listen_address,
             InboundDesc::External,
         )
     }
 
     pub fn target_fns() -> TargetDesc {
         TargetDesc::new(
-            runtime_config::config()
-                .api_endpoints
-                .fns
-                .advertised_address,
+            runtime_config().api_endpoints.fns.advertised_address,
             OutboundDesc::Sgx(get_trusted_enclave_attr(vec!["fns"])),
         )
     }

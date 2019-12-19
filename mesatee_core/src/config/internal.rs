@@ -16,90 +16,66 @@
 // under the License.
 
 use super::get_trusted_enclave_attr;
+use super::runtime_config;
 use super::InboundDesc;
 use super::OutboundDesc;
 use super::ServiceConfig;
 use super::TargetDesc;
-use teaclave_config::runtime_config;
 
 pub struct Internal;
 impl Internal {
     pub fn tms() -> ServiceConfig {
         ServiceConfig::new(
-            runtime_config::config()
-                .internal_endpoints
-                .tms
-                .listen_address,
+            runtime_config().internal_endpoints.tms.listen_address,
             InboundDesc::Sgx(get_trusted_enclave_attr(vec!["fns"])),
         )
     }
 
     pub fn kms() -> ServiceConfig {
         ServiceConfig::new(
-            runtime_config::config()
-                .internal_endpoints
-                .kms
-                .listen_address,
+            runtime_config().internal_endpoints.kms.listen_address,
             InboundDesc::Sgx(get_trusted_enclave_attr(vec!["fns", "tdfs"])),
         )
     }
 
     pub fn tdfs() -> ServiceConfig {
         ServiceConfig::new(
-            runtime_config::config()
-                .internal_endpoints
-                .tdfs
-                .listen_address,
+            runtime_config().internal_endpoints.tdfs.listen_address,
             InboundDesc::Sgx(get_trusted_enclave_attr(vec!["fns", "tms"])),
         )
     }
 
     pub fn acs() -> ServiceConfig {
         ServiceConfig::new(
-            runtime_config::config()
-                .internal_endpoints
-                .acs
-                .listen_address,
+            runtime_config().internal_endpoints.acs.listen_address,
             InboundDesc::Sgx(get_trusted_enclave_attr(vec!["kms", "tms", "tdfs"])),
         )
     }
 
     pub fn target_tms() -> TargetDesc {
         TargetDesc::new(
-            runtime_config::config()
-                .internal_endpoints
-                .tms
-                .advertised_address,
+            runtime_config().internal_endpoints.tms.advertised_address,
             OutboundDesc::Sgx(get_trusted_enclave_attr(vec!["tms"])),
         )
     }
 
     pub fn target_kms() -> TargetDesc {
         TargetDesc::new(
-            runtime_config::config()
-                .internal_endpoints
-                .kms
-                .advertised_address,
+            runtime_config().internal_endpoints.kms.advertised_address,
             OutboundDesc::Sgx(get_trusted_enclave_attr(vec!["kms"])),
         )
     }
 
     pub fn target_tdfs() -> TargetDesc {
         TargetDesc::new(
-            runtime_config::config()
-                .internal_endpoints
-                .tdfs
-                .advertised_address,
+            runtime_config().internal_endpoints.tdfs.advertised_address,
             OutboundDesc::Sgx(get_trusted_enclave_attr(vec!["tdfs"])),
         )
     }
 
     pub fn target_acs() -> TargetDesc {
         TargetDesc::new(
-            runtime_config::config()
-                .internal_endpoints
-                .acs
-                .advertised_address,
+            runtime_config().internal_endpoints.acs.advertised_address,
             OutboundDesc::Sgx(get_trusted_enclave_attr(vec!["acs"])),
         )
     }

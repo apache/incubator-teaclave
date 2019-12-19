@@ -1,6 +1,7 @@
 // Use sgx_tstd to replace Rust's default std
 #![cfg_attr(feature = "mesalock_sgx", no_std)]
 #[cfg(feature = "mesalock_sgx")]
+#[macro_use]
 extern crate sgx_tstd as std;
 #[macro_use]
 extern crate log;
@@ -16,12 +17,14 @@ pub mod runtime_config {
     #[cfg(not(feature = "mesalock_sgx"))]
     use std::fs;
     #[cfg(feature = "mesalock_sgx")]
+    use std::prelude::v1::*;
+    #[cfg(feature = "mesalock_sgx")]
     use std::untrusted::fs;
 
-    use lazy_static::lazy_static;
     use serde_derive::Deserialize;
     use std::env;
     use std::net::SocketAddr;
+    use std::path::Path;
     use std::path::PathBuf;
     use std::string::String;
     use std::vec::Vec;
@@ -64,8 +67,14 @@ pub mod runtime_config {
 
     #[derive(Debug, Deserialize)]
     pub struct AuditConfig {
-        pub enclave_info: ConfigSource,
-        pub auditor_signatures: Vec<ConfigSource>,
+        #[serde(rename(deserialize = "enclave_info"))]
+        enclave_info_source: ConfigSource,
+        #[serde(rename(deserialize = "auditor_signatures"))]
+        auditor_signatures_source: Vec<ConfigSource>,
+        #[serde(skip_deserializing)]
+        pub enclave_info: String,
+        #[serde(skip_deserializing)]
+        pub auditor_signatures: Vec<Vec<u8>>,
     }
 
     #[derive(Debug, Deserialize)]
@@ -80,21 +89,10 @@ pub mod runtime_config {
         pub ias_key: String,
     }
 
-    pub fn is_initialized() -> bool {
-        RUNTIME_CONFIG.is_some()
-    }
-
-    pub fn config() -> &'static RuntimeConfig {
-        RUNTIME_CONFIG
-            .as_ref()
-            .expect("Invalid runtime config, should gracefully exit during enclave_init!!")
-    }
-
-    lazy_static! {
-        static ref RUNTIME_CONFIG: Option<RuntimeConfig> = {
-            #[cfg(feature = "mesalock_sgx")]
+    impl RuntimeConfig {
+        pub fn from_toml<T: AsRef<Path>>(path: T) -> Option<Self> {
             use std::prelude::v1::*;
-            let contents = match fs::read_to_string("runtime.config.toml") {
+            let contents = match fs::read_to_string(path) {
                 Ok(c) => c,
                 Err(_) => {
                     error!("Something went wrong reading the runtime config file.");
@@ -108,6 +106,24 @@ pub mod runtime_config {
                     return None;
                 }
             };
+
+            config.audit.enclave_info = match &config.audit.enclave_info_source {
+                ConfigSource::Path(ref enclave_info_path) => fs::read_to_string(enclave_info_path)
+                    .unwrap_or_else(|_| {
+                        panic!("Cannot find enclave info at {:?}.", enclave_info_path)
+                    }),
+            };
+
+            let mut signatures: Vec<Vec<u8>> = vec![];
+            for source in &config.audit.auditor_signatures_source {
+                let signature = match source {
+                    ConfigSource::Path(ref path) => fs::read(path)
+                        .unwrap_or_else(|_| panic!("Cannot find signature file {:?}.", path)),
+                };
+                signatures.push(signature);
+            }
+            config.audit.auditor_signatures = signatures;
+
             if !cfg!(sgx_sim) {
                 let ias_spid = match env::var("IAS_SPID") {
                     Ok(e) => e.trim().to_string(),
@@ -132,7 +148,7 @@ pub mod runtime_config {
             }
 
             Some(config)
-        };
+        }
     }
 }
 

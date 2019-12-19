@@ -48,7 +48,7 @@ use lazy_static::lazy_static;
 use super::fail::MayfailTrace;
 use crate::{Error, ErrorKind, Result};
 
-use teaclave_config::runtime_config;
+use crate::config::runtime_config;
 use teaclave_utils;
 
 pub const CERT_VALID_DAYS: i64 = 90i64;
@@ -270,7 +270,7 @@ fn talk_to_intel_ias(fd: c_int, req: String) -> Result<Vec<u8>> {
 fn get_sigrl_from_intel(fd: c_int, gid: u32) -> Result<Vec<u8>> {
     let req = format!(
         "GET {}{:08x} HTTP/1.1\r\nHOST: {}\r\nOcp-Apim-Subscription-Key: {}\r\nConnection: Close\r\n\r\n",
-        SIGRL_SUFFIX, gid, DEV_HOSTNAME, &runtime_config::config().env.ias_key
+        SIGRL_SUFFIX, gid, DEV_HOSTNAME, &runtime_config().env.ias_key
     );
 
     mayfail! {
@@ -288,7 +288,7 @@ fn get_report_from_intel(fd: c_int, quote: &[u8]) -> Result<AttnReport> {
     let req = format!("POST {} HTTP/1.1\r\nHOST: {}\r\nOcp-Apim-Subscription-Key: {}\r\nConnection: Close\r\nContent-Length:{}\r\nContent-Type: application/json\r\n\r\n{}",
                            REPORT_SUFFIX,
                            DEV_HOSTNAME,
-                           &runtime_config::config().env.ias_key,
+                           &runtime_config().env.ias_key,
                            encoded_json.len(),
                            encoded_json);
 
@@ -404,7 +404,7 @@ fn create_attestation_report(pub_k: &sgx_ec256_public_t) -> Result<AttnReport> {
     };
     let p_report = &rep as *const sgx_report_t;
     let quote_type = sgx_quote_sign_type_t::SGX_LINKABLE_SIGNATURE;
-    let spid: sgx_spid_t = teaclave_utils::decode_spid(&runtime_config::config().env.ias_spid)?;
+    let spid: sgx_spid_t = teaclave_utils::decode_spid(&runtime_config().env.ias_spid)?;
     let p_spid = &spid as *const sgx_spid_t;
     let p_nonce = &quote_nonce as *const sgx_quote_nonce_t;
     let p_qe_report = &mut qe_report as *mut sgx_report_t;
