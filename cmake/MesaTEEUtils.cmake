@@ -20,7 +20,7 @@ endfunction()
 
 function(init_submodules)
     execute_process (
-    COMMAND bash -c "if [[ ! $(git submodule foreach ls) ]] || [[ $(git submodule summary) ]]; then echo INFO: Need to reinitialize git submodules && git submodule update --init --recursive; fi"
+    COMMAND bash -c "if [[ ! $(git submodule foreach ls -A) ]] || [[ $(git submodule summary) ]]; then echo INFO: Need to reinitialize git submodules && git submodule update --init --recursive; fi"
     )
 endfunction()
 
