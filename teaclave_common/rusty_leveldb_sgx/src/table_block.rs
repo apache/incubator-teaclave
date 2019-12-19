@@ -53,15 +53,15 @@ pub fn read_table_block(
         f,
         &BlockHandle::new(
             location.offset() + location.size(),
-            table_builder::TABLE_BLOCK_COMPRESS_LEN
-        )
+            table_builder::TABLE_BLOCK_COMPRESS_LEN,
+        ),
     )?;
     let cksum = read_bytes(
         f,
         &BlockHandle::new(
             location.offset() + location.size() + table_builder::TABLE_BLOCK_COMPRESS_LEN,
-            table_builder::TABLE_BLOCK_CKSUM_LEN
-        )
+            table_builder::TABLE_BLOCK_CKSUM_LEN,
+        ),
     )?;
 
     if !verify_table_block(&buf, compress[0], unmask_crc(u32::decode_fixed(&cksum))) {
