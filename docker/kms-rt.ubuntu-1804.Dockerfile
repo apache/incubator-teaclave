@@ -1,7 +1,7 @@
 FROM ubuntu:18.04
 
-ENV SGX_DOWNLOAD_URL_BASE "https://download.01.org/intel-sgx/linux-2.6/ubuntu18.04-server"
-ENV LIBSGX_ENCLAVE_COMMON        libsgx-enclave-common_2.6.100.51363-bionic1_amd64.deb
+ENV SGX_DOWNLOAD_URL_BASE "https://download.01.org/intel-sgx/sgx-linux/2.7.1/distro/ubuntu18.04-server"
+ENV LIBSGX_ENCLAVE_COMMON        libsgx-enclave-common_2.7.101.3-bionic1_amd64.deb
 ENV LIBSGX_ENCLAVE_COMMON_URL    "$SGX_DOWNLOAD_URL_BASE/$LIBSGX_ENCLAVE_COMMON"
 
 RUN apt-get update && apt-get install -q -y \
