@@ -129,8 +129,8 @@ impl TaskRequest {
     ) -> TaskRequest {
         TaskRequest::Create(CreateTaskRequest {
             function_name: function_name.to_owned(),
-            collaborator_list: collaborator_list.iter().map(|s| s.to_string()).collect(),
-            files: files.iter().map(|s| s.to_string()).collect(),
+            collaborator_list: collaborator_list.iter().map(|s| (*s).to_string()).collect(),
+            files: files.iter().map(|s| (*s).to_string()).collect(),
             user_id: user_id.to_owned(),
             user_token: user_token.to_owned(),
         })
@@ -144,7 +144,7 @@ impl TaskRequest {
     ) -> TaskRequest {
         TaskRequest::Update(UpdateTaskRequest {
             task_id: task_id.to_owned(),
-            files: files.iter().map(|s| s.to_string()).collect(),
+            files: files.iter().map(|s| (*s).to_string()).collect(),
             user_id: user_id.to_owned(),
             user_token: user_token.to_owned(),
         })
@@ -192,7 +192,7 @@ impl TaskResponse {
 
     pub fn new_list_task(list: &[&str]) -> TaskResponse {
         TaskResponse::List(ListTaskResponse {
-            list: list.iter().map(|s| s.to_string()).collect(),
+            list: list.iter().map(|s| (*s).to_string()).collect(),
         })
     }
 }

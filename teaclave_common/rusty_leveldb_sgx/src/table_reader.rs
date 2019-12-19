@@ -43,7 +43,7 @@ pub struct Table {
 impl Table {
     /// Creates a new table reader operating on unformatted keys (i.e., UserKey).
     fn new_raw(opt: Options, file: Rc<Box<dyn RandomAccess>>, size: usize) -> Result<Table> {
-        let footer = read_footer(file.as_ref().as_ref(), size);
+        let footer = read_footer(file.as_ref().as_ref(), size)?;
         let indexblock =
             table_block::read_table_block(opt.clone(), file.as_ref().as_ref(), &footer.index)?;
         let metaindexblock =
