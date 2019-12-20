@@ -1,0 +1,31 @@
+[package]
+name = "tms_proto"
+version = "0.1.0"
+authors = ["MesaTEE Authors <developers@mesatee.org>"]
+description = "RPC protocol for TMS"
+license = "Apache-2.0"
+edition = "2018"
+
+[features]
+default = []
+mesalock_sgx = ["sgx_tstd", "mesatee_core/mesalock_sgx", "tdfs_common_proto/mesalock_sgx", "kms_proto/mesalock_sgx", "authentication_proto/mesalock_sgx"]
+cov = ["sgx_cov"]
+
+[dependencies]
+prost = { version = "0.5.0" }
+bytes = { version = ">= 0.4.12"} # unix app depends on 0.4.12, while sgx lib depends on 0.5.0
+prost-types = { version = "0.5.0" }
+cfg-if       = { version = "0.1.9" }
+serde        = { version = "1.0.39" }
+serde_json   = { version = "1.0.39" }
+serde_derive = { version = "1.0.92" }
+mesatee_core = { version = "0.1.0" }
+sgx_cov      = { version = "0.1.0", optional = true }
+sgx_tstd     = { version = "1.0.9", features = ["net", "backtrace"], optional = true }
+sgx_types    = { version = "1.0.9" }
+tdfs_common_proto = { path = "../../tdfs/common_proto" }
+kms_proto = { path = "../../kms/proto" }
+authentication_proto = { path = "../../common/authentication"}
+
+[build-dependencies]
+prost-build = { version = "0.5.0" }

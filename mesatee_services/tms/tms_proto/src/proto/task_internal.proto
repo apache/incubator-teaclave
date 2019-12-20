@@ -1,0 +1,78 @@
+syntax = "proto2";
+package tms_internal;
+import "kms.proto";
+import "data_common.proto";
+
+// Function information
+message Function {
+  // Built-in function only needs function_id
+  optional function_id = 1
+  // script content
+  required bytes script = 2;
+}
+
+// Input Arugment
+message InputArg {
+  // Meta information is used to verify the data integrity. 
+  required data_common.DataMeta meta = 1; 
+  // Storage information is used to access the physical data. 
+  required data_common.DataStorageInfo storage_info = 2;
+  // Key config is used to decrypt the data.
+  required kms_proto.KeyConfig config = 3; 
+}
+
+// Output Argument
+message OutputArg {
+  // Storage information is used to access the physical data. 
+  required data_common.DataStorageInfo storage_info = 1;
+  // Key config is used to encrypt the data.
+  required kms_proto.KeyConfig config = 2; 
+}
+
+// ExecutableTask contains all the information the worker is required to execute the Task.
+// Compared to TaskAgreement, data_id is replaced by meta information, physical access information and logical access information.
+message ExecutableTask {
+  // Task identifer
+  required string task_id = 1;
+  // Task token is used for the worker to update the Task status and output meta
+  required string task_token = 2;
+  // Function information
+  required Function function = 3;
+  // Input Arguments
+  map<string, InputArg> input_arguments = 4;
+  // Output Arguments
+  map<string, OutputArg> output_argments = 5;
+}
+
+// Task status
+enum TaskStatus {
+  // If the Task is scheduled and being executed in a worker, the status is Running
+  Running = 3;
+  // If the Task is executed successfully, the status is Successful
+  Successful = 4;
+  // If the Task is failed to be executed, the status is Failed.
+  Failed = 5;
+}
+
+// Request for updating Task status and output meta.
+message UpdateTaskRequest {
+  // Task identifier
+  required string task_id = 1;
+  // Task token 
+  required string task_token = 2;
+  // Task status
+  required TaskStatus status = 3;
+  // Output meta
+  map<string, data_common.DataMeta> output_meta = 4;
+}
+
+// Response for updating Task status and output meta.
+message UpdateTaskResponse {
+  required bool success = 1;
+}
+
+service TaskService {
+  // Worker can use this request to ask the scheduler to update the task status and output meta.
+  // Scheduler can use this request to ask TMS to update the task status and output meta
+  rpc UpdateTask(UpdateTaskRequest) returns (UpdateTaskResponse);
+}

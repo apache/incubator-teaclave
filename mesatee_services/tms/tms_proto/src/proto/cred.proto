@@ -1,0 +1,11 @@
+// This file is copied from kms. 
+// It's just used for reference. 
+// It will not be used to generage rust files. 
+// Message bodies can be removed or inconsistent with the original ones
+
+syntax = "proto2";
+package cred_proto;
+
+message Credential {
+    // don't need to prvoide the fields 
+}
