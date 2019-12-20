@@ -34,9 +34,13 @@ mkdir -p build && cd build
 cmake -DTEST_MODE=ON .. && make
 ```
 
-Start Teaclave services with `docker-compose` and detach into background. Make
-sure SGX driver and PSW package are properly installed and you have got the SPID
-and key to connect Intel Attestation Service.
+Start Teaclave services with
+[Docker Compose](https://docs.docker.com/compose/) and detach into background.
+Make
+sure [SGX driver and PSW package](https://01.org/intel-software-guard-extensions/downloads)
+are properly installed and you have got the
+[SPID and key](https://api.portal.trustedservices.intel.com/EPID-attestation)
+to connect Intel Attestation Service.
 
 ```
 export IAS_SPID=xxx
@@ -58,8 +62,9 @@ Shutdown all Teaclave services.
 
 ## Contributing
 
-Teaclave is open source in The Apache Way, we aim to create a project that is
-maintained and owned by the community. All kinds of contributions are welcome.
+Teaclave is open source in [The Apache Way](https://www.apache.org/theapacheway/),
+we aim to create a project that is maintained and owned by the community. All
+kinds of contributions are welcome.
 
 
 ## Community
