@@ -33,7 +33,7 @@ struct EchoOpt {
     #[structopt(short = "e", required = true)]
     enclave_info: PathBuf,
 
-    #[structopt(short = "i", required = true)]
+    #[structopt(short = "m", required = true)]
     message: String,
 }
 
