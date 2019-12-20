@@ -6,9 +6,9 @@ platform.
 ***Security***:
 Teaclave adopts multiple security technologies to enable secure computing, in
 particular, Teaclave uses Intel SGX to serve the most security-sensitive tasks
-with *hardware-based isolation**, *memory encryption* and *attestation*.
+with *hardware-based isolation*, *memory encryption* and *attestation*.
 Also, Teaclave is built in the Rust programming language to prevent
-*memory-safety** issues.
+*memory-safety* issues.
 
 ***Functionality***:
 Teaclave is provided as a *function-as-a-service platform* for secure computing.
@@ -16,7 +16,7 @@ With many useful built-in functions, it supports tasks such as machine learning,
 private set intersection (PSI), crypto computation, etc. Developers can easily
 deploy a Python script in the Teaclave's trusted execution environment. More
 importantly, unlike traditional FaaS, Teaclave supports both general secure
-computing tasks and *flexible multi-party secure computation**.
+computing tasks and *flexible multi-party secure computation*.
 
 ***Usability***:
 Teaclave builds its components in containers, therefore, it supports deployment
