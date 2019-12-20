@@ -22,7 +22,7 @@ SDKs and command line tool.
 
 Teaclave is originated from Baidu X-Lab (formerly named MesaTEE).
 
-## Quickstart
+## Quick Start
 
 
 Clone and build Teaclave services, examples, SDK, and command line tool.
@@ -34,7 +34,7 @@ mkdir -p build && cd build
 cmake -DTEST_MODE=ON .. && make
 ```
 
-Start Teaclave services with
+Start all Teaclave services with
 [Docker Compose](https://docs.docker.com/compose/) and detach into background.
 Make
 sure [SGX driver and PSW package](https://01.org/intel-software-guard-extensions/downloads)
@@ -48,7 +48,7 @@ export IAS_KEY=xxx
 (cd docker && docker-compose -f docker-compose-ubuntu-1804.yml up --build --detach)
 ```
 
-Try the quickstart example.
+Try the "quickstart" example.
 
 ```
 ./release/examples/quickstart echo -e release/examples/enclave_info.toml -m "Hello, World!"
