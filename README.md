@@ -1,6 +1,6 @@
 # Teaclave: Universal Secure Computing Platform
 
-Apache Teaclave (incubating) is an open source *universal secure computing*
+Apache Teaclave (incubating) is an open source ***universal secure computing***
 platform.
 
 ***Security***:
