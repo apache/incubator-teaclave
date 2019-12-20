@@ -7,5 +7,7 @@ license = "Apache-2.0"
 edition = "2018"
 
 [dependencies]
+structopt = "0.2"
+serde = "1.0.92"
 mesatee_sdk = { path = "../../mesatee_sdk" }
 lazy_static = { version = "1.1.0" }
