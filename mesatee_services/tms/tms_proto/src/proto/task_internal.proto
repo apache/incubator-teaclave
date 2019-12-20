@@ -6,7 +6,7 @@ import "data_common.proto";
 // Function information
 message Function {
   // Built-in function only needs function_id
-  optional function_id = 1
+  optional string function_id = 1;
   // script content
   required bytes script = 2;
 }
