@@ -1,0 +1,12 @@
+github:
+  description: "Apache Teaclave (incubating) is an open source universal secure computing platform"
+  homepage: https://teaclave.org
+  labels:
+    - universal-secure-computing
+    - trusted-execution-environment
+    - function-as-a-service
+    - secure-multiparty-computation
+    - tee
+    - sgx
+    - faas
+    - rust
