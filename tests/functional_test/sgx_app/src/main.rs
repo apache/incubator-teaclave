@@ -58,7 +58,7 @@ fn test_from_unstrusted() {
 }
 
 fn test_in_tee() -> Result<()> {
-    let tee = match TeeBinder::new("functional_test", 1) {
+    let tee = match TeeBinder::new(env!("CARGO_PKG_NAME"), 1) {
         Ok(r) => {
             info!("Init TEE Successfully!");
             r

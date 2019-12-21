@@ -28,7 +28,7 @@ use mesatee_core::ipc::protos::ECallCommand;
 use mesatee_core::ipc::IpcSender;
 use mesatee_core::Result;
 
-static ENCLAVE_FILE_SUFFIX: &str = "enclave.signed.so";
+static ENCLAVE_FILE_SUFFIX: &str = "_enclave.signed.so";
 
 use std::sync::Arc;
 #[derive(Clone)]
@@ -100,7 +100,7 @@ fn init_enclave(enclave_name: &str, debug_launch: i32) -> Result<SgxEnclave> {
         misc_select: 0,
     };
 
-    let enclave_file = format!("{}.{}", enclave_name, ENCLAVE_FILE_SUFFIX);
+    let enclave_file = format!("{}{}", enclave_name, ENCLAVE_FILE_SUFFIX);
 
     let enclave = SgxEnclave::create(
         enclave_file,

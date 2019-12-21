@@ -24,8 +24,8 @@ function(init_submodules)
     )
 endfunction()
 
-macro(sgxlib_pkgname_2_modname pkg_name mod_name)
-    string(REGEX REPLACE "_enclave$" "" ${mod_name} ${pkg_name})
+macro(rm_trailing_enclave src_str dest_name)
+    string(REGEX REPLACE "_enclave$" "" ${dest_name} ${src_str})
 endmacro()
 
 # add_cargo_build_target(package_name
@@ -122,7 +122,7 @@ function(add_cargo_build_dylib_target package_name)
     )
 endfunction()
 
-# add_sgx_build_target(sgx_lib_path
+# add_sgx_build_target(sgx_lib_path pkg_name
 # [DEPENDS [dep]...]
 # [INSTALL_DIR dir]
 # [EXTRA_CARGO_FLAGS flg...]
@@ -146,15 +146,14 @@ function(add_sgx_build_target sgx_lib_path pkg_name)
         set(_copy_dir ${MESATEE_INSTALL_DIR})
     endif()
 
-    # remove trailing "_enclave" to get _module_name
-    sgxlib_pkgname_2_modname(${pkg_name} _module_name)
+    rm_trailing_enclave(${pkg_name} pkg_name_no_enclave)
 
-    set(_target_name ${SGXLIB_PREFIX}-${_module_name})
+    set(_target_name ${SGXLIB_PREFIX}-${pkg_name_no_enclave})
 
-    if(_module_name STREQUAL "functional_test")
+    if(pkg_name_no_enclave STREQUAL "functional_test")
         set(_enclave_info "/dev/null")
     else()
-        set(_enclave_info "${MESATEE_OUT_DIR}/${_module_name}_enclave_info.toml")
+        set(_enclave_info "${MESATEE_OUT_DIR}/${pkg_name}_info.toml")
     endif()
 
     add_custom_target(${_target_name} ALL
@@ -162,9 +161,9 @@ function(add_sgx_build_target sgx_lib_path pkg_name)
             ${MT_SCRIPT_DIR}/cargo_build_ex.sh -p ${pkg_name}
             --target-dir ${TRUSTED_TARGET_DIR} ${CARGO_BUILD_FLAGS} ${SGX_ENCLAVE_FEATURES} ${MTEE_EXTRA_CARGO_FLAGS}
         COMMAND ${CMAKE_COMMAND} -E env ${TARGET_SGXLIB_ENVS} SGX_COMMON_CFLAGS=${STR_SGX_COMMON_CFLAGS}
-            CUR_MODULE_NAME=${_module_name} CUR_MODULE_PATH=${sgx_lib_path} CUR_INSTALL_DIR=${_copy_dir} ${MT_SCRIPT_DIR}/sgx_link_sign.sh
+            CUR_PKG_NAME=${pkg_name} CUR_PKG_PATH=${sgx_lib_path} CUR_INSTALL_DIR=${_copy_dir} ${MT_SCRIPT_DIR}/sgx_link_sign.sh
         ${_depends}
-        COMMAND cat ${MESATEE_OUT_DIR}/${_module_name}.enclave.meta.txt | python ${MT_SCRIPT_DIR}/gen_enclave_info_toml.py ${_module_name} > ${_enclave_info}
+        COMMAND cat ${MESATEE_OUT_DIR}/${pkg_name}.meta.txt | python ${MT_SCRIPT_DIR}/gen_enclave_info_toml.py ${pkg_name_no_enclave} > ${_enclave_info}
         COMMENT "Building ${_target_name}, enclave info to ${_enclave_info}"
         WORKING_DIRECTORY ${MT_SGXLIB_TOML_DIR}
     )
@@ -201,7 +200,7 @@ function(generate_env_file)
     list(FILTER envs INCLUDE REGEX "MESATEE_PROJECT_ROOT|MESATEE_CFG_DIR|\
 MESATEE_BUILD_CFG_DIR|MESATEE_OUT_DIR|MESATEE_AUDITORS_DIR")
     # add extra env vars
-    list(APPEND envs "MESATEE_TEST_MODE=1" "RUST_LOG=info" "RUST_BACKTRACE=1")
+    list(APPEND envs "RUST_LOG=info" "RUST_BACKTRACE=1")
     join_string("${envs}" "\nexport " env_file)
     string(PREPEND env_file "export ")
     string(APPEND env_file "\n")

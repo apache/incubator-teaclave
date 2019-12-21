@@ -119,9 +119,8 @@ foreach(_i RANGE ${SGX_LIB_LAST_INDEX})
     list(GET SGX_LIBS ${_i} _pkg_name)
     list(GET SGX_LIB_PATHS ${_i} _pkg_path)
     list(GET SGX_LIB_CATEGORIES ${_i} _category)
-    sgxlib_pkgname_2_modname(${_pkg_name} _mod_name)
     add_sgx_build_target(${_pkg_path} ${_pkg_name}
-        DEPENDS prep "${SGXAPP_PREFIX}-${_mod_name}" pycomponent
+        DEPENDS prep pycomponent
         INSTALL_DIR ${MESATEE_INSTALL_DIR}/${_category}
     )
 endforeach()

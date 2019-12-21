@@ -57,15 +57,12 @@ pub mod config;
 #[cfg(feature = "mesalock_sgx")]
 pub fn init_service(name: &str) -> Result<()> {
     use std::backtrace;
+    env_logger::init();
 
     debug!("Enclave [{}]: Initializing...", name);
 
-    env_logger::init();
-    if backtrace::enable_backtrace(
-        format!("{}.enclave.signed.so", name),
-        backtrace::PrintFormat::Full,
-    )
-    .is_err()
+    if backtrace::enable_backtrace(format!("{}.signed.so", name), backtrace::PrintFormat::Full)
+        .is_err()
     {
         error!("Cannot enable backtrace");
         return Err(Error::from(ErrorKind::ECallError));
