@@ -95,6 +95,5 @@ help set the variables. Below is the description for the environment variables:
 * ``MESATEE_BUILD_CFG_DIR``: directory containing the compile time config
 * `MESATEE_SOTRAGE_DIR`: directory for TDFS data storage, default is `/tmp`
 * ``MESATEE_AUDITORS_DIR``: directory containing auditors' public keys and endorsement to TEE enclaves (digital signatures)
-* ``MESATEE_TEST_MODE``: whether executing in testing mode
 * ``RUST_LOG``: logging levels
 * ``RUST_BACKTRACE``: whether to enable backtrace logging on crash
