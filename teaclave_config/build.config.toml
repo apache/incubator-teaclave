@@ -1,8 +1,5 @@
 # Teaclave Build Config
 
-# Service provider's root CA certificate to verify clients
-sp_root_ca_cert = { path = "../keys/sp_root_ca_cert.pem" }
-
 # Intel Attestation Service root CA certificate to verify attestation report
 ias_root_ca_cert = { path = "../keys/ias_root_ca_cert.pem" }
 

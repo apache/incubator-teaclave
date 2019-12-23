@@ -9,7 +9,6 @@ use std::path::PathBuf;
 
 #[derive(Serialize, Deserialize)]
 struct BuildConfigToml {
-    sp_root_ca_cert: ConfigSource,
     ias_root_ca_cert: ConfigSource,
     auditor_public_keys: Vec<ConfigSource>,
     rpc_max_message_size: u32,
@@ -45,7 +44,6 @@ fn main() {
     let contents = fs::read_to_string(&args[1]).expect("Something went wrong reading the file");
     let config: BuildConfigToml = toml::from_str(&contents).expect("Failed to parse the config.");
 
-    let sp_root_ca_cert = display_config_source(&config.sp_root_ca_cert);
     let ias_root_ca_cert = display_config_source(&config.ias_root_ca_cert);
 
     let mut auditor_public_keys = String::new();
@@ -61,20 +59,17 @@ fn main() {
         r#"
     #[derive(Debug)]
     pub struct BuildConfig<'a> {{
-        pub sp_root_ca_cert: &'a [u8],
         pub ias_root_ca_cert: &'a [u8],
         pub auditor_public_keys: &'a [&'a [u8];{}],
         pub rpc_max_message_size: u64,
     }}
 
     pub static BUILD_CONFIG: BuildConfig<'static> = BuildConfig {{
-        sp_root_ca_cert: {},
         ias_root_ca_cert: {},
         auditor_public_keys: {},
         rpc_max_message_size: {},
     }};"#,
         config.auditor_public_keys.len(),
-        sp_root_ca_cert,
         ias_root_ca_cert,
         auditor_public_keys,
         config.rpc_max_message_size

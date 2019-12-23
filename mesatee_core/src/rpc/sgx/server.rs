@@ -17,107 +17,81 @@
 
 use std::collections::HashMap;
 use std::sync::Arc;
-#[cfg(not(feature = "mesalock_sgx"))]
-use std::sync::RwLock;
-#[cfg(feature = "mesalock_sgx")]
-use std::sync::SgxRwLock as RwLock;
 use std::vec::Vec;
-
-use teaclave_config::build_config::BUILD_CONFIG;
 
 use crate::rpc::sgx::EnclaveAttr;
 use crate::Error;
 use crate::ErrorKind;
 use crate::Result;
 
+use sgx_types::sgx_sha256_hash_t;
+use std::sync::SgxRwLock as RwLock;
+
 use lazy_static::lazy_static;
 
 lazy_static! {
-    static ref SVRCONFIGCACHE: RwLock<HashMap<u64, Arc<rustls::ServerConfig>>> =
-        { RwLock::new(HashMap::new()) };
+    static ref SERVER_CONFIG_CACHE: RwLock<ServerConfigCache> =
+        { RwLock::new(ServerConfigCache::default()) };
+}
+
+#[derive(Default)]
+struct ServerConfigCache {
+    private_key_sha256: sgx_sha256_hash_t,
+    target_configs: HashMap<Arc<EnclaveAttr>, Arc<rustls::ServerConfig>>,
 }
 
 pub(crate) fn get_tls_config(
     client_attr: Option<EnclaveAttr>,
 ) -> Result<Arc<rustls::ServerConfig>> {
-    use super::calc_hash;
     use crate::rpc::sgx::ra::get_ra_cert;
 
     // To re-use existing TLS cache, we need to first check if the server has
     // updated his RA cert
-    let (cert_key, invalidate_cache) = get_ra_cert();
+    let cert_key = get_ra_cert();
 
-    let attr_with_hash = client_attr.map(|attr| {
-        // This branch is for accepting socket from Enclaves
-        // calc_hash generates a u64 for (EnclaveAttr, CertKeyPair)
-        // According to the below code, as long as cert_key is unchanged,
-        // the `mutual_cfg` would not change, because it only take two
-        // parameters: EnclaveAttr, and CertKeyPair
-        let hash = calc_hash(&attr, &cert_key);
-        (attr, hash)
-    });
+    let client_attr = match client_attr {
+        Some(attr) => Arc::new(attr),
+        None => {
+            let mut certs = Vec::new();
+            certs.push(rustls::Certificate(cert_key.cert));
+            let privkey = rustls::PrivateKey(cert_key.private_key);
+            // Build a default authenticator which allow every authenticated client
+            let authenticator = rustls::NoClientAuth::new();
+            let mut cfg = rustls::ServerConfig::new(authenticator);
+            cfg.set_single_cert(certs, privkey)
+                .map_err(|_| Error::from(ErrorKind::TLSError))?;
+            return Ok(Arc::new(cfg));
+        }
+    };
 
-    // invalidate_cache is true iff. ra is renewed in the above func call
-    // if ra cert is pulled from cache, then we can try to do it quickly.
-    if !invalidate_cache {
-        if let Some(&(_, new_hash)) = attr_with_hash.as_ref() {
-            if let Ok(cfg_cache) = SVRCONFIGCACHE.try_read() {
-                if let Some(cfg) = cfg_cache.get(&new_hash) {
-                    // Everything matched. Be quick!
-                    return Ok(cfg.clone());
-                }
-            }
-        };
-    } else {
-        // ra cert is updated. so we need to invalidate the cache
-        // THIS IS BLOCKING!
-        match SVRCONFIGCACHE.write() {
-            Ok(mut cfg_cache) => {
-                info!("SVRCONFIGCACHE invalidate all config cache!");
-                cfg_cache.clear();
-            }
-            Err(x) => {
-                // Poisoned
-                error!("SVRCONFIGCACHE invalidate cache failed {}!", x);
-            }
+    if let Ok(cfg_cache) = SERVER_CONFIG_CACHE.try_read() {
+        if let Some(cfg) = cfg_cache.target_configs.get(&client_attr) {
+            // Hit Cache. Be quick!
+            return Ok(cfg.clone());
         }
     }
 
-    let root_ca_bin = BUILD_CONFIG.sp_root_ca_cert;
-    let mut ca_reader = std::io::BufReader::new(&root_ca_bin[..]);
-    let mut rc_store = rustls::RootCertStore::empty();
-
-    // Build a root ca storage
-    rc_store
-        .add_pem_file(&mut ca_reader)
-        .map_err(|_| Error::from(ErrorKind::TLSError))?;
-
-    let mut certs = Vec::new();
-    certs.push(rustls::Certificate(cert_key.cert));
+    let certs = vec![rustls::Certificate(cert_key.cert)];
     let privkey = rustls::PrivateKey(cert_key.private_key);
 
-    if let Some((client_attr, stat_hash)) = attr_with_hash {
-        // We assigned Some(u64) to new_hash when client_attr is some.
-        // So in this branch, new_hash should always be Some(u64)
-        let mut mutual_cfg = rustls::ServerConfig::new(Arc::new(client_attr));
-        mutual_cfg
-            .set_single_cert(certs, privkey)
-            .map_err(|_| Error::from(ErrorKind::TLSError))?;
+    let mut server_cfg = rustls::ServerConfig::new(client_attr.clone());
+    server_cfg
+        .set_single_cert(certs, privkey)
+        .map_err(|_| Error::from(ErrorKind::TLSError))?;
 
-        let final_arc = Arc::new(mutual_cfg); // Create an Arc
+    let final_arc = Arc::new(server_cfg);
 
-        if let Ok(mut cfg_cache) = SVRCONFIGCACHE.try_write() {
-            let _ = cfg_cache.insert(stat_hash, final_arc.clone()); // Overwrite
+    if let Ok(mut cfg_cache) = SERVER_CONFIG_CACHE.try_write() {
+        if cfg_cache.private_key_sha256 != cert_key.private_key_sha256 {
+            *cfg_cache = ServerConfigCache {
+                private_key_sha256: cert_key.private_key_sha256,
+                target_configs: HashMap::new(),
+            }
         }
-
-        Ok(final_arc)
-    } else {
-        // Build a default authenticator which allow every authenticated client
-        let authenticator = rustls::NoClientAuth::new();
-        let mut cfg = rustls::ServerConfig::new(authenticator);
-        cfg.set_single_cert(certs, privkey)
-            .map_err(|_| Error::from(ErrorKind::TLSError))?;
-
-        Ok(Arc::new(cfg))
+        let _ = cfg_cache
+            .target_configs
+            .insert(client_attr, final_arc.clone()); // Overwrite
     }
+
+    Ok(final_arc)
 }

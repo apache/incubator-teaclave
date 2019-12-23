@@ -88,6 +88,36 @@ extern "C" {
 pub(crate) struct CertKeyPair {
     pub cert: Vec<u8>,
     pub private_key: Vec<u8>,
+    pub private_key_sha256: sgx_sha256_hash_t,
+}
+
+impl CertKeyPair {
+    fn new() -> Result<CertKeyPair> {
+        let cert_key_pair = mayfail! {
+            let ecc_handle = SgxEccHandle::new();
+            _open_result =<< ecc_handle.open();
+            (prv_k, pub_k) =<< ecc_handle.create_key_pair();
+            _close_result =<< ecc_handle.close();
+
+            AttnReport {
+                report: attn_report,
+                signature: sig,
+                certificate: cert,
+            } =<< create_attestation_report(&pub_k);
+            let payload = [attn_report, sig, cert].join("|");
+
+            let cert_der = gen_ecc_cert(payload, &prv_k, &pub_k);
+            let prv_key_der = convert_ec_private_to_der(&prv_k, &pub_k);
+            sha256 =<< rsgx_sha256_slice(&prv_key_der);
+            ret CertKeyPair {
+                cert: cert_der,
+                private_key: prv_key_der,
+                private_key_sha256: sha256
+            }
+        }?;
+
+        Ok(cert_key_pair)
+    }
 }
 
 #[derive(Clone)]
@@ -102,6 +132,7 @@ lazy_static! {
             cert_key: CertKeyPair {
                 cert: Vec::<u8>::new(),
                 private_key: Vec::<u8>::new(),
+                private_key_sha256: sgx_sha256_hash_t::default(),
             },
             gen_time: SystemTime::UNIX_EPOCH,
         })
@@ -481,7 +512,7 @@ fn is_tls_config_updated(gen_time: &SystemTime) -> bool {
     dur.is_ok() && dur.unwrap() < max_allowed_diff
 }
 
-pub(crate) fn get_ra_cert() -> (CertKeyPair, bool) {
+pub(crate) fn get_ra_cert() -> CertKeyPair {
     // Check if the global cert valid
     // If valid, use it directly
     // If invalid, update it before use.
@@ -494,7 +525,7 @@ pub(crate) fn get_ra_cert() -> (CertKeyPair, bool) {
         // Simple crash in that case.
         let cache = RACACHE.read().unwrap();
         if is_tls_config_updated(&cache.gen_time) {
-            return (cache.cert_key.clone(), false);
+            return cache.cert_key.clone();
         }
     }
 
@@ -508,11 +539,11 @@ pub(crate) fn get_ra_cert() -> (CertKeyPair, bool) {
     // No other reader/writer exists in this branch
     // Toc tou check
     if is_tls_config_updated(&cache.gen_time) {
-        return (cache.cert_key.clone(), false);
+        return cache.cert_key.clone();
     }
 
     // Do the renew
-    if renew_ra_cert(&mut cache).is_err() {
+    *cache = match renew_ra_cert() {
         // If RA renewal fails, we do not crash for the following reasons.
         // 1. Crashing the enclave causes most data to be lost permanently,
         //    since we do not have persistent key-value storage yet. On the
@@ -523,54 +554,43 @@ pub(crate) fn get_ra_cert() -> (CertKeyPair, bool) {
         // 3. The certificate has a 90 days valid duration. If RA keeps
         //    failing for 90 days, the enclave itself will not serve any
         //    client.
-        error!("RACACHE renewal failed");
-        panic!();
-    }
+        Err(e) => {
+            error!("RACACHE renewal failed: {:?}", e);
+            panic!()
+        }
+        Ok(new_cache) => new_cache,
+    };
 
-    (cache.cert_key.clone(), true)
+    cache.cert_key.clone()
 }
 
-fn renew_ra_cert(global_ra_cert: &mut RACache) -> Result<()> {
-    let ecc_handle = SgxEccHandle::new();
+fn renew_ra_cert() -> Result<RACache> {
+    let cert_key = CertKeyPair::new()?;
+    let gen_time = SystemTime::now();
+    Ok(RACache { cert_key, gen_time })
+}
 
-    global_ra_cert.cert_key = mayfail! {
-        _open_result =<< ecc_handle.open();
-        (prv_k, pub_k) =<< ecc_handle.create_key_pair();
-        AttnReport {
-            report: attn_report,
-            signature: sig,
-            certificate: cert,
-        } =<< create_attestation_report(&pub_k);
-        let payload = attn_report + "|" + &sig + "|" + &cert;
-        let cert_key = gen_ecc_cert(payload, &prv_k, &pub_k, &ecc_handle);
-        _close_result =<< ecc_handle.close();
-        ret cert_key
-    }?;
-
-    global_ra_cert.gen_time = SystemTime::now();
-
-    Ok(())
+fn make_ecc_public_key_bytes(pub_k: &sgx_ec256_public_t) -> Vec<u8> {
+    // Generate public key bytes
+    // The first must be 4, encoding for "uncompressed".
+    // Ref: https://github.com/briansmith/ring/blob/772fc080898c7b330fff99701c2a534580ebbf8c/src/ec/suite_b/public_key.rs#L30
+    let mut pub_key_bytes: Vec<u8> = vec![4];
+    pub_key_bytes.extend(pub_k.gx.iter().rev());
+    pub_key_bytes.extend(pub_k.gy.iter().rev());
+    pub_key_bytes
 }
 
 fn gen_ecc_cert(
     payload: String,
     prv_k: &sgx_ec256_private_t,
     pub_k: &sgx_ec256_public_t,
-    ecc_handle: &SgxEccHandle,
-) -> CertKeyPair {
+) -> Vec<u8> {
     const ISSUER: &str = "MesaTEE";
     const SUBJECT: &str = "MesaTEE";
 
     use super::cert::*;
 
-    // Generate public key bytes since both DER will use it
-    let mut pub_key_bytes: Vec<u8> = vec![4];
-    let mut pk_gx = pub_k.gx;
-    pk_gx.reverse();
-    let mut pk_gy = pub_k.gy;
-    pk_gy.reverse();
-    pub_key_bytes.extend_from_slice(&pk_gx);
-    pub_key_bytes.extend_from_slice(&pk_gy);
+    let pub_key_bytes = make_ecc_public_key_bytes(pub_k);
 
     // Generate Certificate DER
     let tbs_cert_der = yasna::construct_der(|writer| {
@@ -628,6 +648,10 @@ fn gen_ecc_cert(
 
     // There will be serious problems if this call fails. We might as well
     // panic in this case, thus unwrap()
+
+    let ecc_handle = SgxEccHandle::new();
+    ecc_handle.open().unwrap();
+
     let sig = ecc_handle
         .ecdsa_sign_slice(&tbs_cert_der.as_slice(), &prv_k)
         .unwrap();
@@ -647,7 +671,7 @@ fn gen_ecc_cert(
         });
     });
 
-    let cert_der = yasna::construct_der(|writer| {
+    yasna::construct_der(|writer| {
         writer.write_sequence(|writer| {
             writer.next().write_der(&tbs_cert_der.as_slice());
             CertSignAlgo::dump(writer.next(), cert_sign_algo);
@@ -655,10 +679,19 @@ fn gen_ecc_cert(
                 .next()
                 .write_bitvec(&bit_vec::BitVec::from_bytes(&sig_der.as_slice()));
         });
-    });
+    })
+}
+
+fn convert_ec_private_to_der(prv_k: &sgx_ec256_private_t, pub_k: &sgx_ec256_public_t) -> Vec<u8> {
+    // Generate public key bytes
+    let pub_key_bytes = make_ecc_public_key_bytes(pub_k);
+
+    // Generate private key bytes
+    let mut prv_key_bytes: Vec<u8> = vec![];
+    prv_key_bytes.extend(prv_k.r.iter().rev());
 
     // Generate Private Key DER
-    let key_der = yasna::construct_der(|writer| {
+    yasna::construct_der(|writer| {
         writer.write_sequence(|writer| {
             writer.next().write_u8(0);
             writer.next().write_sequence(|writer| {
@@ -676,9 +709,7 @@ fn gen_ecc_cert(
             let inner_key_der = yasna::construct_der(|writer| {
                 writer.write_sequence(|writer| {
                     writer.next().write_u8(1);
-                    let mut prv_k_r = prv_k.r;
-                    prv_k_r.reverse();
-                    writer.next().write_bytes(&prv_k_r);
+                    writer.next().write_bytes(&prv_key_bytes);
                     writer
                         .next()
                         .write_tagged(yasna::Tag::context(1), |writer| {
@@ -688,10 +719,5 @@ fn gen_ecc_cert(
             });
             writer.next().write_bytes(&inner_key_der);
         });
-    });
-
-    CertKeyPair {
-        cert: cert_der,
-        private_key: key_der,
-    }
+    })
 }
