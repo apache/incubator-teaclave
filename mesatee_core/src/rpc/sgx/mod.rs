@@ -25,6 +25,8 @@ use std::hash::{Hash, Hasher};
 use std::io::{self, Read, Write};
 use std::marker::PhantomData;
 use std::net::TcpStream;
+use std::sync::Arc;
+
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
@@ -82,24 +84,7 @@ impl Hash for EnclaveAttr {
     }
 }
 
-#[cfg(feature = "mesalock_sgx")]
-pub(crate) fn calc_hash(ea: &EnclaveAttr, crp: &ra::CertKeyPair) -> u64 {
-    use std::collections::hash_map::DefaultHasher;
-    let mut s = DefaultHasher::new();
-    ea.hash(&mut s);
-    crp.hash(&mut s);
-    s.finish()
-}
-
 impl EnclaveAttr {
-    #[cfg(not(feature = "mesalock_sgx"))]
-    fn calculate_hash(&self) -> u64 {
-        use std::collections::hash_map::DefaultHasher;
-        let mut s = DefaultHasher::new();
-        self.hash(&mut s);
-        s.finish()
-    }
-
     fn check_in_cert_quote(&self, cert_der: &[u8]) -> bool {
         if cfg!(sgx_sim) {
             return true;
@@ -279,7 +264,7 @@ where
 {
     type Config = PipeClientConfig;
     fn open(config: Self::Config) -> Result<Self> {
-        let rustls_client_cfg = client::get_tls_config(config.server_attr);
+        let rustls_client_cfg = client::get_tls_config(Arc::new(config.server_attr));
         let sess = rustls::ClientSession::new(&rustls_client_cfg, config.hostname.as_ref());
 
         Ok(PipeClient {
