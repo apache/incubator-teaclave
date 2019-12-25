@@ -21,6 +21,7 @@ use std::prelude::v1::*;
 
 use mesatee_core::config;
 use mesatee_core::prelude::*;
+use mesatee_core::rpc::server::SgxTrustedServer;
 use mesatee_core::Result;
 
 use crate::fns::FNSEnclave;
@@ -54,8 +55,6 @@ fn handle_finalize_enclave(_args: &FinalizeEnclaveInput) -> Result<FinalizeEncla
 fn handle_serve_connection(args: &ServeConnectionInput) -> Result<ServeConnectionOutput> {
     debug!("Enclave [FNS]: Serve Connection.");
 
-    let server_instance = FNSEnclave::default();
-
     let fns_config = config::External::fns();
     assert_eq!(args.port, fns_config.addr.port());
 
@@ -63,23 +62,21 @@ fn handle_serve_connection(args: &ServeConnectionInput) -> Result<ServeConnectio
         config::InboundDesc::External => None,
         _ => unreachable!(),
     };
-
-    let config = PipeConfig {
-        fd: args.socket_fd,
-        retry: 0,
-        client_attr: enclave_attr,
-    };
-
-    let mut server = match Pipe::start(config) {
+    let server = match SgxTrustedServer::new(FNSEnclave::default(), args.socket_fd, enclave_attr) {
         Ok(s) => s,
         Err(e) => {
-            error!("Start Pipe failed: {}", e);
+            error!("New server failed: {:?}.", e);
             return Ok(ServeConnectionOutput::default());
         }
     };
+    match server.start() {
+        Ok(_) => {}
+        Err(e) => {
+            error!("Start server failed: {:?}.", e);
+            return Ok(ServeConnectionOutput::default());
+        }
+    }
 
     // We discard all enclave internal errors here.
-    let _ = server.serve(server_instance);
-
     Ok(ServeConnectionOutput::default())
 }

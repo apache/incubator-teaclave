@@ -166,7 +166,6 @@ impl rustls::ClientCertVerifier for EnclaveAttr {
 #[cfg(feature = "mesalock_sgx")]
 pub struct PipeConfig {
     pub fd: c_int,
-    pub retry: u32,
     // the SGX server can optionally verify the identity of the client
     pub client_attr: Option<EnclaveAttr>,
 }
@@ -205,7 +204,7 @@ where
     X: EnclaveService<U, V>,
 {
     type Config = PipeConfig;
-    fn start(config: Self::Config) -> Result<Self> {
+    fn start(config: &Self::Config) -> Result<Self> {
         let tcp = TcpStream::new(config.fd)?;
 
         // TCP set nodelay should not affect the success of this function
@@ -216,7 +215,7 @@ where
         // TODO: Due to switching to the SDK-style design, performing an
         // initial RA at enclave start is not longer a viable design. Need
         // to refactor the related API.
-        let rustls_server_cfg = server::get_tls_config(config.client_attr)?;
+        let rustls_server_cfg = server::get_tls_config(&config.client_attr)?;
         let sess = rustls::ServerSession::new(&rustls_server_cfg);
 
         Ok(Pipe {

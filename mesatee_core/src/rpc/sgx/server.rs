@@ -40,14 +40,14 @@ struct ServerConfigCache {
 }
 
 pub(crate) fn get_tls_config(
-    client_attr: Option<EnclaveAttr>,
+    client_attr: &Option<EnclaveAttr>,
 ) -> Result<Arc<rustls::ServerConfig>> {
     use crate::rpc::sgx::ra::get_current_ra_credential;
 
     let ra_credential = get_current_ra_credential();
 
     let client_attr = match client_attr {
-        Some(attr) => Arc::new(attr),
+        Some(attr) => Arc::new(attr.clone()),
         None => {
             let certs = vec![rustls::Certificate(ra_credential.cert)];
             let privkey = rustls::PrivateKey(ra_credential.private_key);
