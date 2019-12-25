@@ -587,7 +587,6 @@ impl Secp256k1KeyPair {
         use yasna::models::ObjectIdentifier;
         use yasna::Tag;
 
-        // Define OID for later usage.
         let ec_public_key_oid = ObjectIdentifier::from_slice(&[1, 2, 840, 10045, 2, 1]);
         let prime256v1_oid = ObjectIdentifier::from_slice(&[1, 2, 840, 10045, 3, 1, 7]);
 
@@ -647,7 +646,7 @@ impl Secp256k1KeyPair {
         let expire = now + chrono::Duration::days(CERT_VALID_DAYS).to_std().unwrap();
         let expire_ts = chrono::Utc.timestamp(expire.as_secs() as i64, 0);
 
-        // Construct certificate in DER.
+        // Construct certificate with payload in extension in DER.
         let tbs_cert_der = construct_der(|writer| {
             let version = 2i8;
             let serial = 1u8;
