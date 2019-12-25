@@ -71,7 +71,7 @@ pub fn init_service(name: &str) -> Result<()> {
         error!("Runtime config is not initialized");
         return Err(Error::from(ErrorKind::ECallError));
     }
-    crate::rpc::sgx::prelude();
+    crate::rpc::sgx::prelude()?;
 
     Ok(())
 }

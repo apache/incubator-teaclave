@@ -17,7 +17,6 @@
 
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::vec::Vec;
 
 use crate::rpc::sgx::EnclaveAttr;
 use crate::Error;
@@ -43,18 +42,15 @@ struct ServerConfigCache {
 pub(crate) fn get_tls_config(
     client_attr: Option<EnclaveAttr>,
 ) -> Result<Arc<rustls::ServerConfig>> {
-    use crate::rpc::sgx::ra::get_ra_cert;
+    use crate::rpc::sgx::ra::get_current_ra_credential;
 
-    // To re-use existing TLS cache, we need to first check if the server has
-    // updated his RA cert
-    let cert_key = get_ra_cert();
+    let ra_credential = get_current_ra_credential();
 
     let client_attr = match client_attr {
         Some(attr) => Arc::new(attr),
         None => {
-            let mut certs = Vec::new();
-            certs.push(rustls::Certificate(cert_key.cert));
-            let privkey = rustls::PrivateKey(cert_key.private_key);
+            let certs = vec![rustls::Certificate(ra_credential.cert)];
+            let privkey = rustls::PrivateKey(ra_credential.private_key);
             // Build a default authenticator which allow every authenticated client
             let authenticator = rustls::NoClientAuth::new();
             let mut cfg = rustls::ServerConfig::new(authenticator);
@@ -71,8 +67,8 @@ pub(crate) fn get_tls_config(
         }
     }
 
-    let certs = vec![rustls::Certificate(cert_key.cert)];
-    let privkey = rustls::PrivateKey(cert_key.private_key);
+    let certs = vec![rustls::Certificate(ra_credential.cert)];
+    let privkey = rustls::PrivateKey(ra_credential.private_key);
 
     let mut server_cfg = rustls::ServerConfig::new(client_attr.clone());
     server_cfg
@@ -82,9 +78,9 @@ pub(crate) fn get_tls_config(
     let final_arc = Arc::new(server_cfg);
 
     if let Ok(mut cfg_cache) = SERVER_CONFIG_CACHE.try_write() {
-        if cfg_cache.private_key_sha256 != cert_key.private_key_sha256 {
+        if cfg_cache.private_key_sha256 != ra_credential.private_key_sha256 {
             *cfg_cache = ServerConfigCache {
-                private_key_sha256: cert_key.private_key_sha256,
+                private_key_sha256: ra_credential.private_key_sha256,
                 target_configs: HashMap::new(),
             }
         }
