@@ -51,13 +51,8 @@ fn handle_serve_connection(args: &ServeConnectionInput) -> Result<ServeConnectio
             return Ok(ServeConnectionOutput::default());
         }
     };
-    match server.start() {
-        Ok(_) => {}
-        Err(e) => {
-            error!("Start server failed: {:?}.", e);
-            return Ok(ServeConnectionOutput::default());
-        }
-    }
+    let _ = server.start();
+
     // We discard all enclave internal errors here.
     Ok(ServeConnectionOutput::default())
 }

@@ -77,13 +77,7 @@ fn handle_serve_connection(args: &ServeConnectionInput) -> Result<ServeConnectio
                 return Ok(ServeConnectionOutput::default());
             }
         };
-        match server.start() {
-            Ok(_) => {}
-            Err(e) => {
-                error!("Start server failed: {:?}.", e);
-                return Ok(ServeConnectionOutput::default());
-            }
-        }
+        let _ = server.start();
     } else if args.port == external.addr.port() {
         let enclave_attr = match external.inbound_desc {
             config::InboundDesc::External => None,
@@ -101,13 +95,7 @@ fn handle_serve_connection(args: &ServeConnectionInput) -> Result<ServeConnectio
                 return Ok(ServeConnectionOutput::default());
             }
         };
-        match server.start() {
-            Ok(_) => {}
-            Err(e) => {
-                error!("Start server failed: {:?}.", e);
-                return Ok(ServeConnectionOutput::default());
-            }
-        }
+        let _ = server.start();
     } else {
         unreachable!()
     }
