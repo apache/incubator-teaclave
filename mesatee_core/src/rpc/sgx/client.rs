@@ -35,6 +35,9 @@ lazy_static! {
         { RwLock::new(ClientConfigCache::default()) };
 }
 
+// We use sha256 of private_key as the identity of current enclave.
+// The config cache is organized by a hashmap, in which the target
+// enclave_attr is the key.
 #[cfg(feature = "mesalock_sgx")]
 #[derive(Default)]
 struct ClientConfigCache {
@@ -50,21 +53,18 @@ struct ClientConfigCache {
 
 #[cfg(feature = "mesalock_sgx")]
 pub(crate) fn get_tls_config(server_attr: Arc<EnclaveAttr>) -> Arc<rustls::ClientConfig> {
-    use crate::rpc::sgx::ra::get_ra_cert;
+    use crate::rpc::sgx::ra::get_current_ra_credential;
 
-    // To re-use existing TLS cache, we need to first check if the server has
-    // updated his RA cert
-    let cert_key = get_ra_cert();
+    let ra_credential = get_current_ra_credential();
 
-    // TODO: add wrapper function
     if let Ok(cfg_cache) = CLIENT_CONFIG_CACHE.try_read() {
         if let Some(cfg) = cfg_cache.target_configs.get(&server_attr) {
             return cfg.clone();
         }
     }
 
-    let certs = vec![rustls::Certificate(cert_key.cert)];
-    let privkey = rustls::PrivateKey(cert_key.private_key);
+    let certs = vec![rustls::Certificate(ra_credential.cert)];
+    let privkey = rustls::PrivateKey(ra_credential.private_key);
 
     let mut client_cfg = rustls::ClientConfig::new();
     client_cfg.set_single_client_cert(certs, privkey);
@@ -76,11 +76,10 @@ pub(crate) fn get_tls_config(server_attr: Arc<EnclaveAttr>) -> Arc<rustls::Clien
 
     let final_arc = Arc::new(client_cfg);
 
-    // TODO: add wrapper function
     if let Ok(mut cfg_cache) = CLIENT_CONFIG_CACHE.try_write() {
-        if cfg_cache.private_key_sha256 != cert_key.private_key_sha256 {
+        if cfg_cache.private_key_sha256 != ra_credential.private_key_sha256 {
             *cfg_cache = ClientConfigCache {
-                private_key_sha256: cert_key.private_key_sha256,
+                private_key_sha256: ra_credential.private_key_sha256,
                 target_configs: HashMap::new(),
             }
         }
@@ -95,8 +94,6 @@ pub(crate) fn get_tls_config(server_attr: Arc<EnclaveAttr>) -> Arc<rustls::Clien
 
 #[cfg(not(feature = "mesalock_sgx"))]
 pub(crate) fn get_tls_config(server_attr: Arc<EnclaveAttr>) -> Arc<rustls::ClientConfig> {
-    // We believe a client from untrusted side do not change his tls cert
-    // during single execution.
     if let Ok(cfg_cache) = CLIENT_CONFIG_CACHE.try_read() {
         if let Some(cfg) = cfg_cache.target_configs.get(&server_attr) {
             return cfg.clone();

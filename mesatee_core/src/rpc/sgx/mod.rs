@@ -55,8 +55,10 @@ mod ra;
 
 // Export this function for sgx enclave initialization
 #[cfg(feature = "mesalock_sgx")]
-pub fn prelude() {
-    ra::get_ra_cert();
+pub fn prelude() -> Result<()> {
+    // Hard coded RACredential validity in seconds for all enclave.
+    // We may allow each enclave to setup its own validity in the future.
+    ra::init_ra_credential(86400u64)
 }
 
 #[derive(Clone)]
