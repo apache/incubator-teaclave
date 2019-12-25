@@ -40,7 +40,7 @@ use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::ptr;
 use std::sync::{Arc, SgxRwLock};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::SystemTime;
 use std::untrusted::time::SystemTimeEx;
 
 use lazy_static::lazy_static;
@@ -106,8 +106,9 @@ impl CertKeyPair {
             } =<< create_attestation_report(&pub_k);
             let payload = [attn_report, sig, cert].join("|");
 
-            let cert_der = gen_ecc_cert(payload, &prv_k, &pub_k);
-            let prv_key_der = convert_ec_private_to_der(&prv_k, &pub_k);
+            let key_pair = Secp256k1KeyPair::new(prv_k, pub_k);
+            let cert_der = key_pair.create_cert_with_extension("Teaclave", "Teaclave", &payload.as_bytes());
+            let prv_key_der = key_pair.private_key_into_der();
             sha256 =<< rsgx_sha256_slice(&prv_key_der);
             ret CertKeyPair {
                 cert: cert_der,
@@ -570,154 +571,158 @@ fn renew_ra_cert() -> Result<RACache> {
     Ok(RACache { cert_key, gen_time })
 }
 
-fn make_ecc_public_key_bytes(pub_k: &sgx_ec256_public_t) -> Vec<u8> {
-    // Generate public key bytes
-    // The first must be 4, encoding for "uncompressed".
-    // Ref: https://github.com/briansmith/ring/blob/772fc080898c7b330fff99701c2a534580ebbf8c/src/ec/suite_b/public_key.rs#L30
-    let mut pub_key_bytes: Vec<u8> = vec![4];
-    pub_key_bytes.extend(pub_k.gx.iter().rev());
-    pub_key_bytes.extend(pub_k.gy.iter().rev());
-    pub_key_bytes
+struct Secp256k1KeyPair {
+    prv_k: sgx_ec256_private_t,
+    pub_k: sgx_ec256_public_t,
 }
 
-fn gen_ecc_cert(
-    payload: String,
-    prv_k: &sgx_ec256_private_t,
-    pub_k: &sgx_ec256_public_t,
-) -> Vec<u8> {
-    const ISSUER: &str = "MesaTEE";
-    const SUBJECT: &str = "MesaTEE";
+impl Secp256k1KeyPair {
+    fn new(prv_k: sgx_ec256_private_t, pub_k: sgx_ec256_public_t) -> Self {
+        Self { prv_k, pub_k }
+    }
 
-    use super::cert::*;
+    pub fn private_key_into_der(&self) -> Vec<u8> {
+        use bit_vec::BitVec;
+        use yasna::construct_der;
+        use yasna::models::ObjectIdentifier;
+        use yasna::Tag;
 
-    let pub_key_bytes = make_ecc_public_key_bytes(pub_k);
+        let ec_public_key_oid = ObjectIdentifier::from_slice(&[1, 2, 840, 10045, 2, 1]);
+        let prime256v1_oid = ObjectIdentifier::from_slice(&[1, 2, 840, 10045, 3, 1, 7]);
 
-    // Generate Certificate DER
-    let tbs_cert_der = yasna::construct_der(|writer| {
-        let version = 2i8;
-        let serial = 1u8;
-        let cert_sign_algo = asn1_seq!(yasna::models::ObjectIdentifier::from_slice(&[
-            1, 2, 840, 10045, 4, 3, 2,
-        ]),);
-        let issuer = asn1_seq!(asn1_seq!(asn1_seq!(
-            yasna::models::ObjectIdentifier::from_slice(&[2, 5, 4, 3]),
-            ISSUER.to_string(),
-        ),),);
+        let pub_key_bytes = self.public_key_into_bytes();
+        let prv_key_bytes = self.private_key_into_bytes();
+
+        // Construct private key in DER.
+        construct_der(|writer| {
+            writer.write_sequence(|writer| {
+                writer.next().write_u8(0);
+                writer.next().write_sequence(|writer| {
+                    writer.next().write_oid(&ec_public_key_oid);
+                    writer.next().write_oid(&prime256v1_oid);
+                });
+                let inner_key_der = construct_der(|writer| {
+                    writer.write_sequence(|writer| {
+                        writer.next().write_u8(1);
+                        writer.next().write_bytes(&prv_key_bytes);
+                        writer.next().write_tagged(Tag::context(1), |writer| {
+                            writer.write_bitvec(&BitVec::from_bytes(&pub_key_bytes));
+                        });
+                    });
+                });
+                writer.next().write_bytes(&inner_key_der);
+            });
+        })
+    }
+
+    pub fn create_cert_with_extension(
+        &self,
+        issuer: &str,
+        subject: &str,
+        payload: &[u8],
+    ) -> Vec<u8> {
+        use super::cert::*;
+        use bit_vec::BitVec;
         use chrono::TimeZone;
+        use num_bigint::BigUint;
+        use std::time::UNIX_EPOCH;
+        use yasna::construct_der;
+        use yasna::models::ObjectIdentifier;
+        use yasna::models::UTCTime;
+
+        let ecdsa_with_sha256_oid = ObjectIdentifier::from_slice(&[1, 2, 840, 10045, 4, 3, 2]);
+        let common_name_oid = ObjectIdentifier::from_slice(&[2, 5, 4, 3]);
+        let ec_public_key_oid = ObjectIdentifier::from_slice(&[1, 2, 840, 10045, 2, 1]);
+        let prime256v1_oid = ObjectIdentifier::from_slice(&[1, 2, 840, 10045, 3, 1, 7]);
+        let comment_oid = ObjectIdentifier::from_slice(&[2, 16, 840, 1, 113730, 1, 13]);
+
+        let pub_key_bytes = self.public_key_into_bytes();
+
         // UNIX_EPOCH is the earliest time stamp. This unwrap should constantly succeed.
         let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
         let issue_ts = chrono::Utc.timestamp(now.as_secs() as i64, 0);
-        // This is guarenteed to be a valid duration..
+
+        // This is guaranteed to be a valid duration.
         let expire = now + chrono::Duration::days(CERT_VALID_DAYS).to_std().unwrap();
         let expire_ts = chrono::Utc.timestamp(expire.as_secs() as i64, 0);
-        let valid_range = asn1_seq!(
-            yasna::models::UTCTime::from_datetime(&issue_ts),
-            yasna::models::UTCTime::from_datetime(&expire_ts),
-        );
-        let subject = asn1_seq!(asn1_seq!(asn1_seq!(
-            yasna::models::ObjectIdentifier::from_slice(&[2, 5, 4, 3]),
-            SUBJECT.to_string(),
-        ),),);
-        let pub_key = asn1_seq!(
-            asn1_seq!(
-                yasna::models::ObjectIdentifier::from_slice(&[1, 2, 840, 10045, 2, 1,]),
-                yasna::models::ObjectIdentifier::from_slice(&[1, 2, 840, 10045, 3, 1, 7,]),
-            ),
-            bit_vec::BitVec::from_bytes(&pub_key_bytes),
-        );
-        let sgx_ra_cert_ext = asn1_seq!(asn1_seq!(
-            yasna::models::ObjectIdentifier::from_slice(&[2, 16, 840, 1, 113730, 1, 13,]),
-            payload.into_bytes(),
-        ),);
-        let tbs_cert = asn1_seq!(
-            version,
-            serial,
-            cert_sign_algo,
-            issuer,
-            valid_range,
-            subject,
-            pub_key,
-            sgx_ra_cert_ext,
-        );
-        TbsCert::dump(writer, tbs_cert);
-    });
 
-    let cert_sign_algo = asn1_seq!(yasna::models::ObjectIdentifier::from_slice(&[
-        1, 2, 840, 10045, 4, 3, 2,
-    ]),);
-
-    // There will be serious problems if this call fails. We might as well
-    // panic in this case, thus unwrap()
-
-    let ecc_handle = SgxEccHandle::new();
-    ecc_handle.open().unwrap();
-
-    let sig = ecc_handle
-        .ecdsa_sign_slice(&tbs_cert_der.as_slice(), &prv_k)
-        .unwrap();
-
-    let sig_der = yasna::construct_der(|writer| {
-        writer.write_sequence(|writer| {
-            let mut sig_x = sig.x;
-            sig_x.reverse();
-            let mut sig_y = sig.y;
-            sig_y.reverse();
-            writer
-                .next()
-                .write_biguint(&num_bigint::BigUint::from_slice(&sig_x));
-            writer
-                .next()
-                .write_biguint(&num_bigint::BigUint::from_slice(&sig_y));
+        // Construct certificate with payload in extension in DER.
+        let tbs_cert_der = construct_der(|writer| {
+            let version = 2i8;
+            let serial = 1u8;
+            let cert_sign_algo = asn1_seq!(ecdsa_with_sha256_oid.clone());
+            let issuer = asn1_seq!(asn1_seq!(asn1_seq!(
+                common_name_oid.clone(),
+                issuer.to_owned()
+            )));
+            let valid_range = asn1_seq!(
+                UTCTime::from_datetime(&issue_ts),
+                UTCTime::from_datetime(&expire_ts),
+            );
+            let subject = asn1_seq!(asn1_seq!(asn1_seq!(
+                common_name_oid.clone(),
+                subject.to_string(),
+            )));
+            let pub_key = asn1_seq!(
+                asn1_seq!(ec_public_key_oid, prime256v1_oid,),
+                BitVec::from_bytes(&pub_key_bytes),
+            );
+            let sgx_ra_cert_ext = asn1_seq!(asn1_seq!(comment_oid, payload.to_owned()));
+            let tbs_cert = asn1_seq!(
+                version,
+                serial,
+                cert_sign_algo,
+                issuer,
+                valid_range,
+                subject,
+                pub_key,
+                sgx_ra_cert_ext,
+            );
+            TbsCert::dump(writer, tbs_cert);
         });
-    });
 
-    yasna::construct_der(|writer| {
-        writer.write_sequence(|writer| {
-            writer.next().write_der(&tbs_cert_der.as_slice());
-            CertSignAlgo::dump(writer.next(), cert_sign_algo);
-            writer
-                .next()
-                .write_bitvec(&bit_vec::BitVec::from_bytes(&sig_der.as_slice()));
+        // There will be serious problems if this call fails. We might as well
+        // panic in this case, thus unwrap()
+        let ecc_handle = SgxEccHandle::new();
+        ecc_handle.open().unwrap();
+
+        let sig = ecc_handle
+            .ecdsa_sign_slice(&tbs_cert_der.as_slice(), &self.prv_k)
+            .unwrap();
+
+        let sig_der = yasna::construct_der(|writer| {
+            writer.write_sequence(|writer| {
+                let mut sig_x = sig.x;
+                sig_x.reverse();
+                let mut sig_y = sig.y;
+                sig_y.reverse();
+                writer.next().write_biguint(&BigUint::from_slice(&sig_x));
+                writer.next().write_biguint(&BigUint::from_slice(&sig_y));
+            });
         });
-    })
-}
 
-fn convert_ec_private_to_der(prv_k: &sgx_ec256_private_t, pub_k: &sgx_ec256_public_t) -> Vec<u8> {
-    // Generate public key bytes
-    let pub_key_bytes = make_ecc_public_key_bytes(pub_k);
-
-    // Generate private key bytes
-    let mut prv_key_bytes: Vec<u8> = vec![];
-    prv_key_bytes.extend(prv_k.r.iter().rev());
-
-    // Generate Private Key DER
-    yasna::construct_der(|writer| {
-        writer.write_sequence(|writer| {
-            writer.next().write_u8(0);
-            writer.next().write_sequence(|writer| {
+        yasna::construct_der(|writer| {
+            writer.write_sequence(|writer| {
+                writer.next().write_der(&tbs_cert_der.as_slice());
+                CertSignAlgo::dump(writer.next(), asn1_seq!(ecdsa_with_sha256_oid.clone()));
                 writer
                     .next()
-                    .write_oid(&yasna::models::ObjectIdentifier::from_slice(&[
-                        1, 2, 840, 10045, 2, 1,
-                    ]));
-                writer
-                    .next()
-                    .write_oid(&yasna::models::ObjectIdentifier::from_slice(&[
-                        1, 2, 840, 10045, 3, 1, 7,
-                    ]));
+                    .write_bitvec(&BitVec::from_bytes(&sig_der.as_slice()));
             });
-            let inner_key_der = yasna::construct_der(|writer| {
-                writer.write_sequence(|writer| {
-                    writer.next().write_u8(1);
-                    writer.next().write_bytes(&prv_key_bytes);
-                    writer
-                        .next()
-                        .write_tagged(yasna::Tag::context(1), |writer| {
-                            writer.write_bitvec(&bit_vec::BitVec::from_bytes(&pub_key_bytes));
-                        });
-                });
-            });
-            writer.next().write_bytes(&inner_key_der);
-        });
-    })
+        })
+    }
+
+    fn public_key_into_bytes(&self) -> Vec<u8> {
+        // The first byte must be 4, which indicates the uncompressed encoding.
+        let mut pub_key_bytes: Vec<u8> = vec![4];
+        pub_key_bytes.extend(self.pub_k.gx.iter().rev());
+        pub_key_bytes.extend(self.pub_k.gy.iter().rev());
+        pub_key_bytes
+    }
+
+    fn private_key_into_bytes(&self) -> Vec<u8> {
+        let mut prv_key_bytes: Vec<u8> = vec![];
+        prv_key_bytes.extend(self.prv_k.r.iter().rev());
+        prv_key_bytes
+    }
 }
