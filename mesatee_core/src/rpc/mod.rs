@@ -44,7 +44,7 @@ where
 {
     type Config;
 
-    fn start(config: Self::Config) -> Result<Self>;
+    fn start(config: &Self::Config) -> Result<Self>;
 
     // This call would block -- contains main loop
     // Returns error on socket close or any exceptions.
@@ -128,6 +128,8 @@ where
 // Please reivse this later if we have a dedicated rpc for mesalock_sgx.
 
 pub mod channel;
+#[cfg(feature = "mesalock_sgx")]
+pub mod server;
 
 pub mod sgx;
 pub mod unix;

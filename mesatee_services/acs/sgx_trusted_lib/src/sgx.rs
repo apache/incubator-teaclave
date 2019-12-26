@@ -24,6 +24,7 @@ use std::os::raw::c_char;
 
 use mesatee_core::config;
 use mesatee_core::prelude::*;
+use mesatee_core::rpc::server::SgxTrustedServer;
 use mesatee_core::{Error, ErrorKind, Result};
 
 use crate::acs::ACSEnclave;
@@ -43,30 +44,22 @@ extern "C" {
 fn handle_serve_connection(args: &ServeConnectionInput) -> Result<ServeConnectionOutput> {
     debug!("Enclave [ACS]: Serve Connection.");
 
-    let server_instance = ACSEnclave::default();
     let acs_config = config::Internal::acs();
     assert_eq!(args.port, acs_config.addr.port());
 
     let enclave_attr = match acs_config.inbound_desc {
-        config::InboundDesc::Sgx(enclave_attr) => enclave_attr,
+        config::InboundDesc::Sgx(enclave_attr) => Some(enclave_attr),
         _ => unreachable!(),
     };
 
-    let config = PipeConfig {
-        fd: args.socket_fd,
-        retry: 0,
-        client_attr: Some(enclave_attr),
-    };
-
-    let mut server = match Pipe::start(config) {
+    let server = match SgxTrustedServer::new(ACSEnclave::default(), args.socket_fd, enclave_attr) {
         Ok(s) => s,
         Err(e) => {
-            error!("Start Pipe failed: {}", e);
+            error!("New server failed: {:?}.", e);
             return Ok(ServeConnectionOutput::default());
         }
     };
-
-    let _ = server.serve(server_instance);
+    let _ = server.start();
 
     // We discard all enclave internal errors here.
     Ok(ServeConnectionOutput::default())

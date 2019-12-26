@@ -115,7 +115,7 @@ where
     // type X = Box<EnclaveService<U, V>>;
     // The `TcpStream::new()` function is different from Rust's design.
     // The SGX version takes a fd as a input and return an `Option`.
-    fn start(config: Self::Config) -> Result<Self> {
+    fn start(config: &Self::Config) -> Result<Self> {
         Ok(Pipe {
             #[cfg(feature = "mesalock_sgx")]
             inner: TcpStream::new(config.get())?,

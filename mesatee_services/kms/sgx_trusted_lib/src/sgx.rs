@@ -21,6 +21,7 @@ use std::prelude::v1::*;
 
 use mesatee_core::config;
 use mesatee_core::prelude::*;
+use mesatee_core::rpc::server::SgxTrustedServer;
 use mesatee_core::Result;
 
 use crate::kms::KMSEnclave;
@@ -36,30 +37,21 @@ register_ecall_handler!(
 fn handle_serve_connection(args: &ServeConnectionInput) -> Result<ServeConnectionOutput> {
     debug!("Enclave [KMS]: Serve Connection.");
 
-    let server_instance = KMSEnclave::default();
     let kms_config = config::Internal::kms();
     assert_eq!(args.port, kms_config.addr.port());
 
     let enclave_attr = match kms_config.inbound_desc {
-        config::InboundDesc::Sgx(enclave_attr) => enclave_attr,
+        config::InboundDesc::Sgx(enclave_attr) => Some(enclave_attr),
         _ => unreachable!(),
     };
-
-    let config = PipeConfig {
-        fd: args.socket_fd,
-        retry: 0,
-        client_attr: Some(enclave_attr),
-    };
-
-    let mut server = match Pipe::start(config) {
+    let server = match SgxTrustedServer::new(KMSEnclave::default(), args.socket_fd, enclave_attr) {
         Ok(s) => s,
         Err(e) => {
-            error!("Start Pipe failed: {}", e);
+            error!("New server failed: {:?}.", e);
             return Ok(ServeConnectionOutput::default());
         }
     };
-
-    let _ = server.serve(server_instance);
+    let _ = server.start();
 
     // We discard all enclave internal errors here.
     Ok(ServeConnectionOutput::default())

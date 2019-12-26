@@ -20,6 +20,7 @@ use std::prelude::v1::*;
 
 use mesatee_core::config;
 use mesatee_core::prelude::*;
+use mesatee_core::rpc::server::SgxTrustedServer;
 use mesatee_core::Result;
 
 use crate::tms_external::TMSExternalEnclave;
@@ -65,41 +66,36 @@ fn handle_serve_connection(args: &ServeConnectionInput) -> Result<ServeConnectio
             _ => unreachable!(),
         };
 
-        let config = PipeConfig {
-            fd: args.socket_fd,
-            retry: 0,
-            client_attr: enclave_attr,
-        };
-
-        let mut server = match Pipe::start(config) {
+        let server = match SgxTrustedServer::new(
+            TMSInternalEnclave::default(),
+            args.socket_fd,
+            enclave_attr,
+        ) {
             Ok(s) => s,
             Err(e) => {
-                error!("Start Pipe failed: {}", e);
+                error!("New server failed: {:?}.", e);
                 return Ok(ServeConnectionOutput::default());
             }
         };
-        let _ = server.serve(TMSInternalEnclave::default());
+        let _ = server.start();
     } else if args.port == external.addr.port() {
         let enclave_attr = match external.inbound_desc {
             config::InboundDesc::External => None,
             _ => unreachable!(),
         };
 
-        let config = PipeConfig {
-            fd: args.socket_fd,
-            retry: 0,
-            client_attr: enclave_attr,
-        };
-
-        let mut server = match Pipe::start(config) {
+        let server = match SgxTrustedServer::new(
+            TMSExternalEnclave::default(),
+            args.socket_fd,
+            enclave_attr,
+        ) {
             Ok(s) => s,
             Err(e) => {
-                error!("Start Pipe failed: {}", e);
+                error!("New server failed: {:?}.", e);
                 return Ok(ServeConnectionOutput::default());
             }
         };
-
-        let _ = server.serve(TMSExternalEnclave::default());
+        let _ = server.start();
     } else {
         unreachable!()
     }

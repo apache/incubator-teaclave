@@ -19,6 +19,7 @@ use std::prelude::v1::*;
 
 use mesatee_core::config;
 use mesatee_core::prelude::*;
+use mesatee_core::rpc::server::SgxTrustedServer;
 use mesatee_core::Result;
 
 use crate::data_store::add_test_infomation;
@@ -38,48 +39,35 @@ fn handle_serve_connection(args: &ServeConnectionInput) -> Result<ServeConnectio
     let internal = config::Internal::tdfs();
     let external = config::External::tdfs();
 
+    let fd = args.socket_fd;
     if args.port == internal.addr.port() {
         let enclave_attr = match internal.inbound_desc {
             config::InboundDesc::Sgx(enclave_attr) => Some(enclave_attr),
             _ => unreachable!(),
         };
 
-        let config = PipeConfig {
-            fd: args.socket_fd,
-            retry: 0,
-            client_attr: enclave_attr,
-        };
-
-        let mut server = match Pipe::start(config) {
+        let server = match SgxTrustedServer::new(DFSInternalEnclave::default(), fd, enclave_attr) {
             Ok(s) => s,
             Err(e) => {
-                error!("Start Pipe failed: {}", e);
+                error!("New server failed: {:?}.", e);
                 return Ok(ServeConnectionOutput::default());
             }
         };
-
-        let _ = server.serve(DFSInternalEnclave::default());
+        let _ = server.start();
     } else if args.port == external.addr.port() {
         let enclave_attr = match external.inbound_desc {
             config::InboundDesc::External => None,
             _ => unreachable!(),
         };
 
-        let config = PipeConfig {
-            fd: args.socket_fd,
-            retry: 0,
-            client_attr: enclave_attr,
-        };
-
-        let mut server = match Pipe::start(config) {
+        let server = match SgxTrustedServer::new(DFSExternalEnclave::default(), fd, enclave_attr) {
             Ok(s) => s,
             Err(e) => {
-                error!("Start Pipe failed: {}", e);
+                error!("New server failed: {:?}.", e);
                 return Ok(ServeConnectionOutput::default());
             }
         };
-
-        let _ = server.serve(DFSExternalEnclave::default());
+        let _ = server.start();
     } else {
         unreachable!()
     }
