@@ -119,11 +119,6 @@ struct RACache {
     validity: time::Duration,
 }
 
-struct Secp256k1KeyPair {
-    prv_k: sgx_ec256_private_t,
-    pub_k: sgx_ec256_public_t,
-}
-
 pub(crate) fn init_ra_credential(valid_secs: u64) -> Result<()> {
     match RACache::new(valid_secs) {
         Ok(new_entry) => {
@@ -193,11 +188,9 @@ pub(crate) fn get_current_ra_credential() -> RACredential {
 
 impl RACredential {
     fn generate_and_endorse() -> Result<RACredential> {
-        let (prv_k, pub_k) = generate_sgx_ecc_keypair()?;
-        let report = create_attestation_report(&pub_k)?;
+        let key_pair = Secp256k1KeyPair::new()?;
+        let report = create_attestation_report(&key_pair.pub_k)?;
         let payload = [report.report, report.signature, report.certificate].join("|");
-
-        let key_pair = Secp256k1KeyPair::new(prv_k, pub_k);
         let cert_der =
             key_pair.create_cert_with_extension("Teaclave", "Teaclave", &payload.as_bytes());
         let prv_key_der = key_pair.private_key_into_der();
@@ -229,17 +222,18 @@ impl RACache {
     }
 }
 
-fn generate_sgx_ecc_keypair() -> Result<(sgx_ec256_private_t, sgx_ec256_public_t)> {
-    let ecc_handle = SgxEccHandle::new();
-    ecc_handle.open()?;
-    let (prv_k, pub_k) = ecc_handle.create_key_pair()?;
-    ecc_handle.close()?;
-    Ok((prv_k, pub_k))
+struct Secp256k1KeyPair {
+    prv_k: sgx_ec256_private_t,
+    pub_k: sgx_ec256_public_t,
 }
 
 impl Secp256k1KeyPair {
-    fn new(prv_k: sgx_ec256_private_t, pub_k: sgx_ec256_public_t) -> Self {
-        Self { prv_k, pub_k }
+    fn new() -> Result<Self> {
+        let ecc_handle = SgxEccHandle::new();
+        ecc_handle.open()?;
+        let (prv_k, pub_k) = ecc_handle.create_key_pair()?;
+        ecc_handle.close()?;
+        Ok(Self { prv_k, pub_k })
     }
 
     pub fn private_key_into_der(&self) -> Vec<u8> {
@@ -529,7 +523,7 @@ fn talk_to_intel_ias(fd: c_int, req: String) -> Result<Vec<u8>> {
         let mut sess = rustls::ClientSession::new(&IAS_CLIENT_CONFIG, dns_name);
         mut sock =<< TcpStream::new(fd);
         let mut tls = rustls::Stream::new(&mut sess, &mut sock);
-        _ =<< tls.write(req.as_bytes());
+        _ =<< tls.write_all(req.as_bytes());
         let mut plaintext = Vec::new();
         _ =<< tls.read_to_end(&mut plaintext);
         ret plaintext
