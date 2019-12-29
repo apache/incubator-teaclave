@@ -181,16 +181,4 @@ impl IasClient {
 
         Ok(len)
     }
-
-    fn check_http_response(resp: &httparse::Response) -> Result<()> {
-        match resp.code {
-            Some(code) if code != 200 => {
-                Ok(())
-            },
-            _ => {
-                error!("Intel IAS service returned invalid HTTP response");
-                Err(Error::new(RaError::IasError))
-            }
-        }
-    }
 }

@@ -20,13 +20,10 @@
 // This entire file is solely used for the sgx environment
 use std::prelude::v1::*;
 
-use rustls;
-use webpki_roots;
-
 use sgx_tcrypto::rsgx_sha256_slice;
 use sgx_types::*;
 
-use std::sync::{Arc, SgxRwLock};
+use std::sync::SgxRwLock;
 use std::time::{self, SystemTime};
 use std::untrusted::time::SystemTimeEx;
 
@@ -44,17 +41,6 @@ lazy_static! {
             gen_time: SystemTime::UNIX_EPOCH,
             validity: time::Duration::from_secs(0),
         })
-    };
-
-    static ref IAS_CLIENT_CONFIG: Arc<rustls::ClientConfig> = {
-        let mut config = rustls::ClientConfig::new();
-
-        // We trust known CA
-        config
-            .root_store
-            .add_server_trust_anchors(&webpki_roots::TLS_SERVER_ROOTS);
-
-        Arc::new(config)
     };
 }
 

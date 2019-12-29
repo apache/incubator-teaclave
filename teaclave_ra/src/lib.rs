@@ -24,16 +24,18 @@ struct SgxQuoteVerifier;
 
 #[macro_use]
 mod cert;
-#[cfg(feature = "mesalock_sgx")]
-pub mod key;
-
-#[cfg(feature = "mesalock_sgx")]
-mod ra;
-#[cfg(feature = "mesalock_sgx")]
-mod ias;
-#[cfg(feature = "mesalock_sgx")]
-pub use ra::SgxRaReport;
 
 mod quote {
     struct SgxQuote;
+}
+
+use cfg_if::cfg_if;
+cfg_if! {
+    if #[cfg(feature = "mesalock_sgx")]  {
+        pub mod key;
+        mod ra;
+        mod ias;
+        pub use ra::SgxRaReport;
+    } else {
+    }
 }

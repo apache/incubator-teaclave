@@ -28,6 +28,7 @@ rustls       = { version = "0.16.0", features = ["dangerous_configuration"] }
 base64       = { version = "0.10.1" }
 httparse     = { version = "1.3.2", default-features = false }
 log          = { version = "0.4.6" }
+cfg-if          = { version = "0.1.9" }
 
 sgx_tstd  = { version = "1.1.0", features = ["net", "backtrace"], optional = true }
 sgx_types = { version = "1.1.0" }
