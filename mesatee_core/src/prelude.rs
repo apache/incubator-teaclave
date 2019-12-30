@@ -22,7 +22,7 @@ cfg_if! {
         // preludes provided for SGX enclave.
         pub use crate::register_ecall_handler;
         pub use crate::rpc::{RpcServer, RpcClient, EnclaveService};
-        pub use crate::rpc::sgx::{EnclaveAttr, Pipe, PipeConfig};
+        pub use crate::rpc::sgx::{Pipe, PipeConfig};
         pub use crate::ipc::{IpcSender, IpcService, IpcReceiver};
         pub use crate::ipc::protos::ECallCommand;
         pub use crate::ipc::protos::ecall::{

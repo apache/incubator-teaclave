@@ -18,11 +18,11 @@
 // ip/port is dynamically dispatched for fns client.
 // we cannot use the &'static str in this struct.
 
-use crate::rpc::sgx::EnclaveAttr;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::prelude::v1::*;
 use teaclave_attestation;
+use teaclave_attestation::verifier::EnclaveAttr;
 use teaclave_config::build_config::BUILD_CONFIG;
 use teaclave_config::runtime_config;
 use teaclave_config::runtime_config::RuntimeConfig;
@@ -64,7 +64,6 @@ impl OutboundDesc {
     pub fn new(measures: EnclaveMeasurement) -> OutboundDesc {
         OutboundDesc::Sgx(EnclaveAttr {
             measures: vec![measures],
-            quote_checker: universal_quote_check,
         })
     }
 }
@@ -115,17 +114,10 @@ pub fn runtime_config() -> &'static RuntimeConfig {
         .expect("Invalid runtime config, should gracefully exit during enclave_init!")
 }
 
-fn universal_quote_check(quote: &teaclave_attestation::quote::SgxQuote) -> bool {
-    quote.status != teaclave_attestation::quote::SgxQuoteStatus::UnknownBadStatus
-}
-
 pub fn get_trusted_enclave_attr(service_names: Vec<&str>) -> EnclaveAttr {
     let measures = service_names
         .iter()
         .map(|name| *ENCLAVE_IDENTITIES.get(&(*name).to_string()).unwrap())
         .collect();
-    EnclaveAttr {
-        measures,
-        quote_checker: universal_quote_check,
-    }
+    EnclaveAttr { measures }
 }

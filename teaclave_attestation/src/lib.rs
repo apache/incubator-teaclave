@@ -15,11 +15,10 @@ pub enum AttestationError {
     QuoteError,
 }
 
-// struct SgxQuoteVerifier;
-
 #[macro_use]
 mod cert;
 pub mod quote;
+pub mod verifier;
 
 use cfg_if::cfg_if;
 cfg_if! {

@@ -18,10 +18,10 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::rpc::sgx::EnclaveAttr;
 use crate::Error;
 use crate::ErrorKind;
 use crate::Result;
+use teaclave_attestation::verifier::SgxQuoteVerifier;
 
 use sgx_types::sgx_sha256_hash_t;
 use std::sync::SgxRwLock as RwLock;
@@ -36,17 +36,17 @@ lazy_static! {
 #[derive(Default)]
 struct ServerConfigCache {
     private_key_sha256: sgx_sha256_hash_t,
-    target_configs: HashMap<Arc<EnclaveAttr>, Arc<rustls::ServerConfig>>,
+    target_configs: HashMap<Arc<SgxQuoteVerifier>, Arc<rustls::ServerConfig>>,
 }
 
 pub(crate) fn get_tls_config(
-    client_attr: &Option<EnclaveAttr>,
+    client_verifier: &Option<SgxQuoteVerifier>,
 ) -> Result<Arc<rustls::ServerConfig>> {
     use crate::rpc::sgx::ra::get_current_ra_credential;
 
     let ra_credential = get_current_ra_credential();
 
-    let client_attr = match client_attr {
+    let client_verifier = match client_verifier {
         Some(attr) => Arc::new(attr.clone()),
         None => {
             let certs = vec![rustls::Certificate(ra_credential.cert)];
@@ -61,7 +61,7 @@ pub(crate) fn get_tls_config(
     };
 
     if let Ok(cfg_cache) = SERVER_CONFIG_CACHE.try_read() {
-        if let Some(cfg) = cfg_cache.target_configs.get(&client_attr) {
+        if let Some(cfg) = cfg_cache.target_configs.get(&client_verifier) {
             // Hit Cache. Be quick!
             return Ok(cfg.clone());
         }
@@ -70,7 +70,7 @@ pub(crate) fn get_tls_config(
     let certs = vec![rustls::Certificate(ra_credential.cert)];
     let privkey = rustls::PrivateKey(ra_credential.private_key);
 
-    let mut server_cfg = rustls::ServerConfig::new(client_attr.clone());
+    let mut server_cfg = rustls::ServerConfig::new(client_verifier.clone());
     server_cfg
         .set_single_cert(certs, privkey)
         .map_err(|_| Error::from(ErrorKind::TLSError))?;
@@ -86,7 +86,7 @@ pub(crate) fn get_tls_config(
         }
         let _ = cfg_cache
             .target_configs
-            .insert(client_attr, final_arc.clone()); // Overwrite
+            .insert(client_verifier, final_arc.clone()); // Overwrite
     }
 
     Ok(final_arc)

@@ -1,4 +1,4 @@
-use crate::ra::SgxRaReport;
+use crate::report::IasReport;
 use crate::AttestationError;
 use anyhow::Error;
 use anyhow::Result;
@@ -104,7 +104,7 @@ impl IasClient {
         }
     }
 
-    pub fn get_report(&mut self, quote: &[u8]) -> Result<SgxRaReport> {
+    pub fn get_report(&mut self, quote: &[u8]) -> Result<IasReport> {
         debug!("get_report");
         let report_uri = "/sgx/dev/attestation/v3/report";
         let encoded_quote = base64::encode(quote);
@@ -177,7 +177,7 @@ impl IasClient {
 
         debug!("get_report");
         let report = String::from_utf8_lossy(&response[header_len..]).into_owned();
-        Ok(SgxRaReport {
+        Ok(IasReport {
             report,
             signature,
             signing_cert,
