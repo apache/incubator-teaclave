@@ -1,7 +1,8 @@
+use crate::ra::SgxRaReport;
+use crate::RaError;
 use anyhow::Error;
 use anyhow::Result;
-use crate::RaError;
-use crate::ra::SgxRaReport;
+use log::debug;
 use sgx_types::*;
 use std::collections::HashMap;
 use std::io::{Read, Write};
@@ -17,7 +18,6 @@ extern "C" {
 pub struct IasClient {
     ias_key: String,
     ias_hostname: &'static str,
-    production: bool,
 }
 
 impl IasClient {
@@ -28,7 +28,10 @@ impl IasClient {
             "api.trustedservices.intel.com"
         };
 
-        Self { ias_key: ias_key.to_owned(), ias_hostname, production }
+        Self {
+            ias_key: ias_key.to_owned(),
+            ias_hostname,
+        }
     }
 
     fn get_ias_socket() -> Result<c_int> {
@@ -47,25 +50,24 @@ impl IasClient {
         let fd = Self::get_ias_socket()?;
         let dns_name = webpki::DNSNameRef::try_from_ascii_str(self.ias_hostname)?;
         let mut config = rustls::ClientConfig::new();
-        config.root_store.add_server_trust_anchors(&webpki_roots::TLS_SERVER_ROOTS);
-        let mut client = rustls::ClientSession::new(&Arc::new(config), dns_name);
-        let mut socket = TcpStream::new(fd)?;
-        let mut stream = rustls::StreamOwned::new(client, socket);
+        config
+            .root_store
+            .add_server_trust_anchors(&webpki_roots::TLS_SERVER_ROOTS);
+        let client = rustls::ClientSession::new(&Arc::new(config), dns_name);
+        let socket = TcpStream::new(fd)?;
+        let stream = rustls::StreamOwned::new(client, socket);
 
         Ok(stream)
     }
 
     pub fn get_sigrl(&mut self, epid_group_id: u32) -> Result<Vec<u8>> {
-
         let sigrl_uri = format!("/sgx/dev/attestation/v3/sigrl/{:08x}", epid_group_id);
         let request = format!(
             "GET {} HTTP/1.1\r\n\
              HOST: {}\r\n\
              Ocp-Apim-Subscription-Key: {}\r\n\
              Connection: Close\r\n\r\n",
-            sigrl_uri,
-            self.ias_hostname,
-            self.ias_key
+            sigrl_uri, self.ias_hostname, self.ias_key
         );
 
         let mut stream = self.new_tls_stream()?;
@@ -75,16 +77,24 @@ impl IasClient {
 
         let mut headers = [httparse::EMPTY_HEADER; 16];
         let mut http_response = httparse::Response::new(&mut headers);
-        let header_len = match http_response.parse(&response)
-            .map_err(|_| Error::new(RaError::IasError))? {
+        let header_len = match http_response
+            .parse(&response)
+            .map_err(|_| Error::new(RaError::IasError))?
+        {
             httparse::Status::Complete(s) => s,
             _ => return Err(Error::new(RaError::IasError)),
         };
 
         let header_map = Self::parse_headers(&http_response);
 
-        if !header_map.contains_key("Content-Length") ||
-            header_map.get("Content-Length").unwrap().parse::<u32>().unwrap_or(0) == 0 {
+        if !header_map.contains_key("Content-Length")
+            || header_map
+                .get("Content-Length")
+                .unwrap()
+                .parse::<u32>()
+                .unwrap_or(0)
+                == 0
+        {
             Ok(Vec::new())
         } else {
             let base64 = std::str::from_utf8(&response[header_len..])?;
@@ -126,8 +136,10 @@ impl IasClient {
         let mut headers = [httparse::EMPTY_HEADER; 16];
         let mut http_response = httparse::Response::new(&mut headers);
         debug!("http_response.parse");
-        let header_len = match http_response.parse(&response)
-            .map_err(|_| Error::new(RaError::IasError))? {
+        let header_len = match http_response
+            .parse(&response)
+            .map_err(|_| Error::new(RaError::IasError))?
+        {
             httparse::Status::Complete(s) => s,
             _ => return Err(Error::new(RaError::IasError)),
         };
@@ -136,17 +148,26 @@ impl IasClient {
         let header_map = Self::parse_headers(&http_response);
 
         debug!("get_content_length");
-        if !header_map.contains_key("Content-Length") ||
-            header_map.get("Content-Length").unwrap().parse::<u32>().unwrap_or(0) == 0 {
-                return Err(Error::new(RaError::IasError));
+        if !header_map.contains_key("Content-Length")
+            || header_map
+                .get("Content-Length")
+                .unwrap()
+                .parse::<u32>()
+                .unwrap_or(0)
+                == 0
+        {
+            return Err(Error::new(RaError::IasError));
         }
 
         debug!("get_signature");
-        let signature = header_map.get("X-IASReport-Signature")
-            .ok_or_else(|| Error::new(RaError::IasError))?.to_owned();
+        let signature = header_map
+            .get("X-IASReport-Signature")
+            .ok_or_else(|| Error::new(RaError::IasError))?
+            .to_owned();
         debug!("get_signing_cert");
         let signing_cert = {
-            let cert_str = header_map.get("X-IASReport-Signing-Certificate")
+            let cert_str = header_map
+                .get("X-IASReport-Signing-Certificate")
                 .ok_or_else(|| Error::new(RaError::IasError))?;
             let decoded_cert = teaclave_utils::percent_decode(cert_str)?;
             // We should get two concatenated PEM files at this step.
@@ -159,26 +180,19 @@ impl IasClient {
         Ok(SgxRaReport {
             report,
             signature,
-            signing_cert
+            signing_cert,
         })
     }
 
     fn parse_headers(resp: &httparse::Response) -> HashMap<String, String> {
         let mut header_map = HashMap::new();
         for h in resp.headers.iter() {
-            header_map.insert(h.name.to_owned(), String::from_utf8_lossy(h.value).into_owned());
+            header_map.insert(
+                h.name.to_owned(),
+                String::from_utf8_lossy(h.value).into_owned(),
+            );
         }
 
         header_map
-    }
-
-    fn get_content_length(resp: &httparse::Response) -> Result<u32> {
-        let header = resp.headers.iter()
-            .find(|&&header| header.name == "Content-Length")
-            .ok_or_else(|| Error::new(RaError::IasError))?;
-        let len_str = std::str::from_utf8(header.value)?;
-        let len = len_str.parse::<u32>()?;
-
-        Ok(len)
     }
 }

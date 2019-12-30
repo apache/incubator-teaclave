@@ -1,17 +1,16 @@
-use anyhow::Result;
-use anyhow::Error;
-use std::prelude::v1::*;
-use sgx_types::sgx_ec256_public_t;
+use crate::ias::IasClient;
 use crate::RaError;
-use sgx_types::*;
-use sgx_tse::*;
-use base64;
+use anyhow::Error;
+use anyhow::Result;
+use log::debug;
 use sgx_rand::os::SgxRng;
 use sgx_rand::Rng;
-use teaclave_utils;
 use sgx_tcrypto::rsgx_sha256_slice;
-use std::collections::HashMap;
-use crate::ias::IasClient;
+use sgx_tse::{rsgx_create_report, rsgx_verify_report};
+use sgx_types::sgx_ec256_public_t;
+use sgx_types::*;
+use std::prelude::v1::*;
+use teaclave_utils;
 
 extern "C" {
     fn ocall_sgx_init_quote(
@@ -41,7 +40,6 @@ extern "C" {
     ) -> sgx_status_t;
 }
 
-
 pub struct SgxRaReport {
     pub report: String,
     pub signature: String,
@@ -49,7 +47,12 @@ pub struct SgxRaReport {
 }
 
 impl SgxRaReport {
-    pub fn new(pub_k: sgx_ec256_public_t, ias_key: &str, ias_spid: &str, production: bool) -> Result<Self> {
+    pub fn new(
+        pub_k: sgx_ec256_public_t,
+        ias_key: &str,
+        ias_spid: &str,
+        production: bool,
+    ) -> Result<Self> {
         let (target_info, epid_group_id) = Self::init_quote()?;
         let mut ias_client = IasClient::new(ias_key, production);
         let sigrl = ias_client.get_sigrl(u32::from_le_bytes(epid_group_id))?;
@@ -65,22 +68,19 @@ impl SgxRaReport {
         let mut eg: sgx_epid_group_id_t = sgx_epid_group_id_t::default();
         let mut rt: sgx_status_t = sgx_status_t::SGX_ERROR_UNEXPECTED;
 
-        let res = unsafe {
-            ocall_sgx_init_quote(
-                &mut rt as _,
-                &mut ti as _,
-                &mut eg as _,
-            )
-        };
+        let res = unsafe { ocall_sgx_init_quote(&mut rt as _, &mut ti as _, &mut eg as _) };
 
-        if res != sgx_status_t::SGX_SUCCESS ||rt != sgx_status_t::SGX_SUCCESS {
+        if res != sgx_status_t::SGX_SUCCESS || rt != sgx_status_t::SGX_SUCCESS {
             Err(Error::new(RaError::OCallError))
         } else {
             Ok((ti, eg))
         }
     }
 
-    fn create_report(pub_k: sgx_ec256_public_t, target_info: sgx_target_info_t) -> Result<sgx_report_t> {
+    fn create_report(
+        pub_k: sgx_ec256_public_t,
+        target_info: sgx_target_info_t,
+    ) -> Result<sgx_report_t> {
         debug!("create_report");
         let mut report_data: sgx_report_data_t = sgx_report_data_t::default();
         let mut pub_k_gx = pub_k.gx;
@@ -93,7 +93,12 @@ impl SgxRaReport {
         rsgx_create_report(&target_info, &report_data).map_err(|_| Error::new(RaError::IasError))
     }
 
-    fn get_quote(sigrl: &[u8], report: sgx_report_t, target_info: sgx_target_info_t, ias_spid: &str) -> Result<Vec<u8>> {
+    fn get_quote(
+        sigrl: &[u8],
+        report: sgx_report_t,
+        target_info: sgx_target_info_t,
+        ias_spid: &str,
+    ) -> Result<Vec<u8>> {
         let mut rt: sgx_status_t = sgx_status_t::SGX_ERROR_UNEXPECTED;
         let (p_sigrl, sigrl_len) = if sigrl.is_empty() {
             (std::ptr::null(), 0)
@@ -103,12 +108,7 @@ impl SgxRaReport {
         let mut quote_len: u32 = 0;
 
         let res = unsafe {
-            ocall_sgx_calc_quote_size(
-                &mut rt as _,
-                p_sigrl,
-                sigrl_len,
-                &mut quote_len as _
-            )
+            ocall_sgx_calc_quote_size(&mut rt as _, p_sigrl, sigrl_len, &mut quote_len as _)
         };
 
         if res != sgx_status_t::SGX_SUCCESS || rt != sgx_status_t::SGX_SUCCESS {

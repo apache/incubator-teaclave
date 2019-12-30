@@ -2,8 +2,6 @@
 #[cfg(feature = "mesalock_sgx")]
 #[macro_use]
 extern crate sgx_tstd as std;
-#[macro_use]
-extern crate log;
 
 use thiserror::Error;
 
@@ -17,17 +15,11 @@ pub enum RaError {
     QuoteError,
 }
 
-struct SgxQuoteBody;
-struct SgxReportBody;
-
-struct SgxQuoteVerifier;
+// struct SgxQuoteVerifier;
 
 #[macro_use]
 mod cert;
-
-mod quote {
-    struct SgxQuote;
-}
+pub mod quote;
 
 use cfg_if::cfg_if;
 cfg_if! {

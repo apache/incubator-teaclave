@@ -1,7 +1,7 @@
-use std::prelude::v1::*;
+use anyhow::Result;
 use sgx_tcrypto::SgxEccHandle;
 use sgx_types::{sgx_ec256_private_t, sgx_ec256_public_t};
-use anyhow::Result;
+use std::prelude::v1::*;
 
 pub const CERT_VALID_DAYS: i64 = 90i64;
 
@@ -59,12 +59,12 @@ impl Secp256k1KeyPair {
         subject: &str,
         payload: &[u8],
     ) -> Vec<u8> {
+        use crate::cert::*;
         use bit_vec::BitVec;
         use chrono::TimeZone;
-        use crate::cert::*;
         use num_bigint::BigUint;
+        use std::time::SystemTime;
         use std::time::UNIX_EPOCH;
-        use std::time:: SystemTime;
         use std::untrusted::time::SystemTimeEx;
         use yasna::construct_der;
         use yasna::models::{ObjectIdentifier, UTCTime};
@@ -73,7 +73,7 @@ impl Secp256k1KeyPair {
         let common_name_oid = ObjectIdentifier::from_slice(&[2, 5, 4, 3]);
         let ec_public_key_oid = ObjectIdentifier::from_slice(&[1, 2, 840, 10045, 2, 1]);
         let prime256v1_oid = ObjectIdentifier::from_slice(&[1, 2, 840, 10045, 3, 1, 7]);
-        let comment_oid = ObjectIdentifier::from_slice(&[2, 16, 840, 1, 113730, 1, 13]);
+        let comment_oid = ObjectIdentifier::from_slice(&[2, 16, 840, 1, 113_730, 1, 13]);
 
         let pub_key_bytes = self.public_key_into_bytes();
 

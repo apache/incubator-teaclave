@@ -33,7 +33,6 @@ impl Error for UtilsError {
     }
 }
 
-
 fn decode_hex_digit(digit: char) -> Result<u8> {
     match digit {
         '0'..='9' => Ok(digit as u8 - b'0'),

@@ -26,6 +26,8 @@ webpki       = { version = "0.21.0" }
 webpki-roots = { version = "0.17.0" }
 rustls       = { version = "0.16.0", features = ["dangerous_configuration"] }
 base64       = { version = "0.10.1" }
+serde_json   = { version = "1.0.39" }
+uuid         = { version = "0.7.4", features = ["v4"] }
 httparse     = { version = "1.3.2", default-features = false }
 log          = { version = "0.4.6" }
 cfg-if          = { version = "0.1.9" }

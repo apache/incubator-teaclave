@@ -17,6 +17,10 @@
 
 //! Monadic mayfail notation for chained error handling
 
+#![cfg_attr(feature = "mesalock_sgx", no_std)]
+#[cfg(feature = "mesalock_sgx")]
+extern crate sgx_tstd as std;
+
 /// maiyfail use duck typing.
 ///
 /// Syntax:
@@ -54,6 +58,7 @@
 ///     assert!(ret.is_ok() && ret.unwrap() == 4);
 /// }
 /// ```
+
 macro_rules! mayfail {
     (let $p: pat = $e: expr ; $($t: tt)*) => (
         { let $p = $e; mayfail! { $($t)* } }
@@ -70,9 +75,9 @@ macro_rules! mayfail {
     (ret $f: expr) => (Ok($f))
 }
 
-use crate::Error;
-use crate::ErrorKind;
-use crate::Result;
+use mesatee_core::Error;
+use mesatee_core::ErrorKind;
+use mesatee_core::Result;
 
 pub trait MayfailNop<T> {
     fn to_mt_result(self: Self, file: &'static str, line: u32) -> Result<T>;

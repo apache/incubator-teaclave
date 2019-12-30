@@ -36,20 +36,16 @@ use crate::rpc::{EnclaveService, RpcServer};
 use crate::rpc::RpcClient;
 use crate::Result;
 
+use teaclave_config::build_config::BUILD_CONFIG;
+use teaclave_ra;
+use teaclave_ra::quote::SgxQuote;
 use teaclave_utils;
 use teaclave_utils::EnclaveMeasurement;
-
-#[macro_use]
-mod fail;
 
 pub mod client;
 #[cfg(feature = "mesalock_sgx")]
 pub mod server;
 
-#[macro_use]
-mod cert;
-pub mod auth;
-pub use auth::*;
 #[cfg(feature = "mesalock_sgx")]
 mod ra;
 
@@ -92,8 +88,11 @@ impl EnclaveAttr {
             return true;
         }
 
-        let quote_result = auth::extract_sgx_quote_from_mra_cert(&cert_der);
-        let quote: SgxQuote = match quote_result {
+        let quote_result = teaclave_ra::quote::extract_sgx_quote_from_mra_cert(
+            &cert_der,
+            BUILD_CONFIG.ias_root_ca_cert,
+        );
+        let quote: teaclave_ra::quote::SgxQuote = match quote_result {
             Err(_) => {
                 return false;
             }

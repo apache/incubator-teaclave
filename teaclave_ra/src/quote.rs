@@ -21,6 +21,7 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
+use anyhow::{Error, Result};
 use chrono::DateTime;
 use rustls;
 use serde_json;
@@ -33,8 +34,6 @@ use std::time::*;
 use std::untrusted::time::SystemTimeEx;
 
 use uuid::Uuid;
-
-use teaclave_config::build_config::BUILD_CONFIG;
 
 type SignatureAlgorithms = &'static [&'static webpki::SignatureAlgorithm];
 static SUPPORTED_SIG_ALGS: SignatureAlgorithms = &[
@@ -51,10 +50,15 @@ static SUPPORTED_SIG_ALGS: SignatureAlgorithms = &[
     &webpki::RSA_PKCS1_3072_8192_SHA384,
 ];
 
-#[derive(Debug)]
+use thiserror::Error;
+
+#[derive(Error, Debug)]
 pub enum CertVerificationError {
+    #[error("Invalid cert format")]
     InvalidCertFormat,
+    #[error("Bad attestation report")]
     BadAttnReport,
+    #[error("Webpki failure")]
     WebpkiFailure,
 }
 
@@ -228,9 +232,10 @@ pub struct SgxQuote {
     pub body: SgxQuoteBody,
 }
 
-pub(crate) fn extract_sgx_quote_from_mra_cert(
+pub fn extract_sgx_quote_from_mra_cert(
     cert_der: &[u8],
-) -> Result<SgxQuote, CertVerificationError> {
+    ias_report_ca_cert: &[u8],
+) -> Result<SgxQuote> {
     // Before we reach here, Webpki already verifed the cert is properly signed
     use super::cert::*;
 
@@ -246,26 +251,25 @@ pub(crate) fn extract_sgx_quote_from_mra_cert(
 
     let payload: Vec<u8> = ((sgx_ra_cert_ext.0).1).0;
 
-    use crate::rpc::sgx::fail::MayfailTrace;
-
     // Extract each field
     let mut iter = payload.split(|x| *x == 0x7C);
-    let (attn_report_raw, sig, sig_cert_dec) = mayfail! {
-        attn_report_raw =<< iter.next();
-        sig_raw =<< iter.next();
-        sig =<< base64::decode(&sig_raw);
-        sig_cert_raw =<< iter.next();
-        sig_cert_dec =<< base64::decode_config(&sig_cert_raw, base64::STANDARD);
-        ret (attn_report_raw, sig, sig_cert_dec)
-    }
-    .map_err(|_| CertVerificationError::InvalidCertFormat)?;
+    let attn_report_raw = iter
+        .next()
+        .ok_or_else(|| Error::new(CertVerificationError::InvalidCertFormat))?;
+    let sig_raw = iter
+        .next()
+        .ok_or_else(|| Error::new(CertVerificationError::InvalidCertFormat))?;
+    let sig = base64::decode(&sig_raw)?;
+    let sig_cert_raw = iter
+        .next()
+        .ok_or_else(|| Error::new(CertVerificationError::InvalidCertFormat))?;
+    let sig_cert_dec = base64::decode_config(&sig_cert_raw, base64::STANDARD)?;
 
     let sig_cert = webpki::EndEntityCert::from(&sig_cert_dec)
         .map_err(|_| CertVerificationError::InvalidCertFormat)?;
 
     // Verify if the signing cert is issued by Intel CA
-    let ias_report_ca = BUILD_CONFIG.ias_root_ca_cert;
-    let mut ias_ca_stripped = ias_report_ca.to_vec();
+    let mut ias_ca_stripped = ias_report_ca_cert.to_vec();
     ias_ca_stripped.retain(|&x| x != 0x0d && x != 0x0a);
     let head_len = "-----BEGIN CERTIFICATE-----".len();
     let tail_len = "-----END CERTIFICATE-----".len();
@@ -274,7 +278,7 @@ pub(crate) fn extract_sgx_quote_from_mra_cert(
     let ias_cert_dec = base64::decode_config(ias_ca_core, base64::STANDARD)
         .map_err(|_| CertVerificationError::InvalidCertFormat)?;
 
-    let mut ca_reader = BufReader::new(&ias_report_ca[..]);
+    let mut ca_reader = BufReader::new(&ias_report_ca_cert[..]);
 
     let mut root_store = rustls::RootCertStore::empty();
     root_store
@@ -311,32 +315,35 @@ pub(crate) fn extract_sgx_quote_from_mra_cert(
         .map_err(|_| CertVerificationError::BadAttnReport)?;
 
     // 1. Check timestamp is within 24H (90day is recommended by Intel)
-    let quote_freshness = mayfail! {
-        time =<< attn_report["timestamp"].as_str();
+    let quote_freshness = {
+        let time = attn_report["timestamp"]
+            .as_str()
+            .ok_or_else(|| Error::new(CertVerificationError::BadAttnReport))?;
         let time_fixed = String::from(time) + "+0000";
-        date_time =<< DateTime::parse_from_str(&time_fixed, "%Y-%m-%dT%H:%M:%S%.f%z");
+        let date_time = DateTime::parse_from_str(&time_fixed, "%Y-%m-%dT%H:%M:%S%.f%z")?;
         let ts = date_time.naive_utc();
         let now = DateTime::<chrono::offset::Utc>::from(SystemTime::now()).naive_utc();
-        secs =<< u64::try_from((now - ts).num_seconds());
-        ret secs
-    }
-    .map_err(|_| CertVerificationError::BadAttnReport)?;
+        u64::try_from((now - ts).num_seconds())?
+    };
 
     // 2. Get quote status
-    let quote_status = mayfail! {
-        status_string =<< attn_report["isvEnclaveQuoteStatus"].as_str();
-        ret SgxQuoteStatus::from(status_string)
-    }
-    .map_err(|_| CertVerificationError::BadAttnReport)?;
+    let quote_status = {
+        let status_string = attn_report["isvEnclaveQuoteStatus"]
+            .as_str()
+            .ok_or_else(|| Error::new(CertVerificationError::BadAttnReport))?;
+
+        SgxQuoteStatus::from(status_string)
+    };
 
     // 3. Get quote body
-    let quote_body = mayfail! {
-        quote_encoded =<< attn_report["isvEnclaveQuoteBody"].as_str();
-        quote_raw =<< base64::decode(&(quote_encoded.as_bytes()));
-        quote_body =<< SgxQuoteBody::parse_from(quote_raw.as_slice());
-        ret quote_body
-    }
-    .map_err(|_| CertVerificationError::BadAttnReport)?;
+    let quote_body = {
+        let quote_encoded = attn_report["isvEnclaveQuoteBody"]
+            .as_str()
+            .ok_or_else(|| Error::new(CertVerificationError::BadAttnReport))?;
+        let quote_raw = base64::decode(&(quote_encoded.as_bytes()))?;
+        SgxQuoteBody::parse_from(quote_raw.as_slice())
+            .ok_or_else(|| Error::new(CertVerificationError::BadAttnReport))?
+    };
 
     let raw_pub_k = pub_k.to_bytes();
 
@@ -352,7 +359,7 @@ pub(crate) fn extract_sgx_quote_from_mra_cert(
     let is_uncompressed = raw_pub_k[0] == 4;
     let pub_k = &raw_pub_k.as_slice()[1..];
     if !is_uncompressed || pub_k != &quote_body.report_body.report_data[..] {
-        return Err(CertVerificationError::BadAttnReport);
+        return Err(Error::new(CertVerificationError::BadAttnReport));
     }
 
     Ok(SgxQuote {
