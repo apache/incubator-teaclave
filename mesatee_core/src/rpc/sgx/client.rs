@@ -17,7 +17,7 @@
 
 use std::sync::Arc;
 
-use crate::rpc::sgx::EnclaveAttr;
+use teaclave_attestation::verifier::SgxQuoteVerifier;
 
 #[cfg(feature = "mesalock_sgx")]
 use sgx_types::sgx_sha256_hash_t;
@@ -42,23 +42,23 @@ lazy_static! {
 #[derive(Default)]
 struct ClientConfigCache {
     private_key_sha256: sgx_sha256_hash_t,
-    target_configs: HashMap<Arc<EnclaveAttr>, Arc<rustls::ClientConfig>>,
+    target_configs: HashMap<Arc<SgxQuoteVerifier>, Arc<rustls::ClientConfig>>,
 }
 
 #[cfg(not(feature = "mesalock_sgx"))]
 #[derive(Default)]
 struct ClientConfigCache {
-    target_configs: HashMap<Arc<EnclaveAttr>, Arc<rustls::ClientConfig>>,
+    target_configs: HashMap<Arc<SgxQuoteVerifier>, Arc<rustls::ClientConfig>>,
 }
 
 #[cfg(feature = "mesalock_sgx")]
-pub(crate) fn get_tls_config(server_attr: Arc<EnclaveAttr>) -> Arc<rustls::ClientConfig> {
+pub(crate) fn get_tls_config(server_verifier: Arc<SgxQuoteVerifier>) -> Arc<rustls::ClientConfig> {
     use crate::rpc::sgx::ra::get_current_ra_credential;
 
     let ra_credential = get_current_ra_credential();
 
     if let Ok(cfg_cache) = CLIENT_CONFIG_CACHE.try_read() {
-        if let Some(cfg) = cfg_cache.target_configs.get(&server_attr) {
+        if let Some(cfg) = cfg_cache.target_configs.get(&server_verifier) {
             return cfg.clone();
         }
     }
@@ -70,7 +70,7 @@ pub(crate) fn get_tls_config(server_attr: Arc<EnclaveAttr>) -> Arc<rustls::Clien
     client_cfg.set_single_client_cert(certs, privkey);
     client_cfg
         .dangerous()
-        .set_certificate_verifier(server_attr.clone());
+        .set_certificate_verifier(server_verifier.clone());
     client_cfg.versions.clear();
     client_cfg.versions.push(rustls::ProtocolVersion::TLSv1_2);
 
@@ -86,16 +86,16 @@ pub(crate) fn get_tls_config(server_attr: Arc<EnclaveAttr>) -> Arc<rustls::Clien
 
         let _ = cfg_cache
             .target_configs
-            .insert(server_attr, final_arc.clone());
+            .insert(server_verifier, final_arc.clone());
     }
 
     final_arc
 }
 
 #[cfg(not(feature = "mesalock_sgx"))]
-pub(crate) fn get_tls_config(server_attr: Arc<EnclaveAttr>) -> Arc<rustls::ClientConfig> {
+pub(crate) fn get_tls_config(server_verifier: Arc<SgxQuoteVerifier>) -> Arc<rustls::ClientConfig> {
     if let Ok(cfg_cache) = CLIENT_CONFIG_CACHE.try_read() {
-        if let Some(cfg) = cfg_cache.target_configs.get(&server_attr) {
+        if let Some(cfg) = cfg_cache.target_configs.get(&server_verifier) {
             return cfg.clone();
         }
     }
@@ -104,7 +104,7 @@ pub(crate) fn get_tls_config(server_attr: Arc<EnclaveAttr>) -> Arc<rustls::Clien
 
     client_cfg
         .dangerous()
-        .set_certificate_verifier(server_attr.clone());
+        .set_certificate_verifier(server_verifier.clone());
     client_cfg.versions.clear();
     client_cfg.versions.push(rustls::ProtocolVersion::TLSv1_2);
 
@@ -113,7 +113,7 @@ pub(crate) fn get_tls_config(server_attr: Arc<EnclaveAttr>) -> Arc<rustls::Clien
     if let Ok(mut cfg_cache) = CLIENT_CONFIG_CACHE.try_write() {
         let _ = cfg_cache
             .target_configs
-            .insert(server_attr, final_arc.clone());
+            .insert(server_verifier, final_arc.clone());
     }
 
     final_arc

@@ -8,13 +8,29 @@ use serde::Deserializer;
 use serde_derive::Deserialize;
 use std::collections::HashMap;
 
+use std::error::Error;
+use std::fmt;
+
 type Result<T> = std::result::Result<T, UtilsError>;
 use sgx_types::SGX_HASH_SIZE;
 
 pub type SgxMeasurement = [u8; SGX_HASH_SIZE];
 
+#[derive(Debug)]
 pub enum UtilsError {
     ParseError,
+}
+
+impl fmt::Display for UtilsError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Teaclave utils error")
+    }
+}
+
+impl Error for UtilsError {
+    fn description(&self) -> &str {
+        "Teaclave utils error"
+    }
 }
 
 fn decode_hex_digit(digit: char) -> Result<u8> {
@@ -58,7 +74,8 @@ pub fn decode_spid(hex: &str) -> Result<sgx_types::sgx_spid_t> {
     Ok(spid)
 }
 
-pub fn percent_decode(orig: String) -> Result<String> {
+pub fn percent_decode(orig: &str) -> Result<String> {
+    let orig = orig.replace("%0A", "");
     let v: Vec<&str> = orig.split('%').collect();
     let mut ret = String::new();
     ret.push_str(v[0]);

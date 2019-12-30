@@ -16,12 +16,13 @@
 // under the License.
 
 use crate::rpc::sgx;
-use crate::rpc::sgx::EnclaveAttr;
 use crate::rpc::EnclaveService;
 use crate::rpc::RpcServer;
 use crate::Result;
 use serde::{de::DeserializeOwned, Serialize};
 use sgx_types::c_int;
+use teaclave_attestation::verifier::EnclaveAttr;
+use teaclave_attestation::verifier::SgxQuoteVerifier;
 
 pub struct SgxTrustedServer<U, V, X>
 where
@@ -41,7 +42,19 @@ where
     X: EnclaveService<U, V>,
 {
     pub fn new(service: X, fd: c_int, client_attr: Option<EnclaveAttr>) -> Result<Self> {
-        let config = sgx::PipeConfig { fd, client_attr };
+        let config = match client_attr {
+            Some(c) => {
+                let client_verifier = SgxQuoteVerifier::new(c);
+                sgx::PipeConfig {
+                    fd,
+                    client_verifier: Some(client_verifier),
+                }
+            }
+            _ => sgx::PipeConfig {
+                fd,
+                client_verifier: None,
+            },
+        };
         Ok(Self {
             config,
             service,

@@ -25,6 +25,9 @@ use crate::Result;
 use net2::TcpBuilder;
 use serde::{de::DeserializeOwned, Serialize};
 
+use teaclave_attestation::verifier::EnclaveAttr;
+use teaclave_attestation::verifier::SgxQuoteVerifier;
+
 pub struct SgxTrustedChannel<U: Serialize, V: DeserializeOwned> {
     client: sgx::PipeClient<U, V>,
 }
@@ -36,7 +39,7 @@ where
 {
     pub fn new(
         addr: std::net::SocketAddr,
-        enclave_attr: sgx::EnclaveAttr,
+        enclave_attr: EnclaveAttr,
     ) -> Result<SgxTrustedChannel<U, V>> {
         let tcp_builder = TcpBuilder::new_v4()?;
         tcp_builder.reuse_address(true)?;
@@ -50,7 +53,7 @@ where
             )
             .unwrap()
             .to_owned(),
-            server_attr: enclave_attr,
+            server_verifier: SgxQuoteVerifier::new(enclave_attr),
         };
         let client = sgx::PipeClient::<U, V>::open(config)?;
 
