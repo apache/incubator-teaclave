@@ -72,7 +72,8 @@ impl SgxQuoteVerifier {
             return true;
         }
 
-        let quote = match SgxQuote::extract_from_cert(&cert_der, BUILD_CONFIG.ias_root_ca_cert) {
+        let quote = match SgxQuote::extract_verified_quote(&cert_der, BUILD_CONFIG.ias_root_ca_cert)
+        {
             Ok(quote) => quote,
             Err(_) => {
                 return false;

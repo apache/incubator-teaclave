@@ -6,7 +6,7 @@ use std::prelude::v1::*;
 pub const CERT_VALID_DAYS: i64 = 90i64;
 
 pub struct Secp256k1KeyPair {
-    pub prv_k: sgx_ec256_private_t,
+    prv_k: sgx_ec256_private_t,
     pub pub_k: sgx_ec256_public_t,
 }
 

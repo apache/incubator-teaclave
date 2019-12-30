@@ -233,7 +233,7 @@ pub struct SgxQuote {
 }
 
 impl SgxQuote {
-    pub fn extract_from_cert(cert_der: &[u8], ias_report_ca_cert: &[u8]) -> Result<SgxQuote> {
+    pub fn extract_verified_quote(cert_der: &[u8], ias_report_ca_cert: &[u8]) -> Result<SgxQuote> {
         // Before we reach here, Webpki already verifed the cert is properly signed
         use super::cert::*;
 
