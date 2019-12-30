@@ -12,7 +12,7 @@ path = "src/lib.rs"
 
 [features]
 default = []
-mesalock_sgx = ["sgx_tstd", "sgx_tcrypto", "sgx_rand", "sgx_tse", "ipc", "teaclave_config/mesalock_sgx", "teaclave_utils/mesalock_sgx", "teaclave_ra/mesalock_sgx"]
+mesalock_sgx = ["sgx_tstd", "sgx_tcrypto", "sgx_rand", "sgx_tse", "ipc", "teaclave_config/mesalock_sgx", "teaclave_utils/mesalock_sgx", "teaclave_attestation/mesalock_sgx"]
 ipc = []
 
 [dependencies]
@@ -47,4 +47,4 @@ sgx_tse   = { version = "1.1.0", optional = true }
 teaclave_config = { path = "../teaclave_config" }
 teaclave_utils = { path = "../teaclave_utils" }
 ipc_attribute = { path = "./ipc_attribute" }
-teaclave_ra = { path = "../teaclave_ra" }
+teaclave_attestation = { path = "../teaclave_attestation" }

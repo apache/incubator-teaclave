@@ -25,7 +25,7 @@ use std::prelude::v1::*;
 use teaclave_config::build_config::BUILD_CONFIG;
 use teaclave_config::runtime_config;
 use teaclave_config::runtime_config::RuntimeConfig;
-use teaclave_ra;
+use teaclave_attestation;
 use teaclave_utils::EnclaveMeasurement;
 
 mod external;
@@ -115,8 +115,8 @@ pub fn runtime_config() -> &'static RuntimeConfig {
         .expect("Invalid runtime config, should gracefully exit during enclave_init!")
 }
 
-fn universal_quote_check(quote: &teaclave_ra::quote::SgxQuote) -> bool {
-    quote.status != teaclave_ra::quote::SgxQuoteStatus::UnknownBadStatus
+fn universal_quote_check(quote: &teaclave_attestation::quote::SgxQuote) -> bool {
+    quote.status != teaclave_attestation::quote::SgxQuoteStatus::UnknownBadStatus
 }
 
 pub fn get_trusted_enclave_attr(service_names: Vec<&str>) -> EnclaveAttr {

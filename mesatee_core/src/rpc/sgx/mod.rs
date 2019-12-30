@@ -37,8 +37,8 @@ use crate::rpc::RpcClient;
 use crate::Result;
 
 use teaclave_config::build_config::BUILD_CONFIG;
-use teaclave_ra;
-use teaclave_ra::quote::SgxQuote;
+use teaclave_attestation;
+use teaclave_attestation::quote::SgxQuote;
 use teaclave_utils;
 use teaclave_utils::EnclaveMeasurement;
 
@@ -88,11 +88,11 @@ impl EnclaveAttr {
             return true;
         }
 
-        let quote_result = teaclave_ra::quote::extract_sgx_quote_from_mra_cert(
+        let quote_result = teaclave_attestation::quote::extract_sgx_quote_from_mra_cert(
             &cert_der,
             BUILD_CONFIG.ias_root_ca_cert,
         );
-        let quote: teaclave_ra::quote::SgxQuote = match quote_result {
+        let quote: teaclave_attestation::quote::SgxQuote = match quote_result {
             Err(_) => {
                 return false;
             }

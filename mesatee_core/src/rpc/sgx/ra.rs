@@ -32,7 +32,7 @@ use lazy_static::lazy_static;
 use crate::{Error, ErrorKind, Result};
 
 use crate::config::runtime_config;
-use teaclave_ra;
+use teaclave_attestation;
 
 lazy_static! {
     static ref RACACHE: SgxRwLock<RACache> = {
@@ -128,9 +128,9 @@ pub(crate) fn get_current_ra_credential() -> RACredential {
 
 impl RACredential {
     fn generate_and_endorse() -> Result<RACredential> {
-        let key_pair = teaclave_ra::key::Secp256k1KeyPair::new()
+        let key_pair = teaclave_attestation::key::Secp256k1KeyPair::new()
             .map_err(|_| Error::from(ErrorKind::RAInternalError))?;
-        let report = match teaclave_ra::SgxRaReport::new(
+        let report = match teaclave_attestation::SgxRaReport::new(
             key_pair.pub_k,
             &runtime_config().env.ias_key,
             &runtime_config().env.ias_spid,

@@ -1,13 +1,13 @@
 [package]
-name = "teaclave_ra"
+name = "teaclave_attestation"
 version = "0.1.0"
 authors = ["MesaTEE Authors <developers@mesatee.org>"]
-description = "Teaclave RA"
+description = "Teaclave Attestation"
 license = "Apache-2.0"
 edition = "2018"
 
 [lib]
-name = "teaclave_ra"
+name = "teaclave_attestation"
 path = "src/lib.rs"
 
 [features]
