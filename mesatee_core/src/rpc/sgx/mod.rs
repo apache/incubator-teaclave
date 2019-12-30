@@ -36,9 +36,9 @@ use crate::rpc::{EnclaveService, RpcServer};
 use crate::rpc::RpcClient;
 use crate::Result;
 
-use teaclave_config::build_config::BUILD_CONFIG;
 use teaclave_attestation;
 use teaclave_attestation::quote::SgxQuote;
+use teaclave_config::build_config::BUILD_CONFIG;
 use teaclave_utils;
 use teaclave_utils::EnclaveMeasurement;
 

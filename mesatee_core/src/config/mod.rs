@@ -22,10 +22,10 @@ use crate::rpc::sgx::EnclaveAttr;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::prelude::v1::*;
+use teaclave_attestation;
 use teaclave_config::build_config::BUILD_CONFIG;
 use teaclave_config::runtime_config;
 use teaclave_config::runtime_config::RuntimeConfig;
-use teaclave_attestation;
 use teaclave_utils::EnclaveMeasurement;
 
 mod external;
