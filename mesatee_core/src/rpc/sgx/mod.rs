@@ -88,15 +88,11 @@ impl EnclaveAttr {
             return true;
         }
 
-        let quote_result = teaclave_attestation::quote::extract_sgx_quote_from_mra_cert(
-            &cert_der,
-            BUILD_CONFIG.ias_root_ca_cert,
-        );
-        let quote: teaclave_attestation::quote::SgxQuote = match quote_result {
+        let quote = match SgxQuote::extract_from_cert(&cert_der, BUILD_CONFIG.ias_root_ca_cert) {
+            Ok(quote) => quote,
             Err(_) => {
                 return false;
             }
-            Ok(quote) => quote,
         };
 
         // Enclave measures are not tested in test mode since we have
