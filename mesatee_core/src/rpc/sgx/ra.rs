@@ -131,9 +131,9 @@ impl RACredential {
         let key_pair = teaclave_attestation::key::Secp256k1KeyPair::new()
             .map_err(|_| Error::from(ErrorKind::RAInternalError))?;
         let report = if cfg!(sgx_sim) {
-            teaclave_attestation::SgxRaReport::default()
+            teaclave_attestation::IasReport::default()
         } else {
-            match teaclave_attestation::SgxRaReport::new(
+            match teaclave_attestation::IasReport::new(
                 key_pair.pub_k,
                 &runtime_config().env.ias_key,
                 &runtime_config().env.ias_spid,

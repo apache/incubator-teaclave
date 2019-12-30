@@ -1,5 +1,5 @@
 use crate::ra::SgxRaReport;
-use crate::RaError;
+use crate::AttestationError;
 use anyhow::Error;
 use anyhow::Result;
 use log::debug;
@@ -40,7 +40,7 @@ impl IasClient {
         let res = unsafe { ocall_sgx_get_ias_socket(&mut fd as _) };
 
         if res != sgx_status_t::SGX_SUCCESS || fd < 0 {
-            Err(Error::new(RaError::OCallError))
+            Err(Error::new(AttestationError::OCallError))
         } else {
             Ok(fd)
         }
@@ -79,10 +79,10 @@ impl IasClient {
         let mut http_response = httparse::Response::new(&mut headers);
         let header_len = match http_response
             .parse(&response)
-            .map_err(|_| Error::new(RaError::IasError))?
+            .map_err(|_| Error::new(AttestationError::IasError))?
         {
             httparse::Status::Complete(s) => s,
-            _ => return Err(Error::new(RaError::IasError)),
+            _ => return Err(Error::new(AttestationError::IasError)),
         };
 
         let header_map = Self::parse_headers(&http_response);
@@ -138,10 +138,10 @@ impl IasClient {
         debug!("http_response.parse");
         let header_len = match http_response
             .parse(&response)
-            .map_err(|_| Error::new(RaError::IasError))?
+            .map_err(|_| Error::new(AttestationError::IasError))?
         {
             httparse::Status::Complete(s) => s,
-            _ => return Err(Error::new(RaError::IasError)),
+            _ => return Err(Error::new(AttestationError::IasError)),
         };
 
         debug!("Self::parse_headers");
@@ -156,19 +156,19 @@ impl IasClient {
                 .unwrap_or(0)
                 == 0
         {
-            return Err(Error::new(RaError::IasError));
+            return Err(Error::new(AttestationError::IasError));
         }
 
         debug!("get_signature");
         let signature = header_map
             .get("X-IASReport-Signature")
-            .ok_or_else(|| Error::new(RaError::IasError))?
+            .ok_or_else(|| Error::new(AttestationError::IasError))?
             .to_owned();
         debug!("get_signing_cert");
         let signing_cert = {
             let cert_str = header_map
                 .get("X-IASReport-Signing-Certificate")
-                .ok_or_else(|| Error::new(RaError::IasError))?;
+                .ok_or_else(|| Error::new(AttestationError::IasError))?;
             let decoded_cert = teaclave_utils::percent_decode(cert_str)?;
             // We should get two concatenated PEM files at this step.
             let cert_content: Vec<&str> = decoded_cert.split("-----").collect();

@@ -6,7 +6,7 @@ extern crate sgx_tstd as std;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum RaError {
+pub enum AttestationError {
     #[error("OCall failed")]
     OCallError,
     #[error("Ias error")]
@@ -25,9 +25,9 @@ use cfg_if::cfg_if;
 cfg_if! {
     if #[cfg(feature = "mesalock_sgx")]  {
         pub mod key;
-        mod ra;
+        mod report;
         mod ias;
-        pub use ra::SgxRaReport;
+        pub use report::IasReport;
     } else {
     }
 }
