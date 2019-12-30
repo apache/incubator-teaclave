@@ -40,6 +40,7 @@ extern "C" {
     ) -> sgx_status_t;
 }
 
+#[derive(Default)]
 pub struct SgxRaReport {
     pub report: String,
     pub signature: String,

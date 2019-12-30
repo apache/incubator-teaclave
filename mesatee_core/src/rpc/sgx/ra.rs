@@ -130,16 +130,20 @@ impl RACredential {
     fn generate_and_endorse() -> Result<RACredential> {
         let key_pair = teaclave_attestation::key::Secp256k1KeyPair::new()
             .map_err(|_| Error::from(ErrorKind::RAInternalError))?;
-        let report = match teaclave_attestation::SgxRaReport::new(
-            key_pair.pub_k,
-            &runtime_config().env.ias_key,
-            &runtime_config().env.ias_spid,
-            false,
-        ) {
-            Ok(r) => r,
-            Err(e) => {
-                error!("{:?}", e);
-                return Err(Error::from(ErrorKind::RAInternalError));
+        let report = if cfg!(sgx_sim) {
+            teaclave_attestation::SgxRaReport::default()
+        } else {
+            match teaclave_attestation::SgxRaReport::new(
+                key_pair.pub_k,
+                &runtime_config().env.ias_key,
+                &runtime_config().env.ias_spid,
+                false,
+            ) {
+                Ok(r) => r,
+                Err(e) => {
+                    error!("{:?}", e);
+                    return Err(Error::from(ErrorKind::RAInternalError));
+                }
             }
         };
         let payload = [report.report, report.signature, report.signing_cert].join("|");
