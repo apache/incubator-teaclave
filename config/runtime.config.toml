@@ -1,0 +1,48 @@
+# Teaclave Runtime Config
+#
+# Note that this config is loaded at running time. We don't have to trust the
+# content though. Maliciously crafted config from this file will not break data
+# confidentiality/integrity.
+#
+# Topology of Services
+#
+#      ┌───────────────────────────────────────────────────┐
+#      │                                                   │FNS API Endpoint
+#      │                                                   ▼
+#      │                                        ┌─────────────────────┐
+#      │                                        │Function Node Service│
+#      │          TMS Internal ┌────────────────│        (FNS)        │─┐
+#      │            Endpoint   │                └─────────────────────┘ │
+#      │                       ▼                           │            │
+# ┌────────┐       ┌───────────────────────┐               │            │  ┌──────────────────────┐
+# │  User  │       │Task Management Service│  ┌────────────┘            │  │Key Management Service│
+# │        │──────▶│         (TMS)         │  │                         ├─▶│        (KMS)         │
+# └────────┘       └───────────────────────┘  │                         │  └──────────────────────┘
+#      │   TMS API Endpoint    │              │  ┌───────────────────┐  │KMS Internal
+#      │                       │              │  │Trusted Distributed│  │  Endpoint
+#      │                       └──────────────┴─▶│    File System    │──┘
+#      │                            TDFS Internal│      (TDFS)       │
+#      │                              Endpoint   └───────────────────┘
+#      │                                                   ▲
+#      │                                                   │ TDFS API Endpoint
+#      └───────────────────────────────────────────────────┘
+
+[api_endpoints]
+teaclave_frontend = { listen_address = "0.0.0.0:7777" }
+tms  = { listen_address = "0.0.0.0:5554" }
+tdfs = { listen_address = "0.0.0.0:5065" }
+fns  = { listen_address = "0.0.0.0:3444", advertised_address = "127.0.0.1:3444"}
+
+[internal_endpoints]
+tms  = { listen_address = "0.0.0.0:5555", advertised_address = "127.0.0.1:5555" }
+tdfs = { listen_address = "0.0.0.0:5066", advertised_address = "127.0.0.1:5066" }
+kms  = { listen_address = "0.0.0.0:6016", advertised_address = "127.0.0.1:6016" }
+acs  = { listen_address = "0.0.0.0:5077", advertised_address = "127.0.0.1:5077" }
+
+[audit]
+enclave_info = { path = "enclave_info.toml" }
+auditor_signatures = [
+    { path = "auditors/godzilla/godzilla.sign.sha256" },
+    { path = "auditors/optimus_prime/optimus_prime.sign.sha256" },
+    { path = "auditors/albus_dumbledore/albus_dumbledore.sign.sha256" },
+]

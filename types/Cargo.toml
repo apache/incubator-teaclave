@@ -1,0 +1,16 @@
+[package]
+name = "teaclave_types"
+version = "0.1.0"
+authors = ["MesaTEE Authors <developers@mesatee.org>"]
+description = "Teaclave types"
+license = "Apache-2.0"
+edition = "2018"
+
+[features]
+default = []
+mesalock_sgx = ["sgx_tstd"]
+
+[dependencies]
+sgx_tstd  = { version = "1.1.0", features = ["net", "backtrace"], optional = true }
+anyhow    = { version = "1.0.26" }
+sgx_types = "1.1.0"

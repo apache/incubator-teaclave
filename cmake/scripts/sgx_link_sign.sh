@@ -19,6 +19,7 @@ if [ ! "$LIBENCLAVE_PATH" -nt "$SIGNED_PATH" ] \
     # "Skip linking ${SIGNED_PATH} because of no update."
     exit 0
 fi
+
 cd ${MESATEE_OUT_DIR}
 ${CMAKE_C_COMPILER} libEnclave_t.o -o \
     ${MESATEE_OUT_DIR}/${CUR_PKG_NAME}.so ${SGX_COMMON_CFLAGS} \
@@ -27,7 +28,7 @@ ${CMAKE_C_COMPILER} libEnclave_t.o -o \
     -Wl,--no-whole-archive -Wl,--start-group \
     -l${Service_Library_Name} -lsgx_tprotected_fs -lsgx_tkey_exchange \
     -lsgx_tstdc -lsgx_tcxx -lsgx_tservice -lsgx_tcrypto \
-    -L${MESATEE_OUT_DIR} -lpycomponent ffi.o -lpypy-c -lsgx_tlibc_ext -lffi \
+    -L${MESATEE_OUT_DIR} ffi.o -lpypy-c -lsgx_tlibc_ext -lffi \
     -L${TRUSTED_TARGET_DIR}/${TARGET} -l${CUR_PKG_NAME} -Wl,--end-group \
     -Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefined \
     -Wl,-pie,-eenclave_entry -Wl,--export-dynamic  \

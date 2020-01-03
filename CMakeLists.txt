@@ -33,10 +33,10 @@ set(UNIX_LIBS mesatee_sdk protected_fs_rs)
 # ================ VARIABLES FOR MANUAL CHANGE END ================
 
 # UNIX_APPS, SGX_APPS and SGX_LIBS are parsed from corresponding toml files
-parse_cargo_packages(UNIX_APPS
-    CARGO_TOML_PATH ${PROJECT_SOURCE_DIR}/cmake/tomls/Cargo.unix_app.toml
-    CATEGORIES UNIX_APP_CATEGORIES
-)
+# parse_cargo_packages(UNIX_APPS
+#     CARGO_TOML_PATH ${PROJECT_SOURCE_DIR}/cmake/tomls/Cargo.unix_app.toml
+#     CATEGORIES UNIX_APP_CATEGORIES
+# )
 
 parse_cargo_packages(SGX_APPS
     CARGO_TOML_PATH ${PROJECT_SOURCE_DIR}/cmake/tomls/Cargo.sgx_untrusted_app.toml
@@ -60,20 +60,20 @@ generate_env_file()
 include(UtilTargets)
 
 # unix_app
-list(LENGTH UNIX_APPS UNIX_APP_LEN)
-math(EXPR UNIX_APP_LAST_INDEX "${UNIX_APP_LEN} - 1")
-foreach(_i RANGE ${UNIX_APP_LAST_INDEX})
-    list(GET UNIX_APPS ${_i} _pkg_name)
-    list(GET UNIX_APP_CATEGORIES ${_i} _category)
-    add_cargo_build_target(${_pkg_name}
-        TARGET_NAME "${UNIXAPP_PREFIX}-${_pkg_name}"
-        TOML_DIR ${MT_UNIX_TOML_DIR}
-        TARGET_DIR ${UNIX_TARGET_DIR}
-        INSTALL_DIR ${MESATEE_INSTALL_DIR}/${_category}
-        EXTRA_CARGO_FLAGS ${EXTRA_CARGO_FLAGS}
-        DEPENDS prep
-    )
-endforeach()
+# list(LENGTH UNIX_APPS UNIX_APP_LEN)
+# math(EXPR UNIX_APP_LAST_INDEX "${UNIX_APP_LEN} - 1")
+# foreach(_i RANGE ${UNIX_APP_LAST_INDEX})
+#     list(GET UNIX_APPS ${_i} _pkg_name)
+#     list(GET UNIX_APP_CATEGORIES ${_i} _category)
+#     add_cargo_build_target(${_pkg_name}
+#         TARGET_NAME "${UNIXAPP_PREFIX}-${_pkg_name}"
+#         TOML_DIR ${MT_UNIX_TOML_DIR}
+#         TARGET_DIR ${UNIX_TARGET_DIR}
+#         INSTALL_DIR ${MESATEE_INSTALL_DIR}/${_category}
+#         EXTRA_CARGO_FLAGS ${EXTRA_CARGO_FLAGS}
+#         DEPENDS prep
+#     )
+# endforeach()
 
 # sgx_untrusted_app
 list(LENGTH SGX_APPS SGX_APP_LEN)
@@ -92,24 +92,24 @@ foreach(_i RANGE ${SGX_APP_LAST_INDEX})
 endforeach()
 
 # mesapy components
-add_custom_command(
-    OUTPUT ${MESATEE_OUT_DIR}/acs_py_enclave.c
-    COMMAND env
-    ARGS PYTHONPATH=${PROJECT_SOURCE_DIR}/third_party/mesapy/sgx
-         PYPY_FFI_OUTDIR=${MESATEE_OUT_DIR}
-         pypy ${PROJECT_SOURCE_DIR}/mesatee_services/acs/python/ffi.py
-    DEPENDS prep
-            ${PROJECT_SOURCE_DIR}/mesatee_services/acs/python/ffi.py
-            ${PROJECT_SOURCE_DIR}/mesatee_services/acs/python/acs_engine.py
-    COMMENT "Generating mesapy ffi stubs"
-)
-add_library(pycomponent STATIC ${MESATEE_OUT_DIR}/acs_py_enclave.c)
-set_target_properties(pycomponent PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${MESATEE_OUT_DIR})
-target_compile_definitions(pycomponent PUBLIC SGX)
-if(NOT EXISTS "/usr/lib/pypy/include")
-    message(FATAL_ERROR "pypy development package not found\nFor Ubuntu, please run `apt-get install pypy-dev`")
-endif()
-target_compile_options(pycomponent PUBLIC -UWITH_THREAD -O2 -fPIC -Wimplicit -I/usr/lib/pypy/include)
+# add_custom_command(
+#     OUTPUT ${MESATEE_OUT_DIR}/acs_py_enclave.c
+#     COMMAND env
+#     ARGS PYTHONPATH=${PROJECT_SOURCE_DIR}/third_party/mesapy/sgx
+#          PYPY_FFI_OUTDIR=${MESATEE_OUT_DIR}
+#          pypy ${PROJECT_SOURCE_DIR}/mesatee_services/acs/python/ffi.py
+#     DEPENDS prep
+#             ${PROJECT_SOURCE_DIR}/mesatee_services/acs/python/ffi.py
+#             ${PROJECT_SOURCE_DIR}/mesatee_services/acs/python/acs_engine.py
+#     COMMENT "Generating mesapy ffi stubs"
+# )
+# add_library(pycomponent STATIC ${MESATEE_OUT_DIR}/acs_py_enclave.c)
+# set_target_properties(pycomponent PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${MESATEE_OUT_DIR})
+# target_compile_definitions(pycomponent PUBLIC SGX)
+# if(NOT EXISTS "/usr/lib/pypy/include")
+#     message(FATAL_ERROR "pypy development package not found\nFor Ubuntu, please run `apt-get install pypy-dev`")
+# endif()
+# target_compile_options(pycomponent PUBLIC -UWITH_THREAD -O2 -fPIC -Wimplicit -I/usr/lib/pypy/include)
 
 
 # sgx_trusted_lib
@@ -120,29 +120,30 @@ foreach(_i RANGE ${SGX_LIB_LAST_INDEX})
     list(GET SGX_LIB_PATHS ${_i} _pkg_path)
     list(GET SGX_LIB_CATEGORIES ${_i} _category)
     add_sgx_build_target(${_pkg_path} ${_pkg_name}
-        DEPENDS prep pycomponent
+        # TODO: DEPENDS prep pycomponent
+        DEPENDS prep
         INSTALL_DIR ${MESATEE_INSTALL_DIR}/${_category}
     )
 endforeach()
 
 # MesaTEE C SDK
-add_cargo_build_dylib_target(mesatee_sdk_c
-    TARGET_NAME "${UNIXLIB_PREFIX}-mesatee_sdk_c"
-    TOML_DIR ${MT_UNIX_TOML_DIR}
-    TARGET_DIR ${UNIX_TARGET_DIR}
-    DEPENDS prep
-)
+# add_cargo_build_dylib_target(mesatee_sdk_c
+#     TARGET_NAME "${UNIXLIB_PREFIX}-mesatee_sdk_c"
+#     TOML_DIR ${MT_UNIX_TOML_DIR}
+#     TARGET_DIR ${UNIX_TARGET_DIR}
+#     DEPENDS prep
+# )
 
 # example/quickstart_c
-link_directories(${MESATEE_LIB_INSTALL_DIR})
-add_executable(quickstart_c ${MESATEE_PROJECT_ROOT}/examples/quickstart_c/main.c)
-add_dependencies(quickstart_c prep ${UNIXLIB_PREFIX}-mesatee_sdk_c)
-target_include_directories(quickstart_c
-    PUBLIC ${MESATEE_PROJECT_ROOT}/mesatee_sdk/c_sdk/include/)
-target_link_libraries(quickstart_c mesatee_sdk_c)
-add_custom_command(TARGET quickstart_c POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/quickstart_c
-    ${MESATEE_EXAMPLE_INSTALL_DIR}/quickstart_c
-)
+# link_directories(${MESATEE_LIB_INSTALL_DIR})
+# add_executable(quickstart_c ${MESATEE_PROJECT_ROOT}/examples/quickstart_c/main.c)
+# add_dependencies(quickstart_c prep ${UNIXLIB_PREFIX}-mesatee_sdk_c)
+# target_include_directories(quickstart_c
+#     PUBLIC ${MESATEE_PROJECT_ROOT}/mesatee_sdk/c_sdk/include/)
+# target_link_libraries(quickstart_c mesatee_sdk_c)
+# add_custom_command(TARGET quickstart_c POST_BUILD
+#     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/quickstart_c
+#     ${MESATEE_EXAMPLE_INSTALL_DIR}/quickstart_c
+# )
 
 add_enclave_sig_target_n_hooks()

@@ -19,8 +19,8 @@ mkdir -p ${MESATEE_OUT_DIR} ${MESATEE_TARGET_DIR} ${MESATEE_SERVICE_INSTALL_DIR}
     ${MESATEE_TEST_INSTALL_DIR} ${MESATEE_AUDITORS_DIR} ${MESATEE_EXAMPLE_AUDITORS_DIR}
 # copy auditors to install directory to make it easy to package all built things
 cp -RT ${CMAKE_SOURCE_DIR}/keys/auditors/ ${MESATEE_AUDITORS_DIR}/
-cp ${CMAKE_SOURCE_DIR}/teaclave_config/runtime.config.toml ${MESATEE_SERVICE_INSTALL_DIR}
-cp ${CMAKE_SOURCE_DIR}/teaclave_config/runtime.config.toml ${MESATEE_TEST_INSTALL_DIR}
+cp ${CMAKE_SOURCE_DIR}/config/runtime.config.toml ${MESATEE_SERVICE_INSTALL_DIR}
+cp ${CMAKE_SOURCE_DIR}/config/runtime.config.toml ${MESATEE_TEST_INSTALL_DIR}
 # create the following symlinks to make remapped paths accessible and avoid repeated building
 mkdir -p /tmp/mesatee_symlinks
 ln -snf ${HOME}/.cargo /tmp/mesatee_symlinks/cargo_home
@@ -38,6 +38,7 @@ if [ ! -f ${MESATEE_OUT_DIR}/libpypy-c.a ] || [ ! -f ${MESATEE_OUT_DIR}/${MESAPY
 fi
 # build libEnclave_u.a & libEnclave_t.o
 if [ ! -f ${MESATEE_OUT_DIR}/libEnclave_u.a ]; then
+    echo 'INFO: Start to build EDL.'
     ${SGX_EDGER8R} --untrusted ${MT_EDL_FILE} --search-path ${SGX_SDK}/include \
         --search-path ${RUST_SGX_SDK}/edl --untrusted-dir ${MESATEE_OUT_DIR}
     cd ${MESATEE_OUT_DIR}
