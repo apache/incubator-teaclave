@@ -1,0 +1,15 @@
+[package]
+name = "teaclave_service_app_utils"
+version = "0.1.0"
+authors = ["MesaTEE Authors <developers@mesatee.org>"]
+description = "Teaclave service app utils"
+license = "Apache-2.0"
+edition = "2018"
+
+
+[dependencies]
+ctrlc           = { version = "3.1.2" }
+env_logger   = { version = "0.7.1" }
+anyhow       = { version = "1.0.26" }
+log          = { version = "0.4.6" }
+teaclave_binder = { path = "../../binder" }

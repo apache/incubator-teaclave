@@ -1,24 +1,13 @@
 [workspace]
 
 members = [
-  "mesatee_services/kms/sgx_app",
-  "mesatee_services/fns/sgx_app",
-  "mesatee_services/tdfs/sgx_app",
-  "mesatee_services/tms/sgx_app",
-  "mesatee_services/acs/sgx_app",
-  "tests/functional_test/sgx_app",
+  "services/teaclave_frontend/sgx_app",
 ]
 
 exclude = [
-  "mesatee_core",
-  "teaclave_config",
 ]
 
 [patch.crates-io]
-# mesatee_core
-mesatee_core = { path = "./mesatee_core" }
-teaclave_binder = { path = "./teaclave_binder" }
-
 # We cannot remove these crates, because proto crates depend on them
 sgx_cov = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.0" }
 sgx_urts = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.0" }

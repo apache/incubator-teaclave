@@ -1,0 +1,24 @@
+[package]
+name = "teaclave_rpc"
+version = "0.1.0"
+authors = ["MesaTEE Authors <developers@mesatee.org>"]
+description = "Teaclave RPC"
+license = "Apache-2.0"
+edition = "2018"
+
+[features]
+default = []
+mesalock_sgx = ["sgx_tstd", "teaclave_attestation/mesalock_sgx"]
+
+[dependencies]
+serde        = { version = "1.0.92", features = ["derive"] }
+cfg-if       = { version = "0.1.9" }
+log             = { version = "0.4.6" }
+serde_json   = { version = "1.0.39" }
+anyhow       = { version = "1.0.26" }
+thiserror    = { version = "1.0.9" }
+webpki       = { version = "0.21.0" }
+rustls       = { version = "0.16.0", features = ["dangerous_configuration"] }
+
+sgx_tstd        = { version = "1.1.0", features = ["net", "backtrace"], optional = true }
+teaclave_attestation = { path = "../attestation" }

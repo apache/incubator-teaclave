@@ -55,13 +55,13 @@ def pkg_path_2_category(pkg_path):
     Return services/examples/tests/bin depends on the beginning of pkg_path.
     (lib not used by this function)
     """
-    if pkg_path.startswith('mesatee_services/'):
+    if pkg_path.startswith('services/'):
         return 'services'
     elif pkg_path.startswith('examples/'):
         return 'examples'
     elif pkg_path.startswith('tests/'):
         return 'tests'
-    elif pkg_path == 'teaclave_cli':
+    elif pkg_path == 'cli':
         return 'bin'
     else:
         sys.stderr.write('[Error]: Unknown category for package_path {}\n'.format(pkg_path))

@@ -17,24 +17,24 @@ steps:
   image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
   commands:
   - . /root/.cargo/env
-  - export RUSTFLAGS="-D warnings"
+  # - export RUSTFLAGS="-D warnings"
   - cd build && make VERBOSE=1 -j2
-- name: sgx-test
-  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
-  environment:
-    IAS_KEY:
-      from_secret: V5_KEY
-    IAS_SPID:
-      from_secret: V5_SPID
-  privileged: true
-  volumes:
-  - name: isgx
-    path: /dev/isgx
-  - name: aesmd
-    path: /var/run/aesmd/aesm.socket
-  commands:
-  - . /root/.cargo/env
-  - cd build && make sgx-test
+# - name: sgx-test
+#   image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+#   environment:
+#     IAS_KEY:
+#       from_secret: V5_KEY
+#     IAS_SPID:
+#       from_secret: V5_SPID
+#   privileged: true
+#   volumes:
+#   - name: isgx
+#     path: /dev/isgx
+#   - name: aesmd
+#     path: /var/run/aesmd/aesm.socket
+#   commands:
+#   - . /root/.cargo/env
+#   - cd build && make sgx-test
 
 volumes:
 - name: isgx
@@ -68,24 +68,24 @@ steps:
   image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
   commands:
   - . /root/.cargo/env
-  - export RUSTFLAGS="-D warnings"
+  # - export RUSTFLAGS="-D warnings"
   - cd build && make VERBOSE=1 -j2
-- name: sgx-test
-  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
-  privileged: true
-  environment:
-    IAS_KEY:
-      from_secret: V5_KEY
-    IAS_SPID:
-      from_secret: V5_SPID
-  volumes:
-  - name: isgx
-    path: /dev/isgx
-  - name: aesmd
-    path: /var/run/aesmd/aesm.socket
-  commands:
-  - . /root/.cargo/env
-  - cd build && make sgx-test
+# - name: sgx-test
+#   image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+#   privileged: true
+#   environment:
+#     IAS_KEY:
+#       from_secret: V5_KEY
+#     IAS_SPID:
+#       from_secret: V5_SPID
+#   volumes:
+#   - name: isgx
+#     path: /dev/isgx
+#   - name: aesmd
+#     path: /var/run/aesmd/aesm.socket
+#   commands:
+#   - . /root/.cargo/env
+#   - cd build && make sgx-test
 
 volumes:
 - name: isgx
@@ -119,12 +119,13 @@ steps:
   image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
   commands:
   - . /root/.cargo/env
-  - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DRUSTFLAGS="-D warnings" -DSGX_SIM_MODE=ON .. && make VERBOSE=1 -j2
-- name: sgx-test
-  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
-  commands:
-  - . /root/.cargo/env
-  - cd build && make sgx-test
+  - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DSGX_SIM_MODE=ON .. && make VERBOSE=1 -j2
+  # - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DRUSTFLAGS="-D warnings" -DSGX_SIM_MODE=ON .. && make VERBOSE=1 -j2
+# - name: sgx-test
+#   image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+#   commands:
+#   - . /root/.cargo/env
+#   - cd build && make sgx-test
 
 node:
   instance: mesatee-sgx
@@ -150,12 +151,13 @@ steps:
   image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
   commands:
   - . /root/.cargo/env
-  - cd build && cmake -DRUSTFLAGS="-D warnings" -DSGX_SIM_MODE=ON .. && make VERBOSE=1 -j2
-- name: sgx-test
-  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
-  commands:
-  - . /root/.cargo/env
-  - cd build && make sgx-test
+  - cd build && cmake -DSGX_SIM_MODE=ON .. && make VERBOSE=1 -j2
+  # - cd build && cmake -DRUSTFLAGS="-D warnings" -DSGX_SIM_MODE=ON .. && make VERBOSE=1 -j2
+# - name: sgx-test
+#   image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+#   commands:
+#   - . /root/.cargo/env
+#   - cd build && make sgx-test
 
 node:
   instance: mesatee-sgx
@@ -181,24 +183,24 @@ steps:
   image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
   commands:
   - . /root/.cargo/env
-  - export RUSTFLAGS="-D warnings"
+  # - export RUSTFLAGS="-D warnings"
   - cd build && make VERBOSE=1 -j2
-- name: sgx-test
-  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
-  environment:
-    IAS_KEY:
-      from_secret: V5_KEY
-    IAS_SPID:
-      from_secret: V5_SPID
-  privileged: true
-  volumes:
-  - name: isgx
-    path: /dev/isgx
-  - name: aesmd
-    path: /var/run/aesmd/aesm.socket
-  commands:
-  - . /root/.cargo/env
-  - cd build && make sgx-test
+# - name: sgx-test
+#   image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
+#   environment:
+#     IAS_KEY:
+#       from_secret: V5_KEY
+#     IAS_SPID:
+#       from_secret: V5_SPID
+#   privileged: true
+#   volumes:
+#   - name: isgx
+#     path: /dev/isgx
+#   - name: aesmd
+#     path: /var/run/aesmd/aesm.socket
+#   commands:
+#   - . /root/.cargo/env
+#   - cd build && make sgx-test
 
 volumes:
 - name: isgx
@@ -232,24 +234,24 @@ steps:
   image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
   commands:
   - . /root/.cargo/env
-  - export RUSTFLAGS="-D warnings"
+  # - export RUSTFLAGS="-D warnings"
   - cd build && make VERBOSE=1 -j2
-- name: sgx-test
-  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
-  privileged: true
-  environment:
-    IAS_KEY:
-      from_secret: V5_KEY
-    IAS_SPID:
-      from_secret: V5_SPID
-  volumes:
-  - name: isgx
-    path: /dev/isgx
-  - name: aesmd
-    path: /var/run/aesmd/aesm.socket
-  commands:
-  - . /root/.cargo/env
-  - cd build && make sgx-test
+# - name: sgx-test
+#   image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
+#   privileged: true
+#   environment:
+#     IAS_KEY:
+#       from_secret: V5_KEY
+#     IAS_SPID:
+#       from_secret: V5_SPID
+#   volumes:
+#   - name: isgx
+#     path: /dev/isgx
+#   - name: aesmd
+#     path: /var/run/aesmd/aesm.socket
+#   commands:
+#   - . /root/.cargo/env
+#   - cd build && make sgx-test
 
 volumes:
 - name: isgx
@@ -283,12 +285,13 @@ steps:
   image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
   commands:
   - . /root/.cargo/env
-  - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DRUSTFLAGS="-D warnings" -DSGX_SIM_MODE=ON .. && make VERBOSE=1 -j2
-- name: sgx-test
-  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
-  commands:
-  - . /root/.cargo/env
-  - cd build && make sgx-test
+  - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DSGX_SIM_MODE=ON .. && make VERBOSE=1 -j2
+  # - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DRUSTFLAGS="-D warnings" -DSGX_SIM_MODE=ON .. && make VERBOSE=1 -j2
+# - name: sgx-test
+#   image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
+#   commands:
+#   - . /root/.cargo/env
+#   - cd build && make sgx-test
 
 node:
   instance: mesatee-sgx
@@ -314,12 +317,13 @@ steps:
   image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
   commands:
   - . /root/.cargo/env
-  - cd build && cmake -DRUSTFLAGS="-D warnings" -DSGX_SIM_MODE=ON -DTEST_MODE=ON .. && make VERBOSE=1 -j2
-- name: sgx-test
-  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
-  commands:
-  - . /root/.cargo/env
-  - cd build && make sgx-test
+  - cd build && cmake -DSGX_SIM_MODE=ON -DTEST_MODE=ON .. && make VERBOSE=1 -j2
+  # - cd build && cmake -DRUSTFLAGS="-D warnings" -DSGX_SIM_MODE=ON -DTEST_MODE=ON .. && make VERBOSE=1 -j2
+# - name: sgx-test
+#   image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
+#   commands:
+#   - . /root/.cargo/env
+#   - cd build && make sgx-test
 
 node:
   instance: mesatee-sgx
@@ -350,108 +354,108 @@ steps:
 node:
   instance: mesatee-sgx
 
----
+# ---
 
-kind: pipeline
-name: coverage
+# kind: pipeline
+# name: coverage
 
-steps:
-- name: prepare
-  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
-  commands:
-  - . /root/.cargo/env
-  - mkdir -p build
-  - cd build && cmake -DCMAKE_BUILD_TYPE=DEBUG -DCOV=ON -DTEST_MODE=ON ..
-- name: check
-  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
-  commands:
-  - . /root/.cargo/env
-  - cd build && make check
-- name: compile
-  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
-  commands:
-  - . /root/.cargo/env
-  - export RUSTFLAGS="-D warnings"
-  - cd build && make VERBOSE=1 -j2
-- name: sgx-test
-  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
-  environment:
-    IAS_KEY:
-      from_secret: V5_KEY
-    IAS_SPID:
-      from_secret: V5_SPID
-  privileged: true
-  volumes:
-  - name: isgx
-    path: /dev/isgx
-  - name: aesmd
-    path: /var/run/aesmd/aesm.socket
-  commands:
-  - . /root/.cargo/env
-  - cd build && make sgx-test
-- name: coverage
-  failure: ignore
-  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
-  commands:
-  - cd build && make cov
-  - bash -c "bash <(curl -s https://codecov.io/bash) -f intermediate/cov.info"
-  environment:
-    CODECOV_TOKEN:
-      from_secret: CODECOV_TOKEN
+# steps:
+# - name: prepare
+#   image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+#   commands:
+#   - . /root/.cargo/env
+#   - mkdir -p build
+#   - cd build && cmake -DCMAKE_BUILD_TYPE=DEBUG -DCOV=ON -DTEST_MODE=ON ..
+# - name: check
+#   image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+#   commands:
+#   - . /root/.cargo/env
+#   - cd build && make check
+# - name: compile
+#   image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+#   commands:
+#   - . /root/.cargo/env
+#   - export RUSTFLAGS="-D warnings"
+#   - cd build && make VERBOSE=1 -j2
+# - name: sgx-test
+#   image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+#   environment:
+#     IAS_KEY:
+#       from_secret: V5_KEY
+#     IAS_SPID:
+#       from_secret: V5_SPID
+#   privileged: true
+#   volumes:
+#   - name: isgx
+#     path: /dev/isgx
+#   - name: aesmd
+#     path: /var/run/aesmd/aesm.socket
+#   commands:
+#   - . /root/.cargo/env
+#   - cd build && make sgx-test
+# - name: coverage
+#   failure: ignore
+#   image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+#   commands:
+#   - cd build && make cov
+#   - bash -c "bash <(curl -s https://codecov.io/bash) -f intermediate/cov.info"
+#   environment:
+#     CODECOV_TOKEN:
+#       from_secret: CODECOV_TOKEN
 
-volumes:
-- name: isgx
-  host:
-    path: /dev/isgx
-- name: aesmd
-  host:
-    path: /var/run/aesmd/aesm.socket
+# volumes:
+# - name: isgx
+#   host:
+#     path: /dev/isgx
+# - name: aesmd
+#   host:
+#     path: /var/run/aesmd/aesm.socket
 
-trigger:
-  branch:
-    - master
-  event:
-    - push
+# trigger:
+#   branch:
+#     - master
+#   event:
+#     - push
 
-node:
-  instance: mesatee-sgx
+# node:
+#   instance: mesatee-sgx
 
----
+# ---
 
-kind: pipeline
-name: doc
+# kind: pipeline
+# name: doc
 
-steps:
-- name: prepare
-  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
-  commands:
-  - . /root/.cargo/env
-  - mkdir -p build
-  - cd build && cmake ..
-- name: doc
-  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
-  failure: ignore
-  commands:
-  - . /root/.cargo/env
-  - cd build && make doc
-  - mkdir -p ~/.ssh && echo $DOC_KEY | base64 -d > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa
-  - tar czf doc.tar.gz -C cmake_tomls/unix_app/target/ doc && ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no $DOC_USERNAME@$DOC_HOSTNAME "cd /home/ubuntu/www/mesatee.org && tar -xz" < doc.tar.gz
-  environment:
-    DOC_KEY:
-      from_secret: DOC_KEY
-    DOC_USERNAME:
-      from_secret: DOC_USERNAME
-    DOC_HOSTNAME:
-      from_secret: DOC_HOSTNAME
+# steps:
+# - name: prepare
+#   image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+#   commands:
+#   - . /root/.cargo/env
+#   - mkdir -p build
+#   - cd build && cmake ..
+# - name: doc
+#   image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+#   failure: ignore
+#   commands:
+#   - . /root/.cargo/env
+#   - cd build && make doc
+#   - mkdir -p ~/.ssh && echo $DOC_KEY | base64 -d > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa
+#   - tar czf doc.tar.gz -C cmake_tomls/unix_app/target/ doc && ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no $DOC_USERNAME@$DOC_HOSTNAME "cd /home/ubuntu/www/mesatee.org && tar -xz" < doc.tar.gz
+#   environment:
+#     DOC_KEY:
+#       from_secret: DOC_KEY
+#     DOC_USERNAME:
+#       from_secret: DOC_USERNAME
+#     DOC_HOSTNAME:
+#       from_secret: DOC_HOSTNAME
 
-trigger:
-  branch:
-    - master
-  event:
-    - push
+# trigger:
+#   branch:
+#     - master
+#   event:
+#     - push
 
-node:
-  instance: mesatee-sgx
+# node:
+#   instance: mesatee-sgx
 
 ---
 

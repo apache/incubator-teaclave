@@ -1,36 +1,13 @@
 [workspace]
 
 members = [
-  "mesatee_services/kms/sgx_trusted_lib",
-  "mesatee_services/fns/sgx_trusted_lib",
-  "mesatee_services/tdfs/sgx_trusted_lib",
-  "mesatee_services/tms/sgx_trusted_lib",
-  "mesatee_services/acs/sgx_trusted_lib",
-  "tests/functional_test/sgx_trusted_lib",
+  "services/teaclave_frontend/sgx_trusted_lib",
 ]
 
 exclude = [
-  "examples/private_join_and_compute",
-  "examples/image_resizing",
-  "examples/online_decrypt",
-  "examples/kmeans",
-  "examples/logistic_reg",
-  "examples/lin_reg",
-  "examples/svm",
-  "examples/gen_linear_model",
-  "examples/gaussian_mixture_model",
-  "examples/gaussian_processes",
-  "examples/dbscan",
-  "examples/neural_net",
-  "examples/naive_bayes",
-  "examples/gbdt",
-  "mesatee_core",
 ]
 
 [patch.crates-io]
-# mesatee crates
-mesatee_core      = { path = "./mesatee_core" }
-
 # Rust SGX SDK
 sgx_alloc         = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.0" }
 sgx_build_helper  = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.0" }
