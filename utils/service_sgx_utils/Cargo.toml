@@ -19,5 +19,5 @@ anyhow       = { version = "1.0.26" }
 log          = { version = "0.4.6" }
 sgx_tstd  = { version = "1.1.0", features = ["net", "backtrace"], optional = true }
 
-teaclave_service_config = { path = "../../common/service_config" }
+teaclave_service_config = { path = "../service_config" }
 teaclave_service_sgx_utils_proc_macro = { path = "./proc_macro" }

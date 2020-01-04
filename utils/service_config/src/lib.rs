@@ -23,7 +23,6 @@
 #[macro_use]
 extern crate sgx_tstd as std;
 
-use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::prelude::v1::*;
 use teaclave_attestation;
@@ -31,6 +30,7 @@ use teaclave_attestation::verifier::EnclaveAttr;
 use teaclave_config::build_config::BUILD_CONFIG;
 use teaclave_config::runtime_config;
 use teaclave_config::runtime_config::RuntimeConfig;
+use teaclave_types::EnclaveInfo;
 use teaclave_types::EnclaveMeasurement;
 
 mod external;
@@ -86,27 +86,26 @@ impl ServiceConfig {
 
 use lazy_static::lazy_static;
 
-fn load_presigned_enclave_info() -> HashMap<String, EnclaveMeasurement> {
+fn load_presigned_enclave_info() -> EnclaveInfo {
     if runtime_config().audit.auditor_signatures.len() < BUILD_CONFIG.auditor_public_keys.len() {
         panic!("Number of auditor signatures is not enough for verification.")
     }
 
-    if !teaclave_utils::verify_enclave_info(
-        &runtime_config().audit.enclave_info.as_bytes(),
+    if !EnclaveInfo::verify_enclave_info(
+        &runtime_config().audit.enclave_info,
         BUILD_CONFIG.auditor_public_keys,
         &runtime_config().audit.auditor_signatures,
     ) {
         panic!("Failed to verify the signatures of enclave info.");
     }
 
-    teaclave_utils::load_enclave_info(&runtime_config().audit.enclave_info)
+    EnclaveInfo::load_enclave_info(&runtime_config().audit.enclave_info)
 }
 
 lazy_static! {
     static ref RUNTIME_CONFIG: Option<RuntimeConfig> =
         RuntimeConfig::from_toml("runtime.config.toml");
-    static ref ENCLAVE_IDENTITIES: HashMap<String, EnclaveMeasurement> =
-        load_presigned_enclave_info();
+    static ref ENCLAVE_IDENTITIES: EnclaveInfo = load_presigned_enclave_info();
 }
 
 pub fn is_runtime_config_initialized() -> bool {
@@ -122,7 +121,7 @@ pub fn runtime_config() -> &'static RuntimeConfig {
 pub fn get_trusted_enclave_attr(service_names: Vec<&str>) -> EnclaveAttr {
     let measures = service_names
         .iter()
-        .map(|name| *ENCLAVE_IDENTITIES.get(&(*name).to_string()).unwrap())
+        .map(|name| *ENCLAVE_IDENTITIES.measurements.get(*name).unwrap())
         .collect();
     EnclaveAttr { measures }
 }
