@@ -39,5 +39,4 @@ sgx_tstd    = { version = "1.1.0", features = ["net", "backtrace"], optional = t
 sgx_types   = { version = "1.1.0" }
 
 teaclave_config = { path = "../config" }
-teaclave_utils  = { path = "../utils" }
 teaclave_types = { path = "../types" }

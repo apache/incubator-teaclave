@@ -19,7 +19,7 @@ use crate::report::IasReport;
 use crate::AttestationError;
 use anyhow::Error;
 use anyhow::Result;
-use log::debug;
+use log::{debug, trace};
 use sgx_types::*;
 use std::collections::HashMap;
 use std::io::{Read, Write};
@@ -140,14 +140,14 @@ impl IasClient {
             encoded_json.len(),
             encoded_json
         );
-        debug!("{}", request);
+        trace!("{}", request);
 
         let mut stream = self.new_tls_stream()?;
         stream.write_all(request.as_bytes())?;
         let mut response = Vec::new();
         stream.read_to_end(&mut response)?;
 
-        debug!("{}", String::from_utf8_lossy(&response));
+        trace!("{}", String::from_utf8_lossy(&response));
 
         let mut headers = [httparse::EMPTY_HEADER; 16];
         let mut http_response = httparse::Response::new(&mut headers);
@@ -191,7 +191,6 @@ impl IasClient {
             cert_content[2].to_string()
         };
 
-        debug!("get_report");
         let report = String::from_utf8_lossy(&response[header_len..]).into_owned();
         Ok(IasReport {
             report,

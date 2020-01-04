@@ -45,5 +45,5 @@ teaclave_attestation    = { path = "../../../attestation" }
 teaclave_ipc            = { path = "../../../ipc" }
 teaclave_types          = { path = "../../../types" }
 teaclave_frontend_proto = { path = "../proto", optional = true}
-teaclave_service_sgx_utils  = { path = "../../../common/service_sgx_utils", optional = true }
-teaclave_service_config = { path = "../../../common/service_config", optional = true }
+teaclave_service_sgx_utils  = { path = "../../../utils/service_sgx_utils", optional = true }
+teaclave_service_config = { path = "../../../utils/service_config", optional = true }

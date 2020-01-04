@@ -8,6 +8,7 @@ use std::prelude::v1::*;
 use hex;
 use serde::Deserializer;
 use serde_derive::Deserialize;
+use std::collections::HashMap;
 
 /// Status for Ecall
 #[repr(C)]
@@ -67,4 +68,56 @@ where
         array.copy_from_slice(bytes);
         Ok(array)
     })
+}
+
+pub struct EnclaveInfo {
+    pub measurements: HashMap<String, EnclaveMeasurement>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(transparent)]
+struct EnclaveInfoToml(HashMap<String, EnclaveMeasurement>);
+
+impl EnclaveInfo {
+    pub fn load_enclave_info(content: &str) -> Self {
+        let config: EnclaveInfoToml =
+            toml::from_str(&content).expect("Content not correct, unable to load enclave info.");
+        let mut info_map = std::collections::HashMap::new();
+        for (k, v) in config.0 {
+            info_map.insert(k, EnclaveMeasurement::new(v.mr_enclave, v.mr_signer));
+        }
+
+        Self {
+            measurements: info_map,
+        }
+    }
+
+    pub fn verify_enclave_info<T, U>(
+        enclave_info: &str,
+        public_keys: &[T],
+        signatures: &[U],
+    ) -> bool
+    where
+        T: AsRef<[u8]>,
+        U: AsRef<[u8]>,
+    {
+        use ring::signature;
+
+        for k in public_keys {
+            let mut verified = false;
+            for s in signatures {
+                if signature::UnparsedPublicKey::new(&signature::RSA_PKCS1_2048_8192_SHA256, k)
+                    .verify(enclave_info.as_bytes(), s.as_ref())
+                    .is_ok()
+                {
+                    verified = true;
+                }
+            }
+            if !verified {
+                return false;
+            }
+        }
+
+        true
+    }
 }
