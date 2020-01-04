@@ -36,7 +36,7 @@ use teaclave_service_app_utils;
 use teaclave_service_config;
 
 fn main() -> anyhow::Result<()> {
-    let tee = teaclave_service_app_utils::init_tee()?;
+    let tee = teaclave_service_app_utils::init_tee(env!("CARGO_PKG_NAME"))?;
     run(tee)?;
 
     Ok(())

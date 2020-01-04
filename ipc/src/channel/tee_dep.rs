@@ -37,10 +37,13 @@ impl IpcReceiver for ECallReceiver {
         V: serde::Serialize,
         X: IpcService<U, V>,
     {
+        debug!("from_slice");
         let input: U = serde_json::from_slice(&input_payload)?;
 
+        debug!("handle_invoke");
         let response = x.handle_invoke(input)?;
 
+        debug!("to_vec");
         let response_payload = serde_json::to_vec(&response)?;
 
         Ok(response_payload)

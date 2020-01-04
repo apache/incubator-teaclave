@@ -19,6 +19,7 @@ use crate::ias::IasClient;
 use crate::AttestationError;
 use anyhow::Error;
 use anyhow::Result;
+use hex;
 use log::debug;
 use sgx_rand::os::SgxRng;
 use sgx_rand::Rng;
@@ -27,7 +28,6 @@ use sgx_tse::{rsgx_create_report, rsgx_verify_report};
 use sgx_types::sgx_ec256_public_t;
 use sgx_types::*;
 use std::prelude::v1::*;
-use teaclave_utils;
 
 extern "C" {
     fn ocall_sgx_init_quote(
@@ -116,7 +116,7 @@ impl IasReport {
         sigrl: &[u8],
         report: sgx_report_t,
         target_info: sgx_target_info_t,
-        ias_spid: &str,
+        ias_spid_str: &str,
     ) -> Result<Vec<u8>> {
         let mut rt: sgx_status_t = sgx_status_t::SGX_ERROR_UNEXPECTED;
         let (p_sigrl, sigrl_len) = if sigrl.is_empty() {
@@ -140,7 +140,10 @@ impl IasReport {
         let mut qe_report = sgx_report_t::default();
 
         let quote_type = sgx_quote_sign_type_t::SGX_LINKABLE_SIGNATURE;
-        let spid: sgx_spid_t = teaclave_utils::decode_spid(ias_spid)?;
+
+        let mut spid = sgx_types::sgx_spid_t::default();
+        let hex = hex::decode(ias_spid_str)?;
+        spid.id.copy_from_slice(&hex[..16]);
 
         let mut quote = vec![0; quote_len as usize];
 

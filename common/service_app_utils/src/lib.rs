@@ -2,10 +2,10 @@ use log::{error, info};
 use std::sync::Arc;
 use teaclave_binder::TeeBinder;
 
-pub fn init_tee() -> anyhow::Result<std::sync::Arc<TeeBinder>> {
+pub fn init_tee(enclave_name: &str) -> anyhow::Result<std::sync::Arc<TeeBinder>> {
     env_logger::init();
 
-    let tee = match TeeBinder::new(env!("CARGO_PKG_NAME"), 1) {
+    let tee = match TeeBinder::new(enclave_name, 1) {
         Ok(r) => {
             info!("Init TEE Successfully!");
             r
