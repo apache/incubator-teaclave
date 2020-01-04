@@ -5,6 +5,7 @@ extern crate sgx_tstd as std;
 
 use anyhow::{self, Result};
 use teaclave_service_config as config;
+pub use teaclave_service_sgx_utils_proc_macro::teaclave_service;
 
 pub fn init_service(name: &str) -> Result<()> {
     use std::backtrace;
