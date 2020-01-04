@@ -19,7 +19,7 @@ use crate::quote::SgxQuote;
 use std::hash::{Hash, Hasher};
 use std::vec::Vec;
 use teaclave_config::build_config::BUILD_CONFIG;
-use teaclave_utils::EnclaveMeasurement;
+use teaclave_types::EnclaveMeasurement;
 
 #[derive(Clone)]
 pub struct EnclaveAttr {

@@ -85,13 +85,16 @@ mod sgx_trusted_tls {
             V: for<'de> Deserialize<'de> + std::fmt::Debug,
             X: TeaclaveService<V, U>,
         {
+            let mut protocol = protocol::JsonProtocol::new(self);
+
             loop {
-                let mut protocol = protocol::JsonProtocol::new(self);
+                debug!("read_message");
                 let request: V = protocol.read_message()?;
                 debug!("request: {:?}", request);
                 let response: U = service.handle_request(request)?;
                 debug!("response: {:?}", response);
                 protocol.write_message(response)?;
+                debug!("write_messagge done");
             }
         }
     }

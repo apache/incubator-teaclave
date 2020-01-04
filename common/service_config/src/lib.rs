@@ -31,7 +31,7 @@ use teaclave_attestation::verifier::EnclaveAttr;
 use teaclave_config::build_config::BUILD_CONFIG;
 use teaclave_config::runtime_config;
 use teaclave_config::runtime_config::RuntimeConfig;
-use teaclave_utils::EnclaveMeasurement;
+use teaclave_types::EnclaveMeasurement;
 
 mod external;
 mod internal;

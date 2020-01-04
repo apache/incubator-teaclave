@@ -93,7 +93,12 @@ fn handle_start_service(_args: &StartServiceInput) -> Result<StartServiceOutput>
             proto::TeaclaveFrontendResponse,
             proto::TeaclaveFrontendRequest,
         >::new_with_config(stream, &rc_config);
-        server.start(service::TeaclaveFrontendService)?;
+        match server.start(service::TeaclaveFrontendService) {
+            Ok(_) => (),
+            Err(e) => {
+                error!("Service exit, error: {}.", e);
+            }
+        }
     }
 }
 
@@ -104,6 +109,7 @@ fn handle_serve_connection(args: &ServeConnectionInput) -> Result<ServeConnectio
     let sender = &FD_QUEUE.sender;
     sender.send(args.socket_fd).unwrap();
 
+    debug!("handle_serve_connection success exit");
     Ok(ServeConnectionOutput::default())
 }
 

@@ -15,6 +15,7 @@ default = []
 mesalock_sgx = ["sgx_tstd", "sgx_tcrypto", "sgx_rand", "sgx_tse"]
 
 [dependencies]
+hex = "0.4.0"
 anyhow       = { version = "1.0.26" }
 base64       = { version = "0.10.1" }
 bit-vec      = { version = "0.6.1", default-features = false }
@@ -39,3 +40,4 @@ sgx_types   = { version = "1.1.0" }
 
 teaclave_config = { path = "../config" }
 teaclave_utils  = { path = "../utils" }
+teaclave_types = { path = "../types" }
