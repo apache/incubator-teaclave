@@ -78,7 +78,7 @@ impl MesaTEEServiceGenerator {
         buf.push_str(LINE_ENDING);
         for method in &service.methods {
             buf.push_str(&format!(
-                "    fn {}(req: {}) -> Result<{}>;",
+                "    fn {}(req: crate::{}) -> Result<crate::{}>;",
                 method.name, method.input_type, method.output_type
             ));
             buf.push_str(LINE_ENDING);
@@ -121,10 +121,25 @@ impl MesaTEEServiceGenerator {
         buf.push_str("        match req {");
         buf.push_str(LINE_ENDING);
         for method in &service.methods {
+            let request_str = format!("{}Request", &method.proto_name);
+            let response_str = format!("{}Response", &method.proto_name);
             buf.push_str(&format!(
-                "            {}::{}(req) => Self::{}(req).map({}::{}),",
-                &request_name, &method.proto_name, method.name, &response_name, &method.proto_name
+                "            {}::{}(req) => {{",
+                &request_name, &method.proto_name
             ));
+            buf.push_str(&format!(
+                "let req = crate::{}::try_from(req)?;",
+                &request_str
+            ));
+            buf.push_str(&format!(
+                "                let resp = {}::from(Self::{}(req)?);",
+                &response_str, method.name,
+            ));
+            buf.push_str(&format!(
+                "                Ok(resp).map({}::{})",
+                &response_name, &method.proto_name
+            ));
+            buf.push_str(&format!("            }},",));
         }
         buf.push_str("        }");
         buf.push_str(LINE_ENDING);
@@ -190,6 +205,7 @@ impl {} {{
 
 impl prost_build::ServiceGenerator for MesaTEEServiceGenerator {
     fn generate(&mut self, service: prost_build::Service, buf: &mut String) {
+        buf.push_str("use core::convert::TryFrom;");
         self.generate_structure(&service, buf);
         self.generate_service(&service, buf);
         self.generate_client(&service, buf);

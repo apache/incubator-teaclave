@@ -21,8 +21,6 @@ extern crate sgx_tstd as std;
 
 use anyhow::{Error, Result};
 
-pub mod proto;
-
 #[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
 pub struct UserLoginRequest {
     pub id: std::string::String,
@@ -63,3 +61,6 @@ impl From<UserLoginResponse> for crate::proto::UserLoginResponse {
         }
     }
 }
+
+pub mod proto;
+pub use proto::TeaclaveFrontend;
