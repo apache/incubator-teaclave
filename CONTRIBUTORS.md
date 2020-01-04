@@ -30,7 +30,12 @@ being active.
 - [Yulong Zhang](https://github.com/yulongzhang) (PPMC)
 - [Zhaofeng Chen](https://github.com/m4sterchain) (PPMC)
 
-## List of Contributors
+## Contributors
 
-- [Full List of Contributors](https://github.com/apache/incubator-teaclave/graphs/contributors)
-- To contributors: please add yourself to the list.
+- [Full list of contributors](https://github.com/apache/incubator-teaclave/graphs/contributors) (please also add yourself to the list below)
+- [Hongbin Mao](https://github.com/hello2mao)
+- [Meng Yang](https://github.com/m3ngyang)
+- [Sammy](https://github.com/sammyne)
+- [T0day](https://github.com/hi-T0day)
+- [luoyanhua2011](https://github.com/luoyanhua2011)
+- [zEqueue](https://github.com/z1queue)
