@@ -4,7 +4,7 @@ Please include a summary of the change and which issue is fixed. Please also inc
 
 Fixes # (issue)
 
-## Type of change (select applied and DELETE the others)
+## Type of change (select or add applied and delete the others)
 
 - [ ] Bug fix (non-breaking change which fixes an issue)
 - [ ] New feature (non-breaking change which adds functionality)
@@ -13,9 +13,9 @@ Fixes # (issue)
 - [ ] Additional test coverage
 - [ ] Code cleanup or just sync with upstream third-party crates
 
-## How Has This Been Tested?
+## How has this been tested?
 
-## Checklist (check ALL before submitting PR, even not applicable)
+## Checklist
 
 - [ ] Fork the repo and create your branch from `master`.
 - [ ] If you've added code that should be tested, add tests.
