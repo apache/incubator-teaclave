@@ -37,7 +37,7 @@ impl MesaTEEServiceGenerator {
         // Generate request enum structure
         buf.push_str("#[derive(Clone, serde_derive::Serialize, serde_derive::Deserialize, Debug)]");
         buf.push_str(LINE_ENDING);
-        buf.push_str(r#"#[serde(tag = "type")]"#);
+        buf.push_str(r#"#[serde(tag = "type", rename_all = "snake_case")]"#);
 
         buf.push_str(&format!("pub enum {} {{", &request_name));
         buf.push_str(LINE_ENDING);
@@ -54,7 +54,7 @@ impl MesaTEEServiceGenerator {
         // Generate response enum structure
         buf.push_str("#[derive(Clone, serde_derive::Serialize, serde_derive::Deserialize, Debug)]");
         buf.push_str(LINE_ENDING);
-        buf.push_str(r#"#[serde(tag = "type")]"#);
+        buf.push_str(r#"#[serde(tag = "type", rename_all = "snake_case")]"#);
         buf.push_str(LINE_ENDING);
         buf.push_str(&format!("pub enum {} {{", &response_name));
         buf.push_str(LINE_ENDING);
