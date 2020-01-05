@@ -19,7 +19,7 @@ mesalock_sgx = [
   "teaclave_ipc/mesalock_sgx",
   "teaclave_types/mesalock_sgx",
   "teaclave_attestation/mesalock_sgx",
-  "teaclave_service_sgx_utils/mesalock_sgx",
+  "teaclave_service_enclave_utils/mesalock_sgx",
   "teaclave_service_config/mesalock_sgx",
 ]
 cov = ["sgx_cov"]
@@ -45,5 +45,5 @@ teaclave_attestation    = { path = "../../../attestation" }
 teaclave_ipc            = { path = "../../../ipc" }
 teaclave_types          = { path = "../../../types" }
 teaclave_frontend_proto = { path = "../proto", optional = true}
-teaclave_service_sgx_utils  = { path = "../../../utils/service_sgx_utils", optional = true }
+teaclave_service_enclave_utils  = { path = "../../../utils/service_enclave_utils", optional = true }
 teaclave_service_config = { path = "../../../utils/service_config", optional = true }

@@ -1,8 +1,8 @@
 [package]
-name = "teaclave_service_sgx_utils"
+name = "teaclave_service_enclave_utils"
 version = "0.1.0"
 authors = ["MesaTEE Authors <developers@mesatee.org>"]
-description = "Teaclave sgx utils"
+description = "Teaclave enclave utils"
 license = "Apache-2.0"
 edition = "2018"
 
@@ -13,11 +13,14 @@ mesalock_sgx = [
     "teaclave_service_config/mesalock_sgx",
 ]
 
+cov = ["sgx_cov"]
+
 [dependencies]
 env_logger   = { version = "0.7.1" }
 anyhow       = { version = "1.0.26" }
 log          = { version = "0.4.6" }
 sgx_tstd  = { version = "1.1.0", features = ["net", "backtrace"], optional = true }
+sgx_cov         = { version = "1.1.0", optional = true }
 
 teaclave_service_config = { path = "../service_config" }
-teaclave_service_sgx_utils_proc_macro = { path = "./proc_macro" }
+teaclave_service_enclave_utils_proc_macro = { path = "./proc_macro" }

@@ -32,11 +32,11 @@ use threadpool::ThreadPool;
 
 use std::sync::Arc;
 use teaclave_binder::TeeBinder;
-use teaclave_service_app_utils;
+use teaclave_service_app_utils::ServiceEnclaveBuilder;
 use teaclave_service_config;
 
 fn main() -> anyhow::Result<()> {
-    let tee = teaclave_service_app_utils::init_tee(env!("CARGO_PKG_NAME"))?;
+    let tee = ServiceEnclaveBuilder::init_tee_binder(env!("CARGO_PKG_NAME"))?;
     run(tee)?;
 
     Ok(())

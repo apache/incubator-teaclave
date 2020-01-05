@@ -38,7 +38,7 @@ use teaclave_ipc::attribute::handle_ecall;
 use teaclave_ipc::register_ecall_handler;
 
 use teaclave_service_config as config;
-use teaclave_service_sgx_utils;
+use teaclave_service_enclave_utils::ServiceEnclave;
 
 use std::net::TcpStream;
 use std::sync::mpsc;
@@ -114,19 +114,13 @@ fn handle_serve_connection(args: &ServeConnectionInput) -> Result<ServeConnectio
 
 #[handle_ecall]
 fn handle_init_enclave(_args: &InitEnclaveInput) -> Result<InitEnclaveOutput> {
-    debug!("handle_init_enclave");
-
-    teaclave_service_sgx_utils::init_service(env!("CARGO_PKG_NAME"))?;
-
+    ServiceEnclave::init(env!("CARGO_PKG_NAME"))?;
     Ok(InitEnclaveOutput::default())
 }
 
 #[handle_ecall]
 fn handle_finalize_enclave(_args: &FinalizeEnclaveInput) -> Result<FinalizeEnclaveOutput> {
-    #[cfg(feature = "cov")]
-    sgx_cov::cov_writeout();
-
-    debug!("handle_finalize_enclave");
+    ServiceEnclave::finalize()?;
     Ok(FinalizeEnclaveOutput::default())
 }
 
