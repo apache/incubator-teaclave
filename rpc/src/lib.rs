@@ -15,6 +15,7 @@ where
 }
 
 pub mod channel;
+pub mod config;
 mod protocol;
 pub mod server;
 mod transport;
