@@ -6,7 +6,7 @@ use teaclave_service_sgx_utils::teaclave_service;
 pub(crate) struct TeaclaveFrontendService;
 
 impl TeaclaveFrontend for TeaclaveFrontendService {
-    fn user_login(request: UserLoginRequest) -> anyhow::Result<UserLoginResponse> {
+    fn user_login(_request: UserLoginRequest) -> anyhow::Result<UserLoginResponse> {
         let response = UserLoginResponse {
             token: "test_token".to_string(),
         };

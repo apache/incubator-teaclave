@@ -1,0 +1,59 @@
+use anyhow;
+use teaclave_rpc;
+use core::convert::TryFrom;
+
+#[derive(Clone, serde_derive::Serialize, serde_derive::Deserialize, Debug)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum {{ service.proto_name }}Request {
+    {% for m in service.methods %}
+    {{ m.proto_name }}({{ m.input_type }}),
+    {% endfor %}
+}
+
+#[derive(Clone, serde_derive::Serialize, serde_derive::Deserialize, Debug)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum {{ service.proto_name }}Response {
+    {% for m in service.methods %}
+    {{ m.proto_name }}({{ m.output_type }}),
+    {% endfor %}
+}
+
+pub trait {{ service.proto_name }} {
+    {% for m in service.methods %}
+    fn {{ m.name }}(request: crate::{{ m.input_type }}) -> anyhow::Result<crate::{{ m.output_type }}>;
+    {% endfor %}
+    fn dispatch(&self, request: {{ service.proto_name }}Request) -> anyhow::Result<{{ service.proto_name }}Response> {
+        match request {
+            {% for m in service.methods %}
+            {{ service.proto_name }}Request::{{ m.proto_name }}(request) => {
+                let request = crate::{{ m.input_type }}::try_from(request)?;
+                let response = {{ m.output_type }}::from(Self::{{ m.name }}(request)?);
+                Ok(response).map({{ service.proto_name }}Response::{{ m.proto_name }})
+            },
+            {% endfor %}
+        }
+    }
+}
+
+pub struct {{ service.proto_name }}Client {
+    channel: teaclave_rpc::channel::SgxTrustedTlsChannel<{{ service.proto_name }}Request, {{ service.proto_name }}Response>,
+}
+
+impl {{ service.proto_name }}Client {
+    pub fn new(channel: teaclave_rpc::channel::SgxTrustedTlsChannel<{{ service.proto_name }}Request, {{ service.proto_name }}Response>) -> anyhow::Result<Self> {
+        Ok(Self { channel })
+    }
+
+    {% for m in service.methods %}
+    pub fn {{ m.name }}(&mut self, request: {{ m.input_type }}) -> anyhow::Result<{{ m.output_type }}> {
+        let request = {{ service.proto_name }}Request::UserLogin(request);
+        let response = self.channel.invoke(request)?;
+        match response {
+            {{ service.proto_name }}Response::{{ m.proto_name }}(response) => Ok(response),
+            {% if service.methods.len() > 1 -%}
+            _ => Err(anyhow!("rpc error")),
+            {% endif %}
+        }
+    }
+    {% endfor %}
+}
