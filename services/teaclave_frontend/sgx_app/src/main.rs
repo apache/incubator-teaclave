@@ -82,7 +82,7 @@ fn run(tee: Arc<TeeBinder>) -> anyhow::Result<()> {
     info!("Running {}...", env!("CARGO_PKG_NAME"));
 
     start_enclave_service(tee.clone());
-    handle_connection(tee.clone())?;
+    handle_connection(tee)?;
 
     Ok(())
 }
