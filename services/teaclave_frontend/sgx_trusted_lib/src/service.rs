@@ -1,6 +1,6 @@
 use std::prelude::v1::*;
 use teaclave_frontend_proto::{TeaclaveFrontend, UserLoginRequest, UserLoginResponse};
-use teaclave_service_sgx_utils::teaclave_service;
+use teaclave_service_enclave_utils::teaclave_service;
 
 #[teaclave_service(teaclave_frontend_proto, TeaclaveFrontend)]
 pub(crate) struct TeaclaveFrontendService;
