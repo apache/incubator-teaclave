@@ -1,7 +1,7 @@
 [package]
 name = "teaclave_binder"
 version = "0.1.0"
-authors = ["MesaTEE Authors <developers@mesatee.org>"]
+authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
 description = "Abstract communication interfaces between TEE untrusted/trusted worlds."
 license = "Apache-2.0"
 edition = "2018"

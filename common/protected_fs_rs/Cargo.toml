@@ -1,7 +1,7 @@
 [package]
 name = "protected_fs_rs"
 version = "0.0.1"
-authors = ["MesaTEE Authors <developers@mesatee.org>"]
+authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
 description = "Ported sgx_protected_fs (Intel SGX SDK) running out side sgx with Rust bindings."
 license-file = "Apache-2.0"
 edition = "2018"
