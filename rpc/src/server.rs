@@ -8,11 +8,11 @@ cfg_if! {
 
 #[cfg(feature = "mesalock_sgx")]
 mod sgx_trusted_tls {
+    use crate::config::SgxTrustedTlsServerConfig;
     use crate::transport::{ServerTransport, SgxTrustedTlsTransport};
     use crate::TeaclaveService;
     use anyhow::Result;
     use serde::{Deserialize, Serialize};
-    use std::sync::Arc;
 
     pub struct SgxTrustedTlsServer<U, V>
     where
@@ -41,9 +41,9 @@ mod sgx_trusted_tls {
 
         pub fn new_with_config(
             stream: std::net::TcpStream,
-            server_config: &Arc<rustls::ServerConfig>,
+            server_config: &SgxTrustedTlsServerConfig,
         ) -> SgxTrustedTlsServer<U, V> {
-            let session = rustls::ServerSession::new(server_config);
+            let session = rustls::ServerSession::new(&server_config.config);
             let stream = rustls::StreamOwned::new(session, stream);
             Self::new(stream)
         }

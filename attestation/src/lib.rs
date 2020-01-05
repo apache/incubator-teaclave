@@ -35,7 +35,6 @@ pub enum AttestationError {
 #[macro_use]
 mod cert;
 pub mod quote;
-pub mod rpc;
 pub mod verifier;
 
 use cfg_if::cfg_if;

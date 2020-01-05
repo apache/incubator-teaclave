@@ -42,7 +42,6 @@ use teaclave_service_sgx_utils;
 
 use std::net::TcpStream;
 use std::sync::mpsc;
-use std::sync::Arc;
 
 use lazy_static::lazy_static;
 use std::os::raw::c_int;
@@ -50,6 +49,7 @@ use std::sync::SgxMutex as Mutex;
 use teaclave_attestation;
 use teaclave_attestation::RemoteAttestation;
 use teaclave_frontend_proto::*;
+use teaclave_rpc::config::SgxTrustedTlsServerConfig;
 use teaclave_rpc::server::SgxTrustedTlsServer;
 
 mod service;
@@ -82,17 +82,16 @@ fn handle_start_service(_args: &StartServiceInput) -> Result<StartServiceOutput>
             &config::runtime_config().env.ias_spid,
         )
         .unwrap();
-        let config = teaclave_attestation::rpc::new_tls_server_config_without_verifier(
-            attestation.cert,
-            attestation.private_key,
+        let config = SgxTrustedTlsServerConfig::new_without_verifier(
+            &attestation.cert,
+            &attestation.private_key,
         )
         .unwrap();
-        let rc_config = Arc::new(config);
 
         let mut server = SgxTrustedTlsServer::<
             proto::TeaclaveFrontendResponse,
             proto::TeaclaveFrontendRequest,
-        >::new_with_config(stream, &rc_config);
+        >::new_with_config(stream, &config);
         match server.start(service::TeaclaveFrontendService) {
             Ok(_) => (),
             Err(e) => {
