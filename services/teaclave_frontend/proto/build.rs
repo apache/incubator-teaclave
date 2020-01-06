@@ -25,9 +25,12 @@ fn main() {
     let out_dir = env::var("OUT_DIR").expect("$OUT_DIR not set. Please build with cargo");
     println!("cargo:rerun-if-changed={}", proto_path);
     println!("cargo:rerun-if-changed=build.rs");
+    println!("cargo:rerun-if-changed=templates/proto.j2");
     let c = Command::new("cargo")
         .args(&[
             "run",
+            "--target-dir",
+            "/tmp/proto_gen/target",
             "--manifest-path",
             "../../proto_gen/Cargo.toml",
             "--",

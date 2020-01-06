@@ -11,12 +11,13 @@ default = []
 mesalock_sgx = ["sgx_tstd"]
 
 [dependencies]
-sgx_tstd  = { version = "1.1.0", features = ["net", "backtrace"], optional = true }
-anyhow    = { version = "1.0.26" }
-sgx_types = "1.1.0"
-hex = "0.4.0"
+anyhow       = { version = "1.0.26" }
+sgx_types    = { version = "1.1.0" }
+hex          = { version = "0.4.0" }
 serde        = { version = "1.0.92" }
 serde_derive = { version = "1.0.92" }
 toml         = { version = "0.5.3" }
 ring         = { version = "0.16.5" }
 thiserror    = { version = "1.0.9" }
+
+sgx_tstd = { version = "1.1.0", features = ["net", "backtrace"], optional = true }
