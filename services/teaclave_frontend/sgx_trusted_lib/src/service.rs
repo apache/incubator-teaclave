@@ -1,5 +1,7 @@
 use std::prelude::v1::*;
-use teaclave_frontend_proto::{TeaclaveFrontend, UserLoginRequest, UserLoginResponse};
+use teaclave_proto::teaclave_frontend::{
+    self, TeaclaveFrontend, UserLoginRequest, UserLoginResponse,
+};
 use teaclave_service_enclave_utils::teaclave_service;
 
 use teaclave_types::TeaclaveServiceError;
@@ -20,7 +22,7 @@ impl From<TeaclaveFrontendError> for TeaclaveServiceError {
     }
 }
 
-#[teaclave_service(teaclave_frontend_proto, TeaclaveFrontend, TeaclaveFrontendError)]
+#[teaclave_service(teaclave_frontend, TeaclaveFrontend, TeaclaveFrontendError)]
 #[derive(Copy, Clone)]
 pub(crate) struct TeaclaveFrontendService;
 

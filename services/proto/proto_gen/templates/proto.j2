@@ -24,13 +24,13 @@ pub enum {{ service.proto_name }}Response {
 
 pub trait {{ service.proto_name }} {
     {% for m in service.methods %}
-    fn {{ m.name }}(request: crate::{{ m.input_type }}) -> Result<crate::{{ m.output_type }}>;
+    fn {{ m.name }}(request: super::{{ m.input_type }}) -> Result<super::{{ m.output_type }}>;
     {% endfor %}
     fn dispatch(&self, request: {{ service.proto_name }}Request) -> Result<{{ service.proto_name }}Response> {
         match request {
             {% for m in service.methods %}
             {{ service.proto_name }}Request::{{ m.proto_name }}(request) => {
-                let request = crate::{{ m.input_type }}::try_from(request)
+                let request = super::{{ m.input_type }}::try_from(request)
                     .map_err(|_| TeaclaveServiceError::InternalError("internal".to_string()))?;
                 let response = Self::{{ m.name }}(request)?;
                 let response = {{ m.output_type }}::from(response);
