@@ -91,10 +91,16 @@ mod sgx_trusted_tls {
                 debug!("read_message");
                 let request: V = protocol.read_message()?;
                 debug!("request: {:?}", request);
-                let response: U = service.handle_request(request)?;
-                debug!("response: {:?}", response);
-                protocol.write_message(response)?;
-                debug!("write_messagge done");
+                match service.handle_request(request) {
+                    Ok(response) => {
+                        debug!("response: {:?}", response);
+                        protocol.write_message(response)?;
+                    }
+                    Err(e) => {
+                        debug!("write_error: {:?}", e);
+                        protocol.write_error(e)?;
+                    }
+                };
             }
         }
     }

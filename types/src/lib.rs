@@ -8,7 +8,9 @@ use std::prelude::v1::*;
 use hex;
 use serde::Deserializer;
 use serde_derive::Deserialize;
+use serde_derive::Serialize;
 use std::collections::HashMap;
+use thiserror::Error;
 
 /// Status for Ecall
 #[repr(C)]
@@ -120,4 +122,12 @@ impl EnclaveInfo {
 
         true
     }
+}
+
+#[derive(Error, Debug, Serialize, Deserialize)]
+pub enum TeaclaveServiceError {
+    #[error("Request error: {0}")]
+    RequestError(String),
+    #[error("Internal error: {0}")]
+    InternalError(String),
 }

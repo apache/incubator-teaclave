@@ -19,3 +19,4 @@ serde        = { version = "1.0.92" }
 serde_derive = { version = "1.0.92" }
 toml         = { version = "0.5.3" }
 ring         = { version = "0.16.5" }
+thiserror    = { version = "1.0.9" }
