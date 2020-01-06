@@ -1,7 +1,7 @@
 [workspace]
 
 members = [
-  "services/teaclave_frontend/sgx_trusted_lib",
+  "services/frontend/enclave",
 ]
 
 exclude = [

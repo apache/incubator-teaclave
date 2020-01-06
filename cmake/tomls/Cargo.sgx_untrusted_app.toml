@@ -1,7 +1,7 @@
 [workspace]
 
 members = [
-  "services/teaclave_frontend/sgx_app",
+  "services/frontend/app",
 ]
 
 exclude = [
