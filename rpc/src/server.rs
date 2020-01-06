@@ -19,7 +19,8 @@ mod sgx_trusted_tls {
         U: Serialize + std::fmt::Debug,
         V: for<'de> Deserialize<'de> + std::fmt::Debug,
     {
-        transport: SgxTrustedTlsTransport<rustls::ServerSession>,
+        listener: std::net::TcpListener,
+        tls_config: std::sync::Arc<rustls::ServerConfig>,
         maker: std::marker::PhantomData<(U, V)>,
     }
 
@@ -29,27 +30,39 @@ mod sgx_trusted_tls {
         V: for<'de> Deserialize<'de> + std::fmt::Debug,
     {
         pub fn new(
-            stream: rustls::StreamOwned<rustls::ServerSession, std::net::TcpStream>,
+            listener: std::net::TcpListener,
+            server_config: &SgxTrustedTlsServerConfig,
         ) -> SgxTrustedTlsServer<U, V> {
-            let transport =
-                SgxTrustedTlsTransport::<rustls::ServerSession>::new_server_with_stream(stream);
-            SgxTrustedTlsServer {
-                transport,
+            Self {
+                listener,
+                tls_config: server_config.config.clone(),
                 maker: std::marker::PhantomData::<(U, V)>,
             }
         }
 
-        pub fn new_with_config(
-            stream: std::net::TcpStream,
-            server_config: &SgxTrustedTlsServerConfig,
-        ) -> SgxTrustedTlsServer<U, V> {
-            let session = rustls::ServerSession::new(&server_config.config);
-            let stream = rustls::StreamOwned::new(session, stream);
-            Self::new(stream)
-        }
-
-        pub fn start<X: TeaclaveService<V, U>>(&mut self, service: X) -> Result<()> {
-            self.transport.serve(service)
+        pub fn start<X>(&mut self, service: X) -> Result<()>
+        where
+            X: 'static
+                + TeaclaveService<V, U>
+                + Clone
+                + Copy
+                + core::marker::Send
+                + core::marker::Sync,
+        {
+            let n_workers = 10;
+            let pool = threadpool::ThreadPool::new(n_workers);
+            for stream in self.listener.incoming() {
+                let session = rustls::ServerSession::new(&self.tls_config);
+                let tls_stream = rustls::StreamOwned::new(session, stream.unwrap());
+                let mut transport =
+                    SgxTrustedTlsTransport::<rustls::ServerSession>::new_server_with_stream(
+                        tls_stream,
+                    );
+                pool.execute(move || {
+                    let _ = transport.serve(service);
+                });
+            }
+            Ok(())
         }
     }
 }

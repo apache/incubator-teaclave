@@ -3,6 +3,7 @@ use teaclave_frontend_proto::{TeaclaveFrontend, UserLoginRequest, UserLoginRespo
 use teaclave_service_enclave_utils::teaclave_service;
 
 #[teaclave_service(teaclave_frontend_proto, TeaclaveFrontend)]
+#[derive(Copy, Clone)]
 pub(crate) struct TeaclaveFrontendService;
 
 impl TeaclaveFrontend for TeaclaveFrontendService {
