@@ -10,7 +10,7 @@ edition = "2018"
 default = []
 mesalock_sgx = [
     "sgx_tstd",
-    "teaclave_types/mesalock_sgx"
+    "teaclave_types/mesalock_sgx",
 ]
 
 [dependencies]
@@ -18,9 +18,10 @@ serde        = { version = "1.0.92" }
 serde_derive = { version = "1.0.92" }
 anyhow       = { version = "1.0.26" }
 serde_json   = { version = "1.0.39" }
+log          = { version = "0.4.6" }
+
 teaclave_ipc_attribute = { path = "./attribute" }
-teaclave_types = { path = "../types" }
+teaclave_types         = { path = "../types" }
 
 sgx_tstd  = { version = "1.1.0", features = ["net", "backtrace"], optional = true }
 sgx_types = { version = "1.1.0" }
-log          = { version = "0.4.6" }

@@ -11,20 +11,21 @@ default = []
 mesalock_sgx = [
     "sgx_tstd",
     "teaclave_types/mesalock_sgx",
-    "teaclave_attestation/mesalock_sgx"
+    "teaclave_attestation/mesalock_sgx",
 ]
 
 [dependencies]
-serde        = { version = "1.0.92", features = ["derive"] }
-cfg-if       = { version = "0.1.9" }
-log             = { version = "0.4.6" }
-serde_json   = { version = "1.0.39" }
-anyhow       = { version = "1.0.26" }
-thiserror    = { version = "1.0.9" }
-webpki       = { version = "0.21.0" }
-rustls       = { version = "0.16.0", features = ["dangerous_configuration"] }
-threadpool = "1.8.0"
+anyhow     = { version = "1.0.26" }
+cfg-if     = { version = "0.1.9" }
+log        = { version = "0.4.6" }
+rustls     = { version = "0.16.0", features = ["dangerous_configuration"] }
+serde      = { version = "1.0.92", features = ["derive"] }
+serde_json = { version = "1.0.39" }
+thiserror  = { version = "1.0.9" }
+threadpool = { version = "1.8.0" }
+webpki     = { version = "0.21.0" }
 
-sgx_tstd        = { version = "1.1.0", features = ["net", "backtrace"], optional = true }
 teaclave_attestation = { path = "../attestation" }
-teaclave_types = { path = "../types" }
+teaclave_types       = { path = "../types" }
+
+sgx_tstd = { version = "1.1.0", features = ["net", "backtrace"], optional = true }

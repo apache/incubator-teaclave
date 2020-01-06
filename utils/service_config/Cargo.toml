@@ -19,8 +19,9 @@ env_logger   = { version = "0.7.1" }
 anyhow       = { version = "1.0.26" }
 log          = { version = "0.4.6" }
 lazy_static  = { version = "1.0.2", features = ["spin_no_std"] }
-sgx_tstd  = { version = "1.1.0", features = ["net", "backtrace"], optional = true }
 
-teaclave_config = { path = "../../config" }
+teaclave_config      = { path = "../../config" }
 teaclave_attestation = { path = "../../attestation" }
-teaclave_types = { path = "../../types" }
+teaclave_types       = { path = "../../types" }
+
+sgx_tstd  = { version = "1.1.0", features = ["net", "backtrace"], optional = true }

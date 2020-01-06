@@ -24,7 +24,7 @@ impl ServiceEnclaveBuilder {
         {
             let ref_tee = tee.clone();
             ctrlc::set_handler(move || {
-                info!("\nCTRL+C pressed. Destroying server enclave");
+                info!("CTRL+C pressed. Destroying service enclave");
                 ref_tee.finalize();
                 std::process::exit(0);
             })
