@@ -3,15 +3,15 @@
 #[macro_use]
 extern crate sgx_tstd as std;
 
-use anyhow::Result;
 use serde::{Deserialize, Serialize};
+use teaclave_types::TeaclaveServiceError;
 
 pub trait TeaclaveService<V, U>
 where
     U: Serialize + std::fmt::Debug,
     V: for<'de> Deserialize<'de> + std::fmt::Debug,
 {
-    fn handle_request(&self, request: V) -> Result<U>;
+    fn handle_request(&self, request: V) -> std::result::Result<U, TeaclaveServiceError>;
 }
 
 pub mod channel;

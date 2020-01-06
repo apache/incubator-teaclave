@@ -6,10 +6,11 @@ import threading
 hostname = 'localhost'
 context = ssl._create_unverified_context()
 
-def login():
+def login(user_id, user_password):
     with socket.create_connection((hostname, 7777)) as sock:
         with context.wrap_socket(sock, server_hostname=hostname) as ssock:
-            message = b'{"type":"user_login","id":"20937006-2718-4f33-bae2-567933807436","password":"d20ce53ab743d69320712fd98555f5e5"}'
+            message = '{"type":"user_login","id":"'+ user_id + '","password":"' + user_password + '"}'
+            message = message.encode()
             ssock.write(struct.pack(">Q", len(message)))
             ssock.write(message)
 
@@ -18,4 +19,6 @@ def login():
             print(response)
 
 for i in range(100):
-    threading.Thread(target=login).start()
+    threading.Thread(target=login, args=("test_id", "test_password")).start()
+
+login("invalid_id", "invalid_password")

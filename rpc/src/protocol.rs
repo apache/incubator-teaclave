@@ -54,4 +54,20 @@ where
 
         Ok(())
     }
+
+    pub fn write_error<W>(&mut self, message: W) -> Result<()>
+    where
+        W: Serialize + std::fmt::Debug,
+    {
+        let message_vec = serde_json::to_vec(&message)?;
+
+        let buf_len = message_vec.len() as u64;
+        let header = unsafe { transmute::<u64, [u8; 8]>(buf_len.to_be()) };
+
+        self.transport.write(&header)?;
+        self.transport.write_all(&message_vec)?;
+        self.transport.flush()?;
+
+        Ok(())
+    }
 }
