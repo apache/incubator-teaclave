@@ -1,8 +1,8 @@
 [package]
-name = "teaclave_frontend_proto"
+name = "teaclave_proto"
 version = "0.1.0"
 authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
-description = "RPC protocol of Teaclave Frontend."
+description = "RPC protocol of Teaclave services."
 license = "Apache-2.0"
 edition = "2018"
 
@@ -29,5 +29,5 @@ base64       = { version = "0.10.1" }
 sgx_cov      = { version = "1.1.0", optional = true }
 sgx_tstd     = { version = "1.1.0", features = ["net", "backtrace"], optional = true }
 sgx_types    = { version = "1.1.0" }
-teaclave_rpc = { path = "../../../rpc" }
-teaclave_types = { path = "../../../types" }
+teaclave_rpc = { path = "../../rpc" }
+teaclave_types = { path = "../../types" }

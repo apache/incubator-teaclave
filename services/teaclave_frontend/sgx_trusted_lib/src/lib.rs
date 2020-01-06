@@ -39,7 +39,7 @@ use teaclave_service_config as config;
 use teaclave_service_enclave_utils::ServiceEnclave;
 
 use teaclave_attestation::RemoteAttestation;
-use teaclave_frontend_proto::proto::{TeaclaveFrontendRequest, TeaclaveFrontendResponse};
+use teaclave_proto::teaclave_frontend::{TeaclaveFrontendRequest, TeaclaveFrontendResponse};
 use teaclave_rpc::config::SgxTrustedTlsServerConfig;
 use teaclave_rpc::server::SgxTrustedTlsServer;
 

@@ -26,8 +26,8 @@ pub fn teaclave_service(attr: TokenStream, input: TokenStream) -> TokenStream {
         {
             fn handle_request(
                 &self,
-                request: teaclave_frontend_proto::proto::#request,
-            ) -> std::result::Result<teaclave_frontend_proto::proto::#response, teaclave_types::TeaclaveServiceError> {
+                request: #crate_name::proto::#request,
+            ) -> std::result::Result<#crate_name::proto::#response, teaclave_types::TeaclaveServiceError> {
                 use #crate_name::proto::#trait_name_ident;
                 use log::trace;
                 trace!("Dispatching request.");
