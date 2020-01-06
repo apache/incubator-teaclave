@@ -54,10 +54,7 @@ mod sgx_trusted_tls {
             for stream in self.listener.incoming() {
                 let session = rustls::ServerSession::new(&self.tls_config);
                 let tls_stream = rustls::StreamOwned::new(session, stream.unwrap());
-                let mut transport =
-                    SgxTrustedTlsTransport::<rustls::ServerSession>::new_server_with_stream(
-                        tls_stream,
-                    );
+                let mut transport = SgxTrustedTlsTransport::new(tls_stream);
                 pool.execute(move || {
                     let _ = transport.serve(service);
                 });
