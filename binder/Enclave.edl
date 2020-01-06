@@ -16,17 +16,18 @@
 // under the License.
 
 enclave {
-    from "sgx_tstd.edl" import *;
-    from "sgx_stdio.edl" import *;
-    from "sgx_tstdc.edl" import *;
     from "sgx_backtrace.edl" import *;
-    from "sgx_time.edl" import *;
-    from "sgx_fs.edl" import *;
-    from "sgx_fd.edl" import *;
-    from "sgx_net.edl" import *;
     from "sgx_env.edl" import *;
-    from "sgx_tprotected_fs.edl" import *;
+    from "sgx_fd.edl" import *;
+    from "sgx_fs.edl" import *;
+    from "sgx_net.edl" import *;
+    from "sgx_stdio.edl" import *;
+    from "sgx_sys.edl" import *;
     from "sgx_thread.edl" import *;
+    from "sgx_time.edl" import *;
+    from "sgx_tprotected_fs.edl" import *;
+    from "sgx_tstd.edl" import *;
+    from "sgx_tstdc.edl" import *;
 
     trusted {
         public uint32_t ecall_ipc_entry_point(uint32_t cmd,

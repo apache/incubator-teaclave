@@ -30,7 +30,9 @@ use std::os::raw::c_int;
 // }
 
 #[derive(Clone, Serialize, Deserialize, Debug, Default)]
-pub struct StartServiceInput;
+pub struct StartServiceInput {
+    pub fd: c_int,
+}
 
 #[derive(Clone, Serialize, Deserialize, Debug, Default)]
 pub struct StartServiceOutput;
