@@ -29,8 +29,7 @@ mod sgx_trusted_tls {
         pub fn new(
             stream: rustls::StreamOwned<rustls::ClientSession, std::net::TcpStream>,
         ) -> SgxTrustedTlsChannel<U, V> {
-            let transport =
-                SgxTrustedTlsTransport::<rustls::ServerSession>::new_client_with_stream(stream);
+            let transport = SgxTrustedTlsTransport::new(stream);
             Self {
                 transport,
                 maker: std::marker::PhantomData::<(U, V)>,

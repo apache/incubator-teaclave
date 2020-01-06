@@ -47,16 +47,10 @@ mod sgx_trusted_tls {
     where
         S: rustls::Session,
     {
-        pub fn new_client_with_stream(
-            stream: rustls::StreamOwned<rustls::ClientSession, std::net::TcpStream>,
-        ) -> SgxTrustedTlsTransport<rustls::ClientSession> {
-            SgxTrustedTlsTransport::<rustls::ClientSession> { stream }
-        }
-
-        pub fn new_server_with_stream(
-            stream: rustls::StreamOwned<rustls::ServerSession, std::net::TcpStream>,
-        ) -> SgxTrustedTlsTransport<rustls::ServerSession> {
-            SgxTrustedTlsTransport::<rustls::ServerSession> { stream }
+        pub fn new(
+            stream: rustls::StreamOwned<S, std::net::TcpStream>,
+        ) -> SgxTrustedTlsTransport<S> {
+            SgxTrustedTlsTransport::<S> { stream }
         }
     }
 
@@ -69,7 +63,7 @@ mod sgx_trusted_tls {
             U: Serialize + std::fmt::Debug,
             V: for<'de> Deserialize<'de> + std::fmt::Debug,
         {
-            let mut protocol = protocol::JsonProtocol::new(self);
+            let mut protocol = protocol::JsonProtocol::new(&mut self.stream);
             protocol.write_message(request)?;
             protocol.read_message()
         }
@@ -85,7 +79,7 @@ mod sgx_trusted_tls {
             V: for<'de> Deserialize<'de> + std::fmt::Debug,
             X: TeaclaveService<V, U>,
         {
-            let mut protocol = protocol::JsonProtocol::new(self);
+            let mut protocol = protocol::JsonProtocol::new(&mut self.stream);
 
             loop {
                 debug!("read_message");
@@ -102,28 +96,6 @@ mod sgx_trusted_tls {
                     }
                 };
             }
-        }
-    }
-
-    impl<S> std::io::Read for SgxTrustedTlsTransport<S>
-    where
-        S: rustls::Session,
-    {
-        fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-            self.stream.read(buf)
-        }
-    }
-
-    impl<S> std::io::Write for SgxTrustedTlsTransport<S>
-    where
-        S: rustls::Session,
-    {
-        fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-            self.stream.write(buf)
-        }
-
-        fn flush(&mut self) -> std::io::Result<()> {
-            self.stream.flush()
         }
     }
 }
