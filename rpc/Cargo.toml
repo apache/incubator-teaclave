@@ -11,7 +11,6 @@ default = []
 mesalock_sgx = [
     "sgx_tstd",
     "teaclave_types/mesalock_sgx",
-    "teaclave_attestation/mesalock_sgx",
 ]
 
 [dependencies]
@@ -25,7 +24,6 @@ thiserror  = { version = "1.0.9" }
 threadpool = { version = "1.8.0" }
 webpki     = { version = "0.21.0" }
 
-teaclave_attestation = { path = "../attestation" }
 teaclave_types       = { path = "../types" }
 
 sgx_tstd = { version = "1.1.0", features = ["net", "backtrace"], optional = true }
