@@ -50,10 +50,10 @@ pub struct FinalizeEnclaveInput;
 pub struct FinalizeEnclaveOutput;
 
 #[derive(Clone, Serialize, Deserialize, Debug, Default)]
-pub struct RunFunctionalTestInput;
+pub struct RunEnclaveUnitTestInput;
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct RunFunctionalTestOutput {
+#[derive(Clone, Serialize, Deserialize, Debug, Default)]
+pub struct RunEnclaveUnitTestOutput {
     pub failed_count: usize,
 }
 
@@ -66,9 +66,9 @@ pub struct ServeConnectionInput {
 #[derive(Clone, Serialize, Deserialize, Debug, Default)]
 pub struct ServeConnectionOutput;
 
-impl RunFunctionalTestOutput {
-    pub fn new(failed_count: usize) -> RunFunctionalTestOutput {
-        RunFunctionalTestOutput { failed_count }
+impl RunEnclaveUnitTestOutput {
+    pub fn new(failed_count: usize) -> RunEnclaveUnitTestOutput {
+        RunEnclaveUnitTestOutput { failed_count }
     }
 }
 

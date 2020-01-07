@@ -2,6 +2,7 @@
 
 members = [
   "services/frontend/enclave",
+  "testsuite/enclave_unit_test/enclave",
 ]
 
 exclude = [

@@ -335,7 +335,7 @@ steps:
   commands:
   - . /root/.cargo/env
   - mkdir -p build
-  - cd build && cmake ..
+  - cd build && cmake -DTEST_MODE=ON ..
 - name: check
   image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
   commands:

@@ -12,6 +12,7 @@ mesalock_sgx = [
     "sgx_tstd",
     "teaclave_types/mesalock_sgx",
 ]
+enclave_unit_test = []
 
 [dependencies]
 serde        = { version = "1.0.92" }

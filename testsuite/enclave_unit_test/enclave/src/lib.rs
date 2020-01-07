@@ -25,51 +25,24 @@ extern crate log;
 use std::prelude::v1::*;
 
 use anyhow::Result;
+use teaclave_types;
 
+use teaclave_frontend_service_enclave;
 use teaclave_ipc::protos::ecall::{
     FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
-    StartServiceInput, StartServiceOutput,
+    RunEnclaveUnitTestInput, RunEnclaveUnitTestOutput,
 };
 use teaclave_ipc::protos::ECallCommand;
-
 use teaclave_ipc::{handle_ecall, register_ecall_handler};
-
-use teaclave_service_config as config;
 use teaclave_service_enclave_utils::ServiceEnclave;
 
-use teaclave_attestation::RemoteAttestation;
-use teaclave_proto::teaclave_frontend::{TeaclaveFrontendRequest, TeaclaveFrontendResponse};
-use teaclave_rpc::config::SgxTrustedTlsServerConfig;
-use teaclave_rpc::server::SgxTrustedTlsServer;
-
-mod service;
-
 #[handle_ecall]
-fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> {
-    debug!("handle_start_service");
-    let listener = std::net::TcpListener::new(args.fd)?;
-    let attestation = RemoteAttestation::generate_and_endorse(
-        &config::runtime_config().env.ias_key,
-        &config::runtime_config().env.ias_spid,
-    )
-    .unwrap();
-    let config = SgxTrustedTlsServerConfig::new_without_verifier(
-        &attestation.cert,
-        &attestation.private_key,
-    )
-    .unwrap();
-
-    let mut server = SgxTrustedTlsServer::<TeaclaveFrontendResponse, TeaclaveFrontendRequest>::new(
-        listener, &config,
-    );
-    match server.start(service::TeaclaveFrontendService) {
-        Ok(_) => (),
-        Err(e) => {
-            error!("Service exit, error: {}.", e);
-        }
-    }
-
-    Ok(StartServiceOutput::default())
+fn handle_run_enclave_unit_test(
+    _args: &RunEnclaveUnitTestInput,
+) -> Result<RunEnclaveUnitTestOutput> {
+    let mut failed_count = 0;
+    failed_count += teaclave_frontend_service_enclave::tests::run_tests();
+    Ok(RunEnclaveUnitTestOutput { failed_count })
 }
 
 #[handle_ecall]
@@ -86,20 +59,7 @@ fn handle_finalize_enclave(_args: &FinalizeEnclaveInput) -> Result<FinalizeEncla
 
 register_ecall_handler!(
     type ECallCommand,
-    (ECallCommand::StartService, StartServiceInput, StartServiceOutput),
+    (ECallCommand::RunEnclaveUnitTest, RunEnclaveUnitTestInput, RunEnclaveUnitTestOutput),
     (ECallCommand::InitEnclave, InitEnclaveInput, InitEnclaveOutput),
     (ECallCommand::FinalizeEnclave, FinalizeEnclaveInput, FinalizeEnclaveOutput),
 );
-
-#[cfg(all(test_mode, feature = "enclave_unit_test", feature = "mesalock_sgx"))]
-pub mod tests {
-    use super::*;
-
-    pub fn run_tests() -> usize {
-        let mut nfailed = 0;
-
-        nfailed += service::tests::run_service_tests();
-
-        nfailed
-    }
-}
