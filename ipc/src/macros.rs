@@ -79,7 +79,8 @@ macro_rules! register_ecall_handler {
             teaclave_ipc::channel::ECallReceiver::dispatch(input, instance)
         }
 
-        /// The actual ecall funcation defined in .edl.
+        /// The actual ecall function defined in .edl.
+        #[cfg(not(feature="enclave_unit_test"))]
         #[allow(clippy::not_unsafe_ptr_arg_deref)]
         #[no_mangle]
         pub extern "C" fn ecall_ipc_entry_point(

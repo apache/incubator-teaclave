@@ -15,20 +15,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#[macro_use]
-extern crate log;
-
-use teaclave_ipc::protos::ecall::{StartServiceInput, StartServiceOutput};
-use teaclave_ipc::protos::ECallCommand;
-
 use anyhow;
-use std::net::TcpListener;
-use std::os::unix::io::IntoRawFd;
-
 use std::sync::Arc;
 use teaclave_binder::TeeBinder;
+use teaclave_ipc::protos::ecall::{RunEnclaveUnitTestInput, RunEnclaveUnitTestOutput};
+use teaclave_ipc::protos::ECallCommand;
 use teaclave_service_app_utils::ServiceEnclaveBuilder;
-use teaclave_service_config;
 
 fn main() -> anyhow::Result<()> {
     let tee = ServiceEnclaveBuilder::init_tee_binder(env!("CARGO_PKG_NAME"))?;
@@ -37,20 +29,18 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn start_enclave_service(tee: Arc<TeeBinder>) -> anyhow::Result<()> {
-    info!("Start enclave service");
-    let config = teaclave_service_config::External::teaclave_frontend();
-    let listener = TcpListener::bind(config.addr)?;
-    let fd = listener.into_raw_fd();
-    let input = StartServiceInput { fd };
-    let cmd = ECallCommand::StartService;
-    let _ = tee.invoke::<StartServiceInput, StartServiceOutput>(cmd.into(), input);
+fn start_enclave_unit_test_driver(tee: Arc<TeeBinder>) -> anyhow::Result<()> {
+    let cmd = ECallCommand::RunEnclaveUnitTest;
+    let _ = tee.invoke::<RunEnclaveUnitTestInput, RunEnclaveUnitTestOutput>(
+        cmd.into(),
+        RunEnclaveUnitTestInput,
+    );
 
     Ok(())
 }
 
 fn run(tee: Arc<TeeBinder>) -> anyhow::Result<()> {
-    start_enclave_service(tee)?;
+    start_enclave_unit_test_driver(tee)?;
 
     Ok(())
 }
