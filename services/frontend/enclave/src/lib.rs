@@ -94,12 +94,9 @@ register_ecall_handler!(
 #[cfg(all(test_mode, feature = "enclave_unit_test", feature = "mesalock_sgx"))]
 pub mod tests {
     use super::*;
+    use sgx_tunittest::*;
 
     pub fn run_tests() -> usize {
-        let mut nfailed = 0;
-
-        nfailed += service::tests::run_service_tests();
-
-        nfailed
+        rsgx_unit_tests!(service::tests::test_user_login)
     }
 }

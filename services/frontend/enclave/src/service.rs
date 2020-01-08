@@ -41,15 +41,8 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
 #[cfg(all(test_mode, feature = "enclave_unit_test", feature = "mesalock_sgx"))]
 pub mod tests {
     use super::*;
-    use sgx_tunittest::*;
 
-    pub fn run_service_tests() -> usize {
-        let nfailed = rsgx_unit_tests!(test_user_login,);
-
-        nfailed
-    }
-
-    fn test_user_login() {
+    pub fn test_user_login() {
         let request = UserLoginRequest {
             id: "test_id".to_string(),
             password: "test_password".to_string(),

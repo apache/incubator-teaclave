@@ -12,7 +12,7 @@ mesalock_sgx = [
     "sgx_tstd",
     "teaclave_service_config/mesalock_sgx",
 ]
-cov = ["sgx_cov"]
+cov = ["sgx_cov", "sgx_trts"]
 
 [dependencies]
 anyhow     = { version = "1.0.26" }
@@ -23,4 +23,5 @@ teaclave_service_config                   = { path = "../service_config" }
 teaclave_service_enclave_utils_proc_macro = { path = "./proc_macro" }
 
 sgx_cov  = { version = "1.1.0", optional = true }
+sgx_trts = { version = "1.1.0", optional = true }
 sgx_tstd = { version = "1.1.0", features = ["net", "backtrace"], optional = true }
