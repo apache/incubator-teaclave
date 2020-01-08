@@ -38,7 +38,7 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
     }
 }
 
-#[cfg(all(test_mode, feature = "enclave_unit_test", feature = "mesalock_sgx"))]
+#[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
 
