@@ -3,13 +3,21 @@
 #[macro_use]
 extern crate sgx_tstd as std;
 
-use anyhow::{self, Result};
+use anyhow::{anyhow, Result};
 use teaclave_service_config as config;
-pub use teaclave_service_enclave_utils_proc_macro::teaclave_service;
 
 use log::debug;
 use log::error;
 use std::backtrace;
+
+#[cfg(feature = "cov")]
+use sgx_trts::global_dtors_object;
+#[cfg(feature = "cov")]
+global_dtors_object! {
+    SGX_COV_FINALIZE, sgx_cov_exit = {
+        sgx_cov::cov_writeout();
+    }
+}
 
 pub struct ServiceEnclave;
 
@@ -23,22 +31,21 @@ impl ServiceEnclave {
             .is_err()
         {
             error!("Cannot enable backtrace");
-            return Err(anyhow::anyhow!("ecall error"));
+            return Err(anyhow!("ecall error"));
         }
         if !config::is_runtime_config_initialized() {
             error!("Runtime config is not initialized");
-            return Err(anyhow::anyhow!("ecall error"));
+            return Err(anyhow!("ecall error"));
         }
 
         Ok(())
     }
 
     pub fn finalize() -> Result<()> {
-        debug!("Enclave finalizing...");
-
-        #[cfg(feature = "cov")]
-        sgx_cov::cov_writeout();
+        debug!("Enclave finalizing");
 
         Ok(())
     }
 }
+
+pub use teaclave_service_enclave_utils_proc_macro::teaclave_service;

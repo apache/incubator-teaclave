@@ -23,13 +23,15 @@ mesalock_sgx = [
   "teaclave_frontend_service_enclave/mesalock_sgx",
   "teaclave_frontend_service_enclave/enclave_unit_test"
 ]
-cov = ["sgx_cov"]
+cov = ["teaclave_service_enclave_utils/cov"]
 
 [dependencies]
 log         = { version = "0.4.6" }
 anyhow      = { version = "1.0.26" }
 serde       = { version = "1.0.92" }
 thiserror   = { version = "1.0.9" }
+
+teaclave_frontend_service_enclave      = { path = "../../../services/frontend/enclave" }
 
 teaclave_attestation           = { path = "../../../attestation" }
 teaclave_config                = { path = "../../../config" }
@@ -39,8 +41,5 @@ teaclave_service_config        = { path = "../../../utils/service_config" }
 teaclave_service_enclave_utils = { path = "../../../utils/service_enclave_utils" }
 teaclave_types                 = { path = "../../../types" }
 
-teaclave_frontend_service_enclave      = { path = "../../../services/frontend/enclave" }
-
-sgx_cov   = { version = "1.1.0", optional = true }
 sgx_tstd  = { version = "1.1.0", features = ["net", "thread", "backtrace"], optional = true }
 sgx_types = { version = "1.1.0" }

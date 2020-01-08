@@ -22,7 +22,7 @@ mesalock_sgx = [
   "teaclave_service_enclave_utils/mesalock_sgx",
   "teaclave_types/mesalock_sgx",
 ]
-cov = ["sgx_cov"]
+cov = ["teaclave_service_enclave_utils/cov"]
 enclave_unit_test = ["teaclave_ipc/enclave_unit_test", "sgx_tunittest"]
 
 [dependencies]
@@ -40,7 +40,6 @@ teaclave_service_config        = { path = "../../../utils/service_config" }
 teaclave_service_enclave_utils = { path = "../../../utils/service_enclave_utils" }
 teaclave_types                 = { path = "../../../types" }
 
-sgx_cov       = { version = "1.1.0", optional = true }
 sgx_tstd      = { version = "1.1.0", features = ["net", "thread", "backtrace"], optional = true }
 sgx_tunittest = { version = "1.1.0", optional = true }
 sgx_types     = { version = "1.1.0" }
