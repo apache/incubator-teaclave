@@ -1,5 +1,5 @@
 [package]
-name = "enclave_unit_test_enclave"
+name = "teaclave_enclave_unit_test_enclave"
 version = "0.1.0"
 authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
 description = "Enclave Unit Test"
@@ -7,7 +7,7 @@ license = "Apache-2.0"
 edition = "2018"
 
 [lib]
-name = "enclave_unit_test_enclave"
+name = "teaclave_enclave_unit_test_enclave"
 crate-type = ["staticlib"]
 
 [features]

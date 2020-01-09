@@ -3,6 +3,7 @@
 members = [
   "services/authorization/app",
   "testsuite/enclave_unit_test/app",
+  "testsuite/service_functional_test/app",
 ]
 
 exclude = [

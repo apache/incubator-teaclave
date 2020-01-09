@@ -25,11 +25,11 @@ where
     where
         V: for<'de> Deserialize<'de> + std::fmt::Debug,
     {
+        debug!("read_message");
         let mut header = [0u8; 8];
 
         self.transport.read_exact(&mut header)?;
         let buf_len = u64::from_be(unsafe { transmute::<[u8; 8], u64>(header) });
-        debug!("buf_len: {}", buf_len);
 
         let mut recv_buf: Vec<u8> = vec![0u8; buf_len as usize];
         self.transport.read_exact(&mut recv_buf)?;
@@ -43,22 +43,7 @@ where
     where
         U: Serialize + std::fmt::Debug,
     {
-        let message_vec = serde_json::to_vec(&message)?;
-
-        let buf_len = message_vec.len() as u64;
-        let header = unsafe { transmute::<u64, [u8; 8]>(buf_len.to_be()) };
-
-        self.transport.write(&header)?;
-        self.transport.write_all(&message_vec)?;
-        self.transport.flush()?;
-
-        Ok(())
-    }
-
-    pub fn write_error<W>(&mut self, message: W) -> Result<()>
-    where
-        W: Serialize + std::fmt::Debug,
-    {
+        debug!("write_message");
         let message_vec = serde_json::to_vec(&message)?;
 
         let buf_len = message_vec.len() as u64;

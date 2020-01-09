@@ -8,6 +8,7 @@ cfg_if! {
 
 #[cfg(feature = "mesalock_sgx")]
 mod sgx_trusted_tls {
+    use crate::config::SgxTrustedTlsClientConfig;
     use crate::transport::{ClientTransport, SgxTrustedTlsTransport};
     use anyhow::Result;
     use serde::{Deserialize, Serialize};
@@ -26,14 +27,21 @@ mod sgx_trusted_tls {
         U: Serialize + std::fmt::Debug,
         V: for<'de> Deserialize<'de> + std::fmt::Debug,
     {
-        pub fn new(
-            stream: rustls::StreamOwned<rustls::ClientSession, std::net::TcpStream>,
-        ) -> SgxTrustedTlsChannel<U, V> {
-            let transport = SgxTrustedTlsTransport::new(stream);
-            Self {
+        pub fn new<A: std::net::ToSocketAddrs>(
+            addr: A,
+            hostname: &str,
+            client_config: &SgxTrustedTlsClientConfig,
+        ) -> Result<SgxTrustedTlsChannel<U, V>> {
+            let stream = std::net::TcpStream::connect(addr)?;
+            let hostname = webpki::DNSNameRef::try_from_ascii_str(hostname)?;
+            let session = rustls::ClientSession::new(&client_config.config, hostname);
+            let tls_stream = rustls::StreamOwned::new(session, stream);
+            let transport = SgxTrustedTlsTransport::new(tls_stream);
+
+            Ok(Self {
                 transport,
                 maker: std::marker::PhantomData::<(U, V)>,
-            }
+            })
         }
 
         pub fn invoke(&mut self, input: U) -> Result<V> {
