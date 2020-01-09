@@ -27,6 +27,9 @@ pub struct SgxTrustedTlsClientConfig {
 struct NoServerAuth;
 
 impl NoServerAuth {
+    // Allow new_ret_no_self, make it consistent with rustls definition of
+    // `NoClientAuth::new()`.
+    #[allow(clippy::new_ret_no_self)]
     pub fn new() -> Arc<dyn rustls::ServerCertVerifier> {
         Arc::new(NoServerAuth)
     }
