@@ -1,6 +1,6 @@
 use std::prelude::v1::*;
-use teaclave_proto::teaclave_frontend::{
-    self, TeaclaveFrontend, UserLoginRequest, UserLoginResponse,
+use teaclave_proto::teaclave_authorization_service::{
+    self, TeaclaveAuthorization, UserLoginRequest, UserLoginResponse,
 };
 use teaclave_service_enclave_utils::teaclave_service;
 
@@ -11,25 +11,25 @@ use thiserror::Error;
 type Result<T> = std::result::Result<T, TeaclaveServiceError>;
 
 #[derive(Error, Debug)]
-pub enum TeaclaveFrontendError {
+pub enum TeaclaveAuthorizationError {
     #[error("permission denied")]
     PermissionDenied,
 }
 
-impl From<TeaclaveFrontendError> for TeaclaveServiceError {
-    fn from(error: TeaclaveFrontendError) -> Self {
+impl From<TeaclaveAuthorizationError> for TeaclaveServiceError {
+    fn from(error: TeaclaveAuthorizationError) -> Self {
         TeaclaveServiceError::RequestError(error.to_string())
     }
 }
 
-#[teaclave_service(teaclave_frontend, TeaclaveFrontend, TeaclaveFrontendError)]
+#[teaclave_service(teaclave_authorization_service, TeaclaveAuthorization, TeaclaveAuthorizationError)]
 #[derive(Copy, Clone)]
-pub(crate) struct TeaclaveFrontendService;
+pub(crate) struct TeaclaveAuthorizationService;
 
-impl TeaclaveFrontend for TeaclaveFrontendService {
+impl TeaclaveAuthorization for TeaclaveAuthorizationService {
     fn user_login(request: UserLoginRequest) -> Result<UserLoginResponse> {
         if request.id != "test_id" && request.password != "test_password" {
-            return Err(TeaclaveFrontendError::PermissionDenied.into());
+            return Err(TeaclaveAuthorizationError::PermissionDenied.into());
         }
         let response = UserLoginResponse {
             token: "test_token".to_string(),
@@ -47,6 +47,6 @@ pub mod tests {
             id: "test_id".to_string(),
             password: "test_password".to_string(),
         };
-        assert!(TeaclaveFrontendService::user_login(request).is_ok());
+        assert!(TeaclaveAuthorizationService::user_login(request).is_ok());
     }
 }

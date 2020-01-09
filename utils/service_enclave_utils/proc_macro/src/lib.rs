@@ -9,7 +9,7 @@ use proc_macro::TokenStream;
 #[proc_macro_attribute]
 pub fn teaclave_service(attr: TokenStream, input: TokenStream) -> TokenStream {
     let attr_str = attr.to_string();
-    let splits: Vec<&str> = attr_str.split(", ").collect();
+    let splits: Vec<&str> = attr_str.split(",").map(|s| s.trim()).collect();
     let crate_name = Ident::new(splits[0], Span::call_site());
     let trait_name = splits[1];
     let trait_name_ident = Ident::new(trait_name, Span::call_site());

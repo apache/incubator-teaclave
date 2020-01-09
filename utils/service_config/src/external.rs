@@ -22,11 +22,20 @@ use super::{InboundDesc, OutboundDesc, TargetDesc};
 
 pub struct External;
 impl External {
-    pub fn teaclave_frontend() -> ServiceConfig {
+    pub fn frontend() -> ServiceConfig {
         ServiceConfig::new(
             runtime_config()
                 .api_endpoints
-                .teaclave_frontend
+                .frontend
+                .listen_address,
+            InboundDesc::External,
+        )
+    }
+    pub fn authorization() -> ServiceConfig {
+        ServiceConfig::new(
+            runtime_config()
+                .api_endpoints
+                .authorization
                 .listen_address,
             InboundDesc::External,
         )

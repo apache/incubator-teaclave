@@ -1,0 +1,7 @@
+syntax = "proto3";
+package teaclave_common_proto;
+
+message UserCredential {
+  string id = 1;
+  string token = 2;
+}

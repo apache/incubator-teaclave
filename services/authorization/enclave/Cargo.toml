@@ -1,13 +1,13 @@
 [package]
-name = "teaclave_frontend_service_enclave"
+name = "teaclave_authorization_service_enclave"
 version = "0.1.0"
 authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
-description = "Teaclave Frontend Service enclave"
+description = "Teaclave Authorization Service enclave"
 license = "Apache-2.0"
 edition = "2018"
 
 [lib]
-name = "teaclave_frontend_service_enclave"
+name = "teaclave_authorization_service_enclave"
 crate-type = ["staticlib", "rlib"]
 
 [features]
