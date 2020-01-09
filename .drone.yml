@@ -17,7 +17,6 @@ steps:
   image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
   commands:
   - . /root/.cargo/env
-  - export RUSTFLAGS="-D warnings"
   - cd build && make VERBOSE=1 -j2
 # - name: sgx-test
 #   image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
@@ -68,7 +67,6 @@ steps:
   image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
   commands:
   - . /root/.cargo/env
-  - export RUSTFLAGS="-D warnings"
   - cd build && make VERBOSE=1 -j2
 # - name: sgx-test
 #   image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
@@ -119,7 +117,7 @@ steps:
   image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
   commands:
   - . /root/.cargo/env
-  - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DRUSTFLAGS="-D warnings" -DSGX_SIM_MODE=ON .. && make VERBOSE=1 -j2
+  - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DSGX_SIM_MODE=ON .. && make VERBOSE=1 -j2
 # - name: sgx-test
 #   image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
 #   commands:
@@ -150,7 +148,7 @@ steps:
   image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
   commands:
   - . /root/.cargo/env
-  - cd build && cmake -DRUSTFLAGS="-D warnings" -DSGX_SIM_MODE=ON .. && make VERBOSE=1 -j2
+  - cd build && cmake -DSGX_SIM_MODE=ON .. && make VERBOSE=1 -j2
 # - name: sgx-test
 #   image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
 #   commands:
@@ -181,7 +179,6 @@ steps:
   image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
   commands:
   - . /root/.cargo/env
-  - export RUSTFLAGS="-D warnings"
   - cd build && make VERBOSE=1 -j2
 # - name: sgx-test
 #   image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
@@ -232,7 +229,6 @@ steps:
   image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
   commands:
   - . /root/.cargo/env
-  - export RUSTFLAGS="-D warnings"
   - cd build && make VERBOSE=1 -j2
 # - name: sgx-test
 #   image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
@@ -283,7 +279,7 @@ steps:
   image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
   commands:
   - . /root/.cargo/env
-  - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DRUSTFLAGS="-D warnings" -DSGX_SIM_MODE=ON .. && make VERBOSE=1 -j2
+  - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DSGX_SIM_MODE=ON .. && make VERBOSE=1 -j2
 # - name: sgx-test
 #   image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
 #   commands:
@@ -314,7 +310,7 @@ steps:
   image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
   commands:
   - . /root/.cargo/env
-  - cd build && cmake -DRUSTFLAGS="-D warnings" -DSGX_SIM_MODE=ON -DTEST_MODE=ON .. && make VERBOSE=1 -j2
+  - cd build && cmake -DSGX_SIM_MODE=ON -DTEST_MODE=ON .. && make VERBOSE=1 -j2
 # - name: sgx-test
 #   image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
 #   commands:
@@ -335,7 +331,7 @@ steps:
   commands:
   - . /root/.cargo/env
   - mkdir -p build
-  - cd build && cmake -DTEST_MODE=ON ..
+  - cd build && cmake -DRUSTFLAGS="-D warnings" ..
 - name: check
   image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
   commands:
