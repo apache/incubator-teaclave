@@ -4,13 +4,13 @@ pub mod proto {
     #![allow(clippy::all)]
     include!(concat!(
         env!("OUT_DIR"),
-        "/teaclave_authorization_service_proto.rs"
+        "/teaclave_authentication_service_proto.rs"
     ));
 }
 
-pub use proto::TeaclaveAuthorization;
-pub use proto::TeaclaveAuthorizationRequest;
-pub use proto::TeaclaveAuthorizationResponse;
+pub use proto::TeaclaveAuthentication;
+pub use proto::TeaclaveAuthenticationRequest;
+pub use proto::TeaclaveAuthenticationResponse;
 
 #[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
 pub struct UserLoginRequest {

@@ -38,8 +38,8 @@ use teaclave_service_config as config;
 use teaclave_service_enclave_utils::ServiceEnclave;
 
 use teaclave_attestation::RemoteAttestation;
-use teaclave_proto::teaclave_authorization_service::{
-    TeaclaveAuthorizationRequest, TeaclaveAuthorizationResponse,
+use teaclave_proto::teaclave_authentication_service::{
+    TeaclaveAuthenticationRequest, TeaclaveAuthenticationResponse,
 };
 use teaclave_rpc::config::SgxTrustedTlsServerConfig;
 use teaclave_rpc::server::SgxTrustedTlsServer;
@@ -62,10 +62,10 @@ fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> 
     .unwrap();
 
     let mut server = SgxTrustedTlsServer::<
-        TeaclaveAuthorizationResponse,
-        TeaclaveAuthorizationRequest,
+        TeaclaveAuthenticationResponse,
+        TeaclaveAuthenticationRequest,
     >::new(listener, &config);
-    match server.start(service::TeaclaveAuthorizationService) {
+    match server.start(service::TeaclaveAuthenticationService) {
         Ok(_) => (),
         Err(e) => {
             error!("Service exit, error: {}.", e);

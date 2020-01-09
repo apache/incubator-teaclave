@@ -28,9 +28,9 @@ impl External {
             InboundDesc::External,
         )
     }
-    pub fn authorization() -> ServiceConfig {
+    pub fn authentication() -> ServiceConfig {
         ServiceConfig::new(
-            runtime_config().api_endpoints.authorization.listen_address,
+            runtime_config().api_endpoints.authentication.listen_address,
             InboundDesc::External,
         )
     }

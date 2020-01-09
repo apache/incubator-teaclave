@@ -1,7 +1,7 @@
 [workspace]
 
 members = [
-  "services/authorization/enclave",
+  "services/authentication/enclave",
   "testsuite/enclave_unit_test/enclave",
   "testsuite/service_functional_test/enclave",
 ]

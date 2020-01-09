@@ -27,7 +27,7 @@ use std::prelude::v1::*;
 use anyhow::Result;
 use teaclave_types;
 
-use teaclave_authorization_service_enclave;
+use teaclave_authentication_service_enclave;
 use teaclave_ipc::protos::ecall::{
     FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
     RunEnclaveUnitTestInput, RunEnclaveUnitTestOutput,
@@ -41,7 +41,7 @@ fn handle_run_enclave_unit_test(
     _args: &RunEnclaveUnitTestInput,
 ) -> Result<RunEnclaveUnitTestOutput> {
     let mut failed_count = 0;
-    failed_count += teaclave_authorization_service_enclave::tests::run_tests();
+    failed_count += teaclave_authentication_service_enclave::tests::run_tests();
     Ok(RunEnclaveUnitTestOutput { failed_count })
 }
 
