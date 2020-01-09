@@ -27,9 +27,9 @@ impl From<TeaclaveAuthorizationError> for TeaclaveServiceResponseError {
 pub(crate) struct TeaclaveAuthorizationService;
 
 impl TeaclaveAuthorization for TeaclaveAuthorizationService {
-    fn user_login(request: UserLoginRequest) -> TeaclaveServiceResponseResult<UserLoginResponse> {
+    fn user_login(_request: UserLoginRequest) -> TeaclaveServiceResponseResult<UserLoginResponse> {
         #[cfg(test_mode)]
-        return test_mode::mock_user_login(request);
+        return test_mode::mock_user_login(_request);
 
         Err(TeaclaveAuthorizationError::PermissionDenied.into())
     }
