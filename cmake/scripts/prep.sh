@@ -21,6 +21,8 @@ mkdir -p ${MESATEE_OUT_DIR} ${MESATEE_TARGET_DIR} ${MESATEE_SERVICE_INSTALL_DIR}
 cp -RT ${CMAKE_SOURCE_DIR}/keys/auditors/ ${MESATEE_AUDITORS_DIR}/
 cp ${CMAKE_SOURCE_DIR}/config/runtime.config.toml ${MESATEE_SERVICE_INSTALL_DIR}
 cp ${CMAKE_SOURCE_DIR}/config/runtime.config.toml ${MESATEE_TEST_INSTALL_DIR}
+cp -r ${CMAKE_SOURCE_DIR}/tests/test_cases/ ${MESATEE_SERVICE_INSTALL_DIR}
+cp -r ${CMAKE_SOURCE_DIR}/tests/test_cases/ ${MESATEE_TEST_INSTALL_DIR}
 # create the following symlinks to make remapped paths accessible and avoid repeated building
 mkdir -p /tmp/mesatee_symlinks
 ln -snf ${HOME}/.cargo /tmp/mesatee_symlinks/cargo_home

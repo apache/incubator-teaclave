@@ -15,13 +15,16 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#![cfg_attr(feature = "mesalock_sgx", no_std)]
 #[cfg(feature = "mesalock_sgx")]
-extern crate sgx_tstd as std;
+use std::prelude::v1::*;
 
-pub mod teaclave_authentication_service;
-pub mod teaclave_common;
-pub mod teaclave_database_service;
-pub mod teaclave_execution_service;
+use std::io;
 
-pub use crate::teaclave_common::proto as teaclave_common_proto;
+pub trait TeaclaveRuntime {
+    fn open_input(&self, identifier: &str) -> anyhow::Result<Box<dyn io::Read>>;
+    fn create_output(&self, identifier: &str) -> anyhow::Result<Box<dyn io::Write>>;
+    // TODO: add more constrained capabilities
+}
+
+mod default;
+pub use default::DefaultRuntime;

@@ -1,0 +1,27 @@
+syntax = "proto3";
+package teaclave_execution_service_proto;
+
+import "common.proto";
+
+message WorkerFileInfo {
+   string path = 1;
+   teaclave_common_proto.FileCryptoInfo crypto_info = 2;
+}
+
+message StagedFunctionExecuteRequest {
+  string runtime_name = 1;
+  string executor_type = 2;
+  string function_name = 3;
+  string function_payload = 4;
+  map<string, string> function_args = 11;
+  map<string, WorkerFileInfo> input_files = 21;
+  map<string, WorkerFileInfo> output_files = 22;
+}
+
+message StagedFunctionExecuteResponse {
+  string summary = 1;
+}
+
+service TeaclaveExecution {
+  rpc InvokeFunction(StagedFunctionExecuteRequest) returns (StagedFunctionExecuteResponse);
+}
