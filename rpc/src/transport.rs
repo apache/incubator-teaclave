@@ -32,7 +32,6 @@ mod sgx_trusted_tls {
     use crate::transport::{ClientTransport, ServerTransport};
     use crate::TeaclaveService;
     use anyhow::Result;
-    use log::debug;
     use rustls;
     use serde::{Deserialize, Serialize};
 
@@ -82,19 +81,9 @@ mod sgx_trusted_tls {
             let mut protocol = protocol::JsonProtocol::new(&mut self.stream);
 
             loop {
-                debug!("read_message");
                 let request: V = protocol.read_message()?;
-                debug!("request: {:?}", request);
-                match service.handle_request(request) {
-                    Ok(response) => {
-                        debug!("response: {:?}", response);
-                        protocol.write_message(response)?;
-                    }
-                    Err(e) => {
-                        debug!("write_error: {:?}", e);
-                        protocol.write_error(e)?;
-                    }
-                };
+                let response = service.handle_request(request);
+                protocol.write_message(response)?;
             }
         }
     }

@@ -2,7 +2,10 @@ use anyhow::{Error, Result};
 
 pub mod proto {
     #![allow(clippy::all)]
-    include!(concat!(env!("OUT_DIR"), "/teaclave_authorization_service_proto.rs"));
+    include!(concat!(
+        env!("OUT_DIR"),
+        "/teaclave_authorization_service_proto.rs"
+    ));
 }
 
 pub use proto::TeaclaveAuthorization;

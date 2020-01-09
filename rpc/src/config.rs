@@ -19,3 +19,43 @@ impl SgxTrustedTlsServerConfig {
         })
     }
 }
+
+pub struct SgxTrustedTlsClientConfig {
+    pub config: Arc<rustls::ClientConfig>,
+}
+
+struct NoServerAuth;
+
+impl NoServerAuth {
+    pub fn new() -> Arc<dyn rustls::ServerCertVerifier> {
+        Arc::new(NoServerAuth)
+    }
+}
+
+impl rustls::ServerCertVerifier for NoServerAuth {
+    fn verify_server_cert(
+        &self,
+        _roots: &rustls::RootCertStore,
+        _certs: &[rustls::Certificate],
+        _hostname: webpki::DNSNameRef<'_>,
+        _ocsp: &[u8],
+    ) -> Result<rustls::ServerCertVerified, rustls::TLSError> {
+        Ok(rustls::ServerCertVerified::assertion())
+    }
+}
+
+impl SgxTrustedTlsClientConfig {
+    pub fn new_without_verifier() -> Self {
+        let mut config = rustls::ClientConfig::new();
+
+        config
+            .dangerous()
+            .set_certificate_verifier(NoServerAuth::new());
+        config.versions.clear();
+        config.versions.push(rustls::ProtocolVersion::TLSv1_2);
+
+        Self {
+            config: Arc::new(config),
+        }
+    }
+}

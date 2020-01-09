@@ -4,14 +4,14 @@
 extern crate sgx_tstd as std;
 
 use serde::{Deserialize, Serialize};
-use teaclave_types::TeaclaveServiceError;
+use teaclave_types::TeaclaveServiceResponseError;
 
 pub trait TeaclaveService<V, U>
 where
     U: Serialize + std::fmt::Debug,
     V: for<'de> Deserialize<'de> + std::fmt::Debug,
 {
-    fn handle_request(&self, request: V) -> std::result::Result<U, TeaclaveServiceError>;
+    fn handle_request(&self, request: V) -> std::result::Result<U, TeaclaveServiceResponseError>;
 }
 
 pub mod channel;

@@ -125,9 +125,11 @@ impl EnclaveInfo {
 }
 
 #[derive(Error, Debug, Serialize, Deserialize)]
-pub enum TeaclaveServiceError {
+pub enum TeaclaveServiceResponseError {
     #[error("Request error: {0}")]
     RequestError(String),
     #[error("Internal error: {0}")]
     InternalError(String),
 }
+
+pub type TeaclaveServiceResponseResult<T> = std::result::Result<T, TeaclaveServiceResponseError>;

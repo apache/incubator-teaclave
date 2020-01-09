@@ -1,10 +1,10 @@
 use anyhow;
 use teaclave_rpc;
 use core::convert::TryFrom;
-use teaclave_types::TeaclaveServiceError;
+use teaclave_types::TeaclaveServiceResponseError;
 use std::prelude::v1::*;
 
-type Result<T> = std::result::Result<T, TeaclaveServiceError>;
+type Result<T> = std::result::Result<T, TeaclaveServiceResponseError>;
 
 #[derive(Clone, serde_derive::Serialize, serde_derive::Deserialize, Debug)]
 #[serde(tag = "type", rename_all = "snake_case")]
@@ -31,7 +31,7 @@ pub trait {{ service.proto_name }} {
             {% for m in service.methods %}
             {{ service.proto_name }}Request::{{ m.proto_name }}(request) => {
                 let request = super::{{ m.input_type }}::try_from(request)
-                    .map_err(|_| TeaclaveServiceError::InternalError("internal".to_string()))?;
+                    .map_err(|_| TeaclaveServiceResponseError::InternalError("internal".to_string()))?;
                 let response = Self::{{ m.name }}(request)?;
                 let response = {{ m.output_type }}::from(response);
                 Ok(response).map({{ service.proto_name }}Response::{{ m.proto_name }})
@@ -42,23 +42,29 @@ pub trait {{ service.proto_name }} {
 }
 
 pub struct {{ service.proto_name }}Client {
-    channel: teaclave_rpc::channel::SgxTrustedTlsChannel<{{ service.proto_name }}Request, {{ service.proto_name }}Response>,
+    channel: teaclave_rpc::channel::SgxTrustedTlsChannel<{{ service.proto_name }}Request, teaclave_types::TeaclaveServiceResponseResult<{{ service.proto_name }}Response>>,
 }
 
 impl {{ service.proto_name }}Client {
-    pub fn new(channel: teaclave_rpc::channel::SgxTrustedTlsChannel<{{ service.proto_name }}Request, {{ service.proto_name }}Response>) -> anyhow::Result<Self> {
+    pub fn new(channel: teaclave_rpc::channel::SgxTrustedTlsChannel<{{ service.proto_name }}Request, teaclave_types::TeaclaveServiceResponseResult<{{ service.proto_name }}Response>>) -> anyhow::Result<Self> {
         Ok(Self { channel })
     }
 
     {% for m in service.methods %}
-    pub fn {{ m.name }}(&mut self, request: {{ m.input_type }}) -> Result<{{ m.output_type }}> {
+    pub fn {{ m.name }}(&mut self, request: {{ m.input_type }}) -> teaclave_types::TeaclaveServiceResponseResult<{{ m.output_type }}> {
         let request = {{ service.proto_name }}Request::UserLogin(request);
-        let response = self.channel.invoke(request)
-            .map_err(|_| TeaclaveServiceError::InternalError("internal".to_string()))?;
+        let response = match self.channel.invoke(request) {
+            Ok(response_result) => {
+                response_result
+            },
+            Err(_) => {
+                return Err(TeaclaveServiceResponseError::InternalError("internal".to_string()));
+            }
+        }?;
         match response {
             {{ service.proto_name }}Response::{{ m.proto_name }}(response) => Ok(response),
             {% if service.methods.len() > 1 -%}
-            _ => Err(TeaclaveServiceError::InternalError("internal".to_string()),
+            _ => Err(TeaclaveServiceResponseError::InternalError("internal".to_string()),
             {% endif %}
         }
     }

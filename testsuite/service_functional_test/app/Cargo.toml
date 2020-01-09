@@ -1,5 +1,5 @@
 [package]
-name = "teaclave_enclave_unit_test"
+name = "teaclave_service_functional_test"
 version = "0.1.0"
 authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
 description = "Enclave test driver"

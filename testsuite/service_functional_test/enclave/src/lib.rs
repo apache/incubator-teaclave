@@ -25,54 +25,25 @@ extern crate log;
 use std::prelude::v1::*;
 
 use anyhow::Result;
+use teaclave_types;
 
 use teaclave_ipc::protos::ecall::{
     FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
-    StartServiceInput, StartServiceOutput,
+    RunServiceFunctionalTestInput, RunServiceFunctionalTestOutput,
 };
 use teaclave_ipc::protos::ECallCommand;
-
 use teaclave_ipc::{handle_ecall, register_ecall_handler};
-
-use teaclave_service_config as config;
 use teaclave_service_enclave_utils::ServiceEnclave;
 
-use teaclave_attestation::RemoteAttestation;
-use teaclave_proto::teaclave_authorization_service::{
-    TeaclaveAuthorizationRequest, TeaclaveAuthorizationResponse,
-};
-use teaclave_rpc::config::SgxTrustedTlsServerConfig;
-use teaclave_rpc::server::SgxTrustedTlsServer;
-
-mod service;
+mod teaclave_authorization_service;
 
 #[handle_ecall]
-fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> {
-    debug!("handle_start_service");
-    let listener = std::net::TcpListener::new(args.fd)?;
-    let attestation = RemoteAttestation::generate_and_endorse(
-        &config::runtime_config().env.ias_key,
-        &config::runtime_config().env.ias_spid,
-    )
-    .unwrap();
-    let config = SgxTrustedTlsServerConfig::new_without_verifier(
-        &attestation.cert,
-        &attestation.private_key,
-    )
-    .unwrap();
+fn handle_run_enclave_unit_test(
+    _args: &RunServiceFunctionalTestInput,
+) -> Result<RunServiceFunctionalTestOutput> {
+    teaclave_authorization_service::run_functional_tests();
 
-    let mut server = SgxTrustedTlsServer::<
-        TeaclaveAuthorizationResponse,
-        TeaclaveAuthorizationRequest,
-    >::new(listener, &config);
-    match server.start(service::TeaclaveAuthorizationService) {
-        Ok(_) => (),
-        Err(e) => {
-            error!("Service exit, error: {}.", e);
-        }
-    }
-
-    Ok(StartServiceOutput::default())
+    Ok(RunServiceFunctionalTestOutput::default())
 }
 
 #[handle_ecall]
@@ -89,17 +60,7 @@ fn handle_finalize_enclave(_args: &FinalizeEnclaveInput) -> Result<FinalizeEncla
 
 register_ecall_handler!(
     type ECallCommand,
-    (ECallCommand::StartService, StartServiceInput, StartServiceOutput),
+    (ECallCommand::RunServiceFunctionalTest, RunServiceFunctionalTestInput, RunServiceFunctionalTestOutput),
     (ECallCommand::InitEnclave, InitEnclaveInput, InitEnclaveOutput),
     (ECallCommand::FinalizeEnclave, FinalizeEnclaveInput, FinalizeEnclaveOutput),
 );
-
-#[cfg(feature = "enclave_unit_test")]
-pub mod tests {
-    use super::*;
-    use sgx_tunittest::*;
-
-    pub fn run_tests() -> usize {
-        rsgx_unit_tests!(service::tests::test_user_login)
-    }
-}

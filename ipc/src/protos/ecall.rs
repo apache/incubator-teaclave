@@ -57,6 +57,12 @@ pub struct RunEnclaveUnitTestOutput {
     pub failed_count: usize,
 }
 
+#[derive(Clone, Serialize, Deserialize, Debug, Default)]
+pub struct RunServiceFunctionalTestInput;
+
+#[derive(Clone, Serialize, Deserialize, Debug, Default)]
+pub struct RunServiceFunctionalTestOutput;
+
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct ServeConnectionInput {
     pub socket_fd: c_int,
