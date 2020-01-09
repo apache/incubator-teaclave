@@ -1,5 +1,5 @@
 syntax = "proto3";
-package teaclave_frontend_proto;
+package teaclave_authorization_service_proto;
 
 message UserLoginRequest {
   string id = 1;
@@ -10,6 +10,6 @@ message UserLoginResponse {
   string token = 1;
 }
 
-service TeaclaveFrontend {
+service TeaclaveAuthorization {
   rpc UserLogin (UserLoginRequest) returns (UserLoginResponse);
 }

@@ -41,7 +41,8 @@ pub mod runtime_config {
 
     #[derive(Debug, Deserialize)]
     pub struct ApiEndpointsConfig {
-        pub teaclave_frontend: EndpointListenConfig,
+        pub frontend: EndpointListenConfig,
+        pub authorization: EndpointListenConfig,
         pub tms: EndpointListenConfig,
         pub tdfs: EndpointListenConfig,
         pub fns: EndpointListenAdvertisedConfig,

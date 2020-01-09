@@ -28,7 +28,8 @@
 #      └───────────────────────────────────────────────────┘
 
 [api_endpoints]
-teaclave_frontend = { listen_address = "0.0.0.0:7777" }
+authorization = { listen_address = "0.0.0.0:7776" }
+frontend      = { listen_address = "0.0.0.0:7777" }
 tms  = { listen_address = "0.0.0.0:5554" }
 tdfs = { listen_address = "0.0.0.0:5065" }
 fns  = { listen_address = "0.0.0.0:3444", advertised_address = "127.0.0.1:3444"}

@@ -19,4 +19,4 @@
 #[cfg(feature = "mesalock_sgx")]
 extern crate sgx_tstd as std;
 
-pub mod teaclave_frontend;
+pub mod teaclave_authorization_service;

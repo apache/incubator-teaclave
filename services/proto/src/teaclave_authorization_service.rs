@@ -2,12 +2,12 @@ use anyhow::{Error, Result};
 
 pub mod proto {
     #![allow(clippy::all)]
-    include!(concat!(env!("OUT_DIR"), "/teaclave_frontend_proto.rs"));
+    include!(concat!(env!("OUT_DIR"), "/teaclave_authorization_service_proto.rs"));
 }
 
-pub use proto::TeaclaveFrontend;
-pub use proto::TeaclaveFrontendRequest;
-pub use proto::TeaclaveFrontendResponse;
+pub use proto::TeaclaveAuthorization;
+pub use proto::TeaclaveAuthorizationRequest;
+pub use proto::TeaclaveAuthorizationResponse;
 
 #[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
 pub struct UserLoginRequest {

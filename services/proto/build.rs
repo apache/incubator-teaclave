@@ -34,9 +34,9 @@ fn main() {
             "./proto_gen/Cargo.toml",
             "--",
             "-p",
-            "src/proto/teaclave_frontend.proto",
+            "src/proto/teaclave_authorization_service.proto",
             "-i",
-            ".",
+            "src/proto",
             "-d",
             &out_dir,
         ])
