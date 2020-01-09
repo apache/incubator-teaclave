@@ -28,7 +28,7 @@
 #      └───────────────────────────────────────────────────┘
 
 [api_endpoints]
-authorization = { listen_address = "0.0.0.0:7776" }
+authentication = { listen_address = "0.0.0.0:7776" }
 frontend      = { listen_address = "0.0.0.0:7777" }
 tms  = { listen_address = "0.0.0.0:5554" }
 tdfs = { listen_address = "0.0.0.0:5065" }

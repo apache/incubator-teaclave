@@ -39,7 +39,7 @@ fn main() -> anyhow::Result<()> {
 
 fn start_enclave_service(tee: Arc<TeeBinder>) -> anyhow::Result<()> {
     info!("Start enclave service");
-    let config = teaclave_service_config::External::authorization();
+    let config = teaclave_service_config::External::authentication();
     let listener = TcpListener::bind(config.addr)?;
     let fd = listener.into_raw_fd();
     let input = StartServiceInput { fd };

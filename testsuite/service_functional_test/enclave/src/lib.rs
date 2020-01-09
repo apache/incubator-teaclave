@@ -35,13 +35,13 @@ use teaclave_ipc::protos::ECallCommand;
 use teaclave_ipc::{handle_ecall, register_ecall_handler};
 use teaclave_service_enclave_utils::ServiceEnclave;
 
-mod teaclave_authorization_service;
+mod teaclave_authentication_service;
 
 #[handle_ecall]
 fn handle_run_enclave_unit_test(
     _args: &RunServiceFunctionalTestInput,
 ) -> Result<RunServiceFunctionalTestOutput> {
-    teaclave_authorization_service::run_functional_tests();
+    teaclave_authentication_service::run_functional_tests();
 
     Ok(RunServiceFunctionalTestOutput::default())
 }
