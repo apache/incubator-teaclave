@@ -19,6 +19,7 @@ pub mod config;
 mod protocol;
 pub mod server;
 mod transport;
+mod utils;
 
 #[cfg(not(feature = "mesalock_sgx"))]
 #[cfg(test)]
