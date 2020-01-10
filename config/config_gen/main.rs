@@ -20,19 +20,32 @@ enum ConfigSource {
     Path(PathBuf),
 }
 
+fn display_pem_in_bytes(p: &Path) -> String {
+    let content = &fs::read(p).expect(&format!("Failed to read file: {}", p.display()));
+    let pem = pem::parse(content).expect("Cannot parse PEM file");
+    display_raw(&pem.contents)
+}
+
+fn display_raw(content: &[u8]) -> String {
+    let mut output = String::new();
+    output.push_str("&[");
+    for b in content {
+        output.push_str(&format!("{}, ", b));
+    }
+    output.push_str("]");
+
+    output
+}
+
 fn display_config_source(config: &ConfigSource) -> String {
     match config {
-        ConfigSource::Path(p) => {
-            let content = &fs::read(p).expect(&format!("Failed to read file: {}", p.display()));
-            let mut output = String::new();
-            output.push_str("&[");
-            for b in content {
-                output.push_str(&format!("{}, ", b));
+        ConfigSource::Path(p) => match p.extension().and_then(std::ffi::OsStr::to_str) {
+            Some("pem") => display_pem_in_bytes(p),
+            _ => {
+                let content = &fs::read(p).expect(&format!("Failed to read file: {}", p.display()));
+                display_raw(&content)
             }
-            output.push_str("]");
-
-            output
-        }
+        },
     }
 }
 

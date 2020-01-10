@@ -27,7 +27,6 @@ use rustls;
 use serde_json;
 use serde_json::Value;
 use std::convert::TryFrom;
-use std::io::BufReader;
 use std::time::*;
 
 #[cfg(feature = "mesalock_sgx")]
@@ -268,20 +267,20 @@ impl SgxQuote {
             .map_err(|_| CertVerificationError::InvalidCertFormat)?;
 
         // Verify if the signing cert is issued by Intel CA
-        let mut ias_ca_stripped = ias_report_ca_cert.to_vec();
-        ias_ca_stripped.retain(|&x| x != 0x0d && x != 0x0a);
-        let head_len = "-----BEGIN CERTIFICATE-----".len();
-        let tail_len = "-----END CERTIFICATE-----".len();
-        let full_len = ias_ca_stripped.len();
-        let ias_ca_core: &[u8] = &ias_ca_stripped[head_len..full_len - tail_len];
-        let ias_cert_dec = base64::decode_config(ias_ca_core, base64::STANDARD)
-            .map_err(|_| CertVerificationError::InvalidCertFormat)?;
+        // let mut ias_ca_stripped = ias_report_ca_cert.to_vec();
+        // ias_ca_stripped.retain(|&x| x != 0x0d && x != 0x0a);
+        // let head_len = "-----BEGIN CERTIFICATE-----".len();
+        // let tail_len = "-----END CERTIFICATE-----".len();
+        // let full_len = ias_ca_stripped.len();
+        // let ias_ca_core: &[u8] = &ias_ca_stripped[head_len..full_len - tail_len];
+        // let ias_cert_dec = base64::decode_config(ias_ca_core, base64::STANDARD)
+        //     .map_err(|_| CertVerificationError::InvalidCertFormat)?;
 
-        let mut ca_reader = BufReader::new(&ias_report_ca_cert[..]);
+        // let mut ca_reader = BufReader::new(ias_report_ca_cert);
 
         let mut root_store = rustls::RootCertStore::empty();
         root_store
-            .add_pem_file(&mut ca_reader)
+            .add(&rustls::Certificate(ias_report_ca_cert.to_vec()))
             .expect("Failed to add CA");
 
         let trust_anchors: Vec<webpki::TrustAnchor> = root_store
@@ -290,7 +289,7 @@ impl SgxQuote {
             .map(|cert| cert.to_trust_anchor())
             .collect();
 
-        let chain: Vec<&[u8]> = vec![&ias_cert_dec];
+        let chain: Vec<&[u8]> = vec![ias_report_ca_cert];
 
         let now_func = webpki::Time::try_from(SystemTime::now())
             .map_err(|_| CertVerificationError::WebpkiFailure)?;
