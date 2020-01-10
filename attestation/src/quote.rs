@@ -266,18 +266,6 @@ impl SgxQuote {
         let sig_cert = webpki::EndEntityCert::from(&sig_cert_dec)
             .map_err(|_| CertVerificationError::InvalidCertFormat)?;
 
-        // Verify if the signing cert is issued by Intel CA
-        // let mut ias_ca_stripped = ias_report_ca_cert.to_vec();
-        // ias_ca_stripped.retain(|&x| x != 0x0d && x != 0x0a);
-        // let head_len = "-----BEGIN CERTIFICATE-----".len();
-        // let tail_len = "-----END CERTIFICATE-----".len();
-        // let full_len = ias_ca_stripped.len();
-        // let ias_ca_core: &[u8] = &ias_ca_stripped[head_len..full_len - tail_len];
-        // let ias_cert_dec = base64::decode_config(ias_ca_core, base64::STANDARD)
-        //     .map_err(|_| CertVerificationError::InvalidCertFormat)?;
-
-        // let mut ca_reader = BufReader::new(ias_report_ca_cert);
-
         let mut root_store = rustls::RootCertStore::empty();
         root_store
             .add(&rustls::Certificate(ias_report_ca_cert.to_vec()))
