@@ -32,6 +32,7 @@ mod sgx_trusted_tls {
     use crate::transport::{ClientTransport, ServerTransport};
     use crate::TeaclaveService;
     use anyhow::Result;
+    use log::debug;
     use rustls;
     use serde::{Deserialize, Serialize};
 
@@ -64,7 +65,9 @@ mod sgx_trusted_tls {
         {
             let mut protocol = protocol::JsonProtocol::new(&mut self.stream);
             protocol.write_message(request)?;
-            protocol.read_message()
+            protocol
+                .read_message()
+                .map_err(|_| anyhow::anyhow!("InternalError"))
         }
     }
 
@@ -81,7 +84,16 @@ mod sgx_trusted_tls {
             let mut protocol = protocol::JsonProtocol::new(&mut self.stream);
 
             loop {
-                let request: V = protocol.read_message()?;
+                let request: V = match protocol.read_message() {
+                    Ok(r) => r,
+                    Err(e) => match e {
+                        protocol::ProtocolError::IoError(_) => {
+                            debug!("Connection disconnected.");
+                            return Ok(());
+                        }
+                        _ => return Err(anyhow::anyhow!("InternalError")),
+                    },
+                };
                 let response = service.handle_request(request);
                 protocol.write_message(response)?;
             }
