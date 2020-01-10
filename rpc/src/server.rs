@@ -10,6 +10,7 @@ cfg_if! {
 mod sgx_trusted_tls {
     use crate::config::SgxTrustedTlsServerConfig;
     use crate::transport::{ServerTransport, SgxTrustedTlsTransport};
+    use crate::utils;
     use crate::TeaclaveService;
     use anyhow::Result;
     use log::debug;
@@ -50,7 +51,7 @@ mod sgx_trusted_tls {
                 + core::marker::Send
                 + core::marker::Sync,
         {
-            let n_workers = 10;
+            let n_workers = utils::get_tcs_num();
             let pool = threadpool::ThreadPool::new(n_workers);
             for stream in self.listener.incoming() {
                 let session = rustls::ServerSession::new(&self.tls_config);
