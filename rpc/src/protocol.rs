@@ -5,6 +5,15 @@ use serde_json;
 use std::io;
 use std::mem::transmute;
 use std::vec::Vec;
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum ProtocolError {
+    #[error("IoError")]
+    IoError(#[from] io::Error),
+    #[error("SerdeError")]
+    SerdeError(#[from] serde_json::error::Error),
+}
 
 pub(crate) struct JsonProtocol<'a, T>
 where
@@ -21,7 +30,7 @@ where
         Self { transport }
     }
 
-    pub fn read_message<V>(&mut self) -> Result<V>
+    pub fn read_message<V>(&mut self) -> std::result::Result<V, ProtocolError>
     where
         V: for<'de> Deserialize<'de> + std::fmt::Debug,
     {
