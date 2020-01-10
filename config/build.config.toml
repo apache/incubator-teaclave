@@ -5,9 +5,9 @@ ias_root_ca_cert = { path = "../keys/ias_root_ca_cert.pem" }
 
 # Auditors' public keys to verify their endorsement signatures
 auditor_public_keys = [
-    { path = "../keys/auditors/godzilla/godzilla.public.der" },
-    { path = "../keys/auditors/optimus_prime/optimus_prime.public.der" },
-    { path = "../keys/auditors/albus_dumbledore/albus_dumbledore.public.der"},
+    { path = "../keys/auditors/godzilla/godzilla.public.pem" },
+    { path = "../keys/auditors/optimus_prime/optimus_prime.public.pem" },
+    { path = "../keys/auditors/albus_dumbledore/albus_dumbledore.public.pem"},
 ]
 
 # RPC max message size
