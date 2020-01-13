@@ -52,7 +52,7 @@ impl {{ service.proto_name }}Client {
 
     {% for m in service.methods %}
     pub fn {{ m.name }}(&mut self, request: {{ m.input_type }}) -> teaclave_types::TeaclaveServiceResponseResult<{{ m.output_type }}> {
-        let request = {{ service.proto_name }}Request::UserLogin(request);
+        let request = {{ service.proto_name }}Request::{{ m.proto_name }}(request);
         let response = match self.channel.invoke(request) {
             Ok(response_result) => {
                 response_result
@@ -64,7 +64,7 @@ impl {{ service.proto_name }}Client {
         match response {
             {{ service.proto_name }}Response::{{ m.proto_name }}(response) => Ok(response),
             {% if service.methods.len() > 1 -%}
-            _ => Err(TeaclaveServiceResponseError::InternalError("internal".to_string()),
+            _ => Err(TeaclaveServiceResponseError::InternalError("internal".to_string())),
             {% endif %}
         }
     }
