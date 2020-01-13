@@ -21,6 +21,7 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
+use anyhow::anyhow;
 use anyhow::{Error, Result};
 use chrono::DateTime;
 use rustls;
@@ -52,13 +53,11 @@ static SUPPORTED_SIG_ALGS: SignatureAlgorithms = &[
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum CertVerificationError {
+pub enum QuoteParsingError {
     #[error("Invalid cert format")]
     InvalidCertFormat,
     #[error("Bad attestation report")]
     BadAttnReport,
-    #[error("Webpki failure")]
-    WebpkiFailure,
 }
 
 pub struct SgxReport {
@@ -113,80 +112,79 @@ pub struct SgxQuoteBody {
 }
 
 impl SgxQuoteBody {
-    // TODO: A Result should be returned instead of Option
-    fn parse_from<'a>(bytes: &'a [u8]) -> Option<Self> {
+    fn parse_from<'a>(bytes: &'a [u8]) -> Result<Self> {
         let mut pos: usize = 0;
         // TODO: It is really unnecessary to construct a Vec<u8> each time.
         // Try to optimize this.
-        let mut take = |n: usize| -> Option<&'a [u8]> {
+        let mut take = |n: usize| -> Result<&'a [u8]> {
             if n > 0 && bytes.len() >= pos + n {
-                let ret = Some(&bytes[pos..pos + n]);
+                let ret = &bytes[pos..pos + n];
                 pos += n;
-                ret
+                Ok(ret)
             } else {
-                None
+                Err(anyhow!("Quote parsing error."))
             }
         };
 
         // off 0, size 2
-        let version = match u16::from_le_bytes(<[u8; 2]>::try_from(take(2)?).ok()?) {
+        let version = match u16::from_le_bytes(<[u8; 2]>::try_from(take(2)?)?) {
             1 => SgxQuoteVersion::V1,
             2 => SgxQuoteVersion::V2,
-            _ => return None,
+            _ => return Err(anyhow!("Quote parsing error.")),
         };
 
         // off 2, size 2
-        let signature_type = match u16::from_le_bytes(<[u8; 2]>::try_from(take(2)?).ok()?) {
+        let signature_type = match u16::from_le_bytes(<[u8; 2]>::try_from(take(2)?)?) {
             0 => SgxQuoteSigType::Unlinkable,
             1 => SgxQuoteSigType::Linkable,
-            _ => return None,
+            _ => return Err(anyhow!("Quote parsing error.")),
         };
 
         // off 4, size 4
-        let gid = u32::from_le_bytes(<[u8; 4]>::try_from(take(4)?).ok()?);
+        let gid = u32::from_le_bytes(<[u8; 4]>::try_from(take(4)?)?);
 
         // off 8, size 2
-        let isv_svn_qe = u16::from_le_bytes(<[u8; 2]>::try_from(take(2)?).ok()?);
+        let isv_svn_qe = u16::from_le_bytes(<[u8; 2]>::try_from(take(2)?)?);
 
         // off 10, size 2
-        let isv_svn_pce = u16::from_le_bytes(<[u8; 2]>::try_from(take(2)?).ok()?);
+        let isv_svn_pce = u16::from_le_bytes(<[u8; 2]>::try_from(take(2)?)?);
 
         // off 12, size 16
-        let qe_vendor_id_raw = <[u8; 16]>::try_from(take(16)?).ok()?;
-        let qe_vendor_id = Uuid::from_slice(&qe_vendor_id_raw).ok()?;
+        let qe_vendor_id_raw = <[u8; 16]>::try_from(take(16)?)?;
+        let qe_vendor_id = Uuid::from_slice(&qe_vendor_id_raw)?;
 
         // off 28, size 20
-        let user_data = <[u8; 20]>::try_from(take(20)?).ok()?;
+        let user_data = <[u8; 20]>::try_from(take(20)?)?;
 
         // off 48, size 16
-        let cpu_svn = <[u8; 16]>::try_from(take(16)?).ok()?;
+        let cpu_svn = <[u8; 16]>::try_from(take(16)?)?;
 
         // off 64, size 4
-        let misc_select = u32::from_le_bytes(<[u8; 4]>::try_from(take(4)?).ok()?);
+        let misc_select = u32::from_le_bytes(<[u8; 4]>::try_from(take(4)?)?);
 
         // off 68, size 28
         let _reserved = take(28)?;
 
         // off 96, size 16
-        let attributes = <[u8; 16]>::try_from(take(16)?).ok()?;
+        let attributes = <[u8; 16]>::try_from(take(16)?)?;
 
         // off 112, size 32
-        let mr_enclave = <[u8; 32]>::try_from(take(32)?).ok()?;
+        let mr_enclave = <[u8; 32]>::try_from(take(32)?)?;
 
         // off 144, size 32
         let _reserved = take(32)?;
 
         // off 176, size 32
-        let mr_signer = <[u8; 32]>::try_from(take(32)?).ok()?;
+        let mr_signer = <[u8; 32]>::try_from(take(32)?)?;
 
         // off 208, size 96
         let _reserved = take(96)?;
 
         // off 304, size 2
-        let isv_prod_id = u16::from_le_bytes(<[u8; 2]>::try_from(take(2)?).ok()?);
+        let isv_prod_id = u16::from_le_bytes(<[u8; 2]>::try_from(take(2)?)?);
 
         // off 306, size 2
-        let isv_svn = u16::from_le_bytes(<[u8; 2]>::try_from(take(2)?).ok()?);
+        let isv_svn = u16::from_le_bytes(<[u8; 2]>::try_from(take(2)?)?);
 
         // off 308, size 60
         let _reserved = take(60)?;
@@ -196,14 +194,14 @@ impl SgxQuoteBody {
         let _report_data = take(64)?;
         let mut _it = _report_data.iter();
         for i in report_data.iter_mut() {
-            *i = *_it.next()?;
+            *i = *_it.next().ok_or_else(|| anyhow!("Quote parsing error."))?;
         }
 
         if pos != bytes.len() {
-            return None;
+            return Err(anyhow!("Quote parsing error."));
         }
 
-        Some(Self {
+        Ok(Self {
             version,
             signature_type,
             gid,
@@ -236,8 +234,7 @@ impl SgxQuote {
         // Before we reach here, Webpki already verifed the cert is properly signed
         use super::cert::*;
 
-        let x509 = yasna::parse_der(cert_der, |reader| X509::load(reader))
-            .map_err(|_| CertVerificationError::InvalidCertFormat)?;
+        let x509 = yasna::parse_der(cert_der, |reader| X509::load(reader))?;
 
         let tbs_cert: <TbsCert as Asn1Ty>::ValueTy = x509.0;
 
@@ -253,18 +250,17 @@ impl SgxQuote {
         let mut iter = payload.split(|x| *x == 0x7C);
         let attn_report_raw = iter
             .next()
-            .ok_or_else(|| Error::new(CertVerificationError::InvalidCertFormat))?;
+            .ok_or_else(|| Error::new(QuoteParsingError::InvalidCertFormat))?;
         let sig_raw = iter
             .next()
-            .ok_or_else(|| Error::new(CertVerificationError::InvalidCertFormat))?;
+            .ok_or_else(|| Error::new(QuoteParsingError::InvalidCertFormat))?;
         let sig = base64::decode(&sig_raw)?;
         let sig_cert_raw = iter
             .next()
-            .ok_or_else(|| Error::new(CertVerificationError::InvalidCertFormat))?;
+            .ok_or_else(|| Error::new(QuoteParsingError::InvalidCertFormat))?;
         let sig_cert_dec = base64::decode_config(&sig_cert_raw, base64::STANDARD)?;
 
-        let sig_cert = webpki::EndEntityCert::from(&sig_cert_dec)
-            .map_err(|_| CertVerificationError::InvalidCertFormat)?;
+        let sig_cert = webpki::EndEntityCert::from(&sig_cert_dec)?;
 
         let mut root_store = rustls::RootCertStore::empty();
         root_store
@@ -280,31 +276,26 @@ impl SgxQuote {
         let chain: Vec<&[u8]> = vec![ias_report_ca_cert];
 
         let now_func = webpki::Time::try_from(SystemTime::now())
-            .map_err(|_| CertVerificationError::WebpkiFailure)?;
+            .map_err(|_| anyhow!("Cannot convert time."))?;
 
-        sig_cert
-            .verify_is_valid_tls_server_cert(
-                SUPPORTED_SIG_ALGS,
-                &webpki::TLSServerTrustAnchors(&trust_anchors),
-                &chain,
-                now_func,
-            )
-            .map_err(|_| CertVerificationError::WebpkiFailure)?;
+        sig_cert.verify_is_valid_tls_server_cert(
+            SUPPORTED_SIG_ALGS,
+            &webpki::TLSServerTrustAnchors(&trust_anchors),
+            &chain,
+            now_func,
+        )?;
 
         // Verify the signature against the signing cert
-        sig_cert
-            .verify_signature(&webpki::RSA_PKCS1_2048_8192_SHA256, &attn_report_raw, &sig)
-            .map_err(|_| CertVerificationError::WebpkiFailure)?;
+        sig_cert.verify_signature(&webpki::RSA_PKCS1_2048_8192_SHA256, &attn_report_raw, &sig)?;
 
         // Verify attestation report
-        let attn_report: Value = serde_json::from_slice(attn_report_raw)
-            .map_err(|_| CertVerificationError::BadAttnReport)?;
+        let attn_report: Value = serde_json::from_slice(attn_report_raw)?;
 
         // 1. Check timestamp is within 24H (90day is recommended by Intel)
         let quote_freshness = {
             let time = attn_report["timestamp"]
                 .as_str()
-                .ok_or_else(|| Error::new(CertVerificationError::BadAttnReport))?;
+                .ok_or_else(|| Error::new(QuoteParsingError::BadAttnReport))?;
             let time_fixed = String::from(time) + "+0000";
             let date_time = DateTime::parse_from_str(&time_fixed, "%Y-%m-%dT%H:%M:%S%.f%z")?;
             let ts = date_time.naive_utc();
@@ -316,7 +307,7 @@ impl SgxQuote {
         let quote_status = {
             let status_string = attn_report["isvEnclaveQuoteStatus"]
                 .as_str()
-                .ok_or_else(|| Error::new(CertVerificationError::BadAttnReport))?;
+                .ok_or_else(|| Error::new(QuoteParsingError::BadAttnReport))?;
 
             SgxQuoteStatus::from(status_string)
         };
@@ -325,10 +316,9 @@ impl SgxQuote {
         let quote_body = {
             let quote_encoded = attn_report["isvEnclaveQuoteBody"]
                 .as_str()
-                .ok_or_else(|| Error::new(CertVerificationError::BadAttnReport))?;
+                .ok_or_else(|| Error::new(QuoteParsingError::BadAttnReport))?;
             let quote_raw = base64::decode(&(quote_encoded.as_bytes()))?;
-            SgxQuoteBody::parse_from(quote_raw.as_slice())
-                .ok_or_else(|| Error::new(CertVerificationError::BadAttnReport))?
+            SgxQuoteBody::parse_from(quote_raw.as_slice())?
         };
 
         let raw_pub_k = pub_k.to_bytes();
@@ -345,7 +335,7 @@ impl SgxQuote {
         let is_uncompressed = raw_pub_k[0] == 4;
         let pub_k = &raw_pub_k.as_slice()[1..];
         if !is_uncompressed || pub_k != &quote_body.report_body.report_data[..] {
-            return Err(Error::new(CertVerificationError::BadAttnReport));
+            return Err(Error::new(QuoteParsingError::BadAttnReport));
         }
 
         Ok(SgxQuote {
