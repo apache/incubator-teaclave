@@ -58,10 +58,10 @@ pub struct RunEnclaveUnitTestOutput {
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, Default)]
-pub struct RunServiceFunctionalTestInput;
+pub struct RunFunctionalTestInput;
 
 #[derive(Clone, Serialize, Deserialize, Debug, Default)]
-pub struct RunServiceFunctionalTestOutput;
+pub struct RunFunctionalTestOutput;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct ServeConnectionInput {
