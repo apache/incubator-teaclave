@@ -20,8 +20,7 @@ pub fn run_functional_tests() {
 
 fn test_login_successful() {
     let client_config = SgxTrustedTlsClientConfig::new_without_verifier();
-    let channel =
-        SgxTrustedTlsChannel::<U, V>::new("127.0.0.1:7776", "localhost", &client_config).unwrap();
+    let channel = SgxTrustedTlsChannel::<U, V>::new("localhost:7776", &client_config).unwrap();
     let mut client = TeaclaveAuthenticationClient::new(channel).unwrap();
     let request = UserLoginRequest {
         id: "test_id".to_string(),
@@ -35,8 +34,7 @@ fn test_login_successful() {
 
 fn test_login_failed() {
     let client_config = SgxTrustedTlsClientConfig::new_without_verifier();
-    let channel =
-        SgxTrustedTlsChannel::<U, V>::new("127.0.0.1:7776", "localhost", &client_config).unwrap();
+    let channel = SgxTrustedTlsChannel::<U, V>::new("localhost:7776", &client_config).unwrap();
     let mut client = TeaclaveAuthenticationClient::new(channel).unwrap();
     let request = UserLoginRequest {
         id: "".to_string(),
@@ -50,8 +48,7 @@ fn test_login_failed() {
 
 fn test_authorize_successful() {
     let client_config = SgxTrustedTlsClientConfig::new_without_verifier();
-    let channel =
-        SgxTrustedTlsChannel::<U, V>::new("127.0.0.1:7776", "localhost", &client_config).unwrap();
+    let channel = SgxTrustedTlsChannel::<U, V>::new("localhost:7776", &client_config).unwrap();
     let mut client = TeaclaveAuthenticationClient::new(channel).unwrap();
     let credential = UserCredential {
         id: "test_id".to_string(),
@@ -65,8 +62,7 @@ fn test_authorize_successful() {
 
 fn test_authorize_failed() {
     let client_config = SgxTrustedTlsClientConfig::new_without_verifier();
-    let channel =
-        SgxTrustedTlsChannel::<U, V>::new("127.0.0.1:7776", "localhost", &client_config).unwrap();
+    let channel = SgxTrustedTlsChannel::<U, V>::new("localhost:7776", &client_config).unwrap();
     let mut client = TeaclaveAuthenticationClient::new(channel).unwrap();
     let credential = UserCredential {
         id: "".to_string(),
