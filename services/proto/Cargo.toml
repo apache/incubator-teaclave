@@ -15,16 +15,14 @@ mesalock_sgx = [
 cov = ["sgx_cov"]
 
 [dependencies]
-prost = { version = "0.5.0" }
-bytes = { version = ">= 0.4.12"} # unix app depends on 0.4.12, while sgx lib depends on 0.5.0
-prost-types = { version = "0.5.0" }
-cfg-if       = { version = "0.1.9" }
-serde        = { version = "1.0.39" }
-serde_json   = { version = "1.0.39" }
-serde_derive = { version = "1.0.92" }
-rand         = { version = "0.7.0" }
 anyhow       = { version = "1.0.26" }
 base64       = { version = "0.10.1" }
+cfg-if       = { version = "0.1.9" }
+prost        = { version = "0.6.0" }
+rand         = { version = "0.7.0" }
+serde        = { version = "1.0.39" }
+serde_derive = { version = "1.0.92" }
+serde_json   = { version = "1.0.39" }
 
 sgx_cov      = { version = "1.1.0", optional = true }
 sgx_tstd     = { version = "1.1.0", features = ["net", "backtrace"], optional = true }

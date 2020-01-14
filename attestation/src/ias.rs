@@ -20,6 +20,7 @@ use crate::AttestationError;
 use anyhow::Error;
 use anyhow::Result;
 use log::{debug, trace};
+use percent_encoding;
 use sgx_types::*;
 use std::collections::HashMap;
 use std::io::{Read, Write};
@@ -185,7 +186,7 @@ impl IasClient {
             let cert_str = header_map
                 .get("X-IASReport-Signing-Certificate")
                 .ok_or_else(|| Error::new(AttestationError::IasError))?;
-            let decoded_cert = percent_decode(cert_str)?;
+            let decoded_cert = percent_encoding::percent_decode_str(cert_str).decode_utf8()?;
             // We should get two concatenated PEM files at this step.
             let cert_content: Vec<&str> = decoded_cert.split("-----").collect();
             cert_content[2].to_string()
@@ -210,19 +211,4 @@ impl IasClient {
 
         header_map
     }
-}
-
-fn percent_decode(orig: &str) -> Result<String> {
-    let orig = orig.replace("%0A", "");
-    let v: Vec<&str> = orig.split('%').collect();
-    let mut ret = String::new();
-    ret.push_str(v[0]);
-    if v.len() > 1 {
-        for s in v[1..].iter() {
-            let digit = u8::from_str_radix(&s[0..2], 16)?;
-            ret.push(digit as char);
-            ret.push_str(&s[2..]);
-        }
-    }
-    Ok(ret)
 }
