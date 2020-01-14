@@ -21,3 +21,4 @@ extern crate sgx_tstd as std;
 
 pub mod teaclave_authentication_service;
 pub mod teaclave_common;
+pub mod teaclave_database_service;

@@ -44,7 +44,7 @@ mod sgx_trusted_tls {
 
         pub fn start<X>(&mut self, service: X) -> Result<()>
         where
-            X: 'static + TeaclaveService<V, U> + Clone + core::marker::Send + core::marker::Sync,
+            X: 'static + TeaclaveService<V, U> + Clone + core::marker::Send,
         {
             let n_workers = utils::get_tcs_num();
             let pool = threadpool::ThreadPool::new(n_workers);

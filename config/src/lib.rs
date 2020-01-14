@@ -54,6 +54,7 @@ pub mod runtime_config {
         pub tdfs: EndpointListenAdvertisedConfig,
         pub kms: EndpointListenAdvertisedConfig,
         pub acs: EndpointListenAdvertisedConfig,
+        pub dbs: EndpointListenAdvertisedConfig,
     }
 
     #[derive(Debug, Deserialize)]

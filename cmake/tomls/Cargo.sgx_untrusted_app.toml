@@ -2,6 +2,7 @@
 
 members = [
   "services/authentication/app",
+  "services/database/app",
   "testsuite/enclave_unit_test/app",
   "testsuite/service_functional_test/app",
   "testsuite/leveldb_tests/app",
