@@ -10,7 +10,9 @@ cfg_if! {
 mod sgx_trusted_tls {
     use crate::config::SgxTrustedTlsClientConfig;
     use crate::transport::{ClientTransport, SgxTrustedTlsTransport};
+    use anyhow::anyhow;
     use anyhow::Result;
+    use http::Uri;
     use serde::{Deserialize, Serialize};
 
     pub struct SgxTrustedTlsChannel<U, V>
@@ -27,12 +29,13 @@ mod sgx_trusted_tls {
         U: Serialize + std::fmt::Debug,
         V: for<'de> Deserialize<'de> + std::fmt::Debug,
     {
-        pub fn new<A: std::net::ToSocketAddrs>(
-            addr: A,
-            hostname: &str,
+        pub fn new(
+            address: &str,
             client_config: &SgxTrustedTlsClientConfig,
         ) -> Result<SgxTrustedTlsChannel<U, V>> {
-            let stream = std::net::TcpStream::connect(addr)?;
+            let uri = address.parse::<Uri>()?;
+            let hostname = uri.host().ok_or_else(|| anyhow!("Invalid hostname."))?;
+            let stream = std::net::TcpStream::connect(address)?;
             let hostname = webpki::DNSNameRef::try_from_ascii_str(hostname)?;
             let session = rustls::ClientSession::new(&client_config.config, hostname);
             let tls_stream = rustls::StreamOwned::new(session, stream);
