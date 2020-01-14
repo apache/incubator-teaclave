@@ -44,12 +44,7 @@ mod sgx_trusted_tls {
 
         pub fn start<X>(&mut self, service: X) -> Result<()>
         where
-            X: 'static
-                + TeaclaveService<V, U>
-                + Clone
-                + Copy
-                + core::marker::Send
-                + core::marker::Sync,
+            X: 'static + TeaclaveService<V, U> + Clone + core::marker::Send + core::marker::Sync,
         {
             let n_workers = utils::get_tcs_num();
             let pool = threadpool::ThreadPool::new(n_workers);
@@ -57,6 +52,7 @@ mod sgx_trusted_tls {
                 let session = rustls::ServerSession::new(&self.tls_config);
                 let tls_stream = rustls::StreamOwned::new(session, stream.unwrap());
                 let mut transport = SgxTrustedTlsTransport::new(tls_stream);
+                let service = service.clone();
                 pool.execute(move || match transport.serve(service) {
                     Ok(_) => (),
                     Err(e) => {

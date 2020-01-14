@@ -24,11 +24,14 @@ impl From<TeaclaveAuthenticationError> for TeaclaveServiceResponseError {
     TeaclaveAuthentication,
     TeaclaveAuthenticationError
 )]
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub(crate) struct TeaclaveAuthenticationService;
 
 impl TeaclaveAuthentication for TeaclaveAuthenticationService {
-    fn user_login(_request: UserLoginRequest) -> TeaclaveServiceResponseResult<UserLoginResponse> {
+    fn user_login(
+        &self,
+        _request: UserLoginRequest,
+    ) -> TeaclaveServiceResponseResult<UserLoginResponse> {
         #[cfg(test_mode)]
         return test_mode::mock_user_login(_request);
 
@@ -36,6 +39,7 @@ impl TeaclaveAuthentication for TeaclaveAuthenticationService {
     }
 
     fn user_authorize(
+        &self,
         _request: UserAuthorizeRequest,
     ) -> TeaclaveServiceResponseResult<UserAuthorizeResponse> {
         #[cfg(test_mode)]
@@ -81,7 +85,8 @@ pub mod tests {
             id: "test_id".to_string(),
             password: "test_password".to_string(),
         };
-        assert!(TeaclaveAuthenticationService::user_login(request).is_ok());
+        let service = TeaclaveAuthenticationService;
+        assert!(service.user_login(request).is_ok());
     }
 
     pub fn test_user_authorize() {
@@ -91,6 +96,7 @@ pub mod tests {
         };
 
         let request = UserAuthorizeRequest { credential };
-        assert!(TeaclaveAuthenticationService::user_authorize(request).is_ok());
+        let service = TeaclaveAuthenticationService;
+        assert!(service.user_authorize(request).is_ok());
     }
 }
