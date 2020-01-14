@@ -1,6 +1,7 @@
 use std::prelude::v1::*;
 use teaclave_proto::teaclave_authentication_service::{
-    self, TeaclaveAuthentication, UserLoginRequest, UserLoginResponse,
+    self, TeaclaveAuthentication, UserAuthorizeRequest, UserAuthorizeResponse, UserLoginRequest,
+    UserLoginResponse,
 };
 use teaclave_service_enclave_utils::teaclave_service;
 use teaclave_types::{TeaclaveServiceResponseError, TeaclaveServiceResponseResult};
@@ -33,6 +34,15 @@ impl TeaclaveAuthentication for TeaclaveAuthenticationService {
 
         Err(TeaclaveAuthenticationError::PermissionDenied.into())
     }
+
+    fn user_authorize(
+        _request: UserAuthorizeRequest,
+    ) -> TeaclaveServiceResponseResult<UserAuthorizeResponse> {
+        #[cfg(test_mode)]
+        return test_mode::mock_user_authorize(_request);
+
+        Err(TeaclaveAuthenticationError::PermissionDenied.into())
+    }
 }
 
 #[cfg(test_mode)]
@@ -49,11 +59,22 @@ mod test_mode {
         }
         Err(TeaclaveAuthenticationError::PermissionDenied.into())
     }
+
+    pub fn mock_user_authorize(
+        request: UserAuthorizeRequest,
+    ) -> TeaclaveServiceResponseResult<UserAuthorizeResponse> {
+        if request.credential.id == "test_id" && request.credential.token == "test_token" {
+            let response = UserAuthorizeResponse { accept: true };
+            return Ok(response);
+        }
+        Err(TeaclaveAuthenticationError::PermissionDenied.into())
+    }
 }
 
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
+    use teaclave_proto::teaclave_common::UserCredential;
 
     pub fn test_user_login() {
         let request = UserLoginRequest {
@@ -61,5 +82,15 @@ pub mod tests {
             password: "test_password".to_string(),
         };
         assert!(TeaclaveAuthenticationService::user_login(request).is_ok());
+    }
+
+    pub fn test_user_authorize() {
+        let credential = UserCredential {
+            id: "test_id".to_string(),
+            token: "test_token".to_string(),
+        };
+
+        let request = UserAuthorizeRequest { credential };
+        assert!(TeaclaveAuthenticationService::user_authorize(request).is_ok());
     }
 }
