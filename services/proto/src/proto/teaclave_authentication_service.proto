@@ -1,6 +1,8 @@
 syntax = "proto3";
 package teaclave_authentication_service_proto;
 
+import "common.proto";
+
 message UserLoginRequest {
   string id = 1;
   string password = 2;
@@ -10,6 +12,15 @@ message UserLoginResponse {
   string token = 1;
 }
 
+message UserAuthorizeRequest {
+  teaclave_common_proto.UserCredential credential = 1;
+}
+
+message UserAuthorizeResponse {
+  bool accept = 1;
+}
+
 service TeaclaveAuthentication {
   rpc UserLogin (UserLoginRequest) returns (UserLoginResponse);
+  rpc UserAuthorize (UserAuthorizeRequest) returns (UserAuthorizeResponse);
 }

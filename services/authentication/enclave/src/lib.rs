@@ -100,6 +100,9 @@ pub mod tests {
     use sgx_tunittest::*;
 
     pub fn run_tests() -> usize {
-        rsgx_unit_tests!(service::tests::test_user_login)
+        rsgx_unit_tests!(
+            service::tests::test_user_login,
+            service::tests::test_user_authorize,
+        )
     }
 }
