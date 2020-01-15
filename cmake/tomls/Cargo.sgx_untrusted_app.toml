@@ -5,6 +5,7 @@ members = [
   "testsuite/enclave_unit_test/app",
   "testsuite/service_functional_test/app",
   "testsuite/leveldb_tests/app",
+  "testsuite/protected_fs_tests/app",
 ]
 
 exclude = [

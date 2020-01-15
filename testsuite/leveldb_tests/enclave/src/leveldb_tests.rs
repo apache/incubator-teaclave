@@ -1,6 +1,5 @@
 use rand::distributions::Alphanumeric;
 use rand::Rng;
-use sgx_tunittest::*;
 use std::iter;
 use std::prelude::v1::*;
 use std::string::String;
@@ -64,5 +63,7 @@ fn test_write_a_lot() {
 }
 
 pub fn run_tests() {
+    use sgx_tunittest::*;
+
     rsgx_unit_tests!(test_write_a_lot);
 }
