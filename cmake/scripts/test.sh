@@ -14,6 +14,10 @@ if [ "${SGX_MODE}" = "HW" ]; then
     fi
 fi
 
-cd ${MESATEE_PROJECT_ROOT}/tests && ./module_test.sh
-cd ${MESATEE_PROJECT_ROOT}/tests && ./functional_test.sh
-cd ${MESATEE_PROJECT_ROOT}/tests && ./integration_test.sh
+pushd ${MESATEE_TEST_INSTALL_DIR}
+
+./teaclave_enclave_unit_test
+./teaclave_leveldb_tests
+./teaclave_protected_fs_tests
+
+popd
