@@ -1,0 +1,48 @@
+[package]
+name = "teaclave_protected_fs_tests_enclave"
+version = "0.1.0"
+authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
+description = "Service Functional Test"
+license = "Apache-2.0"
+edition = "2018"
+
+[lib]
+name = "teaclave_protected_fs_tests_enclave"
+crate-type = ["staticlib"]
+
+[features]
+default = []
+mesalock_sgx = [
+  "sgx_tstd",
+  "teaclave_attestation/mesalock_sgx",
+  "teaclave_proto/mesalock_sgx",
+  "teaclave_ipc/mesalock_sgx",
+  "teaclave_rpc/mesalock_sgx",
+  "teaclave_service_config/mesalock_sgx",
+  "teaclave_service_enclave_utils/mesalock_sgx",
+  "teaclave_types/mesalock_sgx",
+  "protected_fs_rs/mesalock_sgx",
+]
+cov = ["teaclave_service_enclave_utils/cov"]
+
+[dependencies]
+log         = { version = "0.4.6" }
+anyhow      = { version = "1.0.26" }
+serde       = { version = "1.0.92" }
+thiserror   = { version = "1.0.9" }
+rand        = { version = "0.7.0" }
+
+protected_fs_rs    = { path = "../../../common/protected_fs_rs", default-features = false, optional = true }
+
+teaclave_attestation           = { path = "../../../attestation" }
+teaclave_config                = { path = "../../../config" }
+teaclave_ipc                   = { path = "../../../ipc" }
+teaclave_rpc                   = { path = "../../../rpc" }
+teaclave_service_config        = { path = "../../../utils/service_config" }
+teaclave_service_enclave_utils = { path = "../../../utils/service_enclave_utils" }
+teaclave_types                 = { path = "../../../types" }
+teaclave_proto                 = { path = "../../../services/proto" }
+
+sgx_tstd      = { version = "1.1.0", features = ["net", "thread", "backtrace"], optional = true }
+sgx_tunittest = { version = "1.1.0" }
+sgx_types     = { version = "1.1.0" }
