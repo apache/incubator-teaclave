@@ -2,25 +2,19 @@ use sgx_tunittest::*;
 use std::prelude::v1::*;
 use teaclave_proto::teaclave_authentication_service::*;
 use teaclave_proto::teaclave_common::*;
-use teaclave_rpc::channel::SgxTrustedTlsChannel;
-use teaclave_rpc::config::SgxTrustedTlsClientConfig;
-use teaclave_types::TeaclaveServiceResponseResult;
-
-type U = TeaclaveAuthenticationRequest;
-type V = TeaclaveServiceResponseResult<TeaclaveAuthenticationResponse>;
+use teaclave_rpc::endpoint::Endpoint;
 
 pub fn run_functional_tests() {
     rsgx_unit_tests!(
-        test_login_successful,
-        test_login_failed,
-        test_authorize_successful,
-        test_authorize_failed,
+        test_login_success,
+        test_login_fail,
+        test_authorize_success,
+        test_authorize_fail,
     );
 }
 
-fn test_login_successful() {
-    let client_config = SgxTrustedTlsClientConfig::new_without_verifier();
-    let channel = SgxTrustedTlsChannel::<U, V>::new("localhost:7776", &client_config).unwrap();
+fn test_login_success() {
+    let channel = Endpoint::new("localhost:7776").connect().unwrap();
     let mut client = TeaclaveAuthenticationClient::new(channel).unwrap();
     let request = UserLoginRequest {
         id: "test_id".to_string(),
@@ -32,9 +26,8 @@ fn test_login_successful() {
     assert!(response_result.is_ok());
 }
 
-fn test_login_failed() {
-    let client_config = SgxTrustedTlsClientConfig::new_without_verifier();
-    let channel = SgxTrustedTlsChannel::<U, V>::new("localhost:7776", &client_config).unwrap();
+fn test_login_fail() {
+    let channel = Endpoint::new("localhost:7776").connect().unwrap();
     let mut client = TeaclaveAuthenticationClient::new(channel).unwrap();
     let request = UserLoginRequest {
         id: "".to_string(),
@@ -46,9 +39,8 @@ fn test_login_failed() {
     assert!(response_result.is_err());
 }
 
-fn test_authorize_successful() {
-    let client_config = SgxTrustedTlsClientConfig::new_without_verifier();
-    let channel = SgxTrustedTlsChannel::<U, V>::new("localhost:7776", &client_config).unwrap();
+fn test_authorize_success() {
+    let channel = Endpoint::new("localhost:7776").connect().unwrap();
     let mut client = TeaclaveAuthenticationClient::new(channel).unwrap();
     let credential = UserCredential {
         id: "test_id".to_string(),
@@ -60,9 +52,8 @@ fn test_authorize_successful() {
     assert!(response_result.is_ok());
 }
 
-fn test_authorize_failed() {
-    let client_config = SgxTrustedTlsClientConfig::new_without_verifier();
-    let channel = SgxTrustedTlsChannel::<U, V>::new("localhost:7776", &client_config).unwrap();
+fn test_authorize_fail() {
+    let channel = Endpoint::new("localhost:7776").connect().unwrap();
     let mut client = TeaclaveAuthenticationClient::new(channel).unwrap();
     let credential = UserCredential {
         id: "".to_string(),
