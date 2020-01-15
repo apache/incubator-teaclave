@@ -16,6 +16,7 @@ where
 
 pub mod channel;
 pub mod config;
+pub mod endpoint;
 mod protocol;
 pub mod server;
 mod transport;
