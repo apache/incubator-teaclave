@@ -22,7 +22,7 @@ use std::io::{Read, Write};
 #[test]
 fn test_large_file() {
     const BLOCK_SIZE: usize = 2048;
-    const NBLOCKS: usize = 0x0010_0000;
+    const NBLOCKS: usize = 0x001_0000;
 
     let key = [90u8; 16];
     let mut auth_tag = [0u8; 16];
