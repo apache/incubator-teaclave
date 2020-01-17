@@ -31,7 +31,7 @@ pub struct PutRequest {
 }
 
 #[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
-pub struct PutResponse { }
+pub struct PutResponse {}
 
 #[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
 pub struct DeleteRequest {
@@ -39,7 +39,7 @@ pub struct DeleteRequest {
 }
 
 #[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
-pub struct DeleteResponse { }
+pub struct DeleteResponse {}
 
 #[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
 pub struct EnqueueRequest {
@@ -48,7 +48,7 @@ pub struct EnqueueRequest {
 }
 
 #[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
-pub struct EnqueueResponse { }
+pub struct EnqueueResponse {}
 
 #[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
 pub struct DequeueRequest {
@@ -56,7 +56,7 @@ pub struct DequeueRequest {
 }
 
 #[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
-pub struct DequeueResponse { 
+pub struct DequeueResponse {
     pub value: Vec<u8>,
 }
 
@@ -64,9 +64,7 @@ impl std::convert::TryFrom<proto::GetRequest> for GetRequest {
     type Error = Error;
 
     fn try_from(proto: proto::GetRequest) -> Result<Self> {
-        let ret = Self {
-            key: proto.key
-        };
+        let ret = Self { key: proto.key };
 
         Ok(ret)
     }
@@ -74,20 +72,15 @@ impl std::convert::TryFrom<proto::GetRequest> for GetRequest {
 
 impl From<GetRequest> for proto::GetRequest {
     fn from(request: GetRequest) -> Self {
-        Self {
-            key: request.key,
-        }
+        Self { key: request.key }
     }
 }
-
 
 impl std::convert::TryFrom<proto::GetResponse> for GetResponse {
     type Error = Error;
 
     fn try_from(proto: proto::GetResponse) -> Result<Self> {
-        let ret = Self {
-            value: proto.value
-        };
+        let ret = Self { value: proto.value };
 
         Ok(ret)
     }
@@ -141,9 +134,7 @@ impl std::convert::TryFrom<proto::DeleteRequest> for DeleteRequest {
     type Error = Error;
 
     fn try_from(proto: proto::DeleteRequest) -> Result<Self> {
-        let ret = Self {
-            key: proto.key,
-        };
+        let ret = Self { key: proto.key };
 
         Ok(ret)
     }
@@ -151,9 +142,7 @@ impl std::convert::TryFrom<proto::DeleteRequest> for DeleteRequest {
 
 impl From<DeleteRequest> for proto::DeleteRequest {
     fn from(request: DeleteRequest) -> Self {
-        Self {
-            key: request.key,
-        }
+        Self { key: request.key }
     }
 }
 
@@ -211,9 +200,7 @@ impl std::convert::TryFrom<proto::DequeueRequest> for DequeueRequest {
     type Error = Error;
 
     fn try_from(proto: proto::DequeueRequest) -> Result<Self> {
-        let ret = Self {
-            key: proto.key,
-        };
+        let ret = Self { key: proto.key };
 
         Ok(ret)
     }
@@ -221,9 +208,7 @@ impl std::convert::TryFrom<proto::DequeueRequest> for DequeueRequest {
 
 impl From<DequeueRequest> for proto::DequeueRequest {
     fn from(request: DequeueRequest) -> Self {
-        Self {
-            key: request.key,
-        }
+        Self { key: request.key }
     }
 }
 
@@ -231,9 +216,7 @@ impl std::convert::TryFrom<proto::DequeueResponse> for DequeueResponse {
     type Error = Error;
 
     fn try_from(proto: proto::DequeueResponse) -> Result<Self> {
-        Ok(Self {
-            value: proto.value,
-        })
+        Ok(Self { value: proto.value })
     }
 }
 

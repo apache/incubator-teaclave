@@ -1,12 +1,7 @@
 use sgx_tunittest::*;
 use std::prelude::v1::*;
 use teaclave_proto::teaclave_database_service::*;
-use teaclave_rpc::channel::SgxTrustedTlsChannel;
-use teaclave_rpc::config::SgxTrustedTlsClientConfig;
-use teaclave_types::TeaclaveServiceResponseResult;
-
-type U = TeaclaveDatabaseRequest;
-type V = TeaclaveServiceResponseResult<TeaclaveDatabaseResponse>;
+use teaclave_rpc::endpoint::Endpoint;
 
 pub fn run_functional_tests() {
     rsgx_unit_tests!(
@@ -21,9 +16,7 @@ pub fn run_functional_tests() {
 }
 
 fn test_get_successful() {
-    let client_config = SgxTrustedTlsClientConfig::new_without_verifier();
-    let channel =
-        SgxTrustedTlsChannel::<U, V>::new("127.0.0.1:7778", "localhost", &client_config).unwrap();
+    let channel = Endpoint::new("localhost:7778").connect().unwrap();
     let mut client = TeaclaveDatabaseClient::new(channel).unwrap();
     let request = GetRequest {
         key: b"test_get_key".to_vec(),
@@ -35,9 +28,7 @@ fn test_get_successful() {
 }
 
 fn test_get_failed() {
-    let client_config = SgxTrustedTlsClientConfig::new_without_verifier();
-    let channel =
-        SgxTrustedTlsChannel::<U, V>::new("127.0.0.1:7778", "localhost", &client_config).unwrap();
+    let channel = Endpoint::new("localhost:7778").connect().unwrap();
     let mut client = TeaclaveDatabaseClient::new(channel).unwrap();
     let request = GetRequest {
         key: b"test_key_not_exist".to_vec(),
@@ -48,9 +39,7 @@ fn test_get_failed() {
 }
 
 fn test_put_successful() {
-    let client_config = SgxTrustedTlsClientConfig::new_without_verifier();
-    let channel =
-        SgxTrustedTlsChannel::<U, V>::new("127.0.0.1:7778", "localhost", &client_config).unwrap();
+    let channel = Endpoint::new("localhost:7778").connect().unwrap();
     let mut client = TeaclaveDatabaseClient::new(channel).unwrap();
     let request = PutRequest {
         key: b"test_put_key".to_vec(),
@@ -72,9 +61,7 @@ fn test_put_successful() {
 }
 
 fn test_delete_successful() {
-    let client_config = SgxTrustedTlsClientConfig::new_without_verifier();
-    let channel =
-        SgxTrustedTlsChannel::<U, V>::new("127.0.0.1:7778", "localhost", &client_config).unwrap();
+    let channel = Endpoint::new("localhost:7778").connect().unwrap();
     let mut client = TeaclaveDatabaseClient::new(channel).unwrap();
     let request = DeleteRequest {
         key: b"test_delete_key".to_vec(),
@@ -92,11 +79,8 @@ fn test_delete_successful() {
     assert!(response_result.is_err());
 }
 
-
 fn test_enqueue_successful() {
-    let client_config = SgxTrustedTlsClientConfig::new_without_verifier();
-    let channel =
-        SgxTrustedTlsChannel::<U, V>::new("127.0.0.1:7778", "localhost", &client_config).unwrap();
+    let channel = Endpoint::new("localhost:7778").connect().unwrap();
     let mut client = TeaclaveDatabaseClient::new(channel).unwrap();
     let request = EnqueueRequest {
         key: b"test_enqueue_key".to_vec(),
@@ -109,9 +93,7 @@ fn test_enqueue_successful() {
 }
 
 fn test_dequeue_successful() {
-    let client_config = SgxTrustedTlsClientConfig::new_without_verifier();
-    let channel =
-        SgxTrustedTlsChannel::<U, V>::new("127.0.0.1:7778", "localhost", &client_config).unwrap();
+    let channel = Endpoint::new("localhost:7778").connect().unwrap();
     let mut client = TeaclaveDatabaseClient::new(channel).unwrap();
     let request = DequeueRequest {
         key: b"test_dequeue_key".to_vec(),
@@ -122,13 +104,15 @@ fn test_dequeue_successful() {
     let request = EnqueueRequest {
         key: b"test_dequeue_key".to_vec(),
         value: b"1".to_vec(),
-    }.into();
+    }
+    .into();
     let response_result = client.enqueue(request);
     assert!(response_result.is_ok());
     let request = EnqueueRequest {
         key: b"test_dequeue_key".to_vec(),
         value: b"2".to_vec(),
-    }.into();
+    }
+    .into();
     let response_result = client.enqueue(request);
     assert!(response_result.is_ok());
     let request = DequeueRequest {
@@ -147,11 +131,8 @@ fn test_dequeue_successful() {
     assert_eq!(response_result.unwrap().value, b"2");
 }
 
-
 fn test_dequeue_failed() {
-    let client_config = SgxTrustedTlsClientConfig::new_without_verifier();
-    let channel =
-        SgxTrustedTlsChannel::<U, V>::new("127.0.0.1:7778", "localhost", &client_config).unwrap();
+    let channel = Endpoint::new("localhost:7778").connect().unwrap();
     let mut client = TeaclaveDatabaseClient::new(channel).unwrap();
     let request = DequeueRequest {
         key: b"test_dequeue_key".to_vec(),
@@ -163,7 +144,8 @@ fn test_dequeue_failed() {
     let request = EnqueueRequest {
         key: b"test_dequeue_key".to_vec(),
         value: b"1".to_vec(),
-    }.into();
+    }
+    .into();
     let response_result = client.enqueue(request);
     assert!(response_result.is_ok());
     let request = DequeueRequest {

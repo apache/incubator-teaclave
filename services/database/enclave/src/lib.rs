@@ -37,20 +37,20 @@ use teaclave_ipc::{handle_ecall, register_ecall_handler};
 use teaclave_service_config as config;
 use teaclave_service_enclave_utils::ServiceEnclave;
 
+use rusty_leveldb::DB;
 use teaclave_attestation::RemoteAttestation;
 use teaclave_proto::teaclave_database_service::{
     TeaclaveDatabaseRequest, TeaclaveDatabaseResponse,
 };
 use teaclave_rpc::config::SgxTrustedTlsServerConfig;
 use teaclave_rpc::server::SgxTrustedTlsServer;
-use rusty_leveldb::DB;
 
 mod proxy;
 mod service;
 
+use std::cell::RefCell;
 use std::sync::mpsc::channel;
 use std::thread;
-use std::cell::RefCell;
 
 #[handle_ecall]
 fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> {
@@ -76,16 +76,13 @@ fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> 
             receiver,
         };
         database_service.execution();
-    }); 
+    });
 
-    let mut server = SgxTrustedTlsServer::<
-        TeaclaveDatabaseResponse,
-        TeaclaveDatabaseRequest,
-    >::new(listener, &config);
+    let mut server = SgxTrustedTlsServer::<TeaclaveDatabaseResponse, TeaclaveDatabaseRequest>::new(
+        listener, &config,
+    );
 
-    let service = proxy::ProxyService {
-        sender,
-    };
+    let service = proxy::ProxyService { sender };
 
     match server.start(service) {
         Ok(_) => (),

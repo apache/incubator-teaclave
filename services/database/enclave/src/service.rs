@@ -1,15 +1,15 @@
+use crate::proxy::ProxyRequest;
+use rusty_leveldb::DB;
+use std::cell::RefCell;
 use std::prelude::v1::*;
+use std::sync::mpsc::Receiver;
 use teaclave_proto::teaclave_database_service::{
-    self, TeaclaveDatabase, GetRequest, GetResponse, PutRequest, PutResponse, DeleteRequest, DeleteResponse, EnqueueRequest, EnqueueResponse,
-    DequeueRequest, DequeueResponse,
+    self, DeleteRequest, DeleteResponse, DequeueRequest, DequeueResponse, EnqueueRequest,
+    EnqueueResponse, GetRequest, GetResponse, PutRequest, PutResponse, TeaclaveDatabase,
 };
 use teaclave_service_enclave_utils::teaclave_service;
 use teaclave_types::{TeaclaveServiceResponseError, TeaclaveServiceResponseResult};
 use thiserror::Error;
-use rusty_leveldb::DB;
-use crate::proxy::ProxyRequest;
-use std::cell::RefCell;
-use std::sync::mpsc::Receiver;
 
 #[derive(Error, Debug)]
 pub enum TeaclaveDatabaseError {
@@ -29,14 +29,10 @@ impl From<TeaclaveDatabaseError> for TeaclaveServiceResponseError {
     }
 }
 
-#[teaclave_service(
-    teaclave_database_service,
-    TeaclaveDatabase,
-    TeaclaveDatabaseError
-)]
+#[teaclave_service(teaclave_database_service, TeaclaveDatabase, TeaclaveDatabaseError)]
 pub struct TeaclaveDatabaseService {
     // LevelDB uses ```&mut self``` in its apis, but the service will use ```&self``` in each request,
-    // so we need to wrap the DB with RefCell. 
+    // so we need to wrap the DB with RefCell.
     // The service is running in a single thread, it's safe to use RefCell
     pub database: RefCell<DB>,
     pub receiver: Receiver<ProxyRequest>,
@@ -96,19 +92,20 @@ impl<'a> DBQueue<'a> {
     }
 
     pub fn open(database: &'a mut DB, key: &'a [u8]) -> Self {
-        DBQueue {
-            database,
-            key, 
-        }
+        DBQueue { database, key }
     }
 
     pub fn enqueue(&mut self, value: &[u8]) -> TeaclaveServiceResponseResult<()> {
         let mut tail_index = self.get_tail();
         // put element
-        self.database.put(&self.get_element_key(tail_index), value).map_err(|_| TeaclaveDatabaseError::LevelDbError)?;
+        self.database
+            .put(&self.get_element_key(tail_index), value)
+            .map_err(|_| TeaclaveDatabaseError::LevelDbError)?;
         // tail + 1
         tail_index += 1;
-        self.database.put(&self.get_tail_key(), &tail_index.to_le_bytes()).map_err(|_| TeaclaveDatabaseError::LevelDbError)?;
+        self.database
+            .put(&self.get_tail_key(), &tail_index.to_le_bytes())
+            .map_err(|_| TeaclaveDatabaseError::LevelDbError)?;
         Ok(())
     }
 
@@ -126,7 +123,9 @@ impl<'a> DBQueue<'a> {
             };
             // update head
             head_index += 1;
-            self.database.put(&self.get_head_key(), &head_index.to_le_bytes()).map_err(|_| TeaclaveDatabaseError::LevelDbError)?;
+            self.database
+                .put(&self.get_head_key(), &head_index.to_le_bytes())
+                .map_err(|_| TeaclaveDatabaseError::LevelDbError)?;
             // delete element; it's ok to ignore the error
             let _ = self.database.delete(&element_key);
             Ok(result)
@@ -138,11 +137,11 @@ impl TeaclaveDatabaseService {
     pub fn execution(&mut self) {
         #[cfg(test_mode)]
         test_mode::repalce_with_mock_database(self);
-        
+
         loop {
             let request = match self.receiver.recv() {
                 Ok(req) => req,
-                Err(e) => { 
+                Err(e) => {
                     error!("mspc receive error: {}", e);
                     continue;
                 }
@@ -150,72 +149,55 @@ impl TeaclaveDatabaseService {
             let database_request = request.request;
             let sender = request.sender;
             let response = self.dispatch(database_request);
-            
+
             match sender.send(response) {
                 Ok(_) => (),
                 Err(e) => error!("mpsc send error: {}", e),
             }
         }
-        
     }
 }
 impl TeaclaveDatabase for TeaclaveDatabaseService {
-    fn get(
-        &self,
-        request: GetRequest,
-    ) -> TeaclaveServiceResponseResult<GetResponse> {
+    fn get(&self, request: GetRequest) -> TeaclaveServiceResponseResult<GetResponse> {
         match self.database.borrow_mut().get(&request.key) {
             Some(value) => Ok(GetResponse {
                 value: value.to_owned(),
             }),
-            None => Err(TeaclaveDatabaseError::KeyNotExist.into())
+            None => Err(TeaclaveDatabaseError::KeyNotExist.into()),
         }
     }
 
-    fn put(
-        &self,
-        request: PutRequest,
-    ) -> TeaclaveServiceResponseResult<PutResponse> {
+    fn put(&self, request: PutRequest) -> TeaclaveServiceResponseResult<PutResponse> {
         match self.database.borrow_mut().put(&request.key, &request.value) {
             Ok(_) => Ok(PutResponse {}),
-            Err(_) => Err(TeaclaveDatabaseError::LevelDbError.into())
+            Err(_) => Err(TeaclaveDatabaseError::LevelDbError.into()),
         }
     }
 
-    fn delete(
-        &self,
-        request: DeleteRequest,
-    ) -> TeaclaveServiceResponseResult<DeleteResponse> {
+    fn delete(&self, request: DeleteRequest) -> TeaclaveServiceResponseResult<DeleteResponse> {
         match self.database.borrow_mut().delete(&request.key) {
             Ok(_) => Ok(DeleteResponse {}),
-            Err(_) => Err(TeaclaveDatabaseError::LevelDbError.into())
+            Err(_) => Err(TeaclaveDatabaseError::LevelDbError.into()),
         }
     }
 
-    fn enqueue(
-        &self,
-        request: EnqueueRequest,
-    ) -> TeaclaveServiceResponseResult<EnqueueResponse> {
+    fn enqueue(&self, request: EnqueueRequest) -> TeaclaveServiceResponseResult<EnqueueResponse> {
         let mut db = self.database.borrow_mut();
         let mut queue = DBQueue::open(&mut db, &request.key);
         match queue.enqueue(&request.value) {
             Ok(_) => Ok(EnqueueResponse {}),
-            Err(_) => Err(TeaclaveDatabaseError::LevelDbError.into())
+            Err(_) => Err(TeaclaveDatabaseError::LevelDbError.into()),
         }
     }
 
-    fn dequeue(
-        &self,
-        request: DequeueRequest,
-    ) -> TeaclaveServiceResponseResult<DequeueResponse> {
+    fn dequeue(&self, request: DequeueRequest) -> TeaclaveServiceResponseResult<DequeueResponse> {
         let mut db = self.database.borrow_mut();
         let mut queue = DBQueue::open(&mut db, &request.key);
         match queue.dequeue() {
             Ok(value) => Ok(DequeueResponse { value }),
-            Err(e) => Err(e)
+            Err(e) => Err(e),
         }
     }
-
 }
 
 #[cfg(test_mode)]
@@ -223,9 +205,11 @@ mod test_mode {
     use super::*;
     pub fn repalce_with_mock_database(service: &mut TeaclaveDatabaseService) {
         let opt = rusty_leveldb::in_memory();
-        let mut database = DB::open("mock_db", opt).unwrap();        
+        let mut database = DB::open("mock_db", opt).unwrap();
         database.put(b"test_get_key", b"test_get_value").unwrap();
-        database.put(b"test_delete_key", b"test_delete_value").unwrap();
+        database
+            .put(b"test_delete_key", b"test_delete_value")
+            .unwrap();
         service.database.replace(database);
     }
 }
@@ -238,9 +222,11 @@ pub mod tests {
     fn get_mock_service() -> TeaclaveDatabaseService {
         let (_sender, receiver) = channel();
         let opt = rusty_leveldb::in_memory();
-        let mut database = DB::open("mock_db", opt).unwrap();        
+        let mut database = DB::open("mock_db", opt).unwrap();
         database.put(b"test_get_key", b"test_get_value").unwrap();
-        database.put(b"test_delete_key", b"test_delete_value").unwrap();
+        database
+            .put(b"test_delete_key", b"test_delete_value")
+            .unwrap();
         TeaclaveDatabaseService {
             database: RefCell::new(database),
             receiver,
