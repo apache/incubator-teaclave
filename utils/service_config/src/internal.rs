@@ -51,6 +51,12 @@ impl Internal {
             InboundDesc::Sgx(get_trusted_enclave_attr(vec!["kms", "tms", "tdfs"])),
         )
     }
+    pub fn dbs() -> ServiceConfig {
+        ServiceConfig::new(
+            runtime_config().internal_endpoints.dbs.listen_address,
+            InboundDesc::External,
+        )
+    }
 
     pub fn target_tms() -> TargetDesc {
         TargetDesc::new(

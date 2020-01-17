@@ -36,11 +36,12 @@ use teaclave_ipc::{handle_ecall, register_ecall_handler};
 use teaclave_service_enclave_utils::ServiceEnclave;
 
 mod teaclave_authentication_service;
+mod teaclave_database_service;
 
 #[handle_ecall]
 fn handle_run_enclave_unit_test(_args: &RunFunctionalTestInput) -> Result<RunFunctionalTestOutput> {
     teaclave_authentication_service::run_functional_tests();
-
+    teaclave_database_service::run_functional_tests();
     Ok(RunFunctionalTestOutput::default())
 }
 

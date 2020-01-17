@@ -42,6 +42,7 @@ fn handle_run_enclave_unit_test(
 ) -> Result<RunEnclaveUnitTestOutput> {
     let mut failed_count = 0;
     failed_count += teaclave_authentication_service_enclave::tests::run_tests();
+    failed_count += teaclave_database_service_enclave::tests::run_tests();
     Ok(RunEnclaveUnitTestOutput { failed_count })
 }
 
