@@ -1,0 +1,46 @@
+syntax = "proto3";
+package teaclave_database_service_proto;
+
+message GetRequest {
+  bytes key = 1;
+}
+
+message GetResponse {
+  bytes value = 1;
+}
+
+message PutRequest {
+  bytes key = 1;
+  bytes value = 2;
+}
+
+message PutResponse {}
+
+message DeleteRequest {
+  bytes key = 1;
+}
+
+message DeleteResponse {}
+
+message EnqueueRequest {
+  bytes key = 1;
+  bytes value = 2;
+}
+
+message EnqueueResponse {}
+
+message DequeueRequest {
+  bytes key = 1;
+}
+
+message DequeueResponse {
+  bytes value = 1;
+}
+
+service TeaclaveDatabase {
+  rpc Get(GetRequest) returns (GetResponse);
+  rpc Put(PutRequest) returns (PutResponse);
+  rpc Delete(DeleteRequest) returns (DeleteResponse);
+  rpc Enqueue(EnqueueRequest) returns (EnqueueResponse);
+  rpc Dequeue(DequeueRequest) returns (DequeueResponse);
+}

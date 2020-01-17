@@ -25,6 +25,7 @@ fn main() {
     println!("cargo:rerun-if-changed={}", proto_path);
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=proto_gen/templates/proto.j2");
+    println!("cargo:rerun-if-changed=src/proto/teaclave_database_service.proto");
     let c = Command::new("cargo")
         .args(&[
             "run",
@@ -35,6 +36,7 @@ fn main() {
             "--",
             "-p",
             "src/proto/teaclave_authentication_service.proto",
+            "src/proto/teaclave_database_service.proto",
             "-i",
             "src/proto",
             "-d",
