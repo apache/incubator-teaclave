@@ -114,7 +114,7 @@ impl<'a> DBQueue<'a> {
         let tail_index = self.get_tail();
         // check whether the queue is empty
         if head_index >= tail_index {
-            return Err(TeaclaveDatabaseError::QueueEmpty.into());
+            Err(TeaclaveDatabaseError::QueueEmpty.into())
         } else {
             let element_key = self.get_element_key(head_index);
             let result = match self.database.get(&element_key) {
@@ -160,9 +160,7 @@ impl TeaclaveDatabaseService {
 impl TeaclaveDatabase for TeaclaveDatabaseService {
     fn get(&self, request: GetRequest) -> TeaclaveServiceResponseResult<GetResponse> {
         match self.database.borrow_mut().get(&request.key) {
-            Some(value) => Ok(GetResponse {
-                value: value.to_owned(),
-            }),
+            Some(value) => Ok(GetResponse { value }),
             None => Err(TeaclaveDatabaseError::KeyNotExist.into()),
         }
     }
