@@ -23,14 +23,11 @@ impl RemoteAttestation {
             IasReport::new(key_pair.pub_k, ias_key, ias_spid, false)?
         };
 
-        let cert_extension_payload =
-            [report.report, report.signature, report.signing_cert].join("|");
+        let cert_extension = serde_json::to_vec(&report)?;
 
-        let cert_der = key_pair.create_cert_with_extension(
-            "Teaclave",
-            "Teaclave",
-            &cert_extension_payload.as_bytes(),
-        );
+        let issuer = "Teaclave";
+        let subject = "CN=Teaclave";
+        let cert_der = key_pair.create_cert_with_extension(issuer, subject, &cert_extension);
         let prv_key_der = key_pair.private_key_into_der();
 
         let time = SystemTime::now();

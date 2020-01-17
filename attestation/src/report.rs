@@ -15,188 +15,326 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use crate::ias::IasClient;
-use crate::AttestationError;
-use anyhow::Error;
-use anyhow::Result;
-use hex;
-use log::debug;
-use sgx_rand::os::SgxRng;
-use sgx_rand::Rng;
-use sgx_tcrypto::rsgx_sha256_slice;
-use sgx_tse::{rsgx_create_report, rsgx_verify_report};
-use sgx_types::sgx_ec256_public_t;
-use sgx_types::*;
+#![allow(clippy::redundant_closure)]
+
+// Insert std prelude in the top for the sgx feature
+#[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-extern "C" {
-    fn ocall_sgx_init_quote(
-        p_retval: *mut sgx_status_t,
-        p_target_info: *mut sgx_target_info_t,
-        p_gid: *mut sgx_epid_group_id_t,
-    ) -> sgx_status_t;
+use crate::ias::IasReport;
+use anyhow::{anyhow, bail};
+use anyhow::{Error, Result};
+use chrono::DateTime;
+use rustls;
+use serde_json;
+use serde_json::Value;
+use std::convert::TryFrom;
+use std::time::*;
 
-    fn ocall_sgx_calc_quote_size(
-        p_retval: *mut sgx_status_t,
-        p_sig_rl: *const u8,
-        sig_rl_size: u32,
-        p_quote_size: *mut u32,
-    ) -> sgx_status_t;
+#[cfg(feature = "mesalock_sgx")]
+use std::untrusted::time::SystemTimeEx;
 
-    fn ocall_sgx_get_quote(
-        p_retval: *mut sgx_status_t,
-        p_report: *const sgx_report_t,
-        quote_type: sgx_quote_sign_type_t,
-        p_spid: *const sgx_spid_t,
-        p_nonce: *const sgx_quote_nonce_t,
-        p_sig_rl: *const u8,
-        sig_rl_size: u32,
-        p_qe_report: *mut sgx_report_t,
-        p_quote: *mut u8,
-        quote_size: u32,
-    ) -> sgx_status_t;
+use uuid::Uuid;
+
+type SignatureAlgorithms = &'static [&'static webpki::SignatureAlgorithm];
+static SUPPORTED_SIG_ALGS: SignatureAlgorithms = &[
+    &webpki::ECDSA_P256_SHA256,
+    &webpki::ECDSA_P256_SHA384,
+    &webpki::ECDSA_P384_SHA256,
+    &webpki::ECDSA_P384_SHA384,
+    &webpki::RSA_PSS_2048_8192_SHA256_LEGACY_KEY,
+    &webpki::RSA_PSS_2048_8192_SHA384_LEGACY_KEY,
+    &webpki::RSA_PSS_2048_8192_SHA512_LEGACY_KEY,
+    &webpki::RSA_PKCS1_2048_8192_SHA256,
+    &webpki::RSA_PKCS1_2048_8192_SHA384,
+    &webpki::RSA_PKCS1_2048_8192_SHA512,
+    &webpki::RSA_PKCS1_3072_8192_SHA384,
+];
+
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum QuoteParsingError {
+    #[error("Invalid cert format")]
+    InvalidCertFormat,
+    #[error("Bad attestation report")]
+    BadAttnReport,
 }
 
-#[derive(Default)]
-pub struct IasReport {
-    pub report: String,
-    pub signature: String,
-    pub signing_cert: String,
+pub struct SgxReport {
+    pub cpu_svn: [u8; 16],
+    pub misc_select: u32,
+    pub attributes: [u8; 16],
+    pub mr_enclave: [u8; 32],
+    pub mr_signer: [u8; 32],
+    pub isv_prod_id: u16,
+    pub isv_svn: u16,
+    pub report_data: [u8; 64],
 }
 
-impl IasReport {
-    pub fn new(
-        pub_k: sgx_ec256_public_t,
-        ias_key: &str,
-        ias_spid: &str,
-        production: bool,
-    ) -> Result<Self> {
-        let (target_info, epid_group_id) = Self::init_quote()?;
-        let mut ias_client = IasClient::new(ias_key, production);
-        let sigrl = ias_client.get_sigrl(u32::from_le_bytes(epid_group_id))?;
-        let report = Self::create_report(pub_k, target_info)?;
-        let quote = Self::get_quote(&sigrl, report, target_info, ias_spid)?;
-        let report = ias_client.get_report(&quote)?;
-        Ok(report)
-    }
+pub enum SgxQuoteVersion {
+    V1,
+    V2,
+}
 
-    fn init_quote() -> Result<(sgx_target_info_t, sgx_epid_group_id_t)> {
-        debug!("init_quote");
-        let mut ti: sgx_target_info_t = sgx_target_info_t::default();
-        let mut eg: sgx_epid_group_id_t = sgx_epid_group_id_t::default();
-        let mut rt: sgx_status_t = sgx_status_t::SGX_ERROR_UNEXPECTED;
+pub enum SgxQuoteSigType {
+    Unlinkable,
+    Linkable,
+}
 
-        let res = unsafe { ocall_sgx_init_quote(&mut rt as _, &mut ti as _, &mut eg as _) };
+#[derive(PartialEq, Debug)]
+pub enum SgxQuoteStatus {
+    OK,
+    GroupOutOfDate,
+    ConfigurationNeeded,
+    UnknownBadStatus,
+}
 
-        if res != sgx_status_t::SGX_SUCCESS || rt != sgx_status_t::SGX_SUCCESS {
-            Err(Error::new(AttestationError::OCallError))
-        } else {
-            Ok((ti, eg))
+impl From<&str> for SgxQuoteStatus {
+    fn from(status: &str) -> Self {
+        match status {
+            "OK" => SgxQuoteStatus::OK,
+            "GROUP_OUT_OF_DATE" => SgxQuoteStatus::GroupOutOfDate,
+            "CONFIGURATION_NEEDED" => SgxQuoteStatus::ConfigurationNeeded,
+            _ => SgxQuoteStatus::UnknownBadStatus,
         }
     }
+}
 
-    fn create_report(
-        pub_k: sgx_ec256_public_t,
-        target_info: sgx_target_info_t,
-    ) -> Result<sgx_report_t> {
-        debug!("create_report");
-        let mut report_data: sgx_report_data_t = sgx_report_data_t::default();
-        let mut pub_k_gx = pub_k.gx;
-        pub_k_gx.reverse();
-        let mut pub_k_gy = pub_k.gy;
-        pub_k_gy.reverse();
-        report_data.d[..32].clone_from_slice(&pub_k_gx);
-        report_data.d[32..].clone_from_slice(&pub_k_gy);
+pub struct SgxQuoteBody {
+    pub version: SgxQuoteVersion,
+    pub signature_type: SgxQuoteSigType,
+    pub gid: u32,
+    pub isv_svn_qe: u16,
+    pub isv_svn_pce: u16,
+    pub qe_vendor_id: Uuid,
+    pub user_data: [u8; 20],
+    pub report_body: SgxReport,
+}
 
-        rsgx_create_report(&target_info, &report_data)
-            .map_err(|_| Error::new(AttestationError::IasError))
+impl SgxQuoteBody {
+    fn parse_from<'a>(bytes: &'a [u8]) -> Result<Self> {
+        let mut pos: usize = 0;
+        // TODO: It is really unnecessary to construct a Vec<u8> each time.
+        // Try to optimize this.
+        let mut take = |n: usize| -> Result<&'a [u8]> {
+            if n > 0 && bytes.len() >= pos + n {
+                let ret = &bytes[pos..pos + n];
+                pos += n;
+                Ok(ret)
+            } else {
+                bail!("Quote parsing error.")
+            }
+        };
+
+        // off 0, size 2
+        let version = match u16::from_le_bytes(<[u8; 2]>::try_from(take(2)?)?) {
+            1 => SgxQuoteVersion::V1,
+            2 => SgxQuoteVersion::V2,
+            _ => bail!("Quote parsing error."),
+        };
+
+        // off 2, size 2
+        let signature_type = match u16::from_le_bytes(<[u8; 2]>::try_from(take(2)?)?) {
+            0 => SgxQuoteSigType::Unlinkable,
+            1 => SgxQuoteSigType::Linkable,
+            _ => bail!("Quote parsing error."),
+        };
+
+        // off 4, size 4
+        let gid = u32::from_le_bytes(<[u8; 4]>::try_from(take(4)?)?);
+
+        // off 8, size 2
+        let isv_svn_qe = u16::from_le_bytes(<[u8; 2]>::try_from(take(2)?)?);
+
+        // off 10, size 2
+        let isv_svn_pce = u16::from_le_bytes(<[u8; 2]>::try_from(take(2)?)?);
+
+        // off 12, size 16
+        let qe_vendor_id_raw = <[u8; 16]>::try_from(take(16)?)?;
+        let qe_vendor_id = Uuid::from_slice(&qe_vendor_id_raw)?;
+
+        // off 28, size 20
+        let user_data = <[u8; 20]>::try_from(take(20)?)?;
+
+        // off 48, size 16
+        let cpu_svn = <[u8; 16]>::try_from(take(16)?)?;
+
+        // off 64, size 4
+        let misc_select = u32::from_le_bytes(<[u8; 4]>::try_from(take(4)?)?);
+
+        // off 68, size 28
+        let _reserved = take(28)?;
+
+        // off 96, size 16
+        let attributes = <[u8; 16]>::try_from(take(16)?)?;
+
+        // off 112, size 32
+        let mr_enclave = <[u8; 32]>::try_from(take(32)?)?;
+
+        // off 144, size 32
+        let _reserved = take(32)?;
+
+        // off 176, size 32
+        let mr_signer = <[u8; 32]>::try_from(take(32)?)?;
+
+        // off 208, size 96
+        let _reserved = take(96)?;
+
+        // off 304, size 2
+        let isv_prod_id = u16::from_le_bytes(<[u8; 2]>::try_from(take(2)?)?);
+
+        // off 306, size 2
+        let isv_svn = u16::from_le_bytes(<[u8; 2]>::try_from(take(2)?)?);
+
+        // off 308, size 60
+        let _reserved = take(60)?;
+
+        // off 368, size 64
+        let mut report_data = [0u8; 64];
+        let _report_data = take(64)?;
+        let mut _it = _report_data.iter();
+        for i in report_data.iter_mut() {
+            *i = *_it.next().ok_or_else(|| anyhow!("Quote parsing error."))?;
+        }
+
+        if pos != bytes.len() {
+            bail!("Quote parsing error.");
+        }
+
+        Ok(Self {
+            version,
+            signature_type,
+            gid,
+            isv_svn_qe,
+            isv_svn_pce,
+            qe_vendor_id,
+            user_data,
+            report_body: SgxReport {
+                cpu_svn,
+                misc_select,
+                attributes,
+                mr_enclave,
+                mr_signer,
+                isv_prod_id,
+                isv_svn,
+                report_data,
+            },
+        })
     }
+}
 
-    fn get_quote(
-        sigrl: &[u8],
-        report: sgx_report_t,
-        target_info: sgx_target_info_t,
-        ias_spid_str: &str,
-    ) -> Result<Vec<u8>> {
-        let mut rt: sgx_status_t = sgx_status_t::SGX_ERROR_UNEXPECTED;
-        let (p_sigrl, sigrl_len) = if sigrl.is_empty() {
-            (std::ptr::null(), 0)
-        } else {
-            (sigrl.as_ptr(), sigrl.len() as u32)
+pub struct AttestationReport {
+    pub freshness: Duration,
+    pub sgx_quote_status: SgxQuoteStatus,
+    pub sgx_quote_body: SgxQuoteBody,
+}
+
+impl AttestationReport {
+    pub fn from_cert(cert: &[u8], ias_report_ca_cert: &[u8]) -> Result<Self> {
+        // Before we reach here, Webpki already verifed the cert is properly signed
+        use super::cert::*;
+
+        let x509 = yasna::parse_der(cert, |reader| X509::load(reader))?;
+
+        let tbs_cert: <TbsCert as Asn1Ty>::ValueTy = x509.0;
+
+        let pub_key: <PubKey as Asn1Ty>::ValueTy = ((((((tbs_cert.1).1).1).1).1).1).0;
+        let pub_k = (pub_key.1).0;
+
+        let sgx_ra_cert_ext: <SgxRaCertExt as Asn1Ty>::ValueTy =
+            (((((((tbs_cert.1).1).1).1).1).1).1).0;
+
+        let payload: Vec<u8> = ((sgx_ra_cert_ext.0).1).0;
+
+        // Extract each field
+        let report: IasReport = serde_json::from_slice(&payload)?;
+        let signing_cert = webpki::EndEntityCert::from(&report.signing_cert)?;
+
+        let mut root_store = rustls::RootCertStore::empty();
+        root_store
+            .add(&rustls::Certificate(ias_report_ca_cert.to_vec()))
+            .expect("Failed to add CA");
+
+        let trust_anchors: Vec<webpki::TrustAnchor> = root_store
+            .roots
+            .iter()
+            .map(|cert| cert.to_trust_anchor())
+            .collect();
+
+        let chain: Vec<&[u8]> = vec![ias_report_ca_cert];
+
+        let time = webpki::Time::try_from(SystemTime::now())
+            .map_err(|_| anyhow!("Cannot convert time."))?;
+
+        signing_cert.verify_is_valid_tls_server_cert(
+            SUPPORTED_SIG_ALGS,
+            &webpki::TLSServerTrustAnchors(&trust_anchors),
+            &chain,
+            time,
+        )?;
+
+        // Verify the signature against the signing cert
+        signing_cert.verify_signature(
+            &webpki::RSA_PKCS1_2048_8192_SHA256,
+            &report.report,
+            &report.signature,
+        )?;
+
+        // Verify attestation report
+        let attn_report: Value = serde_json::from_slice(&report.report)?;
+
+        // 1. Check timestamp is within 24H (90day is recommended by Intel)
+        let quote_freshness = {
+            let time = attn_report["timestamp"]
+                .as_str()
+                .ok_or_else(|| Error::new(QuoteParsingError::BadAttnReport))?;
+            let time_fixed = String::from(time) + "+0000";
+            let date_time = DateTime::parse_from_str(&time_fixed, "%Y-%m-%dT%H:%M:%S%.f%z")?;
+            let ts = date_time.naive_utc();
+            let now = DateTime::<chrono::offset::Utc>::from(SystemTime::now()).naive_utc();
+            u64::try_from((now - ts).num_seconds())?
         };
-        let mut quote_len: u32 = 0;
 
-        let res = unsafe {
-            ocall_sgx_calc_quote_size(&mut rt as _, p_sigrl, sigrl_len, &mut quote_len as _)
+        // 2. Get quote status
+        let sgx_quote_status = {
+            let status_string = attn_report["isvEnclaveQuoteStatus"]
+                .as_str()
+                .ok_or_else(|| Error::new(QuoteParsingError::BadAttnReport))?;
+
+            SgxQuoteStatus::from(status_string)
         };
 
-        if res != sgx_status_t::SGX_SUCCESS || rt != sgx_status_t::SGX_SUCCESS {
-            return Err(Error::new(AttestationError::OCallError));
-        }
-
-        let mut quote_nonce = sgx_quote_nonce_t { rand: [0; 16] };
-        let mut os_rng = SgxRng::new()?;
-        os_rng.fill_bytes(&mut quote_nonce.rand);
-        let mut qe_report = sgx_report_t::default();
-
-        let quote_type = sgx_quote_sign_type_t::SGX_LINKABLE_SIGNATURE;
-
-        let mut spid = sgx_types::sgx_spid_t::default();
-        let hex = hex::decode(ias_spid_str)?;
-        spid.id.copy_from_slice(&hex[..16]);
-
-        let mut quote = vec![0; quote_len as usize];
-
-        debug!("ocall_sgx_get_quote");
-        let res = unsafe {
-            ocall_sgx_get_quote(
-                &mut rt as _,
-                &report as _,
-                quote_type,
-                &spid as _,
-                &quote_nonce as _,
-                p_sigrl,
-                sigrl_len,
-                &mut qe_report as _,
-                quote.as_mut_ptr(),
-                quote_len,
-            )
+        // 3. Get quote body
+        let sgx_quote_body = {
+            let quote_encoded = attn_report["isvEnclaveQuoteBody"]
+                .as_str()
+                .ok_or_else(|| Error::new(QuoteParsingError::BadAttnReport))?;
+            let quote_raw = base64::decode(&(quote_encoded.as_bytes()))?;
+            SgxQuoteBody::parse_from(quote_raw.as_slice())?
         };
 
-        if res != sgx_status_t::SGX_SUCCESS || rt != sgx_status_t::SGX_SUCCESS {
-            return Err(Error::new(AttestationError::OCallError));
+        let raw_pub_k = pub_k.to_bytes();
+
+        // According to RFC 5480 `Elliptic Curve Cryptography Subject Public Key Information',
+        // SEC 2.2:
+        // ``The first octet of the OCTET STRING indicates whether the key is
+        // compressed or uncompressed.  The uncompressed form is indicated
+        // by 0x04 and the compressed form is indicated by either 0x02 or
+        // 0x03 (see 2.3.3 in [SEC1]).  The public key MUST be rejected if
+        // any other value is included in the first octet.''
+        //
+        // We only accept the uncompressed form here.
+        let is_uncompressed = raw_pub_k[0] == 4;
+        let pub_k = &raw_pub_k.as_slice()[1..];
+        if !is_uncompressed || pub_k != &sgx_quote_body.report_body.report_data[..] {
+            bail!(QuoteParsingError::BadAttnReport);
         }
 
-        debug!("rsgx_verify_report");
-        // Perform a check on qe_report to verify if the qe_report is valid.
-        rsgx_verify_report(&qe_report).map_err(|_| Error::new(AttestationError::IasError))?;
-
-        // Check if the qe_report is produced on the same platform.
-        if target_info.mr_enclave.m != qe_report.body.mr_enclave.m
-            || target_info.attributes.flags != qe_report.body.attributes.flags
-            || target_info.attributes.xfrm != qe_report.body.attributes.xfrm
-        {
-            return Err(Error::new(AttestationError::QuoteError));
-        }
-
-        // Check qe_report to defend against replay attack. The purpose of
-        // p_qe_report is for the ISV enclave to confirm the QUOTE it received
-        // is not modified by the untrusted SW stack, and not a replay. The
-        // implementation in QE is to generate a REPORT targeting the ISV
-        // enclave (target info from p_report) , with the lower 32Bytes in
-        // report.data = SHA256(p_nonce||p_quote). The ISV enclave can verify
-        // the p_qe_report and report.data to confirm the QUOTE has not be
-        // modified and is not a replay. It is optional.
-        let mut rhs_vec: Vec<u8> = quote_nonce.rand.to_vec();
-        rhs_vec.extend(&quote);
-        debug!("rsgx_sha256_slice");
-        let rhs_hash =
-            rsgx_sha256_slice(&rhs_vec).map_err(|_| Error::new(AttestationError::IasError))?;
-        let lhs_hash = &qe_report.body.report_data.d[..32];
-        if rhs_hash != lhs_hash {
-            return Err(Error::new(AttestationError::QuoteError));
-        }
-
-        Ok(quote)
+        Ok(Self {
+            freshness: std::time::Duration::from_secs(quote_freshness),
+            sgx_quote_status,
+            sgx_quote_body,
+        })
     }
 }
