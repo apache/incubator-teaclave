@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+
 if [ -z "${MESATEE_PROJECT_ROOT}" ] \
 || [ -z "${SGX_SDK}" ] || [ -z "${SGX_MODE}" ]; then
     echo "Please set MESATEE_PROJECT_ROOT, SGX_SDK and SGX_MODE";
@@ -24,14 +25,22 @@ echo_title() {
 pushd ${MESATEE_TEST_INSTALL_DIR}
 
 echo_title "encalve unit tests"
-./teaclave_enclave_unit_test
+./teaclave_unit_tests
 
-echo_title "leveldb tests"
-./teaclave_leveldb_tests
+echo_title "integration tests"
+./teaclave_integration_tests
 
-echo_title "protect_fs tests"
-./teaclave_protected_fs_tests
+echo_title "protect_fs_rs tests (untrusted)"
 cargo test --manifest-path ${MESATEE_PROJECT_ROOT}/common/protected_fs_rs/Cargo.toml \
       --target-dir ${MESATEE_TARGET_DIR}/untrusted
+
+echo_title "functional tests"
+trap 'kill $(jobs -p)' EXIT
+pushd ${MESATEE_SERVICE_INSTALL_DIR}
+./teaclave_authentication_service &
+./teaclave_database_service &
+popd
+sleep 3
+./teaclave_functional_tests
 
 popd

@@ -15,19 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// Insert std prelude in the top for the sgx feature
-
-// use cfg_if::cfg_if;
 use serde_derive::{Deserialize, Serialize};
-
-// Use target specific definitions here
-// cfg_if! {
-//     if #[cfg(feature = "mesalock_sgx")]  {
-//         use sgx_types::c_int;
-//     } else {
 use std::os::raw::c_int;
-//     }
-// }
 
 #[derive(Clone, Serialize, Deserialize, Debug, Default)]
 pub struct StartServiceInput {
@@ -50,18 +39,12 @@ pub struct FinalizeEnclaveInput;
 pub struct FinalizeEnclaveOutput;
 
 #[derive(Clone, Serialize, Deserialize, Debug, Default)]
-pub struct RunEnclaveUnitTestInput;
+pub struct RunTestInput;
 
 #[derive(Clone, Serialize, Deserialize, Debug, Default)]
-pub struct RunEnclaveUnitTestOutput {
+pub struct RunTestOutput {
     pub failed_count: usize,
 }
-
-#[derive(Clone, Serialize, Deserialize, Debug, Default)]
-pub struct RunFunctionalTestInput;
-
-#[derive(Clone, Serialize, Deserialize, Debug, Default)]
-pub struct RunFunctionalTestOutput;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct ServeConnectionInput {
@@ -71,12 +54,6 @@ pub struct ServeConnectionInput {
 
 #[derive(Clone, Serialize, Deserialize, Debug, Default)]
 pub struct ServeConnectionOutput;
-
-impl RunEnclaveUnitTestOutput {
-    pub fn new(failed_count: usize) -> RunEnclaveUnitTestOutput {
-        RunEnclaveUnitTestOutput { failed_count }
-    }
-}
 
 impl ServeConnectionInput {
     pub fn new(socket_fd: c_int, port: u16) -> ServeConnectionInput {

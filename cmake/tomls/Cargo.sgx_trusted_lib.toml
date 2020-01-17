@@ -3,10 +3,9 @@
 members = [
   "services/authentication/enclave",
   "services/database/enclave",
-  "testsuite/enclave_unit_test/enclave",
-  "testsuite/service_functional_test/enclave",
-  "testsuite/leveldb_tests/enclave",
-  "testsuite/protected_fs_tests/enclave",
+  "tests/unit_tests/enclave",
+  "tests/functional_tests/enclave",
+  "tests/integration_tests/enclave",
 ]
 
 exclude = [

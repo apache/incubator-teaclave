@@ -59,7 +59,7 @@ def pkg_path_2_category(pkg_path):
         return 'services'
     elif pkg_path.startswith('examples/'):
         return 'examples'
-    elif pkg_path.startswith('testsuite/'):
+    elif pkg_path.startswith('tests/'):
         return 'tests'
     elif pkg_path == 'cli':
         return 'bin'
