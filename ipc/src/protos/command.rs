@@ -20,9 +20,8 @@ pub enum ECallCommand {
     StartService,
     InitEnclave,
     FinalizeEnclave,
-    RunEnclaveUnitTest,
+    RunTest,
     ServeConnection,
-    RunFunctionalTest,
     Unimplemented,
 }
 
@@ -33,9 +32,8 @@ impl From<u32> for ECallCommand {
             0x0000_1000 => ECallCommand::StartService,
             0x0000_1001 => ECallCommand::InitEnclave,
             0x0000_1002 => ECallCommand::FinalizeEnclave,
-            0x0000_1003 => ECallCommand::RunEnclaveUnitTest,
+            0x0000_1003 => ECallCommand::RunTest,
             0x0000_1004 => ECallCommand::ServeConnection,
-            0x0000_1005 => ECallCommand::RunFunctionalTest,
             _ => ECallCommand::Unimplemented,
         }
     }
@@ -48,9 +46,8 @@ impl Into<u32> for ECallCommand {
             ECallCommand::StartService => 0x0000_1000,
             ECallCommand::InitEnclave => 0x0000_1001,
             ECallCommand::FinalizeEnclave => 0x0000_1002,
-            ECallCommand::RunEnclaveUnitTest => 0x0000_1003,
+            ECallCommand::RunTest => 0x0000_1003,
             ECallCommand::ServeConnection => 0x0000_1004,
-            ECallCommand::RunFunctionalTest => 0x0000_1005,
             ECallCommand::Unimplemented => 0xffff_ffff,
         }
     }
