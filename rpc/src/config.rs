@@ -1,6 +1,8 @@
 use anyhow::Result;
 use rustls;
 use std::sync::Arc;
+use teaclave_attestation::verifier::AttestationReportVerifier;
+use teaclave_attestation::verifier::EnclaveAttr;
 
 pub struct SgxTrustedTlsServerConfig {
     pub config: Arc<rustls::ServerConfig>,
@@ -54,6 +56,19 @@ impl SgxTrustedTlsClientConfig {
         config
             .dangerous()
             .set_certificate_verifier(NoServerAuth::new());
+        config.versions.clear();
+        config.versions.push(rustls::ProtocolVersion::TLSv1_2);
+
+        Self {
+            config: Arc::new(config),
+        }
+    }
+
+    pub fn new_with_attestation_report_verifier(enclave_attr: EnclaveAttr) -> Self {
+        let mut config = rustls::ClientConfig::new();
+        let verifier = Arc::new(AttestationReportVerifier::new(enclave_attr));
+
+        config.dangerous().set_certificate_verifier(verifier);
         config.versions.clear();
         config.versions.push(rustls::ProtocolVersion::TLSv1_2);
 

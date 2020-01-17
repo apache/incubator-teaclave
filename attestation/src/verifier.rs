@@ -15,7 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use crate::quote::SgxQuote;
+use crate::report::AttestationReport;
+use log::{debug, error};
 use std::hash::{Hash, Hasher};
 use std::vec::Vec;
 use teaclave_config::build_config::BUILD_CONFIG;
@@ -42,31 +43,31 @@ impl Hash for EnclaveAttr {
 }
 
 #[derive(Clone)]
-pub struct SgxQuoteVerifier {
+pub struct AttestationReportVerifier {
     pub enclave_attr: EnclaveAttr,
-    pub verifier: fn(&SgxQuote) -> bool,
+    pub verifier: fn(&AttestationReport) -> bool,
 }
 
-impl PartialEq for SgxQuoteVerifier {
-    fn eq(&self, other: &SgxQuoteVerifier) -> bool {
+impl PartialEq for AttestationReportVerifier {
+    fn eq(&self, other: &AttestationReportVerifier) -> bool {
         self.verifier as usize == other.verifier as usize && self.enclave_attr == other.enclave_attr
     }
 }
 
-impl Eq for SgxQuoteVerifier {}
+impl Eq for AttestationReportVerifier {}
 
-impl Hash for SgxQuoteVerifier {
+impl Hash for AttestationReportVerifier {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.enclave_attr.hash(state);
         (self.verifier as usize).hash(state);
     }
 }
 
-fn universal_quote_verifier(quote: &SgxQuote) -> bool {
-    quote.status != crate::quote::SgxQuoteStatus::UnknownBadStatus
+fn universal_quote_verifier(report: &AttestationReport) -> bool {
+    report.sgx_quote_status != crate::report::SgxQuoteStatus::UnknownBadStatus
 }
 
-impl SgxQuoteVerifier {
+impl AttestationReportVerifier {
     pub fn new(enclave_attr: EnclaveAttr) -> Self {
         Self {
             enclave_attr,
@@ -74,9 +75,13 @@ impl SgxQuoteVerifier {
         }
     }
 
-    fn verify_measures(&self, quote: &SgxQuote) -> bool {
-        let this_mr_signer = quote.body.report_body.mr_signer;
-        let this_mr_enclave = quote.body.report_body.mr_enclave;
+    fn verify_measures(&self, attestation_report: &AttestationReport) -> bool {
+        debug!("verify measures");
+        let this_mr_signer = attestation_report.sgx_quote_body.report_body.mr_signer;
+        let this_mr_enclave = attestation_report.sgx_quote_body.report_body.mr_enclave;
+        for m in self.enclave_attr.measures.iter() {
+            debug!("{:?}", m.mr_signer);
+        }
 
         self.enclave_attr
             .measures
@@ -85,14 +90,15 @@ impl SgxQuoteVerifier {
     }
 
     fn verify_cert(&self, cert_der: &[u8]) -> bool {
+        debug!("verify cert");
         if cfg!(sgx_sim) {
             return true;
         }
 
-        let quote = match SgxQuote::extract_verified_quote(&cert_der, BUILD_CONFIG.ias_root_ca_cert)
-        {
-            Ok(quote) => quote,
-            Err(_) => {
+        let report = match AttestationReport::from_cert(&cert_der, BUILD_CONFIG.ias_root_ca_cert) {
+            Ok(report) => report,
+            Err(e) => {
+                error!("{:?}", e);
                 return false;
             }
         };
@@ -100,14 +106,14 @@ impl SgxQuoteVerifier {
         // Enclave measures are not tested in test mode since we have
         // a dedicated test enclave not known to production enclaves
         if cfg!(test_mode) {
-            return (self.verifier)(&quote);
+            return (self.verifier)(&report);
         }
 
-        self.verify_measures(&quote) && (self.verifier)(&quote)
+        self.verify_measures(&report) && (self.verifier)(&report)
     }
 }
 
-impl rustls::ServerCertVerifier for SgxQuoteVerifier {
+impl rustls::ServerCertVerifier for AttestationReportVerifier {
     fn verify_server_cert(
         &self,
         _roots: &rustls::RootCertStore,
@@ -129,7 +135,7 @@ impl rustls::ServerCertVerifier for SgxQuoteVerifier {
     }
 }
 
-impl rustls::ClientCertVerifier for SgxQuoteVerifier {
+impl rustls::ClientCertVerifier for AttestationReportVerifier {
     fn client_auth_root_subjects(&self) -> rustls::DistinguishedNames {
         rustls::DistinguishedNames::new()
     }

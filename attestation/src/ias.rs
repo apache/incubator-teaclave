@@ -15,21 +15,50 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use crate::report::IasReport;
 use crate::AttestationError;
 use anyhow::Error;
 use anyhow::Result;
+use anyhow::{anyhow, bail};
 use log::{debug, trace};
 use percent_encoding;
+use serde::{Deserialize, Serialize};
 use sgx_types::*;
 use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::net::TcpStream;
+use std::os::unix::io::FromRawFd;
 use std::prelude::v1::*;
 use std::sync::Arc;
 
+#[cfg(feature = "mesalock_sgx")]
 extern "C" {
     fn ocall_sgx_get_ias_socket(p_retval: *mut i32) -> sgx_status_t;
+}
+
+#[derive(Default, Serialize, Deserialize)]
+pub struct IasReport {
+    pub report: Vec<u8>,
+    pub signature: Vec<u8>,
+    pub signing_cert: Vec<u8>,
+}
+
+impl IasReport {
+    #[cfg(feature = "mesalock_sgx")]
+    pub fn new(
+        pub_k: sgx_types::sgx_ec256_public_t,
+        ias_key: &str,
+        ias_spid: &str,
+        production: bool,
+    ) -> anyhow::Result<Self> {
+        use crate::platform;
+        let (target_info, epid_group_id) = platform::init_quote()?;
+        let mut ias_client = IasClient::new(ias_key, production);
+        let sigrl = ias_client.get_sigrl(u32::from_le_bytes(epid_group_id))?;
+        let sgx_report = platform::create_report(pub_k, target_info)?;
+        let quote = platform::get_quote(&sigrl, sgx_report, target_info, ias_spid)?;
+        let ias_report = ias_client.get_report(&quote)?;
+        Ok(ias_report)
+    }
 }
 
 pub struct IasClient {
@@ -51,27 +80,15 @@ impl IasClient {
         }
     }
 
-    fn get_ias_socket() -> Result<c_int> {
-        debug!("get_ias_socket");
-        let mut fd: i32 = -1i32;
-        let res = unsafe { ocall_sgx_get_ias_socket(&mut fd as _) };
-
-        if res != sgx_status_t::SGX_SUCCESS || fd < 0 {
-            Err(Error::new(AttestationError::OCallError))
-        } else {
-            Ok(fd)
-        }
-    }
-
     fn new_tls_stream(&self) -> Result<rustls::StreamOwned<rustls::ClientSession, TcpStream>> {
-        let fd = Self::get_ias_socket()?;
         let dns_name = webpki::DNSNameRef::try_from_ascii_str(self.ias_hostname)?;
         let mut config = rustls::ClientConfig::new();
         config
             .root_store
             .add_server_trust_anchors(&webpki_roots::TLS_SERVER_ROOTS);
         let client = rustls::ClientSession::new(&Arc::new(config), dns_name);
-        let socket = TcpStream::new(fd)?;
+        let fd = get_ias_socket()?;
+        let socket = unsafe { TcpStream::from_raw_fd(fd) };
         let stream = rustls::StreamOwned::new(client, socket);
 
         Ok(stream)
@@ -99,10 +116,10 @@ impl IasClient {
             .map_err(|_| Error::new(AttestationError::IasError))?
         {
             httparse::Status::Complete(s) => s,
-            _ => return Err(Error::new(AttestationError::IasError)),
+            _ => bail!(Error::new(AttestationError::IasError)),
         };
 
-        let header_map = Self::parse_headers(&http_response);
+        let header_map = parse_headers(&http_response);
 
         if !header_map.contains_key("Content-Length")
             || header_map
@@ -158,11 +175,10 @@ impl IasClient {
             .map_err(|_| Error::new(AttestationError::IasError))?
         {
             httparse::Status::Complete(s) => s,
-            _ => return Err(Error::new(AttestationError::IasError)),
+            _ => bail!(AttestationError::IasError),
         };
 
-        debug!("Self::parse_headers");
-        let header_map = Self::parse_headers(&http_response);
+        let header_map = parse_headers(&http_response);
 
         debug!("get_content_length");
         if !header_map.contains_key("Content-Length")
@@ -173,42 +189,64 @@ impl IasClient {
                 .unwrap_or(0)
                 == 0
         {
-            return Err(Error::new(AttestationError::IasError));
+            bail!(Error::new(AttestationError::IasError));
         }
 
         debug!("get_signature");
         let signature = header_map
             .get("X-IASReport-Signature")
-            .ok_or_else(|| Error::new(AttestationError::IasError))?
-            .to_owned();
+            .ok_or_else(|| Error::new(AttestationError::IasError))?;
+        let signature = base64::decode(signature)?;
         debug!("get_signing_cert");
         let signing_cert = {
             let cert_str = header_map
                 .get("X-IASReport-Signing-Certificate")
                 .ok_or_else(|| Error::new(AttestationError::IasError))?;
             let decoded_cert = percent_encoding::percent_decode_str(cert_str).decode_utf8()?;
-            // We should get two concatenated PEM files at this step.
-            let cert_content: Vec<&str> = decoded_cert.split("-----").collect();
-            cert_content[2].to_string()
+            let certs = rustls::internal::pemfile::certs(&mut decoded_cert.as_bytes())
+                .map_err(|_| anyhow!("pemfile error"))?;
+            certs[0].0.clone()
         };
 
-        let report = String::from_utf8_lossy(&response[header_len..]).into_owned();
+        let report = response[header_len..].to_vec();
         Ok(IasReport {
             report,
             signature,
             signing_cert,
         })
     }
+}
 
-    fn parse_headers(resp: &httparse::Response) -> HashMap<String, String> {
-        let mut header_map = HashMap::new();
-        for h in resp.headers.iter() {
-            header_map.insert(
-                h.name.to_owned(),
-                String::from_utf8_lossy(h.value).into_owned(),
-            );
-        }
-
-        header_map
+fn parse_headers(resp: &httparse::Response) -> HashMap<String, String> {
+    debug!("parse_headers");
+    let mut header_map = HashMap::new();
+    for h in resp.headers.iter() {
+        header_map.insert(
+            h.name.to_owned(),
+            String::from_utf8_lossy(h.value).into_owned(),
+        );
     }
+
+    header_map
+}
+
+#[cfg(feature = "mesalock_sgx")]
+fn get_ias_socket() -> Result<c_int> {
+    debug!("get_ias_socket");
+    let mut fd: c_int = -1;
+    let res = unsafe { ocall_sgx_get_ias_socket(&mut fd as _) };
+
+    if res != sgx_status_t::SGX_SUCCESS || fd < 0 {
+        bail!(AttestationError::OCallError)
+    } else {
+        Ok(fd)
+    }
+}
+
+#[cfg(not(feature = "mesalock_sgx"))]
+fn get_ias_socket() -> Result<c_int> {
+    use std::os::unix::io::IntoRawFd;
+    let ias_addr = "api.trustedservices.intel.com:443";
+    let stream = TcpStream::connect(ias_addr)?;
+    Ok(stream.into_raw_fd())
 }

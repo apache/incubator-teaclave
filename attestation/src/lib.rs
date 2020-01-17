@@ -34,17 +34,17 @@ pub enum AttestationError {
 
 #[macro_use]
 mod cert;
-pub mod quote;
+pub mod ias;
+pub mod report;
 pub mod verifier;
 
 use cfg_if::cfg_if;
 cfg_if! {
     if #[cfg(feature = "mesalock_sgx")]  {
         pub mod key;
-        mod report;
-        mod ias;
+        mod platform;
         mod attestation;
-        pub use report::IasReport;
+        pub use ias::IasReport;
         pub use attestation::RemoteAttestation;
     } else {
     }
