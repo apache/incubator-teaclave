@@ -146,6 +146,8 @@ impl Secp256k1KeyPair {
             .ecdsa_sign_slice(&tbs_cert_der.as_slice(), &self.prv_k)
             .unwrap();
 
+        ecc_handle.close().unwrap();
+
         let sig_der = yasna::construct_der(|writer| {
             writer.write_sequence(|writer| {
                 let mut sig_x = sig.x;
