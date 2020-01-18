@@ -46,6 +46,5 @@ cfg_if! {
         mod attestation;
         pub use ias::IasReport;
         pub use attestation::RemoteAttestation;
-    } else {
     }
 }
