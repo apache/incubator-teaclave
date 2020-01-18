@@ -48,14 +48,13 @@ impl IasReport {
         pub_k: sgx_types::sgx_ec256_public_t,
         ias_key: &str,
         ias_spid: &str,
-        production: bool,
     ) -> anyhow::Result<Self> {
         use crate::platform;
-        let (target_info, epid_group_id) = platform::init_quote()?;
-        let mut ias_client = IasClient::new(ias_key, production);
+        let (target_info, epid_group_id) = platform::init_sgx_quote()?;
+        let mut ias_client = IasClient::new(ias_key);
         let sigrl = ias_client.get_sigrl(u32::from_le_bytes(epid_group_id))?;
-        let sgx_report = platform::create_report(pub_k, target_info)?;
-        let quote = platform::get_quote(&sigrl, sgx_report, target_info, ias_spid)?;
+        let sgx_report = platform::create_sgx_report(pub_k, target_info)?;
+        let quote = platform::get_sgx_quote(&sigrl, sgx_report, target_info, ias_spid)?;
         let ias_report = ias_client.get_report(&quote)?;
         Ok(ias_report)
     }
@@ -67,12 +66,11 @@ pub struct IasClient {
 }
 
 impl IasClient {
-    pub fn new(ias_key: &str, production: bool) -> Self {
-        let ias_hostname = if production {
-            "as.sgx.trustedservices.intel.com"
-        } else {
-            "api.trustedservices.intel.com"
-        };
+    pub fn new(ias_key: &str) -> Self {
+        #[cfg(production)]
+        let ias_hostname = "as.sgx.trustedservices.intel.com";
+        #[cfg(not(production))]
+        let ias_hostname = "api.trustedservices.intel.com";
 
         Self {
             ias_key: ias_key.to_owned(),
@@ -116,7 +114,7 @@ impl IasClient {
             .map_err(|_| Error::new(AttestationError::IasError))?
         {
             httparse::Status::Complete(s) => s,
-            _ => bail!(Error::new(AttestationError::IasError)),
+            _ => bail!(AttestationError::IasError),
         };
 
         let header_map = parse_headers(&http_response);
@@ -189,7 +187,7 @@ impl IasClient {
                 .unwrap_or(0)
                 == 0
         {
-            bail!(Error::new(AttestationError::IasError));
+            bail!(AttestationError::IasError);
         }
 
         debug!("get_signature");

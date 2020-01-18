@@ -20,7 +20,7 @@ impl RemoteAttestation {
         let report = if cfg!(sgx_sim) {
             IasReport::default()
         } else {
-            IasReport::new(key_pair.pub_k, ias_key, ias_spid, false)?
+            IasReport::new(key_pair.pub_k, ias_key, ias_spid)?
         };
 
         let cert_extension = serde_json::to_vec(&report)?;

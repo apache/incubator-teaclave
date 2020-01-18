@@ -55,12 +55,10 @@ use std::thread;
 #[handle_ecall]
 fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> {
     debug!("handle_start_service");
+    let config = config::runtime_config();
     let listener = std::net::TcpListener::new(args.fd)?;
-    let attestation = RemoteAttestation::generate_and_endorse(
-        &config::runtime_config().env.ias_key,
-        &config::runtime_config().env.ias_spid,
-    )
-    .unwrap();
+    let attestation =
+        RemoteAttestation::generate_and_endorse(&config.env.ias_key, &config.env.ias_spid).unwrap();
     let config = SgxTrustedTlsServerConfig::new_without_verifier(
         &attestation.cert,
         &attestation.private_key,

@@ -15,8 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#![allow(clippy::redundant_closure)]
-
 // Insert std prelude in the top for the sgx feature
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
@@ -235,6 +233,7 @@ impl AttestationReport {
         // Before we reach here, Webpki already verifed the cert is properly signed
         use super::cert::*;
 
+        #[allow(clippy::redundant_closure)]
         let x509 = yasna::parse_der(cert, |reader| X509::load(reader))?;
 
         let tbs_cert: <TbsCert as Asn1Ty>::ValueTy = x509.0;
@@ -247,7 +246,6 @@ impl AttestationReport {
 
         let payload: Vec<u8> = ((sgx_ra_cert_ext.0).1).0;
 
-        // Extract each field
         let report: IasReport = serde_json::from_slice(&payload)?;
         let signing_cert = webpki::EndEntityCert::from(&report.signing_cert)?;
 
@@ -310,7 +308,7 @@ impl AttestationReport {
             let quote_encoded = attn_report["isvEnclaveQuoteBody"]
                 .as_str()
                 .ok_or_else(|| Error::new(QuoteParsingError::BadAttnReport))?;
-            let quote_raw = base64::decode(&(quote_encoded.as_bytes()))?;
+            let quote_raw = base64::decode(&quote_encoded.as_bytes())?;
             SgxQuoteBody::parse_from(quote_raw.as_slice())?
         };
 

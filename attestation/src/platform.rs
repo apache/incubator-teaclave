@@ -39,7 +39,7 @@ extern "C" {
     ) -> sgx_status_t;
 }
 
-pub(crate) fn init_quote() -> Result<(sgx_target_info_t, sgx_epid_group_id_t)> {
+pub(crate) fn init_sgx_quote() -> Result<(sgx_target_info_t, sgx_epid_group_id_t)> {
     debug!("init_quote");
     let mut ti: sgx_target_info_t = sgx_target_info_t::default();
     let mut eg: sgx_epid_group_id_t = sgx_epid_group_id_t::default();
@@ -54,7 +54,7 @@ pub(crate) fn init_quote() -> Result<(sgx_target_info_t, sgx_epid_group_id_t)> {
     }
 }
 
-pub(crate) fn create_report(
+pub(crate) fn create_sgx_report(
     pub_k: sgx_ec256_public_t,
     target_info: sgx_target_info_t,
 ) -> Result<sgx_report_t> {
@@ -71,7 +71,7 @@ pub(crate) fn create_report(
         .map_err(|_| Error::new(AttestationError::IasError))
 }
 
-pub(crate) fn get_quote(
+pub(crate) fn get_sgx_quote(
     sigrl: &[u8],
     report: sgx_report_t,
     target_info: sgx_target_info_t,
@@ -93,8 +93,8 @@ pub(crate) fn get_quote(
     }
 
     let mut quote_nonce = sgx_quote_nonce_t { rand: [0; 16] };
-    let mut os_rng = SgxRng::new()?;
-    os_rng.fill_bytes(&mut quote_nonce.rand);
+    let mut rng = SgxRng::new()?;
+    rng.fill_bytes(&mut quote_nonce.rand);
     let mut qe_report = sgx_report_t::default();
 
     let quote_type = sgx_quote_sign_type_t::SGX_LINKABLE_SIGNATURE;
