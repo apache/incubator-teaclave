@@ -25,8 +25,7 @@ use serde::Serialize;
 use sgx_types::{sgx_enclave_id_t, sgx_status_t};
 
 use crate::IpcSender;
-use anyhow;
-use anyhow::Result;
+use anyhow::{bail, Result};
 use teaclave_types::EnclaveStatus;
 
 // Delaration of ecall for App, the implementation is in TEE
@@ -92,7 +91,7 @@ impl ECallChannel {
             /* Check sgx return values */
             if sgx_status != sgx_status_t::SGX_SUCCESS {
                 error!("ecall_ipc_entry_point, app sgx_error:{}", sgx_status);
-                return Err(anyhow::anyhow!(sgx_status));
+                bail!(sgx_status);
             }
 
             /*
@@ -101,7 +100,6 @@ impl ECallChannel {
              * We only retry once for once invocation.
              */
             if ecall_ret.is_err_ffi_outbuf() && !retried {
-                // TODO: let e = Error::from(ecall_ret);
                 debug!(
                     "ecall_ipc_entry_point, expand app request buffer size: {:?}",
                     ecall_ret
@@ -118,9 +116,8 @@ impl ECallChannel {
              * Transparent deliever the errors to outer logic.
              */
             if ecall_ret.is_err() {
-                // let e = Error::from(ecall_ret);
                 error!("ecall_ipc_entry_point, app api_error: {:?}", ecall_ret);
-                return Err(anyhow::anyhow!("ecall error")); // TODO
+                bail!("ecall error");
             }
 
             unsafe {

@@ -31,7 +31,7 @@ mod sgx_trusted_tls {
     use crate::protocol;
     use crate::transport::{ClientTransport, ServerTransport};
     use crate::TeaclaveService;
-    use anyhow::Result;
+    use anyhow::{bail, Result};
     use log::debug;
     use rustls;
     use serde::{Deserialize, Serialize};
@@ -91,7 +91,7 @@ mod sgx_trusted_tls {
                             debug!("Connection disconnected.");
                             return Ok(());
                         }
-                        _ => return Err(anyhow::anyhow!("InternalError")),
+                        _ => bail!("InternalError"),
                     },
                 };
                 let response = service.handle_request(request);
