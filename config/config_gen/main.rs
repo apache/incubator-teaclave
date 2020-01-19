@@ -1,11 +1,14 @@
+use askama;
+use askama::Template;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
-use std::env;
 use std::fs;
 use std::fs::File;
 use std::io::Write;
+use std::path;
 use std::path::Path;
 use std::path::PathBuf;
+use structopt::StructOpt;
 
 #[derive(Serialize, Deserialize)]
 struct BuildConfigToml {
@@ -20,77 +23,63 @@ enum ConfigSource {
     Path(PathBuf),
 }
 
-fn display_pem_in_bytes(p: &Path) -> String {
-    let content = &fs::read(p).expect(&format!("Failed to read file: {}", p.display()));
-    let pem = pem::parse(content).expect("Cannot parse PEM file");
-    display_raw(&pem.contents)
-}
-
-fn display_raw(content: &[u8]) -> String {
-    let mut output = String::new();
-    output.push_str("&[");
-    for b in content {
-        output.push_str(&format!("{}, ", b));
-    }
-    output.push_str("]");
-
-    output
-}
-
 fn display_config_source(config: &ConfigSource) -> String {
     match config {
         ConfigSource::Path(p) => match p.extension().and_then(std::ffi::OsStr::to_str) {
-            Some("pem") => display_pem_in_bytes(p),
+            Some("pem") => {
+                let content = &fs::read(p).expect(&format!("Failed to read file: {}", p.display()));
+                let pem = pem::parse(content).expect("Cannot parse PEM file");
+                format!("{:?}", pem.contents)
+            }
             _ => {
                 let content = &fs::read(p).expect(&format!("Failed to read file: {}", p.display()));
-                display_raw(&content)
+                format!("{:?}", content)
             }
         },
     }
 }
 
-fn main() {
-    let args: Vec<String> = env::args().collect();
-    if args.len() < 3 {
-        panic!("Please specify the path of build config toml and output path.");
-    }
-    let contents = fs::read_to_string(&args[1]).expect("Something went wrong reading the file");
+#[derive(Template)]
+#[template(path = "config.j2")]
+struct ConfigTemplate {
+    ias_root_ca_cert: String,
+    auditor_public_keys: Vec<String>,
+    rpc_max_message_size: u32,
+}
+
+fn generate_build_config(toml: &Path, out: &Path) {
+    let contents = fs::read_to_string(toml).expect("Something went wrong reading the file");
     let config: BuildConfigToml = toml::from_str(&contents).expect("Failed to parse the config.");
 
     let ias_root_ca_cert = display_config_source(&config.ias_root_ca_cert);
 
-    let mut auditor_public_keys = String::new();
-    auditor_public_keys.push_str("&[");
+    let mut auditor_public_keys: Vec<String> = vec![];
     for key in &config.auditor_public_keys {
         let auditor_pulic_key = display_config_source(key);
-        auditor_public_keys.push_str(&format!("{}, ", auditor_pulic_key));
+        auditor_public_keys.push(auditor_pulic_key);
     }
-    auditor_public_keys.push_str("]");
-
-    let mut build_config_generated = String::new();
-    build_config_generated.push_str(&format!(
-        r#"
-    #[derive(Debug)]
-    pub struct BuildConfig<'a> {{
-        pub ias_root_ca_cert: &'a [u8],
-        pub auditor_public_keys: &'a [&'a [u8];{}],
-        pub rpc_max_message_size: u64,
-    }}
-
-    pub static BUILD_CONFIG: BuildConfig<'static> = BuildConfig {{
-        ias_root_ca_cert: {},
-        auditor_public_keys: {},
-        rpc_max_message_size: {},
-    }};"#,
-        config.auditor_public_keys.len(),
+    let config_template = ConfigTemplate {
         ias_root_ca_cert,
         auditor_public_keys,
-        config.rpc_max_message_size
-    ));
+        rpc_max_message_size: config.rpc_max_message_size,
+    };
+    let mut f = File::create(out).expect(&format!("Failed to create file: {}", out.display()));
+    f.write_all(&config_template.render().unwrap().as_bytes())
+        .expect(&format!("Failed to write file: {}", out.display()));
+}
 
-    let dest_path = Path::new(&args[2]);
-    let mut f =
-        File::create(&dest_path).expect(&format!("Failed to create file: {}", dest_path.display()));
-    f.write_all(build_config_generated.as_bytes())
-        .expect(&format!("Failed to write file: {}", dest_path.display()));
+#[derive(Debug, StructOpt)]
+struct Cli {
+    #[structopt(short = "t", required = true)]
+    /// Path to the config file in toml.
+    toml_path: path::PathBuf,
+
+    #[structopt(short = "o", required = true)]
+    /// Configures the output path where generated Rust file will be written.
+    out_path: path::PathBuf,
+}
+
+fn main() {
+    let args = Cli::from_args();
+    generate_build_config(&args.toml_path, &args.out_path);
 }

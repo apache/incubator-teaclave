@@ -11,6 +11,8 @@ name = "config_gen"
 path = "main.rs"
 
 [dependencies]
+askama = "0.8"
+structopt = "0.3"
 pem = "0.7.0"
 serde = "1.0.92"
 serde_derive = "1.0.92"
