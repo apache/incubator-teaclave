@@ -26,7 +26,7 @@ macro_rules! register_ecall_handler {
                 $(
                     $cmd => dispatch_helper::<$arg, $ret>(input),
                 )*
-                _ => return Err(anyhow::anyhow!("ECallCommandNotRegistered")),
+                _ => anyhow::bail!("ECallCommandNotRegistered"),
             }
         }
         use teaclave_ipc::IpcService;
@@ -101,7 +101,6 @@ macro_rules! register_ecall_handler {
                     Ok(out) => out,
                     Err(e) => {
                         error!("tee execute cmd: {:x}, error: {}", cmd, e);
-                        // return e.into();
                         return teaclave_types::EnclaveStatus(1);
                     }
                 }

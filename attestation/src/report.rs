@@ -20,7 +20,7 @@
 use std::prelude::v1::*;
 
 use crate::ias::IasReport;
-use anyhow::{anyhow, bail};
+use anyhow::{anyhow, bail, ensure};
 use anyhow::{Error, Result};
 use chrono::DateTime;
 use rustls;
@@ -196,9 +196,7 @@ impl SgxQuoteBody {
             *i = *_it.next().ok_or_else(|| anyhow!("Quote parsing error."))?;
         }
 
-        if pos != bytes.len() {
-            bail!("Quote parsing error.");
-        }
+        ensure!(pos == bytes.len(), "Quote parsing error.");
 
         Ok(Self {
             version,
