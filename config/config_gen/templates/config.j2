@@ -1,0 +1,16 @@
+#[derive(Debug)]
+pub struct BuildConfig<'a> {
+    pub ias_root_ca_cert: &'a [u8],
+    pub auditor_public_keys: &'a [&'a [u8]; {{ auditor_public_keys.len() }}],
+    pub rpc_max_message_size: u64,
+}
+
+pub static BUILD_CONFIG: BuildConfig<'static> = BuildConfig {
+    ias_root_ca_cert: &{{ ias_root_ca_cert }},
+    auditor_public_keys: &[
+{% for k in auditor_public_keys %}
+    &{{ k }},
+{% endfor %}
+    ],
+    rpc_max_message_size: {{ rpc_max_message_size }},
+};
