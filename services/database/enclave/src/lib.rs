@@ -73,7 +73,7 @@ fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> 
             database: RefCell::new(database),
             receiver,
         };
-        database_service.execution();
+        database_service.start();
     });
 
     let mut server = SgxTrustedTlsServer::<TeaclaveDatabaseResponse, TeaclaveDatabaseRequest>::new(

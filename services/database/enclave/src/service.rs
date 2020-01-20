@@ -134,7 +134,7 @@ impl<'a> DBQueue<'a> {
 }
 
 impl TeaclaveDatabaseService {
-    pub fn execution(&mut self) {
+    pub fn start(&mut self) {
         #[cfg(test_mode)]
         test_mode::repalce_with_mock_database(self);
 
@@ -182,19 +182,13 @@ impl TeaclaveDatabase for TeaclaveDatabaseService {
     fn enqueue(&self, request: EnqueueRequest) -> TeaclaveServiceResponseResult<EnqueueResponse> {
         let mut db = self.database.borrow_mut();
         let mut queue = DBQueue::open(&mut db, &request.key);
-        match queue.enqueue(&request.value) {
-            Ok(_) => Ok(EnqueueResponse {}),
-            Err(_) => Err(TeaclaveDatabaseError::LevelDbError.into()),
-        }
+        queue.enqueue(&request.value).map(|_| EnqueueResponse {})
     }
 
     fn dequeue(&self, request: DequeueRequest) -> TeaclaveServiceResponseResult<DequeueResponse> {
         let mut db = self.database.borrow_mut();
         let mut queue = DBQueue::open(&mut db, &request.key);
-        match queue.dequeue() {
-            Ok(value) => Ok(DequeueResponse { value }),
-            Err(e) => Err(e),
-        }
+        queue.dequeue().map(|value| DequeueResponse { value })
     }
 }
 
