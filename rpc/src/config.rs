@@ -1,6 +1,7 @@
 use anyhow::Result;
 use rustls;
 use std::sync::Arc;
+use teaclave_attestation::report::AttestationReport;
 use teaclave_attestation::verifier::AttestationReportVerifier;
 use teaclave_attestation::verifier::EnclaveAttr;
 
@@ -64,9 +65,17 @@ impl SgxTrustedTlsClientConfig {
         }
     }
 
-    pub fn new_with_attestation_report_verifier(enclave_attr: EnclaveAttr) -> Self {
+    pub fn new_with_attestation_report_verifier(
+        enclave_attr: EnclaveAttr,
+        root_ca: &[u8],
+        verifier: fn(&AttestationReport) -> bool,
+    ) -> Self {
         let mut config = rustls::ClientConfig::new();
-        let verifier = Arc::new(AttestationReportVerifier::new(enclave_attr));
+        let verifier = Arc::new(AttestationReportVerifier::new(
+            enclave_attr,
+            root_ca,
+            verifier,
+        ));
 
         config.dangerous().set_certificate_verifier(verifier);
         config.versions.clear();
