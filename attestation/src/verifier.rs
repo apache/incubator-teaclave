@@ -19,7 +19,6 @@ use crate::report::AttestationReport;
 use log::{debug, error};
 use std::hash::{Hash, Hasher};
 use std::vec::Vec;
-use teaclave_config::build_config::BUILD_CONFIG;
 use teaclave_types::EnclaveMeasurement;
 
 #[derive(Clone)]
@@ -45,6 +44,7 @@ impl Hash for EnclaveAttr {
 #[derive(Clone)]
 pub struct AttestationReportVerifier {
     pub enclave_attr: EnclaveAttr,
+    pub root_ca: Vec<u8>,
     pub verifier: fn(&AttestationReport) -> bool,
 }
 
@@ -63,15 +63,20 @@ impl Hash for AttestationReportVerifier {
     }
 }
 
-fn universal_quote_verifier(report: &AttestationReport) -> bool {
+pub fn universal_quote_verifier(report: &AttestationReport) -> bool {
     report.sgx_quote_status != crate::report::SgxQuoteStatus::UnknownBadStatus
 }
 
 impl AttestationReportVerifier {
-    pub fn new(enclave_attr: EnclaveAttr) -> Self {
+    pub fn new(
+        enclave_attr: EnclaveAttr,
+        root_ca: &[u8],
+        verifier: fn(&AttestationReport) -> bool,
+    ) -> Self {
         Self {
             enclave_attr,
-            verifier: universal_quote_verifier,
+            root_ca: root_ca.to_vec(),
+            verifier,
         }
     }
 
@@ -95,7 +100,7 @@ impl AttestationReportVerifier {
             return true;
         }
 
-        let report = match AttestationReport::from_cert(&cert_der, BUILD_CONFIG.ias_root_ca_cert) {
+        let report = match AttestationReport::from_cert(&cert_der, &self.root_ca) {
             Ok(report) => report,
             Err(e) => {
                 error!("{:?}", e);

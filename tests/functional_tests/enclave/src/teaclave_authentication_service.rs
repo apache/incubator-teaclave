@@ -1,6 +1,7 @@
 use sgx_tunittest::*;
 use std::prelude::v1::*;
-use teaclave_attestation::verifier::EnclaveAttr;
+use teaclave_attestation::verifier;
+use teaclave_config::build_config::BUILD_CONFIG;
 use teaclave_config::runtime_config::RuntimeConfig;
 use teaclave_proto::teaclave_authentication_service::*;
 use teaclave_proto::teaclave_common::*;
@@ -24,10 +25,14 @@ fn test_login_success() {
         .measurements
         .get("teaclave_authentication_service")
         .expect("authentication");
-    let enclave_attr = EnclaveAttr {
+    let enclave_attr = verifier::EnclaveAttr {
         measures: vec![*measure],
     };
-    let config = SgxTrustedTlsClientConfig::new_with_attestation_report_verifier(enclave_attr);
+    let config = SgxTrustedTlsClientConfig::new_with_attestation_report_verifier(
+        enclave_attr,
+        BUILD_CONFIG.ias_root_ca_cert,
+        verifier::universal_quote_verifier,
+    );
 
     let channel = Endpoint::new("localhost:7776")
         .config(config)
