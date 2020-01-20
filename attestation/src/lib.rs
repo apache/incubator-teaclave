@@ -20,31 +20,39 @@
 #[macro_use]
 extern crate sgx_tstd as std;
 
-use thiserror::Error;
+use serde::{Deserialize, Serialize};
+use std::prelude::v1::*;
 
-#[derive(Error, Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum AttestationError {
-    #[error("OCall failed")]
+    #[error("OCall error")]
     OCallError,
-    #[error("Ias error")]
+    #[error("IAS error")]
     IasError,
-    #[error("Get quote error")]
-    QuoteError,
+    #[error("Platform error")]
+    PlatformError,
+    #[error("Report error")]
+    ReportError,
+}
+
+#[derive(Default, Serialize, Deserialize)]
+pub(crate) struct IasReport {
+    pub report: Vec<u8>,
+    pub signature: Vec<u8>,
+    pub signing_cert: Vec<u8>,
 }
 
 #[macro_use]
 mod cert;
-pub mod ias;
 pub mod report;
 pub mod verifier;
 
-use cfg_if::cfg_if;
-cfg_if! {
+cfg_if::cfg_if! {
     if #[cfg(feature = "mesalock_sgx")]  {
-        pub mod key;
+        mod ias;
+        mod key;
         mod platform;
         mod attestation;
-        pub use ias::IasReport;
         pub use attestation::RemoteAttestation;
     }
 }

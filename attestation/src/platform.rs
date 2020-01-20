@@ -68,7 +68,7 @@ pub(crate) fn create_sgx_report(
     report_data.d[32..].clone_from_slice(&pub_k_gy);
 
     rsgx_create_report(&target_info, &report_data)
-        .map_err(|_| Error::new(AttestationError::IasError))
+        .map_err(|_| Error::new(AttestationError::PlatformError))
 }
 
 pub(crate) fn get_sgx_quote(
@@ -127,14 +127,14 @@ pub(crate) fn get_sgx_quote(
 
     debug!("rsgx_verify_report");
     // Perform a check on qe_report to verify if the qe_report is valid.
-    rsgx_verify_report(&qe_report).map_err(|_| Error::new(AttestationError::IasError))?;
+    rsgx_verify_report(&qe_report).map_err(|_| Error::new(AttestationError::PlatformError))?;
 
     // Check if the qe_report is produced on the same platform.
     if target_info.mr_enclave.m != qe_report.body.mr_enclave.m
         || target_info.attributes.flags != qe_report.body.attributes.flags
         || target_info.attributes.xfrm != qe_report.body.attributes.xfrm
     {
-        bail!(AttestationError::QuoteError);
+        bail!(AttestationError::PlatformError);
     }
 
     // Check qe_report to defend against replay attack. The purpose of
@@ -149,10 +149,10 @@ pub(crate) fn get_sgx_quote(
     rhs_vec.extend(&quote);
     debug!("rsgx_sha256_slice");
     let rhs_hash =
-        rsgx_sha256_slice(&rhs_vec).map_err(|_| Error::new(AttestationError::IasError))?;
+        rsgx_sha256_slice(&rhs_vec).map_err(|_| Error::new(AttestationError::PlatformError))?;
     let lhs_hash = &qe_report.body.report_data.d[..32];
     if rhs_hash != lhs_hash {
-        bail!(AttestationError::QuoteError);
+        bail!(AttestationError::PlatformError);
     }
 
     Ok(quote)
