@@ -19,7 +19,8 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use crate::ias::IasReport;
+use crate::AttestationError;
+use crate::IasReport;
 use anyhow::{anyhow, bail, ensure};
 use anyhow::{Error, Result};
 use chrono::DateTime;
@@ -48,16 +49,6 @@ static SUPPORTED_SIG_ALGS: SignatureAlgorithms = &[
     &webpki::RSA_PKCS1_2048_8192_SHA512,
     &webpki::RSA_PKCS1_3072_8192_SHA384,
 ];
-
-use thiserror::Error;
-
-#[derive(Error, Debug)]
-pub enum QuoteParsingError {
-    #[error("Invalid cert format")]
-    InvalidCertFormat,
-    #[error("Bad attestation report")]
-    BadAttnReport,
-}
 
 pub struct SgxReport {
     pub cpu_svn: [u8; 16],
@@ -113,8 +104,6 @@ pub struct SgxQuoteBody {
 impl SgxQuoteBody {
     fn parse_from<'a>(bytes: &'a [u8]) -> Result<Self> {
         let mut pos: usize = 0;
-        // TODO: It is really unnecessary to construct a Vec<u8> each time.
-        // Try to optimize this.
         let mut take = |n: usize| -> Result<&'a [u8]> {
             if n > 0 && bytes.len() >= pos + n {
                 let ret = &bytes[pos..pos + n];
@@ -284,7 +273,7 @@ impl AttestationReport {
         let quote_freshness = {
             let time = attn_report["timestamp"]
                 .as_str()
-                .ok_or_else(|| Error::new(QuoteParsingError::BadAttnReport))?;
+                .ok_or_else(|| Error::new(AttestationError::ReportError))?;
             let time_fixed = String::from(time) + "+0000";
             let date_time = DateTime::parse_from_str(&time_fixed, "%Y-%m-%dT%H:%M:%S%.f%z")?;
             let ts = date_time.naive_utc();
@@ -296,7 +285,7 @@ impl AttestationReport {
         let sgx_quote_status = {
             let status_string = attn_report["isvEnclaveQuoteStatus"]
                 .as_str()
-                .ok_or_else(|| Error::new(QuoteParsingError::BadAttnReport))?;
+                .ok_or_else(|| Error::new(AttestationError::ReportError))?;
 
             SgxQuoteStatus::from(status_string)
         };
@@ -305,7 +294,7 @@ impl AttestationReport {
         let sgx_quote_body = {
             let quote_encoded = attn_report["isvEnclaveQuoteBody"]
                 .as_str()
-                .ok_or_else(|| Error::new(QuoteParsingError::BadAttnReport))?;
+                .ok_or_else(|| Error::new(AttestationError::ReportError))?;
             let quote_raw = base64::decode(&quote_encoded.as_bytes())?;
             SgxQuoteBody::parse_from(quote_raw.as_slice())?
         };
@@ -324,7 +313,7 @@ impl AttestationReport {
         let is_uncompressed = raw_pub_k[0] == 4;
         let pub_k = &raw_pub_k.as_slice()[1..];
         if !is_uncompressed || pub_k != &sgx_quote_body.report_body.report_data[..] {
-            bail!(QuoteParsingError::BadAttnReport);
+            bail!(AttestationError::ReportError);
         }
 
         Ok(Self {

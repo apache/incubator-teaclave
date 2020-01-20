@@ -16,12 +16,12 @@
 // under the License.
 
 use crate::AttestationError;
+use crate::IasReport;
 use anyhow::Error;
 use anyhow::Result;
 use anyhow::{anyhow, bail};
 use log::{debug, trace};
 use percent_encoding;
-use serde::{Deserialize, Serialize};
 use sgx_types::*;
 use std::collections::HashMap;
 use std::io::{Read, Write};
@@ -30,21 +30,12 @@ use std::os::unix::io::FromRawFd;
 use std::prelude::v1::*;
 use std::sync::Arc;
 
-#[cfg(feature = "mesalock_sgx")]
 extern "C" {
     fn ocall_sgx_get_ias_socket(p_retval: *mut i32) -> sgx_status_t;
 }
 
-#[derive(Default, Serialize, Deserialize)]
-pub struct IasReport {
-    pub report: Vec<u8>,
-    pub signature: Vec<u8>,
-    pub signing_cert: Vec<u8>,
-}
-
 impl IasReport {
-    #[cfg(feature = "mesalock_sgx")]
-    pub fn new(
+    pub(crate) fn new(
         pub_k: sgx_types::sgx_ec256_public_t,
         ias_key: &str,
         ias_spid: &str,
@@ -60,13 +51,13 @@ impl IasReport {
     }
 }
 
-pub struct IasClient {
+struct IasClient {
     ias_key: String,
     ias_hostname: &'static str,
 }
 
 impl IasClient {
-    pub fn new(ias_key: &str) -> Self {
+    fn new(ias_key: &str) -> Self {
         #[cfg(production)]
         let ias_hostname = "as.sgx.trustedservices.intel.com";
         #[cfg(not(production))]
@@ -92,7 +83,7 @@ impl IasClient {
         Ok(stream)
     }
 
-    pub fn get_sigrl(&mut self, epid_group_id: u32) -> Result<Vec<u8>> {
+    fn get_sigrl(&mut self, epid_group_id: u32) -> Result<Vec<u8>> {
         let sigrl_uri = format!("/sgx/dev/attestation/v3/sigrl/{:08x}", epid_group_id);
         let request = format!(
             "GET {} HTTP/1.1\r\n\
@@ -136,7 +127,7 @@ impl IasClient {
         }
     }
 
-    pub fn get_report(&mut self, quote: &[u8]) -> Result<IasReport> {
+    fn get_report(&mut self, quote: &[u8]) -> Result<IasReport> {
         debug!("get_report");
         let report_uri = "/sgx/dev/attestation/v3/report";
         let encoded_quote = base64::encode(quote);
@@ -228,7 +219,6 @@ fn parse_headers(resp: &httparse::Response) -> HashMap<String, String> {
     header_map
 }
 
-#[cfg(feature = "mesalock_sgx")]
 fn get_ias_socket() -> Result<c_int> {
     debug!("get_ias_socket");
     let mut fd: c_int = -1;
@@ -239,12 +229,4 @@ fn get_ias_socket() -> Result<c_int> {
     } else {
         Ok(fd)
     }
-}
-
-#[cfg(not(feature = "mesalock_sgx"))]
-fn get_ias_socket() -> Result<c_int> {
-    use std::os::unix::io::IntoRawFd;
-    let ias_addr = "api.trustedservices.intel.com:443";
-    let stream = TcpStream::connect(ias_addr)?;
-    Ok(stream.into_raw_fd())
 }
