@@ -80,9 +80,9 @@ impl std::convert::TryFrom<proto::GetResponse> for GetResponse {
 }
 
 impl From<GetResponse> for proto::GetResponse {
-    fn from(request: GetResponse) -> Self {
+    fn from(response: GetResponse) -> Self {
         Self {
-            value: request.value,
+            value: response.value,
         }
     }
 }
@@ -118,7 +118,7 @@ impl std::convert::TryFrom<proto::PutResponse> for PutResponse {
 }
 
 impl From<PutResponse> for proto::PutResponse {
-    fn from(_request: PutResponse) -> Self {
+    fn from(_response: PutResponse) -> Self {
         Self {}
     }
 }
@@ -148,7 +148,7 @@ impl std::convert::TryFrom<proto::DeleteResponse> for DeleteResponse {
 }
 
 impl From<DeleteResponse> for proto::DeleteResponse {
-    fn from(_request: DeleteResponse) -> Self {
+    fn from(_response: DeleteResponse) -> Self {
         Self {}
     }
 }
@@ -184,7 +184,7 @@ impl std::convert::TryFrom<proto::EnqueueResponse> for EnqueueResponse {
 }
 
 impl From<EnqueueResponse> for proto::EnqueueResponse {
-    fn from(_request: EnqueueResponse) -> Self {
+    fn from(_response: EnqueueResponse) -> Self {
         Self {}
     }
 }
@@ -214,9 +214,9 @@ impl std::convert::TryFrom<proto::DequeueResponse> for DequeueResponse {
 }
 
 impl From<DequeueResponse> for proto::DequeueResponse {
-    fn from(request: DequeueResponse) -> Self {
+    fn from(response: DequeueResponse) -> Self {
         Self {
-            value: request.value,
+            value: response.value,
         }
     }
 }

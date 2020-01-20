@@ -143,7 +143,7 @@ impl TeaclaveDatabaseService {
                 Ok(req) => req,
                 Err(e) => {
                     error!("mspc receive error: {}", e);
-                    continue;
+                    break;
                 }
             };
             let database_request = request.request;
