@@ -27,8 +27,8 @@ use std::os::unix::io::IntoRawFd;
 
 use std::sync::Arc;
 use teaclave_binder::TeeBinder;
+use teaclave_config;
 use teaclave_service_app_utils::ServiceEnclaveBuilder;
-use teaclave_service_config;
 
 fn main() -> anyhow::Result<()> {
     let tee = ServiceEnclaveBuilder::init_tee_binder(env!("CARGO_PKG_NAME"))?;
@@ -40,10 +40,12 @@ fn main() -> anyhow::Result<()> {
 
 fn start_enclave_service(tee: Arc<TeeBinder>) -> anyhow::Result<()> {
     info!("Start enclave service");
-    let config = teaclave_service_config::Internal::dbs();
-    let listener = TcpListener::bind(config.addr)?;
+    let config =
+        teaclave_config::runtime_config::RuntimeConfig::from_toml("runtime.config.toml").unwrap();
+    let listen_address = config.internal_endpoints.dbs.listen_address;
+    let listener = TcpListener::bind(listen_address)?;
     let fd = listener.into_raw_fd();
-    let input = StartServiceInput { fd };
+    let input = StartServiceInput { fd, config };
     let cmd = ECallCommand::StartService;
     let _ = tee.invoke::<StartServiceInput, StartServiceOutput>(cmd.into(), input);
 

@@ -34,7 +34,6 @@ use teaclave_ipc::protos::ECallCommand;
 
 use teaclave_ipc::{handle_ecall, register_ecall_handler};
 
-use teaclave_service_config as config;
 use teaclave_service_enclave_utils::ServiceEnclave;
 
 use rusty_leveldb::DB;
@@ -55,10 +54,10 @@ use std::thread;
 #[handle_ecall]
 fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> {
     debug!("handle_start_service");
-    let config = config::runtime_config();
     let listener = std::net::TcpListener::new(args.fd)?;
+    let ias_config = &args.config.ias.as_ref().unwrap();
     let attestation =
-        RemoteAttestation::generate_and_endorse(&config.env.ias_key, &config.env.ias_spid).unwrap();
+        RemoteAttestation::generate_and_endorse(&ias_config.ias_key, &ias_config.ias_spid).unwrap();
     let config = SgxTrustedTlsServerConfig::new_without_verifier(
         &attestation.cert,
         &attestation.private_key,

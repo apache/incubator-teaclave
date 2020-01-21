@@ -18,9 +18,10 @@
 use serde_derive::{Deserialize, Serialize};
 use std::os::raw::c_int;
 
-#[derive(Clone, Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct StartServiceInput {
     pub fd: c_int,
+    pub config: teaclave_config::runtime_config::RuntimeConfig,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, Default)]

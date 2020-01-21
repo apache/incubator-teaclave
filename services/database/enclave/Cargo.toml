@@ -18,7 +18,6 @@ mesalock_sgx = [
   "teaclave_proto/mesalock_sgx",
   "teaclave_ipc/mesalock_sgx",
   "teaclave_rpc/mesalock_sgx",
-  "teaclave_service_config/mesalock_sgx",
   "teaclave_service_enclave_utils/mesalock_sgx",
   "teaclave_types/mesalock_sgx",
   "rusty-leveldb/mesalock_sgx",
@@ -39,7 +38,6 @@ teaclave_config                = { path = "../../../config" }
 teaclave_proto                 = { path = "../../proto" }
 teaclave_ipc                   = { path = "../../../ipc" }
 teaclave_rpc                   = { path = "../../../rpc" }
-teaclave_service_config        = { path = "../../../utils/service_config" }
 teaclave_service_enclave_utils = { path = "../../../utils/service_enclave_utils" }
 teaclave_types                 = { path = "../../../types" }
 
