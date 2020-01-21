@@ -20,12 +20,22 @@ use std::process::Command;
 use std::str;
 
 fn main() {
-    let proto_path = format!("src/proto");
+    let proto_files = [
+        "src/proto/teaclave_authentication_service.proto",
+        "src/proto/teaclave_database_service.proto",
+        "src/proto/teaclave_execution_service.proto",
+        "src/proto/teaclave_common.proto",
+    ];
+
     let out_dir = env::var("OUT_DIR").expect("$OUT_DIR not set. Please build with cargo");
-    println!("cargo:rerun-if-changed={}", proto_path);
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=proto_gen/templates/proto.j2");
-    println!("cargo:rerun-if-changed=src/proto/teaclave_database_service.proto");
+    println!("cargo:rerun-if-changed=proto_gen/main.rs");
+
+    for pf in proto_files.iter() {
+        println!("cargo:rerun-if-changed={}", pf);
+    }
+
     let c = Command::new("cargo")
         .args(&[
             "run",
@@ -34,17 +44,15 @@ fn main() {
             "--manifest-path",
             "./proto_gen/Cargo.toml",
             "--",
-            "-p",
-            "src/proto/teaclave_authentication_service.proto",
-            "src/proto/teaclave_database_service.proto",
-            "src/proto/teaclave_execution_service.proto",
             "-i",
             "src/proto",
             "-d",
             &out_dir,
+            "-p",
         ])
+        .args(&proto_files)
         .output()
-        .expect(&format!("Cannot generate {}", &proto_path));
+        .expect("Generate proto failed");
     if !c.status.success() {
         panic!(
             "stdout: {:?}, stderr: {:?}",

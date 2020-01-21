@@ -28,11 +28,16 @@ pub struct MesaTEEServiceGenerator;
 #[template(path = "proto.j2")]
 struct ProtoTemplate<'a> {
     service: &'a prost_build::Service,
+    proto_impl_mod_name: &'a str,
 }
 
 impl MesaTEEServiceGenerator {
     fn generate_from_template(&mut self, service: &prost_build::Service, buf: &mut String) {
-        let proto_template = ProtoTemplate { service };
+        let name_len = service.package.len();
+        let proto_template = ProtoTemplate {
+            service,
+            proto_impl_mod_name: &service.package[0..name_len - "_proto".len()],
+        };
         buf.push_str(&proto_template.render().unwrap());
     }
 }

@@ -1,17 +1,9 @@
-use crate::teaclave_common;
-use crate::teaclave_common::proto as teaclave_common_proto;
 use anyhow::anyhow;
 use anyhow::{Error, Result};
 use core::convert::TryInto;
 
-pub mod proto {
-    #![allow(clippy::all)]
-    include!(concat!(
-        env!("OUT_DIR"),
-        "/teaclave_authentication_service_proto.rs"
-    ));
-}
-
+use crate::teaclave_authentication_service_proto as proto;
+use crate::teaclave_common;
 pub use proto::TeaclaveAuthentication;
 pub use proto::TeaclaveAuthenticationClient;
 pub use proto::TeaclaveAuthenticationRequest;
