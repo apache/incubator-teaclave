@@ -3,6 +3,7 @@
 members = [
   "services/authentication/app",
   "services/database/app",
+  "services/execution/app",
   "tests/unit_tests/app",
   "tests/functional_tests/app",
   "tests/integration_tests/app",

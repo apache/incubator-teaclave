@@ -15,13 +15,39 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#![cfg_attr(feature = "mesalock_sgx", no_std)]
 #[cfg(feature = "mesalock_sgx")]
-extern crate sgx_tstd as std;
+use std::prelude::v1::*;
 
-pub mod teaclave_authentication_service;
-pub mod teaclave_common;
-pub mod teaclave_database_service;
-pub mod teaclave_execution_service;
+use anyhow;
 
-pub use crate::teaclave_common::proto as teaclave_common_proto;
+use super::FunctionArguments;
+use super::TeaclaveFunction;
+use crate::runtime::TeaclaveRuntime;
+
+/* TODO: export wrapped io stream handle to mesapy-sgx
+extern "C"
+t_open(context, file_identifier) -> handle  () {
+    runtime = c_to_rust(context);  // thread_local
+    runtime.open(file_identifier);
+}
+t_read(context, handle, buf);
+t_write(context, handle, buf);
+t_close(context, handle);
+*/
+
+#[derive(Default)]
+pub struct Mesapy;
+
+impl TeaclaveFunction for Mesapy {
+    fn execute(
+        &self,
+        _runtime: Box<dyn TeaclaveRuntime + Send + Sync>,
+        _args: FunctionArguments,
+    ) -> anyhow::Result<String> {
+        // TODO:
+        // args.get("py_payload")
+        // args.get("py_args")
+        // mesapy_exec();
+        unimplemented!()
+    }
+}

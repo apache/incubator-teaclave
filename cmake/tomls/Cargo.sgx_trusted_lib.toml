@@ -3,6 +3,7 @@
 members = [
   "services/authentication/enclave",
   "services/database/enclave",
+  "services/execution/enclave",
   "tests/unit_tests/enclave",
   "tests/functional_tests/enclave",
   "tests/integration_tests/enclave",

@@ -37,6 +37,7 @@ fn main() {
             "-p",
             "src/proto/teaclave_authentication_service.proto",
             "src/proto/teaclave_database_service.proto",
+            "src/proto/teaclave_execution_service.proto",
             "-i",
             "src/proto",
             "-d",
