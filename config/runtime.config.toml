@@ -40,7 +40,7 @@ tdfs = { listen_address = "0.0.0.0:5066", advertised_address = "127.0.0.1:5066" 
 kms  = { listen_address = "0.0.0.0:6016", advertised_address = "127.0.0.1:6016" }
 acs  = { listen_address = "0.0.0.0:5077", advertised_address = "127.0.0.1:5077" }
 dbs  = { listen_address = "0.0.0.0:7778", advertised_address = "127.0.0.1:7778" }
-worker  = { listen_address = "0.0.0.0:7989", advertised_address = "127.0.0.1:7989" }
+execution = { listen_address = "0.0.0.0:7989", advertised_address = "127.0.0.1:7989" }
 
 [audit]
 enclave_info = { path = "enclave_info.toml" }

@@ -59,9 +59,9 @@ impl Internal {
         )
     }
 
-    pub fn worker() -> ServiceConfig {
+    pub fn execution_service() -> ServiceConfig {
         ServiceConfig::new(
-            runtime_config().internal_endpoints.worker.listen_address,
+            runtime_config().internal_endpoints.execution.listen_address,
             // Todo: fix after introducing agent
             InboundDesc::External,
         )
