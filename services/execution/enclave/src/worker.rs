@@ -44,14 +44,11 @@ impl Worker {
         }
     }
 
-    pub fn invoke_function(&self, req: &StagedFunctionExecuteRequest) -> anyhow::Result<String> {
+    pub fn invoke_function(&self, req: StagedFunctionExecuteRequest) -> anyhow::Result<String> {
         let function = self.get_function(&req.executor_type, &req.function_name)?;
-        let runtime = self.get_runtime(
-            &req.runtime_name,
-            req.input_files.clone(),
-            req.output_files.clone(),
-        )?;
-        let unified_args = prepare_arguments(req)?;
+        let runtime = self.get_runtime(&req.runtime_name, req.input_files, req.output_files)?;
+        let unified_args =
+            prepare_arguments(req.executor_type, req.function_args, req.function_payload)?;
 
         function.execute(runtime, unified_args)
     }
@@ -121,23 +118,27 @@ fn setup_runtimes() -> HashMap<String, RuntimeBuilder> {
 // Script engines like Mesapy (TeaclaveExecutorSelector::Python) must have script payload.
 // We assume that the script engines would take the script payload and
 // script arguments from the wrapped argument.
-fn prepare_arguments(req: &StagedFunctionExecuteRequest) -> anyhow::Result<FunctionArguments> {
-    let unified_args = match &req.executor_type {
+fn prepare_arguments(
+    executor_type: TeaclaveExecutorSelector,
+    function_args: HashMap<String, String>,
+    function_payload: String,
+) -> anyhow::Result<FunctionArguments> {
+    let unified_args = match executor_type {
         TeaclaveExecutorSelector::Native => {
-            if !req.function_payload.is_empty() {
+            if !function_payload.is_empty() {
                 return Err(anyhow::anyhow!("Native function payload should be empty!"));
             }
-            FunctionArguments(req.function_args.clone())
+            FunctionArguments(function_args)
         }
         TeaclaveExecutorSelector::Python => {
-            if req.function_payload.is_empty() {
+            if function_payload.is_empty() {
                 return Err(anyhow::anyhow!(
                     "Python function payload must not be empty!"
                 ));
             }
             let mut wrap_args = HashMap::new();
-            let req_args = serde_json::to_string(&req.function_args)?;
-            wrap_args.insert("py_payload".to_string(), req.function_payload.clone());
+            let req_args = serde_json::to_string(&function_args)?;
+            wrap_args.insert("py_payload".to_string(), function_payload);
             wrap_args.insert("py_args".to_string(), req_args);
             FunctionArguments(wrap_args)
         }
@@ -206,7 +207,7 @@ pub mod tests {
         let expected_output = "test_cases/gbdt_training/expected_model.txt";
         let request: StagedFunctionExecuteRequest = serde_json::from_str(request_payload).unwrap();
         let worker = Worker::default();
-        let summary = worker.invoke_function(&request).unwrap();
+        let summary = worker.invoke_function(request).unwrap();
         assert_eq!(summary, "Trained 120 lines of data.");
 
         let result = fs::read_to_string(&plain_output).unwrap();

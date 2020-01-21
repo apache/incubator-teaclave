@@ -4,7 +4,7 @@ use std::cell::RefCell;
 use std::prelude::v1::*;
 use std::sync::mpsc::Receiver;
 use teaclave_proto::teaclave_database_service::{
-    self, DeleteRequest, DeleteResponse, DequeueRequest, DequeueResponse, EnqueueRequest,
+    DeleteRequest, DeleteResponse, DequeueRequest, DequeueResponse, EnqueueRequest,
     EnqueueResponse, GetRequest, GetResponse, PutRequest, PutResponse, TeaclaveDatabase,
 };
 use teaclave_service_enclave_utils::teaclave_service;

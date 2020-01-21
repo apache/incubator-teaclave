@@ -1,6 +1,6 @@
 use std::prelude::v1::*;
 use teaclave_proto::teaclave_authentication_service::{
-    self, TeaclaveAuthentication, UserAuthorizeRequest, UserAuthorizeResponse, UserLoginRequest,
+    TeaclaveAuthentication, UserAuthorizeRequest, UserAuthorizeResponse, UserLoginRequest,
     UserLoginResponse,
 };
 use teaclave_service_enclave_utils::teaclave_service;

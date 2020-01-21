@@ -1,14 +1,7 @@
 use anyhow::{Error, Result};
 use std::prelude::v1::*;
 
-pub mod proto {
-    #![allow(clippy::all)]
-    include!(concat!(
-        env!("OUT_DIR"),
-        "/teaclave_database_service_proto.rs"
-    ));
-}
-
+use crate::teaclave_database_service_proto as proto;
 pub use proto::TeaclaveDatabase;
 pub use proto::TeaclaveDatabaseClient;
 pub use proto::TeaclaveDatabaseRequest;

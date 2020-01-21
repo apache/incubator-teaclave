@@ -1,7 +1,7 @@
 syntax = "proto3";
 package teaclave_execution_service_proto;
 
-import "common.proto";
+import "teaclave_common.proto";
 
 message WorkerFileInfo {
    string path = 1;
