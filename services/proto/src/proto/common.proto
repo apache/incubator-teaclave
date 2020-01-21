@@ -5,3 +5,9 @@ message UserCredential {
   string id = 1;
   string token = 2;
 }
+
+message FileCryptoInfo {
+    string schema = 1;
+    bytes key = 2;
+    bytes iv = 3;
+}

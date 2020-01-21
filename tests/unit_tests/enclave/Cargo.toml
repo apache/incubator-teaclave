@@ -23,7 +23,9 @@ mesalock_sgx = [
   "teaclave_authentication_service_enclave/mesalock_sgx",
   "teaclave_authentication_service_enclave/enclave_unit_test",
   "teaclave_database_service_enclave/mesalock_sgx",
-  "teaclave_database_service_enclave/enclave_unit_test"
+  "teaclave_database_service_enclave/enclave_unit_test",
+  "teaclave_execution_service_enclave/mesalock_sgx",
+  "teaclave_execution_service_enclave/enclave_unit_test",
 ]
 cov = ["teaclave_service_enclave_utils/cov"]
 
@@ -35,6 +37,7 @@ thiserror   = { version = "1.0.9" }
 
 teaclave_authentication_service_enclave = { path = "../../../services/authentication/enclave" }
 teaclave_database_service_enclave = { path = "../../../services/database/enclave" }
+teaclave_execution_service_enclave = { path = "../../../services/execution/enclave" }
 
 teaclave_attestation           = { path = "../../../attestation" }
 teaclave_config                = { path = "../../../config" }

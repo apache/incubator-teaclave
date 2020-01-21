@@ -27,7 +27,6 @@ use std::prelude::v1::*;
 use anyhow::Result;
 use teaclave_types;
 
-use teaclave_authentication_service_enclave;
 use teaclave_ipc::protos::ecall::{
     FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput, RunTestInput,
     RunTestOutput,
@@ -36,10 +35,15 @@ use teaclave_ipc::protos::ECallCommand;
 use teaclave_ipc::{handle_ecall, register_ecall_handler};
 use teaclave_service_enclave_utils::ServiceEnclave;
 
+use teaclave_authentication_service_enclave;
+use teaclave_execution_service_enclave;
+
 #[handle_ecall]
 fn handle_run_test(_args: &RunTestInput) -> Result<RunTestOutput> {
     teaclave_authentication_service_enclave::tests::run_tests();
     teaclave_database_service_enclave::tests::run_tests();
+    teaclave_execution_service_enclave::tests::run_tests();
+
     Ok(RunTestOutput::default())
 }
 
