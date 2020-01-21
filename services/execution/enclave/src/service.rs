@@ -21,7 +21,7 @@ use std::prelude::v1::*;
 use std::sync::Arc;
 
 use teaclave_proto::teaclave_execution_service::{
-    self, StagedFunctionExecuteRequest, StagedFunctionExecuteResponse, TeaclaveExecution,
+    StagedFunctionExecuteRequest, StagedFunctionExecuteResponse, TeaclaveExecution,
 };
 use teaclave_service_enclave_utils::teaclave_service;
 use teaclave_types::{TeaclaveServiceResponseError, TeaclaveServiceResponseResult};
@@ -60,7 +60,7 @@ impl TeaclaveExecution for TeaclaveExecutionService {
         &self,
         request: StagedFunctionExecuteRequest,
     ) -> TeaclaveServiceResponseResult<StagedFunctionExecuteResponse> {
-        match self.worker.invoke_function(&request) {
+        match self.worker.invoke_function(request) {
             Ok(summary) => {
                 info!("[+] Invoking function ok: {}", summary);
                 Ok(summary.into())

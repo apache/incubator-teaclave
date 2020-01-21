@@ -3,19 +3,11 @@ use std::prelude::v1::*;
 
 use crate::teaclave_common::TeaclaveFileCryptoInfo;
 use anyhow::{anyhow, Error, Result};
-use core::convert::TryFrom;
+use core::convert::TryInto;
 use std::collections::HashMap;
 use std::{fmt, format};
 
-use crate::teaclave_common_proto;
-pub mod proto {
-    #![allow(clippy::all)]
-    include!(concat!(
-        env!("OUT_DIR"),
-        "/teaclave_execution_service_proto.rs"
-    ));
-}
-
+use crate::teaclave_execution_service_proto as proto;
 pub use proto::TeaclaveExecution;
 pub use proto::TeaclaveExecutionClient;
 pub use proto::TeaclaveExecutionRequest;
@@ -28,11 +20,11 @@ pub enum TeaclaveExecutorSelector {
     Python,
 }
 
-impl std::convert::TryFrom<&str> for TeaclaveExecutorSelector {
+impl std::convert::TryFrom<String> for TeaclaveExecutorSelector {
     type Error = Error;
 
-    fn try_from(selector: &str) -> Result<Self> {
-        let sel = match selector {
+    fn try_from(selector: String) -> Result<Self> {
+        let sel = match selector.as_ref() {
             "python" => TeaclaveExecutorSelector::Python,
             "native" => TeaclaveExecutorSelector::Native,
             _ => return Err(anyhow!(format!("Invalid executor selector: {}", selector))),
@@ -50,7 +42,7 @@ impl fmt::Display for TeaclaveExecutorSelector {
     }
 }
 
-#[derive(Clone, Debug, serde_derive::Serialize, serde_derive::Deserialize)]
+#[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
 pub struct TeaclaveWorkerFileInfo {
     pub path: std::path::PathBuf,
     pub crypto_info: TeaclaveFileCryptoInfo,
@@ -72,27 +64,25 @@ pub struct StagedFunctionExecuteResponse {
     pub summary: std::string::String,
 }
 
-impl std::convert::TryFrom<&proto::WorkerFileInfo> for TeaclaveWorkerFileInfo {
+impl std::convert::TryFrom<proto::WorkerFileInfo> for TeaclaveWorkerFileInfo {
     type Error = Error;
-    fn try_from(proto: &proto::WorkerFileInfo) -> Result<Self> {
+    fn try_from(proto: proto::WorkerFileInfo) -> Result<Self> {
         let path = std::path::Path::new(&proto.path).to_path_buf();
-        let info = proto
+        let crypto_info = proto
             .crypto_info
-            .as_ref()
-            .ok_or_else(|| anyhow!("Missing field: crypto_info"))?;
-        let crypto_info = TeaclaveFileCryptoInfo::try_from(info)?;
+            .ok_or_else(|| anyhow!("Missing field: crypto_info"))?
+            .try_into()?;
         Ok(TeaclaveWorkerFileInfo { path, crypto_info })
     }
 }
 
 fn try_convert_files_info(
-    files_info: &HashMap<String, proto::WorkerFileInfo>,
+    files_info: HashMap<String, proto::WorkerFileInfo>,
 ) -> Result<HashMap<String, TeaclaveWorkerFileInfo>> {
     let mut out_info: HashMap<String, TeaclaveWorkerFileInfo> = HashMap::new();
-    files_info.iter().try_for_each(
-        |(fid, finfo): (&String, &proto::WorkerFileInfo)| -> Result<()> {
-            let worker_file_info = TeaclaveWorkerFileInfo::try_from(finfo)?;
-            out_info.insert(fid.to_string(), worker_file_info);
+    files_info.into_iter().try_for_each(
+        |(fid, finfo): (String, proto::WorkerFileInfo)| -> Result<()> {
+            out_info.insert(fid, finfo.try_into()?);
             Ok(())
         },
     )?;
@@ -104,13 +94,12 @@ impl std::convert::TryFrom<proto::StagedFunctionExecuteRequest> for StagedFuncti
     type Error = Error;
 
     fn try_from(proto: proto::StagedFunctionExecuteRequest) -> Result<Self> {
-        let executor_type = TeaclaveExecutorSelector::try_from(proto.executor_type.as_ref())?;
-        let input_files = try_convert_files_info(&proto.input_files)?;
-        let output_files = try_convert_files_info(&proto.output_files)?;
+        let input_files = try_convert_files_info(proto.input_files)?;
+        let output_files = try_convert_files_info(proto.output_files)?;
 
         let ret = Self {
             runtime_name: proto.runtime_name,
-            executor_type,
+            executor_type: proto.executor_type.try_into()?,
             function_name: proto.function_name,
             function_payload: proto.function_payload,
             function_args: proto.function_args,
@@ -123,33 +112,31 @@ impl std::convert::TryFrom<proto::StagedFunctionExecuteRequest> for StagedFuncti
 }
 
 fn convert_files_info(
-    files_info: &HashMap<String, TeaclaveWorkerFileInfo>,
+    files_info: HashMap<String, TeaclaveWorkerFileInfo>,
 ) -> HashMap<String, proto::WorkerFileInfo> {
     let mut out_info: HashMap<String, proto::WorkerFileInfo> = HashMap::new();
     files_info
-        .iter()
-        .for_each(|(fid, finfo): (&String, &TeaclaveWorkerFileInfo)| {
-            out_info.insert(fid.to_string(), proto::WorkerFileInfo::from(finfo));
+        .into_iter()
+        .for_each(|(fid, finfo): (String, TeaclaveWorkerFileInfo)| {
+            out_info.insert(fid, finfo.into());
         });
     out_info
 }
 
 // For client side
-impl std::convert::From<&TeaclaveWorkerFileInfo> for proto::WorkerFileInfo {
-    fn from(info: &TeaclaveWorkerFileInfo) -> Self {
-        let path = info.path.clone().into_os_string().into_string().unwrap();
-        let crypto_info = teaclave_common_proto::FileCryptoInfo::from(&info.crypto_info);
+impl std::convert::From<TeaclaveWorkerFileInfo> for proto::WorkerFileInfo {
+    fn from(info: TeaclaveWorkerFileInfo) -> Self {
         proto::WorkerFileInfo {
-            path,
-            crypto_info: Some(crypto_info),
+            path: info.path.to_string_lossy().to_string(),
+            crypto_info: Some(info.crypto_info.into()),
         }
     }
 }
 
 impl From<StagedFunctionExecuteRequest> for proto::StagedFunctionExecuteRequest {
     fn from(request: StagedFunctionExecuteRequest) -> Self {
-        let input_files = convert_files_info(&request.input_files);
-        let output_files = convert_files_info(&request.output_files);
+        let input_files = convert_files_info(request.input_files);
+        let output_files = convert_files_info(request.output_files);
         Self {
             runtime_name: request.runtime_name,
             executor_type: request.executor_type.to_string(),

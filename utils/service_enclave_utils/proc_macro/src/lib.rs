@@ -11,6 +11,7 @@ pub fn teaclave_service(attr: TokenStream, input: TokenStream) -> TokenStream {
     let attr_str = attr.to_string();
     let splits: Vec<&str> = attr_str.split(",").map(|s| s.trim()).collect();
     let crate_name = Ident::new(splits[0], Span::call_site());
+    let crate_name_proto = Ident::new(&format!("{}_proto", crate_name), Span::call_site());
     let trait_name = splits[1];
     let trait_name_ident = Ident::new(trait_name, Span::call_site());
     let request = Ident::new(&format!("{}Request", trait_name), Span::call_site());
@@ -21,14 +22,14 @@ pub fn teaclave_service(attr: TokenStream, input: TokenStream) -> TokenStream {
     let q = quote!(
         #f
 
-        impl teaclave_rpc::TeaclaveService<#crate_name::proto::#request, #crate_name::proto::#response>
+        impl teaclave_rpc::TeaclaveService<teaclave_proto::#crate_name_proto::#request, teaclave_proto::#crate_name_proto::#response>
             for #struct_ident
         {
             fn handle_request(
                 &self,
-                request: #crate_name::proto::#request,
-            ) -> std::result::Result<#crate_name::proto::#response, teaclave_types::TeaclaveServiceResponseError> {
-                use #crate_name::proto::#trait_name_ident;
+                request: teaclave_proto::#crate_name_proto::#request,
+            ) -> std::result::Result<teaclave_proto::#crate_name_proto::#response, teaclave_types::TeaclaveServiceResponseError> {
+                use teaclave_proto::#crate_name_proto::#trait_name_ident;
                 use log::trace;
                 trace!("Dispatching request.");
                 self.dispatch(request)

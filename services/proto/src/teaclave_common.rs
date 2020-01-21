@@ -4,10 +4,7 @@ use std::prelude::v1::*;
 use anyhow::{anyhow, Error, Result};
 use std::format;
 
-pub mod proto {
-    #![allow(clippy::all)]
-    include!(concat!(env!("OUT_DIR"), "/teaclave_common_proto.rs"));
-}
+use crate::teaclave_common_proto as proto;
 
 #[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
 pub struct UserCredential {
@@ -40,7 +37,7 @@ impl From<UserCredential> for proto::UserCredential {
 const AES_GCM_256_KEY_LENGTH: usize = 32;
 const AES_GCM_256_IV_LENGTH: usize = 12;
 
-#[derive(Default, Clone, Debug, serde_derive::Serialize, serde_derive::Deserialize)]
+#[derive(Default, Debug, serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct AesGcm256CryptoInfo {
     pub key: [u8; 32],
     pub iv: [u8; 12],
@@ -71,7 +68,7 @@ impl AesGcm256CryptoInfo {
 const AES_GCM_128_KEY_LENGTH: usize = 16;
 const AES_GCM_128_IV_LENGTH: usize = 12;
 
-#[derive(Default, Clone, Debug, serde_derive::Serialize, serde_derive::Deserialize)]
+#[derive(Default, Debug, serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct AesGcm128CryptoInfo {
     pub key: [u8; AES_GCM_128_KEY_LENGTH],
     pub iv: [u8; AES_GCM_128_IV_LENGTH],
@@ -101,7 +98,7 @@ impl AesGcm128CryptoInfo {
 
 const TEACLAVE_FILE_ROOT_KEY_128_LENGTH: usize = 16;
 
-#[derive(Clone, Debug, serde_derive::Serialize, serde_derive::Deserialize)]
+#[derive(Debug, serde_derive::Serialize, serde_derive::Deserialize)]
 #[serde(rename_all(deserialize = "snake_case"))]
 pub enum TeaclaveFileCryptoInfo {
     AesGcm128(AesGcm128CryptoInfo),
@@ -109,9 +106,9 @@ pub enum TeaclaveFileCryptoInfo {
     TeaclaveFileRootKey128([u8; 16]),
 }
 
-impl std::convert::TryFrom<&proto::FileCryptoInfo> for TeaclaveFileCryptoInfo {
+impl std::convert::TryFrom<proto::FileCryptoInfo> for TeaclaveFileCryptoInfo {
     type Error = Error;
-    fn try_from(proto: &proto::FileCryptoInfo) -> Result<Self> {
+    fn try_from(proto: proto::FileCryptoInfo) -> Result<Self> {
         let info = match proto.schema.as_str() {
             "aes_gcm_128" => {
                 let info = AesGcm128CryptoInfo::try_new(&proto.key, &proto.iv)?;
@@ -145,8 +142,8 @@ impl std::convert::TryFrom<&proto::FileCryptoInfo> for TeaclaveFileCryptoInfo {
     }
 }
 
-impl std::convert::From<&TeaclaveFileCryptoInfo> for proto::FileCryptoInfo {
-    fn from(crypto: &TeaclaveFileCryptoInfo) -> Self {
+impl std::convert::From<TeaclaveFileCryptoInfo> for proto::FileCryptoInfo {
+    fn from(crypto: TeaclaveFileCryptoInfo) -> Self {
         match crypto {
             TeaclaveFileCryptoInfo::AesGcm128(info) => proto::FileCryptoInfo {
                 schema: "aes_gcm_128".to_string(),
