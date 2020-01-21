@@ -4,7 +4,6 @@
 extern crate sgx_tstd as std;
 
 use anyhow::{bail, Result};
-use teaclave_service_config as config;
 
 use log::debug;
 use log::error;
@@ -31,10 +30,6 @@ impl ServiceEnclave {
             .is_err()
         {
             error!("Cannot enable backtrace");
-            bail!("ecall error");
-        }
-        if !config::is_runtime_config_initialized() {
-            error!("Runtime config is not initialized");
             bail!("ecall error");
         }
 

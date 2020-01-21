@@ -75,7 +75,7 @@ pub mod runtime_config {
         enclave_info_source: ConfigSource,
         #[serde(rename(serialize = "auditor_signatures", deserialize = "auditor_signatures"))]
         auditor_signatures_source: Vec<ConfigSource>,
-        pub enclave_info_bytes: Option<String>,
+        pub enclave_info_bytes: Option<Vec<u8>>,
         pub auditor_signatures_bytes: Option<Vec<Vec<u8>>>,
     }
 
@@ -111,7 +111,7 @@ pub mod runtime_config {
 
             config.audit.enclave_info_bytes = match &config.audit.enclave_info_source {
                 ConfigSource::Path(ref enclave_info_path) => {
-                    let content = fs::read_to_string(enclave_info_path).unwrap_or_else(|_| {
+                    let content = fs::read(enclave_info_path).unwrap_or_else(|_| {
                         panic!("Cannot find enclave info at {:?}.", enclave_info_path)
                     });
                     Some(content)
