@@ -35,7 +35,6 @@ webpki           = { version = "0.21.0" }
 webpki-roots     = { version = "0.17.0" }
 yasna            = { version = "0.3.0", features = ["bit-vec", "num-bigint", "chrono"] }
 
-teaclave_config = { path = "../config" }
 teaclave_types  = { path = "../types" }
 
 sgx_rand    = { version = "1.1.0", optional = true }

@@ -20,6 +20,7 @@ mesalock_sgx = [
   "teaclave_rpc/mesalock_sgx",
   "teaclave_service_enclave_utils/mesalock_sgx",
   "teaclave_types/mesalock_sgx",
+  "teaclave_config/mesalock_sgx",
   "rusty-leveldb/mesalock_sgx",
 ]
 cov = ["teaclave_service_enclave_utils/cov"]

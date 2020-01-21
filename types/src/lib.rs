@@ -5,6 +5,8 @@ extern crate sgx_tstd as std;
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
+use anyhow::Result;
+use anyhow::{bail, ensure};
 use hex;
 use serde::Deserializer;
 use serde_derive::Deserialize;
@@ -81,9 +83,29 @@ pub struct EnclaveInfo {
 struct EnclaveInfoToml(HashMap<String, EnclaveMeasurement>);
 
 impl EnclaveInfo {
-    pub fn load_enclave_info(content: &str) -> Self {
-        let config: EnclaveInfoToml =
-            toml::from_str(&content).expect("Content not correct, unable to load enclave info.");
+    pub fn load_and_verify<T, U>(
+        enclave_info: &[u8],
+        public_keys: &[T],
+        signatures: &[U],
+    ) -> Result<Self>
+    where
+        T: AsRef<[u8]>,
+        U: AsRef<[u8]>,
+    {
+        ensure!(
+            signatures.len() <= public_keys.len(),
+            "Invalid number of public keys"
+        );
+        if !Self::verify(enclave_info, public_keys, signatures) {
+            bail!("Invalid enclave_info");
+        }
+
+        Ok(Self::from_bytes(enclave_info))
+    }
+
+    pub fn from_bytes(enclave_info: &[u8]) -> Self {
+        let config: EnclaveInfoToml = toml::from_slice(enclave_info)
+            .expect("Content not correct, unable to load enclave info.");
         let mut info_map = std::collections::HashMap::new();
         for (k, v) in config.0 {
             info_map.insert(k, EnclaveMeasurement::new(v.mr_enclave, v.mr_signer));
@@ -94,11 +116,7 @@ impl EnclaveInfo {
         }
     }
 
-    pub fn verify_enclave_info<T, U>(
-        enclave_info: &str,
-        public_keys: &[T],
-        signatures: &[U],
-    ) -> bool
+    pub fn verify<T, U>(enclave_info: &[u8], public_keys: &[T], signatures: &[U]) -> bool
     where
         T: AsRef<[u8]>,
         U: AsRef<[u8]>,
@@ -109,7 +127,7 @@ impl EnclaveInfo {
             let mut verified = false;
             for s in signatures {
                 if signature::UnparsedPublicKey::new(&signature::RSA_PKCS1_2048_8192_SHA256, k)
-                    .verify(enclave_info.as_bytes(), s.as_ref())
+                    .verify(enclave_info, s.as_ref())
                     .is_ok()
                 {
                     verified = true;
