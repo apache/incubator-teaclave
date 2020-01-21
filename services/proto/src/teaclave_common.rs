@@ -40,8 +40,7 @@ impl From<UserCredential> for proto::UserCredential {
 const AES_GCM_256_KEY_LENGTH: usize = 32;
 const AES_GCM_256_IV_LENGTH: usize = 12;
 
-#[derive(Default, Clone, Debug)]
-#[derive(serde_derive::Serialize, serde_derive::Deserialize)]
+#[derive(Default, Clone, Debug, serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct AesGcm256CryptoInfo {
     pub key: [u8; 32],
     pub iv: [u8; 12],
@@ -72,8 +71,7 @@ impl AesGcm256CryptoInfo {
 const AES_GCM_128_KEY_LENGTH: usize = 16;
 const AES_GCM_128_IV_LENGTH: usize = 12;
 
-#[derive(Default, Clone, Debug)]
-#[derive(serde_derive::Serialize, serde_derive::Deserialize)]
+#[derive(Default, Clone, Debug, serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct AesGcm128CryptoInfo {
     pub key: [u8; AES_GCM_128_KEY_LENGTH],
     pub iv: [u8; AES_GCM_128_IV_LENGTH],
@@ -103,8 +101,7 @@ impl AesGcm128CryptoInfo {
 
 const TEACLAVE_FILE_ROOT_KEY_128_LENGTH: usize = 16;
 
-#[derive(Clone, Debug)]
-#[derive(serde_derive::Serialize, serde_derive::Deserialize)]
+#[derive(Clone, Debug, serde_derive::Serialize, serde_derive::Deserialize)]
 #[serde(rename_all(deserialize = "snake_case"))]
 pub enum TeaclaveFileCryptoInfo {
     AesGcm128(AesGcm128CryptoInfo),

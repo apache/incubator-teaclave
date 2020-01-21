@@ -1,17 +1,19 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
+use crate::teaclave_common::TeaclaveFileCryptoInfo;
 use anyhow::{anyhow, Error, Result};
 use core::convert::TryFrom;
 use std::collections::HashMap;
 use std::{fmt, format};
-use crate::teaclave_common::TeaclaveFileCryptoInfo;
-
 
 use crate::teaclave_common_proto;
 pub mod proto {
     #![allow(clippy::all)]
-    include!(concat!(env!("OUT_DIR"), "/teaclave_execution_service_proto.rs"));
+    include!(concat!(
+        env!("OUT_DIR"),
+        "/teaclave_execution_service_proto.rs"
+    ));
 }
 
 pub use proto::TeaclaveExecution;
@@ -48,8 +50,7 @@ impl fmt::Display for TeaclaveExecutorSelector {
     }
 }
 
-#[derive(Clone, Debug)]
-#[derive(serde_derive::Serialize, serde_derive::Deserialize)]
+#[derive(Clone, Debug, serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct TeaclaveWorkerFileInfo {
     pub path: std::path::PathBuf,
     pub crypto_info: TeaclaveFileCryptoInfo,
@@ -76,7 +77,8 @@ impl std::convert::TryFrom<&proto::WorkerFileInfo> for TeaclaveWorkerFileInfo {
     fn try_from(proto: &proto::WorkerFileInfo) -> Result<Self> {
         let path = std::path::Path::new(&proto.path).to_path_buf();
         let info = proto
-            .crypto_info.as_ref()
+            .crypto_info
+            .as_ref()
             .ok_or_else(|| anyhow!("Missing field: crypto_info"))?;
         let crypto_info = TeaclaveFileCryptoInfo::try_from(info)?;
         Ok(TeaclaveWorkerFileInfo { path, crypto_info })
@@ -170,8 +172,6 @@ impl From<StagedFunctionExecuteResponse> for proto::StagedFunctionExecuteRespons
 
 impl From<String> for StagedFunctionExecuteResponse {
     fn from(summary: String) -> Self {
-        Self {
-            summary
-        }
+        Self { summary }
     }
 }

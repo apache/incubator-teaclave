@@ -1,8 +1,8 @@
+use serde_json;
 use sgx_tunittest::*;
 use std::prelude::v1::*;
 use teaclave_proto::teaclave_execution_service::*;
 use teaclave_rpc::endpoint::Endpoint;
-use serde_json;
 
 pub fn run_tests() {
     rsgx_unit_tests!(
@@ -62,8 +62,7 @@ fn test_get_success() {
         }
     }"#;
 
-    let request: StagedFunctionExecuteRequest =
-        serde_json::from_str(request_payload).unwrap();
+    let request: StagedFunctionExecuteRequest = serde_json::from_str(request_payload).unwrap();
 
     let mut client = setup_client();
     let response_result = client.invoke_function(request.into());

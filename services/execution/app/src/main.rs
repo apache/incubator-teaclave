@@ -51,4 +51,3 @@ fn run(tee: Arc<TeeBinder>) -> anyhow::Result<()> {
     start_enclave_service(tee)?;
     Ok(())
 }
-

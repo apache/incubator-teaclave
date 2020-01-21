@@ -37,7 +37,7 @@ pub struct Worker {
 }
 
 impl Worker {
-    pub fn new() -> Worker {
+    pub fn default() -> Worker {
         Worker {
             functions: setup_functions(),
             runtimes: setup_runtimes(),
@@ -124,11 +124,17 @@ fn setup_runtimes() -> HashMap<String, RuntimeBuilder> {
 fn prepare_arguments(req: &StagedFunctionExecuteRequest) -> anyhow::Result<FunctionArguments> {
     let unified_args = match &req.executor_type {
         TeaclaveExecutorSelector::Native => {
-            assert!(req.function_payload.len() == 0);
+            if !req.function_payload.is_empty() {
+                return Err(anyhow::anyhow!("Native function payload should be empty!"));
+            }
             FunctionArguments(req.function_args.clone())
         }
         TeaclaveExecutorSelector::Python => {
-            assert!(req.function_payload.len() > 0);
+            if req.function_payload.is_empty() {
+                return Err(anyhow::anyhow!(
+                    "Python function payload must not be empty!"
+                ));
+            }
             let mut wrap_args = HashMap::new();
             let req_args = serde_json::to_string(&req.function_args)?;
             wrap_args.insert("py_payload".to_string(), req.function_payload.clone());
@@ -196,12 +202,10 @@ pub mod tests {
             }
         }"#;
 
-
         let plain_output = "test_cases/gbdt_training/model.txt.out";
         let expected_output = "test_cases/gbdt_training/expected_model.txt";
-        let request: StagedFunctionExecuteRequest =
-            serde_json::from_str(request_payload).unwrap();
-        let worker = Worker::new();
+        let request: StagedFunctionExecuteRequest = serde_json::from_str(request_payload).unwrap();
+        let worker = Worker::default();
         let summary = worker.invoke_function(&request).unwrap();
         assert_eq!(summary, "Trained 120 lines of data.");
 

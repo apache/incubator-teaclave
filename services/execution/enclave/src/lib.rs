@@ -27,8 +27,8 @@ extern crate log;
 
 mod function;
 mod runtime;
-mod worker;
 mod service;
+mod worker;
 
 pub use worker::Worker;
 
@@ -45,11 +45,11 @@ use teaclave_service_config as config;
 use teaclave_service_enclave_utils::ServiceEnclave;
 
 use teaclave_attestation::RemoteAttestation;
+use teaclave_proto::teaclave_execution_service::{
+    TeaclaveExecutionRequest, TeaclaveExecutionResponse,
+};
 use teaclave_rpc::config::SgxTrustedTlsServerConfig;
 use teaclave_rpc::server::SgxTrustedTlsServer;
-use teaclave_proto::teaclave_execution_service::{
-    TeaclaveExecutionRequest, TeaclaveExecutionResponse
-};
 
 register_ecall_handler!(
     type ECallCommand,
@@ -70,10 +70,10 @@ fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> 
     )
     .unwrap();
 
-    let mut server = SgxTrustedTlsServer::<
-        TeaclaveExecutionResponse,
-        TeaclaveExecutionRequest,
-    >::new(listener, &config);
+    let mut server =
+        SgxTrustedTlsServer::<TeaclaveExecutionResponse, TeaclaveExecutionRequest>::new(
+            listener, &config,
+        );
     match server.start(service::TeaclaveExecutionService::new()) {
         Ok(_) => (),
         Err(e) => {

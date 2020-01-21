@@ -26,9 +26,8 @@ use teaclave_proto::teaclave_execution_service::{
 use teaclave_service_enclave_utils::teaclave_service;
 use teaclave_types::{TeaclaveServiceResponseError, TeaclaveServiceResponseResult};
 
-
-use thiserror::Error;
 use crate::Worker;
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum TeaclaveExecutionError {
@@ -51,7 +50,7 @@ pub(crate) struct TeaclaveExecutionService {
 impl TeaclaveExecutionService {
     pub(crate) fn new() -> Self {
         TeaclaveExecutionService {
-            worker: Arc::new(Worker::new())
+            worker: Arc::new(Worker::default()),
         }
     }
 }
@@ -65,12 +64,11 @@ impl TeaclaveExecution for TeaclaveExecutionService {
             Ok(summary) => {
                 info!("[+] Invoking function ok: {}", summary);
                 Ok(summary.into())
-            },
+            }
             Err(e) => {
                 error!("[+] Invoking function failed: {}", e);
                 Err(TeaclaveExecutionError::WorkerRunningSpecError.into())
             }
-
         }
     }
 }
