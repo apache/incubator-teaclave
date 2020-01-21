@@ -22,6 +22,7 @@ pub mod runtime_config {
     use std::untrusted::fs;
 
     use serde_derive::Deserialize;
+    use serde_derive::Serialize;
     use std::env;
     use std::net::SocketAddr;
     use std::path::Path;
@@ -30,16 +31,15 @@ pub mod runtime_config {
     use std::vec::Vec;
     use toml;
 
-    #[derive(Debug, Deserialize)]
+    #[derive(Debug, Serialize, Deserialize)]
     pub struct RuntimeConfig {
         pub api_endpoints: ApiEndpointsConfig,
         pub internal_endpoints: InternalEndpointsConfig,
         pub audit: AuditConfig,
-        #[serde(skip_deserializing)]
-        pub env: EnvConfig,
+        pub ias: Option<IasConfig>,
     }
 
-    #[derive(Debug, Deserialize)]
+    #[derive(Debug, Serialize, Deserialize)]
     pub struct ApiEndpointsConfig {
         pub frontend: EndpointListenConfig,
         pub authentication: EndpointListenConfig,
@@ -48,7 +48,7 @@ pub mod runtime_config {
         pub fns: EndpointListenAdvertisedConfig,
     }
 
-    #[derive(Debug, Deserialize)]
+    #[derive(Debug, Serialize, Deserialize)]
     pub struct InternalEndpointsConfig {
         pub tms: EndpointListenAdvertisedConfig,
         pub tdfs: EndpointListenAdvertisedConfig,
@@ -58,37 +58,35 @@ pub mod runtime_config {
         pub execution: EndpointListenAdvertisedConfig,
     }
 
-    #[derive(Debug, Deserialize)]
+    #[derive(Debug, Serialize, Deserialize)]
     pub struct EndpointListenConfig {
         pub listen_address: SocketAddr,
     }
 
-    #[derive(Debug, Deserialize)]
+    #[derive(Debug, Serialize, Deserialize)]
     pub struct EndpointListenAdvertisedConfig {
         pub listen_address: SocketAddr,
         pub advertised_address: SocketAddr,
     }
 
-    #[derive(Debug, Deserialize)]
+    #[derive(Debug, Serialize, Deserialize)]
     pub struct AuditConfig {
-        #[serde(rename(deserialize = "enclave_info"))]
+        #[serde(rename(serialize = "enclave_info", deserialize = "enclave_info"))]
         enclave_info_source: ConfigSource,
-        #[serde(rename(deserialize = "auditor_signatures"))]
+        #[serde(rename(serialize = "auditor_signatures", deserialize = "auditor_signatures"))]
         auditor_signatures_source: Vec<ConfigSource>,
-        #[serde(skip_deserializing)]
-        pub enclave_info: String,
-        #[serde(skip_deserializing)]
-        pub auditor_signatures: Vec<Vec<u8>>,
+        pub enclave_info_bytes: Option<String>,
+        pub auditor_signatures_bytes: Option<Vec<Vec<u8>>>,
     }
 
-    #[derive(Debug, Deserialize)]
-    #[serde(rename_all(deserialize = "snake_case"))]
+    #[derive(Debug, Serialize, Deserialize)]
+    #[serde(rename_all = "snake_case")]
     pub enum ConfigSource {
         Path(PathBuf),
     }
 
-    #[derive(Debug, Default)]
-    pub struct EnvConfig {
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct IasConfig {
         pub ias_spid: String,
         pub ias_key: String,
     }
@@ -111,11 +109,13 @@ pub mod runtime_config {
                 }
             };
 
-            config.audit.enclave_info = match &config.audit.enclave_info_source {
-                ConfigSource::Path(ref enclave_info_path) => fs::read_to_string(enclave_info_path)
-                    .unwrap_or_else(|_| {
+            config.audit.enclave_info_bytes = match &config.audit.enclave_info_source {
+                ConfigSource::Path(ref enclave_info_path) => {
+                    let content = fs::read_to_string(enclave_info_path).unwrap_or_else(|_| {
                         panic!("Cannot find enclave info at {:?}.", enclave_info_path)
-                    }),
+                    });
+                    Some(content)
+                }
             };
 
             let mut signatures: Vec<Vec<u8>> = vec![];
@@ -126,7 +126,7 @@ pub mod runtime_config {
                 };
                 signatures.push(signature);
             }
-            config.audit.auditor_signatures = signatures;
+            config.audit.auditor_signatures_bytes = Some(signatures);
 
             if !cfg!(sgx_sim) {
                 let ias_spid = match env::var("IAS_SPID") {
@@ -148,7 +148,12 @@ pub mod runtime_config {
                     return None;
                 }
 
-                config.env = EnvConfig { ias_spid, ias_key };
+                config.ias = Some(IasConfig { ias_spid, ias_key });
+            } else {
+                config.ias = Some(IasConfig {
+                    ias_spid: "".to_string(),
+                    ias_key: "".to_string(),
+                });
             }
 
             Some(config)
@@ -165,7 +170,7 @@ mod tests {
         println!("{:?}", runtime_config::RUNTIME_CONFIG.api_endpoints);
         println!("{:?}", runtime_config::RUNTIME_CONFIG.internal_endpoints);
         println!("{:?}", runtime_config::RUNTIME_CONFIG.audit);
-        println!("{:?}", runtime_config::RUNTIME_CONFIG.env);
+        println!("{:?}", runtime_config::RUNTIME_CONFIG.ias);
     }
 
     #[test]

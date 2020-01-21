@@ -20,7 +20,8 @@ pub fn run_tests() {
 
 fn test_login_success() {
     let runtime_config = RuntimeConfig::from_toml("runtime.config.toml").expect("runtime");
-    let enclave_info = EnclaveInfo::load_enclave_info(&runtime_config.audit.enclave_info);
+    let enclave_info =
+        EnclaveInfo::load_enclave_info(&runtime_config.audit.enclave_info_bytes.as_ref().unwrap());
     let measure = enclave_info
         .measurements
         .get("teaclave_authentication_service")

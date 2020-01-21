@@ -87,19 +87,22 @@ impl ServiceConfig {
 use lazy_static::lazy_static;
 
 fn load_presigned_enclave_info() -> EnclaveInfo {
-    if runtime_config().audit.auditor_signatures.len() < BUILD_CONFIG.auditor_public_keys.len() {
+    let audit = &runtime_config().audit;
+    let auditor_signatures_bytes = audit.auditor_signatures_bytes.as_ref().unwrap();
+    let enclave_info_bytes = audit.enclave_info_bytes.as_ref().unwrap();
+    if auditor_signatures_bytes.len() < BUILD_CONFIG.auditor_public_keys.len() {
         panic!("Number of auditor signatures is not enough for verification.")
     }
 
     if !EnclaveInfo::verify_enclave_info(
-        &runtime_config().audit.enclave_info,
+        enclave_info_bytes,
         BUILD_CONFIG.auditor_public_keys,
-        &runtime_config().audit.auditor_signatures,
+        auditor_signatures_bytes,
     ) {
         panic!("Failed to verify the signatures of enclave info.");
     }
 
-    EnclaveInfo::load_enclave_info(&runtime_config().audit.enclave_info)
+    EnclaveInfo::load_enclave_info(enclave_info_bytes)
 }
 
 lazy_static! {
