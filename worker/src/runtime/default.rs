@@ -18,24 +18,23 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use std::collections::HashMap;
 use std::io;
 use std::untrusted::fs::File;
 
 use anyhow;
 
 use super::TeaclaveRuntime;
-use teaclave_proto::teaclave_execution_service::TeaclaveWorkerFileInfo;
+use teaclave_types::TeaclaveWorkerFileRegistry;
 
 pub struct DefaultRuntime {
-    input_files: HashMap<String, TeaclaveWorkerFileInfo>,
-    output_files: HashMap<String, TeaclaveWorkerFileInfo>,
+    input_files: TeaclaveWorkerFileRegistry,
+    output_files: TeaclaveWorkerFileRegistry,
 }
 
 impl DefaultRuntime {
     pub fn new(
-        input_files: HashMap<String, TeaclaveWorkerFileInfo>,
-        output_files: HashMap<String, TeaclaveWorkerFileInfo>,
+        input_files: TeaclaveWorkerFileRegistry,
+        output_files: TeaclaveWorkerFileRegistry,
     ) -> DefaultRuntime {
         DefaultRuntime {
             input_files,
@@ -48,6 +47,7 @@ impl TeaclaveRuntime for DefaultRuntime {
     fn open_input(&self, identifier: &str) -> anyhow::Result<Box<dyn io::Read>> {
         let file_info = self
             .input_files
+            .entries
             .get(identifier)
             .ok_or_else(|| anyhow::anyhow!("Invalid input file identifier."))?;
         let f = File::open(&file_info.path)?;
@@ -57,6 +57,7 @@ impl TeaclaveRuntime for DefaultRuntime {
     fn create_output(&self, identifier: &str) -> anyhow::Result<Box<dyn io::Write>> {
         let file_info = self
             .output_files
+            .entries
             .get(identifier)
             .ok_or_else(|| anyhow::anyhow!("Invalide output file identifier"))?;
         let f = File::create(&file_info.path)?;

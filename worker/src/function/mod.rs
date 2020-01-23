@@ -18,36 +18,23 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use anyhow;
-
-use super::FunctionArguments;
-use super::TeaclaveFunction;
 use crate::runtime::TeaclaveRuntime;
+use anyhow;
+use teaclave_types::TeaclaveFunctionArguments;
 
-/* TODO: export wrapped io stream handle to mesapy-sgx
-extern "C"
-t_open(context, file_identifier) -> handle  () {
-    runtime = c_to_rust(context);  // thread_local
-    runtime.open(file_identifier);
-}
-t_read(context, handle, buf);
-t_write(context, handle, buf);
-t_close(context, handle);
-*/
-
-#[derive(Default)]
-pub struct Mesapy;
-
-impl TeaclaveFunction for Mesapy {
+pub trait TeaclaveFunction {
     fn execute(
         &self,
-        _runtime: Box<dyn TeaclaveRuntime + Send + Sync>,
-        _args: FunctionArguments,
-    ) -> anyhow::Result<String> {
-        // TODO:
-        // args.get("py_payload")
-        // args.get("py_args")
-        // mesapy_exec();
-        unimplemented!()
-    }
+        runtime: Box<dyn TeaclaveRuntime + Send + Sync>,
+        args: TeaclaveFunctionArguments,
+    ) -> anyhow::Result<String>;
+
+    // TODO: Add more flexible control support on a running function
+    // fn stop();
+    // fn handle_event();
 }
+
+mod gbdt_training;
+mod mesapy;
+pub use gbdt_training::GbdtTraining;
+pub use mesapy::Mesapy;

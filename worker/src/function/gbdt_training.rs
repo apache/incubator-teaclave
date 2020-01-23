@@ -24,9 +24,9 @@ use std::io::{self, BufRead, BufReader, Write};
 use anyhow;
 use serde_json;
 
-use super::FunctionArguments;
 use super::TeaclaveFunction;
 use crate::runtime::TeaclaveRuntime;
+use teaclave_types::TeaclaveFunctionArguments;
 
 use gbdt::config::Config;
 use gbdt::decision_tree::Data;
@@ -39,7 +39,7 @@ impl TeaclaveFunction for GbdtTraining {
     fn execute(
         &self,
         runtime: Box<dyn TeaclaveRuntime + Send + Sync>,
-        args: FunctionArguments,
+        args: TeaclaveFunctionArguments,
     ) -> anyhow::Result<String> {
         let feature_size: usize = args.try_get("feature_size")?;
         let max_depth: u32 = args.try_get("max_depth")?;

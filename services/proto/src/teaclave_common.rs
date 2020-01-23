@@ -1,8 +1,11 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use anyhow::{anyhow, Error, Result};
+use anyhow::{bail, ensure, Error, Result};
 use std::format;
+use teaclave_types::{
+    AesGcm128CryptoInfo, AesGcm256CryptoInfo, TeaclaveFileCryptoInfo, TeaclaveFileRootKey128,
+};
 
 use crate::teaclave_common_proto as proto;
 
@@ -34,78 +37,6 @@ impl From<UserCredential> for proto::UserCredential {
     }
 }
 
-const AES_GCM_256_KEY_LENGTH: usize = 32;
-const AES_GCM_256_IV_LENGTH: usize = 12;
-
-#[derive(Default, Debug, serde_derive::Serialize, serde_derive::Deserialize)]
-pub struct AesGcm256CryptoInfo {
-    pub key: [u8; 32],
-    pub iv: [u8; 12],
-}
-
-impl AesGcm256CryptoInfo {
-    fn try_new(key: &[u8], iv: &[u8]) -> Result<Self> {
-        if key.len() != AES_GCM_256_KEY_LENGTH {
-            return Err(anyhow!(format!(
-                "Invalid key length for AesGcm256: {}",
-                key.len()
-            )));
-        }
-        if iv.len() != AES_GCM_256_IV_LENGTH {
-            return Err(anyhow!(format!(
-                "Invalid iv length for AesGcm256: {}",
-                iv.len()
-            )));
-        }
-
-        let mut info = AesGcm256CryptoInfo::default();
-        info.key.copy_from_slice(key);
-        info.iv.copy_from_slice(iv);
-        Ok(info)
-    }
-}
-
-const AES_GCM_128_KEY_LENGTH: usize = 16;
-const AES_GCM_128_IV_LENGTH: usize = 12;
-
-#[derive(Default, Debug, serde_derive::Serialize, serde_derive::Deserialize)]
-pub struct AesGcm128CryptoInfo {
-    pub key: [u8; AES_GCM_128_KEY_LENGTH],
-    pub iv: [u8; AES_GCM_128_IV_LENGTH],
-}
-
-impl AesGcm128CryptoInfo {
-    fn try_new(key: &[u8], iv: &[u8]) -> Result<Self> {
-        if key.len() != AES_GCM_128_KEY_LENGTH {
-            return Err(anyhow!(format!(
-                "Invalid key length for AesGcm128: {}",
-                key.len()
-            )));
-        }
-        if iv.len() != AES_GCM_128_IV_LENGTH {
-            return Err(anyhow!(format!(
-                "Invalid iv length for AesGcm128: {}",
-                iv.len()
-            )));
-        }
-
-        let mut info = AesGcm128CryptoInfo::default();
-        info.key.copy_from_slice(key);
-        info.iv.copy_from_slice(iv);
-        Ok(info)
-    }
-}
-
-const TEACLAVE_FILE_ROOT_KEY_128_LENGTH: usize = 16;
-
-#[derive(Debug, serde_derive::Serialize, serde_derive::Deserialize)]
-#[serde(rename_all(deserialize = "snake_case"))]
-pub enum TeaclaveFileCryptoInfo {
-    AesGcm128(AesGcm128CryptoInfo),
-    AesGcm256(AesGcm256CryptoInfo),
-    TeaclaveFileRootKey128([u8; 16]),
-}
-
 impl std::convert::TryFrom<proto::FileCryptoInfo> for TeaclaveFileCryptoInfo {
     type Error = Error;
     fn try_from(proto: proto::FileCryptoInfo) -> Result<Self> {
@@ -119,23 +50,14 @@ impl std::convert::TryFrom<proto::FileCryptoInfo> for TeaclaveFileCryptoInfo {
                 TeaclaveFileCryptoInfo::AesGcm256(info)
             }
             "teaclave_file_root_key_128" => {
-                let rkey = &proto.key;
-                if rkey.len() != TEACLAVE_FILE_ROOT_KEY_128_LENGTH {
-                    return Err(anyhow!(format!(
-                        "Invalid key length for teaclave_file_root_key_128: {}",
-                        rkey.len()
-                    )));
-                }
-                let mut key = [0; TEACLAVE_FILE_ROOT_KEY_128_LENGTH];
-                key.copy_from_slice(rkey);
-                TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(key)
+                ensure!(
+                    proto.iv.is_empty(),
+                    "IV is not empty for teaclave_file_root_key_128"
+                );
+                let info = TeaclaveFileRootKey128::try_new(&proto.key)?;
+                TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(info)
             }
-            _ => {
-                return Err(anyhow!(format!(
-                    "Invalid crypto schema: {}",
-                    proto.schema.as_str()
-                )))
-            }
+            _ => bail!("Invalid crypto schema: {}", proto.schema.as_str()),
         };
 
         Ok(info)
@@ -157,7 +79,7 @@ impl std::convert::From<TeaclaveFileCryptoInfo> for proto::FileCryptoInfo {
             },
             TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(info) => proto::FileCryptoInfo {
                 schema: "teaclave_file_root_key_128".to_string(),
-                key: info.to_vec(),
+                key: info.key.to_vec(),
                 iv: Vec::new(),
             },
         }

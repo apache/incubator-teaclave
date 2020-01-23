@@ -25,12 +25,7 @@ use std::prelude::v1::*;
 #[macro_use]
 extern crate log;
 
-mod function;
-mod runtime;
 mod service;
-mod worker;
-
-pub use worker::Worker;
 
 use anyhow::Result;
 
@@ -98,10 +93,11 @@ fn handle_finalize_enclave(_args: &FinalizeEnclaveInput) -> Result<FinalizeEncla
 
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
-    use super::*;
-    use sgx_tunittest::*;
+    //use super::*;
+    //use sgx_tunittest::*;
 
     pub fn run_tests() -> usize {
-        rsgx_unit_tests!(worker::tests::test_start_worker)
+        //rsgx_unit_tests!()
+        0
     }
 }
