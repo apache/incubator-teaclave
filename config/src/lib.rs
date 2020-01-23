@@ -139,7 +139,7 @@ pub mod runtime_config {
                 config.ias = Some(IasConfig { ias_spid, ias_key });
             }
 
-            if cfg!(sgx_sim) {
+            if cfg!(sgx_sim) && config.ias.is_none() {
                 config.ias = Some(IasConfig {
                     ias_spid: "".to_string(),
                     ias_key: "".to_string(),
