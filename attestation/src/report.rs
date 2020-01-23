@@ -220,8 +220,7 @@ impl AttestationReport {
         // Before we reach here, Webpki already verifed the cert is properly signed
         use super::cert::*;
 
-        #[allow(clippy::redundant_closure)]
-        let x509 = yasna::parse_der(cert, |reader| X509::load(reader))?;
+        let x509 = yasna::parse_der(cert, X509::load)?;
 
         let tbs_cert: <TbsCert as Asn1Ty>::ValueTy = x509.0;
 
