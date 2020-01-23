@@ -22,22 +22,23 @@ use teaclave_ipc::protos::ecall::{RunTestInput, RunTestOutput};
 use teaclave_ipc::protos::ECallCommand;
 use teaclave_service_app_utils::ServiceEnclaveBuilder;
 
+mod teaclave_config_tests;
+
 fn main() -> anyhow::Result<()> {
     let tee = ServiceEnclaveBuilder::init_tee_binder(env!("CARGO_PKG_NAME"))?;
-    run(tee)?;
+    run_app_integration_tests();
+    start_enclave_integration_tests(tee)?;
 
     Ok(())
 }
 
-fn start_enclave_unit_test_driver(tee: Arc<TeeBinder>) -> anyhow::Result<()> {
+fn start_enclave_integration_tests(tee: Arc<TeeBinder>) -> anyhow::Result<()> {
     let cmd = ECallCommand::RunTest;
     let _ = tee.invoke::<RunTestInput, RunTestOutput>(cmd.into(), RunTestInput);
 
     Ok(())
 }
 
-fn run(tee: Arc<TeeBinder>) -> anyhow::Result<()> {
-    start_enclave_unit_test_driver(tee)?;
-
-    Ok(())
+fn run_app_integration_tests() {
+    teaclave_config_tests::run_tests();
 }
