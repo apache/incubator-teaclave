@@ -1,0 +1,3 @@
+[teaclave_authentication_service]
+mr_enclave = "mr_enclave_teaclave_authentication_service"
+mr_signer  = "mr_signer_teaclave_authentication_service"

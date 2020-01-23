@@ -43,17 +43,10 @@ pub mod runtime_config {
     pub struct ApiEndpointsConfig {
         pub frontend: EndpointListenConfig,
         pub authentication: EndpointListenConfig,
-        pub tms: EndpointListenConfig,
-        pub tdfs: EndpointListenConfig,
-        pub fns: EndpointListenAdvertisedConfig,
     }
 
     #[derive(Debug, Serialize, Deserialize)]
     pub struct InternalEndpointsConfig {
-        pub tms: EndpointListenAdvertisedConfig,
-        pub tdfs: EndpointListenAdvertisedConfig,
-        pub kms: EndpointListenAdvertisedConfig,
-        pub acs: EndpointListenAdvertisedConfig,
         pub dbs: EndpointListenAdvertisedConfig,
         pub execution: EndpointListenAdvertisedConfig,
     }
@@ -128,53 +121,41 @@ pub mod runtime_config {
             }
             config.audit.auditor_signatures_bytes = Some(signatures);
 
-            if !cfg!(sgx_sim) {
+            if !cfg!(sgx_sim) && config.ias.is_none() {
                 let ias_spid = match env::var("IAS_SPID") {
                     Ok(e) => e.trim().to_string(),
                     Err(_) => {
-                        error!("Cannot find IAS_SPID from environment variables.");
+                        error!("Cannot find IAS_SPID from config file and environment variables.");
                         return None;
                     }
                 };
                 let ias_key = match env::var("IAS_KEY") {
                     Ok(e) => e.trim().to_string(),
                     Err(_) => {
-                        error!("Cannot find IAS_KEY from environment variables.");
+                        error!("Cannot find IAS_KEY from config file and environment variables.");
                         return None;
                     }
                 };
-                if ias_spid.len() != 32 || ias_key.len() != 32 {
-                    error!("IAS_SPID or IAS_KEY format error.");
-                    return None;
-                }
-
                 config.ias = Some(IasConfig { ias_spid, ias_key });
-            } else {
+            }
+
+            if cfg!(sgx_sim) {
                 config.ias = Some(IasConfig {
                     ias_spid: "".to_string(),
                     ias_key: "".to_string(),
                 });
             }
 
+            if !cfg!(sgx_sim)
+                && (config.ias.is_none()
+                    || config.ias.as_ref().unwrap().ias_spid.len() != 32
+                    || config.ias.as_ref().unwrap().ias_key.len() != 32)
+            {
+                error!("IAS_SPID or IAS_KEY format error.");
+                return None;
+            }
+
             Some(config)
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_runtime_config() {
-        println!("{:?}", runtime_config::RUNTIME_CONFIG.api_endpoints);
-        println!("{:?}", runtime_config::RUNTIME_CONFIG.internal_endpoints);
-        println!("{:?}", runtime_config::RUNTIME_CONFIG.audit);
-        println!("{:?}", runtime_config::RUNTIME_CONFIG.ias);
-    }
-
-    #[test]
-    fn test_build_config() {
-        println!("{:?}", build_config::BUILD_CONFIG);
     }
 }

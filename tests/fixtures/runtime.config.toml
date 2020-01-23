@@ -1,0 +1,19 @@
+[api_endpoints]
+authentication = { listen_address = "0.0.0.0:7776" }
+frontend = { listen_address = "0.0.0.0:7777" }
+
+[internal_endpoints]
+dbs  = { listen_address = "0.0.0.0:7778", advertised_address = "127.0.0.1:7778" }
+execution = { listen_address = "0.0.0.0:7989", advertised_address = "127.0.0.1:7989" }
+
+[audit]
+enclave_info = { path = "fixtures/enclave_info.toml" }
+auditor_signatures = [
+    { path = "fixtures/auditors/godzilla.sign.sha256" },
+    { path = "fixtures/auditors/optimus_prime.sign.sha256" },
+    { path = "fixtures/auditors/albus_dumbledore.sign.sha256" },
+]
+
+[ias]
+ias_key  = "ias_key_AAAABBBBCCCCDDDDEEEEFFFF"
+ias_spid = "ias_spid_AAAABBBBCCCCDDDDEEEEFFF"
