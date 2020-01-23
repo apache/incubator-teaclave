@@ -24,11 +24,12 @@ use std::format;
 use anyhow;
 use serde_json;
 
-use teaclave_proto::teaclave_execution_service::StagedFunctionExecuteRequest;
-use teaclave_proto::teaclave_execution_service::TeaclaveExecutorSelector;
-use teaclave_proto::teaclave_execution_service::TeaclaveWorkerFileInfo;
+use teaclave_types::{
+    TeaclaveExecutorSelector, TeaclaveFunctionArguments, TeaclaveWorkerFileRegistry,
+    WorkerInvocation,
+};
 
-use crate::function::{self, FunctionArguments, TeaclaveFunction};
+use crate::function::{self, TeaclaveFunction};
 use crate::runtime::{self, TeaclaveRuntime};
 
 pub struct Worker {
@@ -44,20 +45,19 @@ impl Worker {
         }
     }
 
-    pub fn invoke_function(&self, req: StagedFunctionExecuteRequest) -> anyhow::Result<String> {
+    pub fn invoke_function(&self, req: WorkerInvocation) -> anyhow::Result<String> {
         let function = self.get_function(&req.executor_type, &req.function_name)?;
         let runtime = self.get_runtime(&req.runtime_name, req.input_files, req.output_files)?;
         let unified_args =
             prepare_arguments(req.executor_type, req.function_args, req.function_payload)?;
-
         function.execute(runtime, unified_args)
     }
 
     fn get_runtime(
         &self,
         name: &str,
-        input_files: HashMap<String, TeaclaveWorkerFileInfo>,
-        output_files: HashMap<String, TeaclaveWorkerFileInfo>,
+        input_files: TeaclaveWorkerFileRegistry,
+        output_files: TeaclaveWorkerFileRegistry,
     ) -> anyhow::Result<Box<dyn TeaclaveRuntime + Send + Sync>> {
         let build_runtime = self
             .runtimes
@@ -120,27 +120,27 @@ fn setup_runtimes() -> HashMap<String, RuntimeBuilder> {
 // script arguments from the wrapped argument.
 fn prepare_arguments(
     executor_type: TeaclaveExecutorSelector,
-    function_args: HashMap<String, String>,
+    function_args: TeaclaveFunctionArguments,
     function_payload: String,
-) -> anyhow::Result<FunctionArguments> {
+) -> anyhow::Result<TeaclaveFunctionArguments> {
     let unified_args = match executor_type {
         TeaclaveExecutorSelector::Native => {
-            if !function_payload.is_empty() {
-                return Err(anyhow::anyhow!("Native function payload should be empty!"));
-            }
-            FunctionArguments(function_args)
+            anyhow::ensure!(
+                function_payload.is_empty(),
+                "Native function payload should be empty!"
+            );
+            function_args
         }
         TeaclaveExecutorSelector::Python => {
-            if function_payload.is_empty() {
-                return Err(anyhow::anyhow!(
-                    "Python function payload must not be empty!"
-                ));
-            }
+            anyhow::ensure!(
+                !function_payload.is_empty(),
+                "Python function payload must not be empty!"
+            );
             let mut wrap_args = HashMap::new();
-            let req_args = serde_json::to_string(&function_args)?;
+            let req_args = serde_json::to_string(&function_args.args)?;
             wrap_args.insert("py_payload".to_string(), function_payload);
             wrap_args.insert("py_args".to_string(), req_args);
-            FunctionArguments(wrap_args)
+            TeaclaveFunctionArguments { args: wrap_args }
         }
     };
 
@@ -150,8 +150,8 @@ fn prepare_arguments(
 type FunctionBuilder = Box<dyn Fn() -> Box<dyn TeaclaveFunction + Send + Sync> + Send + Sync>;
 type RuntimeBuilder = Box<
     dyn Fn(
-            HashMap<String, TeaclaveWorkerFileInfo>,
-            HashMap<String, TeaclaveWorkerFileInfo>,
+            TeaclaveWorkerFileRegistry,
+            TeaclaveWorkerFileRegistry,
         ) -> Box<dyn TeaclaveRuntime + Send + Sync>
         + Send
         + Sync,
@@ -205,7 +205,7 @@ pub mod tests {
 
         let plain_output = "test_cases/gbdt_training/model.txt.out";
         let expected_output = "test_cases/gbdt_training/expected_model.txt";
-        let request: StagedFunctionExecuteRequest = serde_json::from_str(request_payload).unwrap();
+        let request: WorkerInvocation = serde_json::from_str(request_payload).unwrap();
         let worker = Worker::default();
         let summary = worker.invoke_function(request).unwrap();
         assert_eq!(summary, "Trained 120 lines of data.");
