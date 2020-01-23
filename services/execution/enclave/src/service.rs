@@ -26,7 +26,7 @@ use teaclave_proto::teaclave_execution_service::{
 use teaclave_service_enclave_utils::teaclave_service;
 use teaclave_types::{TeaclaveServiceResponseError, TeaclaveServiceResponseResult};
 
-use crate::Worker;
+use teaclave_worker::Worker;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -60,7 +60,7 @@ impl TeaclaveExecution for TeaclaveExecutionService {
         &self,
         request: StagedFunctionExecuteRequest,
     ) -> TeaclaveServiceResponseResult<StagedFunctionExecuteResponse> {
-        match self.worker.invoke_function(request) {
+        match self.worker.invoke_function(request.into()) {
             Ok(summary) => {
                 info!("[+] Invoking function ok: {}", summary);
                 Ok(summary.into())

@@ -18,42 +18,36 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use std::collections::HashMap;
-use std::str::FromStr;
-
 use anyhow;
-use serde_derive::{Deserialize, Serialize};
 
+use super::TeaclaveFunction;
 use crate::runtime::TeaclaveRuntime;
+use teaclave_types::TeaclaveFunctionArguments;
 
-#[derive(Serialize, Deserialize)]
-pub struct FunctionArguments(pub HashMap<String, String>);
-
-impl FunctionArguments {
-    pub fn try_get<T: FromStr>(&self, key: &str) -> anyhow::Result<T> {
-        self.0
-            .get(key)
-            .ok_or_else(|| anyhow::anyhow!("Cannot find function argument"))
-            .and_then(|s| {
-                s.parse::<T>()
-                    .map_err(|_| anyhow::anyhow!("parse argument error"))
-            })
-    }
+/* TODO: export wrapped io stream handle to mesapy-sgx
+extern "C"
+t_open(context, file_identifier) -> handle  () {
+    runtime = c_to_rust(context);  // thread_local
+    runtime.open(file_identifier);
 }
+t_read(context, handle, buf);
+t_write(context, handle, buf);
+t_close(context, handle);
+*/
 
-pub trait TeaclaveFunction {
+#[derive(Default)]
+pub struct Mesapy;
+
+impl TeaclaveFunction for Mesapy {
     fn execute(
         &self,
-        runtime: Box<dyn TeaclaveRuntime + Send + Sync>,
-        args: FunctionArguments,
-    ) -> anyhow::Result<String>;
-
-    // TODO: Add more flexible control support on a running function
-    // fn stop();
-    // fn handle_event();
+        _runtime: Box<dyn TeaclaveRuntime + Send + Sync>,
+        _args: TeaclaveFunctionArguments,
+    ) -> anyhow::Result<String> {
+        // TODO:
+        // args.get("py_payload")
+        // args.get("py_args")
+        // mesapy_exec();
+        unimplemented!()
+    }
 }
-
-mod gbdt_training;
-mod mesapy;
-pub use gbdt_training::GbdtTraining;
-pub use mesapy::Mesapy;
