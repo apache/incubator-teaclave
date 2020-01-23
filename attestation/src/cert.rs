@@ -15,11 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#![allow(
-    clippy::unused_unit,
-    clippy::needless_lifetimes,
-    clippy::redundant_closure
-)]
+#![allow(clippy::unused_unit)]
 // Insert std prelude in the top for the sgx feature
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
@@ -31,37 +27,34 @@ use yasna::{DERWriter, DERWriterSeq, DERWriterSet};
 pub type Writer<'a> = DERWriter<'a>;
 pub type Reader<'a, 'b> = BERReader<'a, 'b>;
 
-pub trait ConsWriter<'a> {
-    fn next<'b>(&'b mut self) -> Writer<'b>;
+pub trait ConsWriter {
+    fn next(&mut self) -> Writer<'_>;
 }
 
-pub trait ConsReader<'a, 'b>
-where
-    'a: 'b,
-{
-    fn next<'c>(&'c mut self, tags: &[yasna::Tag]) -> ASN1Result<Reader<'a, 'c>>;
+pub trait ConsReader<'a> {
+    fn next(&mut self, tags: &[yasna::Tag]) -> ASN1Result<Reader<'a, '_>>;
 }
 
-impl<'a> ConsWriter<'a> for DERWriterSeq<'a> {
-    fn next<'b>(&'b mut self) -> Writer<'b> {
+impl ConsWriter for DERWriterSeq<'_> {
+    fn next(&mut self) -> Writer<'_> {
         self.next()
     }
 }
 
-impl<'a> ConsWriter<'a> for DERWriterSet<'a> {
-    fn next<'b>(&'b mut self) -> Writer<'b> {
+impl ConsWriter for DERWriterSet<'_> {
+    fn next(&mut self) -> Writer<'_> {
         self.next()
     }
 }
 
-impl<'a, 'b> ConsReader<'a, 'b> for BERReaderSeq<'a, 'b> {
-    fn next<'c>(&'c mut self, _tags: &[yasna::Tag]) -> ASN1Result<Reader<'a, 'c>> {
+impl<'a> ConsReader<'a> for BERReaderSeq<'a, '_> {
+    fn next(&mut self, _tags: &[yasna::Tag]) -> ASN1Result<Reader<'a, '_>> {
         Ok(self.next())
     }
 }
 
-impl<'a, 'b> ConsReader<'a, 'b> for BERReaderSet<'a, 'b> {
-    fn next<'c>(&'c mut self, tags: &[yasna::Tag]) -> ASN1Result<Reader<'a, 'c>> {
+impl<'a> ConsReader<'a> for BERReaderSet<'a, '_> {
+    fn next(&mut self, tags: &[yasna::Tag]) -> ASN1Result<Reader<'a, '_>> {
         self.next(tags)
     }
 }
@@ -69,10 +62,9 @@ impl<'a, 'b> ConsReader<'a, 'b> for BERReaderSet<'a, 'b> {
 pub trait Asn1Ty {
     type ValueTy;
     const TAG: yasna::Tag;
-    fn dump<'a>(writer: Writer<'a>, value: Self::ValueTy) -> ();
-    fn load<'a, 'b>(reader: Reader<'a, 'b>) -> ASN1Result<Self::ValueTy>
-    where
-        'a: 'b;
+
+    fn dump(writer: Writer<'_>, value: Self::ValueTy) -> ();
+    fn load<'a>(reader: Reader<'a, '_>) -> ASN1Result<Self::ValueTy>;
 }
 
 pub trait Asn1ConsTy
@@ -80,11 +72,11 @@ where
     Self: std::marker::Sized,
 {
     type ValueTy;
-    fn dump<'a, W: ConsWriter<'a>>(writer: &mut W, value: Self::ValueTy) -> ();
-    fn load<'a, 'b, R>(reader: &mut R) -> ASN1Result<Self::ValueTy>
+
+    fn dump<W: ConsWriter>(writer: &mut W, value: Self::ValueTy) -> ();
+    fn load<'a, R>(reader: &mut R) -> ASN1Result<Self::ValueTy>
     where
-        'a: 'b,
-        R: ConsReader<'a, 'b>;
+        R: ConsReader<'a>;
 }
 
 pub trait Asn1Tag {
@@ -151,14 +143,15 @@ impl Asn1Tag for CtxT3 {
 
 impl<U: Asn1Ty, V: Asn1ConsTy> Asn1ConsTy for Cons<U, V> {
     type ValueTy = (U::ValueTy, V::ValueTy);
-    fn dump<'a, W: ConsWriter<'a>>(writer: &mut W, value: Self::ValueTy) -> () {
+
+    fn dump<W: ConsWriter>(writer: &mut W, value: Self::ValueTy) -> () {
         U::dump(writer.next(), value.0);
         V::dump(writer, value.1);
     }
-    fn load<'a, 'b, R>(reader: &mut R) -> ASN1Result<Self::ValueTy>
+
+    fn load<'a, R>(reader: &mut R) -> ASN1Result<Self::ValueTy>
     where
-        'a: 'b,
-        R: ConsReader<'a, 'b>,
+        R: ConsReader<'a>,
     {
         let first = U::load(reader.next(&[U::TAG])?)?;
         let second = V::load(reader)?;
@@ -168,11 +161,11 @@ impl<U: Asn1Ty, V: Asn1ConsTy> Asn1ConsTy for Cons<U, V> {
 
 impl Asn1ConsTy for Nil {
     type ValueTy = ();
-    fn dump<'a, W: ConsWriter<'a>>(_writer: &mut W, _value: Self::ValueTy) -> () {}
-    fn load<'a, 'b, R>(_reader: &mut R) -> ASN1Result<Self::ValueTy>
+
+    fn dump<W: ConsWriter>(_writer: &mut W, _value: Self::ValueTy) -> () {}
+    fn load<'a, R>(_reader: &mut R) -> ASN1Result<Self::ValueTy>
     where
-        'a: 'b,
-        R: ConsReader<'a, 'b>,
+        R: ConsReader<'a>,
     {
         Ok(())
     }
@@ -181,30 +174,28 @@ impl Asn1ConsTy for Nil {
 impl<T: Asn1Tag, S: Asn1Ty> Asn1Ty for Tagged<T, S> {
     type ValueTy = S::ValueTy;
     const TAG: yasna::Tag = T::TAG;
-    fn dump<'a>(writer: Writer<'a>, value: Self::ValueTy) {
+
+    fn dump(writer: Writer<'_>, value: Self::ValueTy) {
         writer.write_tagged(T::TAG, |writer| S::dump(writer, value));
     }
-    fn load<'a, 'b>(reader: Reader<'a, 'b>) -> ASN1Result<Self::ValueTy>
-    where
-        'a: 'b,
-    {
-        reader.read_tagged(T::TAG, |reader| S::load(reader))
+
+    fn load<'a>(reader: Reader<'a, '_>) -> ASN1Result<Self::ValueTy> {
+        reader.read_tagged(T::TAG, S::load)
     }
 }
 
 impl<U: Asn1Ty, V: Asn1ConsTy> Asn1Ty for Sequence<U, V> {
     type ValueTy = (U::ValueTy, V::ValueTy);
     const TAG: yasna::Tag = yasna::tags::TAG_SEQUENCE;
-    fn dump<'a>(writer: Writer<'a>, value: Self::ValueTy) {
+
+    fn dump(writer: Writer<'_>, value: Self::ValueTy) {
         writer.write_sequence(|writer| {
             U::dump(writer.next(), value.0);
             V::dump(writer, value.1);
         });
     }
-    fn load<'a, 'b>(reader: Reader<'a, 'b>) -> ASN1Result<Self::ValueTy>
-    where
-        'a: 'b,
-    {
+
+    fn load<'a>(reader: Reader<'a, '_>) -> ASN1Result<Self::ValueTy> {
         reader.read_sequence(|reader| {
             let first = U::load(reader.next())?;
             let second = V::load(reader)?;
@@ -216,16 +207,15 @@ impl<U: Asn1Ty, V: Asn1ConsTy> Asn1Ty for Sequence<U, V> {
 impl<U: Asn1Ty, V: Asn1ConsTy> Asn1Ty for Set<U, V> {
     type ValueTy = (U::ValueTy, V::ValueTy);
     const TAG: yasna::Tag = yasna::tags::TAG_SET;
-    fn dump<'a>(writer: Writer<'a>, value: Self::ValueTy) {
+
+    fn dump(writer: Writer<'_>, value: Self::ValueTy) {
         writer.write_set(|writer| {
             U::dump(writer.next(), value.0);
             V::dump(writer, value.1);
         });
     }
-    fn load<'a, 'b>(reader: Reader<'a, 'b>) -> ASN1Result<Self::ValueTy>
-    where
-        'a: 'b,
-    {
+
+    fn load<'a>(reader: Reader<'a, '_>) -> ASN1Result<Self::ValueTy> {
         reader.read_set(|reader| {
             let first = U::load(reader.next(&[U::TAG])?)?;
             let second = V::load(reader)?;
@@ -237,13 +227,12 @@ impl<U: Asn1Ty, V: Asn1ConsTy> Asn1Ty for Set<U, V> {
 impl Asn1Ty for U8 {
     type ValueTy = u8;
     const TAG: yasna::Tag = yasna::tags::TAG_INTEGER;
-    fn dump<'a>(writer: Writer<'a>, value: Self::ValueTy) {
+
+    fn dump(writer: Writer<'_>, value: Self::ValueTy) {
         writer.write_u8(value);
     }
-    fn load<'a, 'b>(reader: Reader<'a, 'b>) -> ASN1Result<Self::ValueTy>
-    where
-        'a: 'b,
-    {
+
+    fn load<'a>(reader: Reader<'a, '_>) -> ASN1Result<Self::ValueTy> {
         reader.read_u8()
     }
 }
@@ -251,13 +240,12 @@ impl Asn1Ty for U8 {
 impl Asn1Ty for I8 {
     type ValueTy = i8;
     const TAG: yasna::Tag = yasna::tags::TAG_INTEGER;
-    fn dump<'a>(writer: Writer<'a>, value: Self::ValueTy) {
+
+    fn dump(writer: Writer<'_>, value: Self::ValueTy) {
         writer.write_i8(value);
     }
-    fn load<'a, 'b>(reader: Reader<'a, 'b>) -> ASN1Result<Self::ValueTy>
-    where
-        'a: 'b,
-    {
+
+    fn load<'a>(reader: Reader<'a, '_>) -> ASN1Result<Self::ValueTy> {
         reader.read_i8()
     }
 }
@@ -265,13 +253,12 @@ impl Asn1Ty for I8 {
 impl Asn1Ty for BigUint {
     type ValueTy = num_bigint::BigUint;
     const TAG: yasna::Tag = yasna::tags::TAG_INTEGER;
-    fn dump<'a>(writer: Writer<'a>, value: Self::ValueTy) {
+
+    fn dump(writer: Writer<'_>, value: Self::ValueTy) {
         writer.write_biguint(&value);
     }
-    fn load<'a, 'b>(reader: Reader<'a, 'b>) -> ASN1Result<Self::ValueTy>
-    where
-        'a: 'b,
-    {
+
+    fn load<'a>(reader: Reader<'a, '_>) -> ASN1Result<Self::ValueTy> {
         reader.read_biguint()
     }
 }
@@ -279,13 +266,12 @@ impl Asn1Ty for BigUint {
 impl Asn1Ty for Utf8Str {
     type ValueTy = String;
     const TAG: yasna::Tag = yasna::tags::TAG_UTF8STRING;
-    fn dump<'a>(writer: Writer<'a>, value: Self::ValueTy) {
+
+    fn dump(writer: Writer<'_>, value: Self::ValueTy) {
         writer.write_utf8_string(value.as_str());
     }
-    fn load<'a, 'b>(reader: Reader<'a, 'b>) -> ASN1Result<Self::ValueTy>
-    where
-        'a: 'b,
-    {
+
+    fn load<'a>(reader: Reader<'a, '_>) -> ASN1Result<Self::ValueTy> {
         reader.read_utf8string()
     }
 }
@@ -293,13 +279,12 @@ impl Asn1Ty for Utf8Str {
 impl Asn1Ty for Oid {
     type ValueTy = yasna::models::ObjectIdentifier;
     const TAG: yasna::Tag = yasna::tags::TAG_OID;
-    fn dump<'a>(writer: Writer<'a>, value: Self::ValueTy) {
+
+    fn dump(writer: Writer<'_>, value: Self::ValueTy) {
         writer.write_oid(&value);
     }
-    fn load<'a, 'b>(reader: Reader<'a, 'b>) -> ASN1Result<Self::ValueTy>
-    where
-        'a: 'b,
-    {
+
+    fn load<'a>(reader: Reader<'a, '_>) -> ASN1Result<Self::ValueTy> {
         reader.read_oid()
     }
 }
@@ -307,13 +292,12 @@ impl Asn1Ty for Oid {
 impl Asn1Ty for UtcTime {
     type ValueTy = yasna::models::UTCTime;
     const TAG: yasna::Tag = yasna::tags::TAG_UTCTIME;
-    fn dump<'a>(writer: Writer<'a>, value: Self::ValueTy) {
+
+    fn dump(writer: Writer<'_>, value: Self::ValueTy) {
         writer.write_utctime(&value);
     }
-    fn load<'a, 'b>(reader: Reader<'a, 'b>) -> ASN1Result<Self::ValueTy>
-    where
-        'a: 'b,
-    {
+
+    fn load<'a>(reader: Reader<'a, '_>) -> ASN1Result<Self::ValueTy> {
         reader.read_utctime()
     }
 }
@@ -321,13 +305,12 @@ impl Asn1Ty for UtcTime {
 impl Asn1Ty for BitVec {
     type ValueTy = bit_vec::BitVec;
     const TAG: yasna::Tag = yasna::tags::TAG_BITSTRING;
-    fn dump<'a>(writer: Writer<'a>, value: Self::ValueTy) {
+
+    fn dump(writer: Writer<'_>, value: Self::ValueTy) {
         writer.write_bitvec(&value);
     }
-    fn load<'a, 'b>(reader: Reader<'a, 'b>) -> ASN1Result<Self::ValueTy>
-    where
-        'a: 'b,
-    {
+
+    fn load<'a>(reader: Reader<'a, '_>) -> ASN1Result<Self::ValueTy> {
         reader.read_bitvec()
     }
 }
@@ -335,13 +318,12 @@ impl Asn1Ty for BitVec {
 impl Asn1Ty for Bytes {
     type ValueTy = Vec<u8>;
     const TAG: yasna::Tag = yasna::tags::TAG_OCTETSTRING;
-    fn dump<'a>(writer: Writer<'a>, value: Self::ValueTy) {
+
+    fn dump(writer: Writer<'_>, value: Self::ValueTy) {
         writer.write_bytes(&value.as_slice());
     }
-    fn load<'a, 'b>(reader: Reader<'a, 'b>) -> ASN1Result<Self::ValueTy>
-    where
-        'a: 'b,
-    {
+
+    fn load<'a>(reader: Reader<'a, '_>) -> ASN1Result<Self::ValueTy> {
         reader.read_bytes()
     }
 }
