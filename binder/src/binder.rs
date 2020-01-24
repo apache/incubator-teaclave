@@ -36,7 +36,7 @@ pub struct TeeBinder {
 
 impl TeeBinder {
     pub fn new(name: &str, debug_launch: i32) -> Result<TeeBinder> {
-        let enclave = init_enclave(&name, debug_launch)?;
+        let enclave = create_sgx_enclave(&name, debug_launch)?;
         debug!("EnclaveID: {}", enclave.geteid());
 
         let tee = TeeBinder { enclave };
@@ -78,7 +78,7 @@ impl Drop for TeeBinder {
     }
 }
 
-fn init_enclave(enclave_name: &str, debug_launch: i32) -> Result<SgxEnclave> {
+fn create_sgx_enclave(enclave_name: &str, debug_launch: i32) -> Result<SgxEnclave> {
     let mut launch_token: sgx_launch_token_t = [0; 1024]; // launch_token is deprecated
     let mut launch_token_updated: i32 = 0; // launch_token is deprecated
 
