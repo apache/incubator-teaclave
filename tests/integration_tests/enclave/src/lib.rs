@@ -45,6 +45,7 @@ fn handle_run_test(_args: &RunTestInput) -> Result<RunTestOutput> {
     rusty_leveldb_sgx::run_tests();
     protected_fs_rs::run_tests();
     teaclave_rpc::run_tests();
+
     Ok(RunTestOutput::default())
 }
 
