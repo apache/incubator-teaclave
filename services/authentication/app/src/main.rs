@@ -25,18 +25,17 @@ use anyhow;
 use std::net::TcpListener;
 use std::os::unix::io::IntoRawFd;
 
-use std::sync::Arc;
 use teaclave_binder::TeeBinder;
-use teaclave_service_app_utils::ServiceEnclaveBuilder;
 
 fn main() -> anyhow::Result<()> {
-    let tee = ServiceEnclaveBuilder::init_tee_binder(env!("CARGO_PKG_NAME"))?;
-    run(tee)?;
+    env_logger::init();
+    let tee = TeeBinder::new(env!("CARGO_PKG_NAME"), 1)?;
+    run(&tee)?;
 
     Ok(())
 }
 
-fn start_enclave_service(tee: Arc<TeeBinder>) -> anyhow::Result<()> {
+fn start_enclave_service(tee: &TeeBinder) -> anyhow::Result<()> {
     info!("Start enclave service");
     let config =
         teaclave_config::runtime_config::RuntimeConfig::from_toml("runtime.config.toml").unwrap();
@@ -50,7 +49,7 @@ fn start_enclave_service(tee: Arc<TeeBinder>) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn run(tee: Arc<TeeBinder>) -> anyhow::Result<()> {
+fn run(tee: &TeeBinder) -> anyhow::Result<()> {
     start_enclave_service(tee)?;
 
     Ok(())

@@ -13,7 +13,6 @@ env_logger = { version = "0.7.1" }
 anyhow     = { version = "1.0.26" }
 
 teaclave_ipc               = { path = "../../../ipc" }
-teaclave_service_app_utils = { path = "../../../utils/service_app_utils" }
 teaclave_binder            = { path = "../../../binder" }
 teaclave_config            = { path = "../../../config" }
 teaclave_test_utils        = { path = "../../test_utils" }

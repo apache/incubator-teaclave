@@ -16,27 +16,27 @@
 // under the License.
 
 use anyhow;
-use std::sync::Arc;
 use teaclave_binder::TeeBinder;
 use teaclave_ipc::protos::ecall::{RunTestInput, RunTestOutput};
 use teaclave_ipc::protos::ECallCommand;
-use teaclave_service_app_utils::ServiceEnclaveBuilder;
 
 fn main() -> anyhow::Result<()> {
-    let tee = ServiceEnclaveBuilder::init_tee_binder(env!("CARGO_PKG_NAME"))?;
-    run(tee)?;
+    env_logger::init();
+
+    let tee = TeeBinder::new(env!("CARGO_PKG_NAME"), 1)?;
+    run(&tee)?;
 
     Ok(())
 }
 
-fn start_enclave_unit_test_driver(tee: Arc<TeeBinder>) -> anyhow::Result<()> {
+fn start_enclave_unit_test_driver(tee: &TeeBinder) -> anyhow::Result<()> {
     let cmd = ECallCommand::RunTest;
     let _ = tee.invoke::<RunTestInput, RunTestOutput>(cmd.into(), RunTestInput);
 
     Ok(())
 }
 
-fn run(tee: Arc<TeeBinder>) -> anyhow::Result<()> {
+fn run(tee: &TeeBinder) -> anyhow::Result<()> {
     start_enclave_unit_test_driver(tee)?;
 
     Ok(())

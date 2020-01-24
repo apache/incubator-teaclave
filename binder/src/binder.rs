@@ -30,29 +30,16 @@ use teaclave_ipc::IpcSender;
 
 static ENCLAVE_FILE_SUFFIX: &str = "_enclave.signed.so";
 
-use std::sync::Arc;
-#[derive(Clone)]
 pub struct TeeBinder {
-    name: String,
-    debug_launch: i32,
-    enclave_id: sgx_enclave_id_t,
-    enclave: Arc<SgxEnclave>,
+    enclave: SgxEnclave,
 }
 
 impl TeeBinder {
     pub fn new(name: &str, debug_launch: i32) -> Result<TeeBinder> {
-        let name = name.to_string();
         let enclave = init_enclave(&name, debug_launch)?;
-        let enclave_id = enclave.geteid();
+        debug!("EnclaveID: {}", enclave.geteid());
 
-        let tee = TeeBinder {
-            name,
-            debug_launch,
-            enclave: Arc::new(enclave),
-            enclave_id,
-        };
-
-        debug!("EnclaveID: {}", enclave_id);
+        let tee = TeeBinder { enclave };
 
         let args_info = InitEnclaveInput::default();
         let _ret_info = tee.invoke::<InitEnclaveInput, InitEnclaveOutput>(
@@ -68,7 +55,7 @@ impl TeeBinder {
         U: Serialize,
         V: DeserializeOwned,
     {
-        let mut channel = ECallChannel::new(self.enclave_id);
+        let mut channel = ECallChannel::new(self.enclave.geteid());
         channel.invoke::<U, V>(cmd, args_info)
     }
 
