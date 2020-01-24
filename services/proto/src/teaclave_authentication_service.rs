@@ -10,6 +10,15 @@ pub use proto::TeaclaveAuthenticationRequest;
 pub use proto::TeaclaveAuthenticationResponse;
 
 #[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
+pub struct UserRegisterRequest {
+    pub id: std::string::String,
+    pub password: std::string::String,
+}
+
+#[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
+pub struct UserRegisterResponse {}
+
+#[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
 pub struct UserLoginRequest {
     pub id: std::string::String,
     pub password: std::string::String,
@@ -21,13 +30,49 @@ pub struct UserLoginResponse {
 }
 
 #[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
-pub struct UserAuthorizeRequest {
+pub struct UserAuthenticateRequest {
     pub credential: teaclave_common::UserCredential,
 }
 
 #[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
-pub struct UserAuthorizeResponse {
+pub struct UserAuthenticateResponse {
     pub accept: bool,
+}
+
+impl std::convert::TryFrom<proto::UserRegisterRequest> for UserRegisterRequest {
+    type Error = Error;
+
+    fn try_from(proto: proto::UserRegisterRequest) -> Result<Self> {
+        let ret = Self {
+            id: proto.id,
+            password: proto.password,
+        };
+
+        Ok(ret)
+    }
+}
+
+impl From<UserRegisterRequest> for proto::UserRegisterRequest {
+    fn from(request: UserRegisterRequest) -> Self {
+        Self {
+            id: request.id,
+            password: request.password,
+        }
+    }
+}
+
+impl std::convert::TryFrom<proto::UserRegisterResponse> for UserRegisterResponse {
+    type Error = Error;
+
+    fn try_from(_reponse: proto::UserRegisterResponse) -> Result<Self> {
+        Ok(Self {})
+    }
+}
+
+impl From<UserRegisterResponse> for proto::UserRegisterResponse {
+    fn from(_response: UserRegisterResponse) -> Self {
+        Self {}
+    }
 }
 
 impl std::convert::TryFrom<proto::UserLoginRequest> for UserLoginRequest {
@@ -60,10 +105,10 @@ impl From<UserLoginResponse> for proto::UserLoginResponse {
     }
 }
 
-impl std::convert::TryFrom<proto::UserAuthorizeRequest> for UserAuthorizeRequest {
+impl std::convert::TryFrom<proto::UserAuthenticateRequest> for UserAuthenticateRequest {
     type Error = Error;
 
-    fn try_from(proto: proto::UserAuthorizeRequest) -> Result<Self> {
+    fn try_from(proto: proto::UserAuthenticateRequest) -> Result<Self> {
         let ret = Self {
             credential: proto
                 .credential
@@ -75,16 +120,16 @@ impl std::convert::TryFrom<proto::UserAuthorizeRequest> for UserAuthorizeRequest
     }
 }
 
-impl From<UserAuthorizeRequest> for proto::UserAuthorizeRequest {
-    fn from(request: UserAuthorizeRequest) -> Self {
+impl From<UserAuthenticateRequest> for proto::UserAuthenticateRequest {
+    fn from(request: UserAuthenticateRequest) -> Self {
         Self {
             credential: Some(request.credential.into()),
         }
     }
 }
 
-impl From<UserAuthorizeResponse> for proto::UserAuthorizeResponse {
-    fn from(response: UserAuthorizeResponse) -> Self {
+impl From<UserAuthenticateResponse> for proto::UserAuthenticateResponse {
+    fn from(response: UserAuthenticateResponse) -> Self {
         Self {
             accept: response.accept,
         }

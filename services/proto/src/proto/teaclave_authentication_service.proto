@@ -3,6 +3,14 @@ package teaclave_authentication_service_proto;
 
 import "teaclave_common.proto";
 
+message UserRegisterRequest {
+  string id = 1;
+  string password = 2;
+}
+
+message UserRegisterResponse {
+}
+
 message UserLoginRequest {
   string id = 1;
   string password = 2;
@@ -12,15 +20,16 @@ message UserLoginResponse {
   string token = 1;
 }
 
-message UserAuthorizeRequest {
+message UserAuthenticateRequest {
   teaclave_common_proto.UserCredential credential = 1;
 }
 
-message UserAuthorizeResponse {
+message UserAuthenticateResponse {
   bool accept = 1;
 }
 
 service TeaclaveAuthentication {
+  rpc UserRegister(UserRegisterRequest) returns (UserRegisterResponse);
   rpc UserLogin (UserLoginRequest) returns (UserLoginResponse);
-  rpc UserAuthorize (UserAuthorizeRequest) returns (UserAuthorizeResponse);
+  rpc UserAuthenticate (UserAuthenticateRequest) returns (UserAuthenticateResponse);
 }

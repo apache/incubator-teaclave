@@ -44,6 +44,8 @@ use teaclave_rpc::config::SgxTrustedTlsServerConfig;
 use teaclave_rpc::server::SgxTrustedTlsServer;
 
 mod service;
+mod user_db;
+mod user_info;
 
 #[handle_ecall]
 fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> {
@@ -62,7 +64,9 @@ fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> 
         TeaclaveAuthenticationResponse,
         TeaclaveAuthenticationRequest,
     >::new(listener, &config);
-    match server.start(service::TeaclaveAuthenticationService) {
+
+    let service = service::TeaclaveAuthenticationService::init().unwrap();
+    match server.start(service) {
         Ok(_) => (),
         Err(e) => {
             error!("Service exit, error: {}.", e);
@@ -99,7 +103,8 @@ pub mod tests {
     pub fn run_tests() -> usize {
         rsgx_unit_tests!(
             service::tests::test_user_login,
-            service::tests::test_user_authorize,
+            service::tests::test_user_authenticate,
+            service::tests::test_user_register,
         )
     }
 }

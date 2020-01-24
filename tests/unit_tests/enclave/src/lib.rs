@@ -40,10 +40,9 @@ use teaclave_execution_service_enclave;
 
 #[handle_ecall]
 fn handle_run_test(_args: &RunTestInput) -> Result<RunTestOutput> {
-    teaclave_authentication_service_enclave::tests::run_tests();
     teaclave_database_service_enclave::tests::run_tests();
     teaclave_execution_service_enclave::tests::run_tests();
-
+    teaclave_authentication_service_enclave::tests::run_tests();
     Ok(RunTestOutput::default())
 }
 
