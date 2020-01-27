@@ -1,4 +1,4 @@
-use crate::user_db::{DBClient, DBError, Database};
+use crate::user_db::{Database, DbClient, DbError};
 use crate::user_info::{UserInfo, JWT_SECRET_LEN};
 use rand::prelude::RngCore;
 use std::prelude::v1::*;
@@ -17,7 +17,7 @@ pub enum TeaclaveAuthenticationError {
     #[error("permission denied")]
     PermissionDenied,
     #[error("invalid userid")]
-    InvalidUserid,
+    InvalidUserId,
     #[error("invalid password")]
     InvalidPassword,
     #[error("service unavailable")]
@@ -37,20 +37,17 @@ impl From<TeaclaveAuthenticationError> for TeaclaveServiceResponseError {
 )]
 #[derive(Clone)]
 pub(crate) struct TeaclaveAuthenticationService {
-    db_client: DBClient,
-    secret: [u8; JWT_SECRET_LEN],
+    db_client: DbClient,
+    secret: Vec<u8>,
 }
 
 impl TeaclaveAuthenticationService {
-    pub fn init() -> Option<Self> {
-        let database = match Database::open() {
-            Some(db) => db,
-            None => return None,
-        };
-        let mut secret = [0; JWT_SECRET_LEN];
+    pub fn init() -> anyhow::Result<Self> {
+        let database = Database::open()?;
+        let mut secret = vec![0; JWT_SECRET_LEN];
         let mut rng = rand::thread_rng();
         rng.fill_bytes(&mut secret);
-        Some(Self {
+        Ok(Self {
             db_client: database.get_client(),
             secret,
         })
@@ -63,18 +60,15 @@ impl TeaclaveAuthentication for TeaclaveAuthenticationService {
         request: UserRegisterRequest,
     ) -> TeaclaveServiceResponseResult<UserRegisterResponse> {
         if request.id.is_empty() {
-            return Err(TeaclaveAuthenticationError::InvalidUserid.into());
+            return Err(TeaclaveAuthenticationError::InvalidUserId.into());
         }
         if self.db_client.get_user(&request.id).is_ok() {
-            return Err(TeaclaveAuthenticationError::InvalidUserid.into());
+            return Err(TeaclaveAuthenticationError::InvalidUserId.into());
         }
-        let new_user = match UserInfo::new_register_user(&request.id, &request.password) {
-            Some(value) => value,
-            None => return Err(TeaclaveAuthenticationError::ServiceUnavailable.into()),
-        };
+        let new_user = UserInfo::new(&request.id, &request.password);
         match self.db_client.create_user(&new_user) {
             Ok(_) => Ok(UserRegisterResponse {}),
-            Err(DBError::UserExist) => Err(TeaclaveAuthenticationError::InvalidUserid.into()),
+            Err(DbError::UserExist) => Err(TeaclaveAuthenticationError::InvalidUserId.into()),
             Err(_) => Err(TeaclaveAuthenticationError::ServiceUnavailable.into()),
         }
     }
@@ -84,7 +78,7 @@ impl TeaclaveAuthentication for TeaclaveAuthenticationService {
         request: UserLoginRequest,
     ) -> TeaclaveServiceResponseResult<UserLoginResponse> {
         if request.id.is_empty() {
-            return Err(TeaclaveAuthenticationError::InvalidUserid.into());
+            return Err(TeaclaveAuthenticationError::InvalidUserId.into());
         }
         if request.password.is_empty() {
             return Err(TeaclaveAuthenticationError::InvalidPassword.into());
@@ -97,7 +91,7 @@ impl TeaclaveAuthentication for TeaclaveAuthenticationService {
             Err(TeaclaveAuthenticationError::PermissionDenied.into())
         } else {
             let now = match SystemTime::now().duration_since(UNIX_EPOCH) {
-                Ok(timestamp) => timestamp.as_secs() as i64,
+                Ok(timestamp) => timestamp.as_secs(),
                 Err(_) => return Err(TeaclaveAuthenticationError::ServiceUnavailable.into()),
             };
             let exp = now + 24 * 60;
@@ -236,7 +230,7 @@ pub mod tests {
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
-            .as_secs() as i64;
+            .as_secs();
         Claims {
             sub: "test_authenticate_id".to_string(),
             iss: ISSUER_NAME.to_string(),
