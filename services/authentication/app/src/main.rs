@@ -37,8 +37,7 @@ fn main() -> anyhow::Result<()> {
 
 fn start_enclave_service(tee: &TeeBinder) -> anyhow::Result<()> {
     info!("Start enclave service");
-    let config =
-        teaclave_config::runtime_config::RuntimeConfig::from_toml("runtime.config.toml").unwrap();
+    let config = teaclave_config::RuntimeConfig::from_toml("runtime.config.toml").unwrap();
     let listen_address = config.api_endpoints.authentication.listen_address;
     let listener = TcpListener::bind(listen_address)?;
     let fd = listener.into_raw_fd();
