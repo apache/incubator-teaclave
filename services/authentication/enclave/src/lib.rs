@@ -17,31 +17,27 @@
 
 #![cfg_attr(feature = "mesalock_sgx", no_std)]
 #[cfg(feature = "mesalock_sgx")]
+#[macro_use]
 extern crate sgx_tstd as std;
 
 #[macro_use]
 extern crate log;
 
-use std::prelude::v1::*;
-
 use anyhow::Result;
-
+use std::prelude::v1::*;
+use teaclave_attestation::RemoteAttestation;
 use teaclave_ipc::protos::ecall::{
     FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
     StartServiceInput, StartServiceOutput,
 };
 use teaclave_ipc::protos::ECallCommand;
-
 use teaclave_ipc::{handle_ecall, register_ecall_handler};
-
-use teaclave_service_enclave_utils::ServiceEnclave;
-
-use teaclave_attestation::RemoteAttestation;
 use teaclave_proto::teaclave_authentication_service::{
     TeaclaveAuthenticationRequest, TeaclaveAuthenticationResponse,
 };
 use teaclave_rpc::config::SgxTrustedTlsServerConfig;
 use teaclave_rpc::server::SgxTrustedTlsServer;
+use teaclave_service_enclave_utils::ServiceEnclave;
 
 mod service;
 mod user_db;

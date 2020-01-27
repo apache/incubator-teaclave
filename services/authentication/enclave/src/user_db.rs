@@ -16,26 +16,38 @@
 // under the License.
 
 use crate::user_info::UserInfo;
-use rusty_leveldb::DB;
+use rusty_leveldb;
 use std::prelude::v1::*;
 use std::sync::mpsc::{channel, Sender};
 use std::thread;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum DBError {
+pub enum DbError {
     #[error("user not exist")]
     UserNotExist,
     #[error("user exist")]
     UserExist,
     #[error("mpsc error")]
-    MpscError,
+    ConnectionError,
     #[error("leveldb error")]
     LevelDbError,
     #[error("invalid response")]
     InvalidResponse,
     #[error("invalid request")]
     InvalidRequest,
+}
+
+impl<T> From<std::sync::mpsc::SendError<T>> for DbError {
+    fn from(_error: std::sync::mpsc::SendError<T>) -> Self {
+        DbError::ConnectionError
+    }
+}
+
+impl From<std::sync::mpsc::RecvError> for DbError {
+    fn from(_error: std::sync::mpsc::RecvError) -> Self {
+        DbError::ConnectionError
+    }
 }
 
 #[derive(Clone)]
@@ -54,14 +66,14 @@ struct CreateRequest {
 }
 
 #[derive(Clone)]
-enum DBRequest {
+enum DbRequest {
     Get(GetRequest),
     Create(CreateRequest),
     Ping,
 }
 
 #[derive(Clone)]
-enum DBResponse {
+enum DbResponse {
     Get(GetResponse),
     Create,
     Ping,
@@ -69,8 +81,8 @@ enum DBResponse {
 
 #[derive(Clone)]
 struct DBCall {
-    pub sender: Sender<Result<DBResponse, DBError>>,
-    pub request: DBRequest,
+    pub sender: Sender<Result<DbResponse, DbError>>,
+    pub request: DbRequest,
 }
 
 pub struct Database {
@@ -78,11 +90,11 @@ pub struct Database {
 }
 
 impl Database {
-    pub fn open() -> Option<Self> {
+    pub fn open() -> Result<Self, DbError> {
         let (sender, receiver) = channel();
         thread::spawn(move || {
             let opt = rusty_leveldb::in_memory();
-            let mut database = DB::open("authentication_db", opt).unwrap();
+            let mut database = rusty_leveldb::DB::open("authentication_db", opt).unwrap();
             loop {
                 let call: DBCall = match receiver.recv() {
                     Ok(req) => req,
@@ -93,18 +105,18 @@ impl Database {
                 };
                 let sender = call.sender;
                 let response = match call.request {
-                    DBRequest::Get(request) => match database.get(&request.key) {
-                        Some(value) => Ok(DBResponse::Get(GetResponse { value })),
-                        None => Err(DBError::UserNotExist),
+                    DbRequest::Get(request) => match database.get(&request.key) {
+                        Some(value) => Ok(DbResponse::Get(GetResponse { value })),
+                        None => Err(DbError::UserNotExist),
                     },
-                    DBRequest::Create(request) => match database.get(&request.key) {
-                        Some(_) => Err(DBError::UserExist),
+                    DbRequest::Create(request) => match database.get(&request.key) {
+                        Some(_) => Err(DbError::UserExist),
                         None => match database.put(&request.key, &request.value) {
-                            Ok(_) => Ok(DBResponse::Create),
-                            Err(_) => Err(DBError::LevelDbError),
+                            Ok(_) => Ok(DbResponse::Create),
+                            Err(_) => Err(DbError::LevelDbError),
                         },
                     },
-                    DBRequest::Ping => Ok(DBResponse::Ping),
+                    DbRequest::Ping => Ok(DbResponse::Ping),
                 };
                 match sender.send(response) {
                     Ok(_) => (),
@@ -115,73 +127,73 @@ impl Database {
 
         let database = Self { sender };
         let client = database.get_client();
-        // check whether the db is opened successfuly
-        match client.ping() {
-            Ok(_) => Some(database),
-            Err(_) => None,
-        }
+
+        // Check whether the user database is successfully opened.
+        client.ping()?;
+
+        Ok(database)
     }
 
-    pub fn get_client(&self) -> DBClient {
-        DBClient {
+    pub fn get_client(&self) -> DbClient {
+        DbClient {
             sender: self.sender.clone(),
         }
     }
 }
 
 #[derive(Clone)]
-pub struct DBClient {
+pub struct DbClient {
     sender: Sender<DBCall>,
 }
 
-impl DBClient {
-    pub fn get_user(&self, id: &str) -> Result<UserInfo, DBError> {
+impl DbClient {
+    pub fn get_user(&self, id: &str) -> Result<UserInfo, DbError> {
         let (sender, receiver) = channel();
-        let request = DBRequest::Get(GetRequest {
+        let request = DbRequest::Get(GetRequest {
             key: id.as_bytes().to_vec(),
         });
         let call = DBCall { sender, request };
-        self.sender.send(call).map_err(|_| DBError::MpscError)?;
-        let result = receiver.recv().map_err(|_| DBError::MpscError)?;
+        self.sender.send(call)?;
+        let result = receiver.recv()?;
         let db_response = result?;
         match db_response {
-            DBResponse::Get(response) => {
+            DbResponse::Get(response) => {
                 let user = serde_json::from_slice(&response.value)
-                    .map_err(|_| DBError::InvalidResponse)?;
+                    .map_err(|_| DbError::InvalidResponse)?;
                 Ok(user)
             }
-            _ => Err(DBError::UserNotExist),
+            _ => Err(DbError::UserNotExist),
         }
     }
 
-    pub fn create_user(&self, user: &UserInfo) -> Result<(), DBError> {
+    pub fn create_user(&self, user: &UserInfo) -> Result<(), DbError> {
         let (sender, receiver) = channel();
-        let user_bytes = serde_json::to_vec(&user).map_err(|_| DBError::InvalidRequest)?;
-        let request = DBRequest::Create(CreateRequest {
+        let user_bytes = serde_json::to_vec(&user).map_err(|_| DbError::InvalidRequest)?;
+        let request = DbRequest::Create(CreateRequest {
             key: user.id.as_bytes().to_vec(),
             value: user_bytes.to_vec(),
         });
         let call = DBCall { sender, request };
-        self.sender.send(call).map_err(|_| DBError::MpscError)?;
-        let result = receiver.recv().map_err(|_| DBError::MpscError)?;
+        self.sender.send(call)?;
+        let result = receiver.recv()?;
         let db_response = result?;
         match db_response {
-            DBResponse::Create => Ok(()),
-            _ => Err(DBError::InvalidResponse),
+            DbResponse::Create => Ok(()),
+            _ => Err(DbError::InvalidResponse),
         }
     }
 
-    // use to check whether the db is opened successfully
-    fn ping(&self) -> Result<(), DBError> {
+    // Check whether the database is opened successfully.
+    fn ping(&self) -> Result<(), DbError> {
         let (sender, receiver) = channel();
-        let request = DBRequest::Ping;
+        let request = DbRequest::Ping;
         let call = DBCall { sender, request };
-        self.sender.send(call).map_err(|_| DBError::MpscError)?;
-        let result = receiver.recv().map_err(|_| DBError::MpscError)?;
+        self.sender.send(call)?;
+        let result = receiver.recv()?;
         let db_response = result?;
         match db_response {
-            DBResponse::Ping => Ok(()),
-            _ => Err(DBError::InvalidResponse),
+            DbResponse::Ping => Ok(()),
+            _ => Err(DbError::InvalidResponse),
         }
     }
 }
