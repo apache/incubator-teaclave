@@ -39,12 +39,14 @@ use teaclave_service_enclave_utils::ServiceEnclave;
 mod protected_fs_rs;
 mod rusty_leveldb_sgx;
 mod teaclave_rpc;
+mod teaclave_worker;
 
 #[handle_ecall]
 fn handle_run_test(_args: &RunTestInput) -> Result<RunTestOutput> {
     rusty_leveldb_sgx::run_tests();
     protected_fs_rs::run_tests();
     teaclave_rpc::run_tests();
+    teaclave_worker::run_tests();
 
     Ok(RunTestOutput::default())
 }
