@@ -1,8 +1,8 @@
 use sgx_tunittest::*;
 use std::prelude::v1::*;
 use teaclave_attestation::verifier;
-use teaclave_config::build_config::BUILD_CONFIG;
-use teaclave_config::runtime_config::RuntimeConfig;
+use teaclave_config::RuntimeConfig;
+use teaclave_config::BUILD_CONFIG;
 use teaclave_proto::teaclave_authentication_service::*;
 use teaclave_proto::teaclave_common::*;
 use teaclave_rpc::config::SgxTrustedTlsClientConfig;

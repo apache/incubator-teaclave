@@ -6,8 +6,7 @@ pub fn run_tests() {
 
 fn runtime_config() {
     let config =
-        teaclave_config::runtime_config::RuntimeConfig::from_toml("./fixtures/runtime.config.toml")
-            .unwrap();
+        teaclave_config::RuntimeConfig::from_toml("./fixtures/runtime.config.toml").unwrap();
     assert_eq!(
         config.api_endpoints.authentication.listen_address,
         "0.0.0.0:7776".parse().unwrap()
