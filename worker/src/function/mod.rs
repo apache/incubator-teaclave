@@ -38,3 +38,16 @@ mod gbdt_training;
 mod mesapy;
 pub use gbdt_training::GbdtTraining;
 pub use mesapy::Mesapy;
+
+#[cfg(feature = "enclave_unit_test")]
+pub mod tests {
+    use super::*;
+    use sgx_tunittest::*;
+
+    pub fn run_tests() -> usize {
+        rsgx_unit_tests!(
+            gbdt_training::tests::test_gbdt_parse_training_data,
+            gbdt_training::tests::test_gbdt_training,
+        )
+    }
+}

@@ -20,7 +20,7 @@ use std::prelude::v1::*;
 
 use anyhow;
 
-use super::TeaclaveFunction;
+use crate::function::TeaclaveFunction;
 use crate::runtime::TeaclaveRuntime;
 use teaclave_types::TeaclaveFunctionArguments;
 

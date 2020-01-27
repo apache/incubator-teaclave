@@ -19,6 +19,9 @@
 #[cfg(feature = "mesalock_sgx")]
 extern crate sgx_tstd as std;
 
+#[cfg(feature = "mesalock_sgx")]
+use std::prelude::v1::*;
+
 //#[macro_use]
 extern crate log;
 
@@ -31,9 +34,8 @@ pub use worker::Worker;
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
-    use sgx_tunittest::*;
 
-    pub fn run_tests() -> usize {
-        rsgx_unit_tests!(worker::tests::test_start_worker)
+    pub fn run_tests() {
+        function::tests::run_tests();
     }
 }

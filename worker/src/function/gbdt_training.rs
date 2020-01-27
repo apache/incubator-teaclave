@@ -24,7 +24,7 @@ use std::io::{self, BufRead, BufReader, Write};
 use anyhow;
 use serde_json;
 
-use super::TeaclaveFunction;
+use crate::function::TeaclaveFunction;
 use crate::runtime::TeaclaveRuntime;
 use teaclave_types::TeaclaveFunctionArguments;
 
@@ -53,7 +53,7 @@ impl TeaclaveFunction for GbdtTraining {
 
         // read input
         let training_file = runtime.open_input("training_data")?;
-        let mut train_dv = parse_training_data(training_file)?;
+        let mut train_dv = parse_training_data(training_file, feature_size)?;
         let data_size = train_dv.len();
 
         // init gbdt config
@@ -83,36 +83,115 @@ impl TeaclaveFunction for GbdtTraining {
     }
 }
 
-fn parse_training_data(input: impl io::Read) -> anyhow::Result<Vec<Data>> {
-    let mut samples: Vec<Data> = Vec::new();
+fn parse_data_line(line: &str, feature_size: usize) -> anyhow::Result<Data> {
+    let trimed_line = line.trim();
+    anyhow::ensure!(!trimed_line.is_empty(), "Empty line");
 
+    let mut v: Vec<f32> = trimed_line
+        .split(',')
+        .map(|x| x.parse::<f32>())
+        .collect::<std::result::Result<_, _>>()?;
+
+    anyhow::ensure!(
+        v.len() == feature_size + 1,
+        "Data format error: column len = {}, expected = {}",
+        v.len(),
+        feature_size + 1
+    );
+
+    // Last column is the label
+    Ok(Data {
+        label: v.swap_remove(feature_size),
+        feature: v,
+        target: 0.0,
+        weight: 1.0,
+        residual: 0.0,
+        initial_guess: 0.0,
+    })
+}
+
+fn parse_training_data(input: impl io::Read, feature_size: usize) -> anyhow::Result<Vec<Data>> {
+    let mut samples: Vec<Data> = Vec::new();
     let reader = BufReader::new(input);
     for line_result in reader.lines() {
         let line = line_result?;
-        let trimed_line = line.trim();
-        if trimed_line.is_empty() {
-            continue;
-        }
-
-        let mut v: Vec<f32> = trimed_line
-            .split(',')
-            .map(|x| x.parse::<f32>().unwrap_or(0.0))
-            .collect();
-
-        if v.len() <= 2 {
-            continue;
-        }
-
-        let sample_label_index = v.len() - 1;
-        samples.push(Data {
-            label: v.swap_remove(sample_label_index),
-            feature: v,
-            target: 0.0,
-            weight: 1.0,
-            residual: 0.0,
-            initial_guess: 0.0,
-        });
+        let data = parse_data_line(&line, feature_size)?;
+        samples.push(data);
     }
 
     Ok(samples)
+}
+
+#[cfg(feature = "enclave_unit_test")]
+pub mod tests {
+    use super::*;
+    use crate::function::TeaclaveFunction;
+    use crate::runtime::DefaultRuntime;
+    use std::untrusted::fs;
+    use teaclave_types::{TeaclaveFunctionArguments, TeaclaveWorkerFileRegistry};
+
+    pub fn test_gbdt_training() {
+        let args_json = r#"
+            {
+                "feature_size": "4",
+                "max_depth": "4",
+                "iterations": "100",
+                "shrinkage": "0.1",
+                "feature_sample_ratio": "1.0",
+                "data_sample_ratio": "1.0",
+                "min_leaf_size": "1",
+                "loss": "LAD",
+                "training_optimization_level": "2"
+            }
+        "#;
+
+        let input_json = r#"
+            {
+                "training_data": {
+                    "path": "test_cases/gbdt_training/train.txt",
+                    "crypto_info": {
+                        "aes_gcm128": {
+                            "key": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+                            "iv": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+                        }
+                    }
+                }
+            }
+        "#;
+
+        let output_json = r#"
+            {
+                "trained_model": {
+                    "path": "test_cases/gbdt_training/training_model.txt.out",
+                    "crypto_info": {
+                        "aes_gcm128": {
+                            "key": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+                            "iv": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+                        }
+                    }
+                }
+            }
+        "#;
+
+        let func_args: TeaclaveFunctionArguments = serde_json::from_str(&args_json).unwrap();
+        let input_files: TeaclaveWorkerFileRegistry = serde_json::from_str(&input_json).unwrap();
+        let output_files: TeaclaveWorkerFileRegistry = serde_json::from_str(&output_json).unwrap();
+        let runtime = Box::new(DefaultRuntime::new(input_files, output_files));
+
+        let function = GbdtTraining;
+        let summary = function.execute(runtime, func_args).unwrap();
+        assert_eq!(summary, "Trained 120 lines of data.");
+
+        let plain_output = "test_cases/gbdt_training/training_model.txt.out";
+        let expected_output = "test_cases/gbdt_training/expected_model.txt";
+        let result = fs::read_to_string(&plain_output).unwrap();
+        let expected = fs::read_to_string(&expected_output).unwrap();
+        assert_eq!(&result[..], &expected[..]);
+    }
+
+    pub fn test_gbdt_parse_training_data() {
+        let line = "4.8,3.0,1.4,0.3,3.0";
+        let result = parse_data_line(&line, 4);
+        assert_eq!(result.is_ok(), true);
+    }
 }
