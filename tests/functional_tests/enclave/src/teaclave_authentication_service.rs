@@ -24,15 +24,11 @@ fn test_login_success() {
     let runtime_config = RuntimeConfig::from_toml("runtime.config.toml").expect("runtime");
     let enclave_info =
         EnclaveInfo::from_bytes(&runtime_config.audit.enclave_info_bytes.as_ref().unwrap());
-    let measure = enclave_info
-        .measurements
-        .get("teaclave_authentication_service")
+    let enclave_attr = enclave_info
+        .get_enclave_attr("teaclave_authentication_service")
         .expect("authentication");
-    let enclave_attr = verifier::EnclaveAttr {
-        measures: vec![*measure],
-    };
     let config = SgxTrustedTlsClientConfig::new_with_attestation_report_verifier(
-        enclave_attr,
+        vec![enclave_attr],
         BUILD_CONFIG.ias_root_ca_cert,
         verifier::universal_quote_verifier,
     );

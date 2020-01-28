@@ -1,9 +1,10 @@
 use anyhow::Result;
 use rustls;
+use std::prelude::v1::*;
 use std::sync::Arc;
 use teaclave_attestation::report::AttestationReport;
 use teaclave_attestation::verifier::AttestationReportVerifier;
-use teaclave_attestation::verifier::EnclaveAttr;
+use teaclave_types::EnclaveAttr;
 
 pub struct SgxTrustedTlsServerConfig {
     pub config: Arc<rustls::ServerConfig>,
@@ -66,13 +67,13 @@ impl SgxTrustedTlsClientConfig {
     }
 
     pub fn new_with_attestation_report_verifier(
-        enclave_attr: EnclaveAttr,
+        accepted_enclave_attrs: Vec<EnclaveAttr>,
         root_ca: &[u8],
         verifier: fn(&AttestationReport) -> bool,
     ) -> Self {
         let mut config = rustls::ClientConfig::new();
         let verifier = Arc::new(AttestationReportVerifier::new(
-            enclave_attr,
+            accepted_enclave_attrs,
             root_ca,
             verifier,
         ));
