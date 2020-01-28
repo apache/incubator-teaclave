@@ -25,25 +25,26 @@ pub struct RuntimeConfig {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ApiEndpointsConfig {
-    pub frontend: EndpointListenConfig,
-    pub authentication: EndpointListenConfig,
+    pub frontend: ApiEndpoint,
+    pub authentication: ApiEndpoint,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InternalEndpointsConfig {
-    pub dbs: EndpointListenAdvertisedConfig,
-    pub execution: EndpointListenAdvertisedConfig,
+    pub dbs: InternalEndpoint,
+    pub execution: InternalEndpoint,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct EndpointListenConfig {
+pub struct ApiEndpoint {
     pub listen_address: SocketAddr,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct EndpointListenAdvertisedConfig {
+pub struct InternalEndpoint {
     pub listen_address: SocketAddr,
     pub advertised_address: SocketAddr,
+    pub inbound_services: Option<Vec<String>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -64,18 +65,17 @@ pub struct IasConfig {
 
 impl RuntimeConfig {
     pub fn from_toml<T: AsRef<Path>>(path: T) -> Option<Self> {
-        use std::prelude::v1::*;
         let contents = match fs::read_to_string(path) {
             Ok(c) => c,
             Err(_) => {
-                error!("Something went wrong reading the runtime config file.");
+                error!("Something went wrong when reading the runtime config file.");
                 return None;
             }
         };
         let mut config: RuntimeConfig = match toml::from_str(&contents) {
             Ok(c) => c,
             Err(_) => {
-                error!("Something went wrong reading the runtime config file.");
+                error!("Cannot parse the runtime config file.");
                 return None;
             }
         };
@@ -99,37 +99,24 @@ impl RuntimeConfig {
         }
         config.audit.auditor_signatures_bytes = Some(signatures);
 
-        if !cfg!(sgx_sim) && config.ias.is_none() {
-            let ias_spid = match env::var("IAS_SPID") {
-                Ok(e) => e.trim().to_string(),
-                Err(_) => {
-                    error!("Cannot find IAS_SPID from config file and environment variables.");
-                    return None;
-                }
-            };
-            let ias_key = match env::var("IAS_KEY") {
-                Ok(e) => e.trim().to_string(),
-                Err(_) => {
-                    error!("Cannot find IAS_KEY from config file and environment variables.");
-                    return None;
-                }
-            };
+        if env::var("IAS_SPID").is_ok() && env::var("IAS_KEY").is_ok() {
+            let ias_spid = env::var("IAS_SPID").unwrap();
+            let ias_key = env::var("IAS_KEY").unwrap();
             config.ias = Some(IasConfig { ias_spid, ias_key });
         }
 
         if cfg!(sgx_sim) && config.ias.is_none() {
             config.ias = Some(IasConfig {
-                ias_spid: "".to_string(),
-                ias_key: "".to_string(),
+                ias_spid: "SGX_SIMULATION_MODE_IAS_SPID_123".to_string(),
+                ias_key: "SGX_SIMULATION_MODE_IAS_KEY_1234".to_string(),
             });
         }
 
-        if !cfg!(sgx_sim)
-            && (config.ias.is_none()
-                || config.ias.as_ref().unwrap().ias_spid.len() != 32
-                || config.ias.as_ref().unwrap().ias_key.len() != 32)
+        if config.ias.is_none()
+            || config.ias.as_ref().unwrap().ias_spid.len() != 32
+            || config.ias.as_ref().unwrap().ias_key.len() != 32
         {
-            error!("IAS_SPID or IAS_KEY format error.");
+            error!("Cannot find IAS SPID/key or format error.");
             return None;
         }
 
