@@ -81,6 +81,11 @@ where
     })
 }
 
+#[derive(Clone)]
+pub struct EnclaveAttr {
+    pub measurement: EnclaveMeasurement,
+}
+
 pub struct EnclaveInfo {
     pub measurements: HashMap<String, EnclaveMeasurement>,
 }
@@ -146,6 +151,16 @@ impl EnclaveInfo {
         }
 
         true
+    }
+
+    pub fn get_enclave_attr(&self, service_name: &str) -> Option<EnclaveAttr> {
+        if let Some(measurement) = self.measurements.get(service_name) {
+            Some(EnclaveAttr {
+                measurement: *measurement,
+            })
+        } else {
+            None
+        }
     }
 }
 

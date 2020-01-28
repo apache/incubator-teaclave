@@ -17,50 +17,14 @@
 
 use crate::report::AttestationReport;
 use log::{debug, error};
-use std::hash::{Hash, Hasher};
 use std::vec::Vec;
-use teaclave_types::EnclaveMeasurement;
-
-#[derive(Clone)]
-pub struct EnclaveAttr {
-    pub measures: Vec<EnclaveMeasurement>,
-}
-
-impl PartialEq for EnclaveAttr {
-    fn eq(&self, other: &EnclaveAttr) -> bool {
-        self.measures == other.measures
-    }
-}
-
-impl Hash for EnclaveAttr {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        for m in &self.measures {
-            m.mr_enclave.hash(state);
-            m.mr_signer.hash(state);
-        }
-    }
-}
+use teaclave_types::EnclaveAttr;
 
 #[derive(Clone)]
 pub struct AttestationReportVerifier {
-    pub enclave_attr: EnclaveAttr,
+    pub accepted_enclave_attrs: Vec<EnclaveAttr>,
     pub root_ca: Vec<u8>,
     pub verifier: fn(&AttestationReport) -> bool,
-}
-
-impl PartialEq for AttestationReportVerifier {
-    fn eq(&self, other: &AttestationReportVerifier) -> bool {
-        self.verifier as usize == other.verifier as usize && self.enclave_attr == other.enclave_attr
-    }
-}
-
-impl Eq for AttestationReportVerifier {}
-
-impl Hash for AttestationReportVerifier {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.enclave_attr.hash(state);
-        (self.verifier as usize).hash(state);
-    }
 }
 
 pub fn universal_quote_verifier(report: &AttestationReport) -> bool {
@@ -69,12 +33,12 @@ pub fn universal_quote_verifier(report: &AttestationReport) -> bool {
 
 impl AttestationReportVerifier {
     pub fn new(
-        enclave_attr: EnclaveAttr,
+        accepted_enclave_attrs: Vec<EnclaveAttr>,
         root_ca: &[u8],
         verifier: fn(&AttestationReport) -> bool,
     ) -> Self {
         Self {
-            enclave_attr,
+            accepted_enclave_attrs,
             root_ca: root_ca.to_vec(),
             verifier,
         }
@@ -84,14 +48,10 @@ impl AttestationReportVerifier {
         debug!("verify measures");
         let this_mr_signer = attestation_report.sgx_quote_body.report_body.mr_signer;
         let this_mr_enclave = attestation_report.sgx_quote_body.report_body.mr_enclave;
-        for m in self.enclave_attr.measures.iter() {
-            debug!("{:?}", m.mr_signer);
-        }
 
-        self.enclave_attr
-            .measures
-            .iter()
-            .any(|m| m.mr_signer == this_mr_signer && m.mr_enclave == this_mr_enclave)
+        self.accepted_enclave_attrs.iter().any(|a| {
+            a.measurement.mr_signer == this_mr_signer && a.measurement.mr_enclave == this_mr_enclave
+        })
     }
 
     fn verify_cert(&self, cert_der: &[u8]) -> bool {
