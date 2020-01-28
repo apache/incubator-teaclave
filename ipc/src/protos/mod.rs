@@ -15,7 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-pub mod ecall;
-
 mod command;
-pub use command::ECallCommand;
+mod ecall;
+
+pub use command::*;
+pub use ecall::*;

@@ -17,8 +17,7 @@
 
 use anyhow;
 use teaclave_binder::TeeBinder;
-use teaclave_ipc::protos::ecall::{RunTestInput, RunTestOutput};
-use teaclave_ipc::protos::ECallCommand;
+use teaclave_ipc::protos::{ECallCommand, RunTestInput, RunTestOutput};
 
 mod teaclave_config_tests;
 

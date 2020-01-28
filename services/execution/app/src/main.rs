@@ -18,8 +18,7 @@
 #[macro_use]
 extern crate log;
 
-use teaclave_ipc::protos::ecall::{StartServiceInput, StartServiceOutput};
-use teaclave_ipc::protos::ECallCommand;
+use teaclave_ipc::protos::{ECallCommand, StartServiceInput, StartServiceOutput};
 
 use anyhow;
 use std::net::TcpListener;
