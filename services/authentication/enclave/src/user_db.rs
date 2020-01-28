@@ -23,7 +23,7 @@ use std::thread;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum DbError {
+pub(crate) enum DbError {
     #[error("user not exist")]
     UserNotExist,
     #[error("user exist")]
@@ -31,7 +31,7 @@ pub enum DbError {
     #[error("mpsc error")]
     ConnectionError,
     #[error("leveldb error")]
-    LevelDbError,
+    LevelDbInternalError,
     #[error("invalid response")]
     InvalidResponse,
     #[error("invalid request")]
@@ -85,12 +85,12 @@ struct DBCall {
     pub request: DbRequest,
 }
 
-pub struct Database {
+pub(crate) struct Database {
     sender: Sender<DBCall>,
 }
 
 impl Database {
-    pub fn open() -> Result<Self, DbError> {
+    pub(crate) fn open() -> Result<Self, DbError> {
         let (sender, receiver) = channel();
         thread::spawn(move || {
             let opt = rusty_leveldb::in_memory();
@@ -113,7 +113,7 @@ impl Database {
                         Some(_) => Err(DbError::UserExist),
                         None => match database.put(&request.key, &request.value) {
                             Ok(_) => Ok(DbResponse::Create),
-                            Err(_) => Err(DbError::LevelDbError),
+                            Err(_) => Err(DbError::LevelDbInternalError),
                         },
                     },
                     DbRequest::Ping => Ok(DbResponse::Ping),
@@ -134,7 +134,7 @@ impl Database {
         Ok(database)
     }
 
-    pub fn get_client(&self) -> DbClient {
+    pub(crate) fn get_client(&self) -> DbClient {
         DbClient {
             sender: self.sender.clone(),
         }
@@ -142,12 +142,12 @@ impl Database {
 }
 
 #[derive(Clone)]
-pub struct DbClient {
+pub(crate) struct DbClient {
     sender: Sender<DBCall>,
 }
 
 impl DbClient {
-    pub fn get_user(&self, id: &str) -> Result<UserInfo, DbError> {
+    pub(crate) fn get_user(&self, id: &str) -> Result<UserInfo, DbError> {
         let (sender, receiver) = channel();
         let request = DbRequest::Get(GetRequest {
             key: id.as_bytes().to_vec(),
@@ -166,7 +166,7 @@ impl DbClient {
         }
     }
 
-    pub fn create_user(&self, user: &UserInfo) -> Result<(), DbError> {
+    pub(crate) fn create_user(&self, user: &UserInfo) -> Result<(), DbError> {
         let (sender, receiver) = channel();
         let user_bytes = serde_json::to_vec(&user).map_err(|_| DbError::InvalidRequest)?;
         let request = DbRequest::Create(CreateRequest {

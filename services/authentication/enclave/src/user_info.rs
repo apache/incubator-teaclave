@@ -33,7 +33,7 @@ pub static JWT_ALG: jwt::Algorithm = jwt::Algorithm::HS512;
 pub const JWT_SECRET_LEN: usize = 512;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct UserInfo {
+pub(crate) struct UserInfo {
     pub id: String,
     pub salt: Vec<u8>,
     pub salted_password_hash: Vec<u8>,
@@ -50,7 +50,7 @@ pub struct Claims {
 }
 
 impl UserInfo {
-    pub fn new(id: &str, password: &str) -> Self {
+    pub(crate) fn new(id: &str, password: &str) -> Self {
         let mut rng = rand::thread_rng();
         let mut salt = vec![0u8; SALT_LEN];
         rng.fill_bytes(&mut salt);
@@ -70,7 +70,7 @@ impl UserInfo {
         }
     }
 
-    pub fn verify_password(&self, password: &str) -> bool {
+    pub(crate) fn verify_password(&self, password: &str) -> bool {
         let pbkdf2_iterations = num::NonZeroU32::new(PBKDF2_ITERATIONS).unwrap();
         pbkdf2::verify(
             PBKDF2_ALG,
@@ -82,23 +82,24 @@ impl UserInfo {
         .is_ok()
     }
 
-    pub fn get_token(&self, exp: u64, secret: &[u8]) -> Result<String> {
-        let my_claims = Claims {
-            sub: self.id.clone(),
-            iss: ISSUER_NAME.to_string(),
+    pub(crate) fn get_token(&self, exp: u64, secret: &[u8]) -> Result<String> {
+        let iss = ISSUER_NAME.to_string();
+        let claims = Claims {
+            sub: self.id.to_string(),
+            iss,
             exp,
         };
         let mut header = jwt::Header::default();
         header.alg = JWT_ALG;
-        let token = jwt::encode(&header, &my_claims, secret)?;
+        let token = jwt::encode(&header, &claims, secret)?;
         Ok(token)
     }
 
-    pub fn validate_token(&self, secret: &[u8], token: &str) -> bool {
+    pub(crate) fn validate_token(&self, secret: &[u8], token: &str) -> bool {
+        let iss = ISSUER_NAME.to_string();
         let mut validation = jwt::Validation::new(JWT_ALG);
-        validation.iss = Some(ISSUER_NAME.to_string());
+        validation.iss = Some(iss);
         validation.sub = Some(self.id.to_string());
-        let token_data = jwt::decode::<Claims>(token, secret, &validation);
-        token_data.is_ok()
+        jwt::decode::<Claims>(token, secret, &validation).is_ok()
     }
 }
