@@ -94,7 +94,7 @@ macro_rules! register_ecall_handler {
             // The last argument could be either * mut usize, or &mut usize
             let input_buf: &[u8] = unsafe { std::slice::from_raw_parts(in_buf, in_len) };
 
-            debug!("tee receive cmd: {:x}, input_buf = {:?}", cmd, input_buf);
+            trace!("tee receive cmd: {:x}, input_buf = {:?}", cmd, input_buf);
 
             let inner_vec = unsafe {
                 match ecall_ipc_lib_dispatcher(cmd, input_buf) {
