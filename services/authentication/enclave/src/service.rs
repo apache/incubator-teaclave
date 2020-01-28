@@ -1,8 +1,8 @@
 use crate::user_db::{Database, DbClient, DbError};
 use crate::user_info::{UserInfo, JWT_SECRET_LEN};
-use rand::prelude::RngCore;
+use rand::RngCore;
 use std::prelude::v1::*;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use std::untrusted::time::SystemTimeEx;
 use teaclave_proto::teaclave_authentication_service::{
     TeaclaveAuthentication, UserAuthenticateRequest, UserAuthenticateResponse, UserLoginRequest,
@@ -13,7 +13,7 @@ use teaclave_types::{TeaclaveServiceResponseError, TeaclaveServiceResponseResult
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum TeaclaveAuthenticationError {
+enum TeaclaveAuthenticationError {
     #[error("permission denied")]
     PermissionDenied,
     #[error("invalid userid")]
@@ -42,7 +42,7 @@ pub(crate) struct TeaclaveAuthenticationService {
 }
 
 impl TeaclaveAuthenticationService {
-    pub fn init() -> anyhow::Result<Self> {
+    pub(crate) fn init() -> anyhow::Result<Self> {
         let database = Database::open()?;
         let mut secret = vec![0; JWT_SECRET_LEN];
         let mut rng = rand::thread_rng();
@@ -83,18 +83,17 @@ impl TeaclaveAuthentication for TeaclaveAuthenticationService {
         if request.password.is_empty() {
             return Err(TeaclaveAuthenticationError::InvalidPassword.into());
         }
-        let user: UserInfo = match self.db_client.get_user(&request.id) {
-            Ok(value) => value,
-            Err(_) => return Err(TeaclaveAuthenticationError::PermissionDenied.into()),
-        };
+        let user = self
+            .db_client
+            .get_user(&request.id)
+            .map_err(|_| TeaclaveAuthenticationError::PermissionDenied)?;
         if !user.verify_password(&request.password) {
             Err(TeaclaveAuthenticationError::PermissionDenied.into())
         } else {
-            let now = match SystemTime::now().duration_since(UNIX_EPOCH) {
-                Ok(timestamp) => timestamp.as_secs(),
-                Err(_) => return Err(TeaclaveAuthenticationError::ServiceUnavailable.into()),
-            };
-            let exp = now + 24 * 60;
+            let now = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .map_err(|_| TeaclaveAuthenticationError::ServiceUnavailable)?;
+            let exp = (now + Duration::from_secs(24 * 60)).as_secs();
             match user.get_token(exp, &self.secret) {
                 Ok(token) => Ok(UserLoginResponse { token }),
                 Err(_) => Err(TeaclaveAuthenticationError::ServiceUnavailable.into()),

@@ -7,7 +7,7 @@ use teaclave_proto::teaclave_database_service::{
 use teaclave_types::TeaclaveServiceResponseResult;
 
 #[derive(Clone)]
-pub struct ProxyService {
+pub(crate) struct ProxyService {
     pub sender: Sender<ProxyRequest>,
 }
 
@@ -29,7 +29,7 @@ impl teaclave_rpc::TeaclaveService<TeaclaveDatabaseRequest, TeaclaveDatabaseResp
 }
 
 #[derive(Clone)]
-pub struct ProxyRequest {
+pub(crate) struct ProxyRequest {
     pub sender: Sender<TeaclaveServiceResponseResult<TeaclaveDatabaseResponse>>,
     pub request: TeaclaveDatabaseRequest,
 }

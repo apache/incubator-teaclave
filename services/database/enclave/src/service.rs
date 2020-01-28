@@ -12,7 +12,7 @@ use teaclave_types::{TeaclaveServiceResponseError, TeaclaveServiceResponseResult
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum TeaclaveDatabaseError {
+pub(crate) enum TeaclaveDatabaseError {
     #[error("key not exist")]
     KeyNotExist,
     #[error("mpsc error")]
@@ -30,10 +30,10 @@ impl From<TeaclaveDatabaseError> for TeaclaveServiceResponseError {
 }
 
 #[teaclave_service(teaclave_database_service, TeaclaveDatabase, TeaclaveDatabaseError)]
-pub struct TeaclaveDatabaseService {
-    // LevelDB uses ```&mut self``` in its apis, but the service will use ```&self``` in each request,
-    // so we need to wrap the DB with RefCell.
-    // The service is running in a single thread, it's safe to use RefCell
+pub(crate) struct TeaclaveDatabaseService {
+    // Current LevelDB implementation is not concurrent, so we need to wrap the
+    // DB with RefCell. This service is running in a single thread, it's safe to
+    // use RefCell.
     pub database: RefCell<DB>,
     pub receiver: Receiver<ProxyRequest>,
 }
@@ -134,7 +134,7 @@ impl<'a> DBQueue<'a> {
 }
 
 impl TeaclaveDatabaseService {
-    pub fn start(&mut self) {
+    pub(crate) fn start(&mut self) {
         #[cfg(test_mode)]
         test_mode::repalce_with_mock_database(self);
 
@@ -195,7 +195,7 @@ impl TeaclaveDatabase for TeaclaveDatabaseService {
 #[cfg(test_mode)]
 mod test_mode {
     use super::*;
-    pub fn repalce_with_mock_database(service: &mut TeaclaveDatabaseService) {
+    pub(crate) fn repalce_with_mock_database(service: &mut TeaclaveDatabaseService) {
         let opt = rusty_leveldb::in_memory();
         let mut database = DB::open("mock_db", opt).unwrap();
         database.put(b"test_get_key", b"test_get_value").unwrap();
