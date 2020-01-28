@@ -7,7 +7,7 @@ use std::prelude::v1::*;
 type Result<T> = std::result::Result<T, TeaclaveServiceResponseError>;
 
 #[derive(Clone, serde_derive::Serialize, serde_derive::Deserialize, Debug)]
-#[serde(tag = "type", rename_all = "snake_case")]
+#[serde(tag = "request", rename_all = "snake_case")]
 pub enum {{ service.proto_name }}Request {
     {% for m in service.methods %}
     {{ m.proto_name }}({{ m.input_type }}),
@@ -15,7 +15,7 @@ pub enum {{ service.proto_name }}Request {
 }
 
 #[derive(Clone, serde_derive::Serialize, serde_derive::Deserialize, Debug)]
-#[serde(tag = "type", rename_all = "snake_case")]
+#[serde(tag = "response", rename_all = "snake_case")]
 pub enum {{ service.proto_name }}Response {
     {% for m in service.methods %}
     {{ m.proto_name }}({{ m.output_type }}),

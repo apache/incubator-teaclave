@@ -34,7 +34,6 @@ where
     where
         V: for<'de> Deserialize<'de> + std::fmt::Debug,
     {
-        debug!("read_message");
         let mut header = [0u8; 8];
 
         self.transport.read_exact(&mut header)?;
@@ -43,6 +42,7 @@ where
         let mut recv_buf: Vec<u8> = vec![0u8; buf_len as usize];
         self.transport.read_exact(&mut recv_buf)?;
 
+        debug!("Recv: {}", std::string::String::from_utf8_lossy(&recv_buf));
         let r: V = serde_json::from_slice(&recv_buf)?;
 
         Ok(r)
@@ -52,14 +52,15 @@ where
     where
         U: Serialize + std::fmt::Debug,
     {
-        debug!("write_message");
-        let message_vec = serde_json::to_vec(&message)?;
+        let send_buf = serde_json::to_vec(&message)?;
 
-        let buf_len = message_vec.len() as u64;
+        debug!("Send: {}", std::string::String::from_utf8_lossy(&send_buf));
+
+        let buf_len = send_buf.len() as u64;
         let header = unsafe { transmute::<u64, [u8; 8]>(buf_len.to_be()) };
 
         self.transport.write(&header)?;
-        self.transport.write_all(&message_vec)?;
+        self.transport.write_all(&send_buf)?;
         self.transport.flush()?;
 
         Ok(())
