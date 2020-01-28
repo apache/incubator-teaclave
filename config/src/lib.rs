@@ -5,8 +5,7 @@ extern crate sgx_tstd as std;
 #[macro_use]
 extern crate log;
 
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
 #[derive(Debug, Serialize, Deserialize)]

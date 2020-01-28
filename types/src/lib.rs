@@ -10,9 +10,7 @@ use anyhow::{bail, ensure};
 use std::collections::HashMap;
 
 use hex;
-use serde::Deserializer;
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::{Deserialize, Deserializer, Serialize};
 
 use thiserror::Error;
 
@@ -71,7 +69,6 @@ where
     D: Deserializer<'de>,
 {
     use serde::de::Error;
-    use serde::Deserialize;
     String::deserialize(deserializer).and_then(|string| {
         let v = hex::decode(&string).map_err(|_| Error::custom("ParseError"))?;
         let mut array = [0; sgx_types::SGX_HASH_SIZE];

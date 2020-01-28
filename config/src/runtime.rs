@@ -6,8 +6,7 @@ use std::prelude::v1::*;
 #[cfg(feature = "mesalock_sgx")]
 use std::untrusted::fs;
 
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
+use serde::{Deserialize, Serialize};
 use std::env;
 use std::net::SocketAddr;
 use std::path::Path;

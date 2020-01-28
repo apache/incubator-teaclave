@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
@@ -11,13 +12,13 @@ pub use proto::TeaclaveExecutionClient;
 pub use proto::TeaclaveExecutionRequest;
 pub use proto::TeaclaveExecutionResponse;
 
-#[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct StagedFunctionExecuteRequest {
     #[serde(flatten)]
     invocation: WorkerInvocation,
 }
 
-#[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct StagedFunctionExecuteResponse {
     pub summary: std::string::String,
 }

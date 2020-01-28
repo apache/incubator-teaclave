@@ -2,6 +2,7 @@
 use std::prelude::v1::*;
 
 use anyhow::{bail, ensure, Error, Result};
+use serde::{Deserialize, Serialize};
 use std::format;
 use teaclave_types::{
     AesGcm128CryptoInfo, AesGcm256CryptoInfo, TeaclaveFileCryptoInfo, TeaclaveFileRootKey128,
@@ -9,7 +10,7 @@ use teaclave_types::{
 
 use crate::teaclave_common_proto as proto;
 
-#[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct UserCredential {
     pub id: std::string::String,
     pub token: std::string::String,

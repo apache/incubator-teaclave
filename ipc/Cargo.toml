@@ -15,8 +15,7 @@ mesalock_sgx = [
 enclave_unit_test = []
 
 [dependencies]
-serde        = { version = "1.0.92" }
-serde_derive = { version = "1.0.92" }
+serde        = { version = "1.0.92", features = ["derive"] }
 anyhow       = { version = "1.0.26" }
 serde_json   = { version = "1.0.39" }
 log          = { version = "0.4.6" }

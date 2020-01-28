@@ -13,8 +13,7 @@ mesalock_sgx = ["sgx_tstd"]
 [dependencies]
 lazy_static  = { version = "1.0.2", features = ["spin_no_std"] }
 log          = { version = "0.4.6" }
-serde        = { version = "1.0.93" }
-serde_derive = { version = "1.0.93" }
+serde         = { version = "1.0.92", features = ["derive"] }
 toml         = { version = "0.5.1" }
 
 sgx_tstd = { version = "1.1.0", optional = true }
