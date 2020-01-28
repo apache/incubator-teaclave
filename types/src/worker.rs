@@ -1,15 +1,15 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 use anyhow;
-use serde_derive;
 use std::format;
 
 use crate::TeaclaveFileCryptoInfo;
 
-#[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all(deserialize = "snake_case"))]
 pub enum TeaclaveExecutorSelector {
     Native,
@@ -38,13 +38,13 @@ impl std::fmt::Display for TeaclaveExecutorSelector {
     }
 }
 
-#[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct TeaclaveWorkerFileInfo {
     pub path: std::path::PathBuf,
     pub crypto_info: TeaclaveFileCryptoInfo,
 }
 
-#[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct TeaclaveWorkerFileRegistry {
     #[serde(flatten)]
     pub entries: HashMap<String, TeaclaveWorkerFileInfo>,
@@ -83,7 +83,7 @@ where
     }
 }
 
-#[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct TeaclaveFunctionArguments {
     #[serde(flatten)]
     pub args: HashMap<String, String>,
@@ -101,7 +101,7 @@ impl TeaclaveFunctionArguments {
     }
 }
 
-#[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct WorkerInvocation {
     pub runtime_name: String,
     pub executor_type: TeaclaveExecutorSelector, // "native" | "python"

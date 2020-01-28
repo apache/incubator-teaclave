@@ -23,8 +23,7 @@ enclave_unit_test = ["sgx_tunittest"]
 log           = { version = "0.4.6" }
 anyhow        = { version = "1.0.26" }
 serde_json    = { version = "1.0.39" }
-serde_derive  = { version = "1.0.93" }
-serde         = { version = "1.0.92" }
+serde         = { version = "1.0.92", features = ["derive"] }
 thiserror     = { version = "1.0.9" }
 gbdt          = { version = "0.1.0", features = ["input", "enable_training"] }
 teaclave_types = { path = "../types" }

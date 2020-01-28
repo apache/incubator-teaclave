@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use std::os::raw::c_int;
 
 #[derive(Serialize, Deserialize, Debug)]

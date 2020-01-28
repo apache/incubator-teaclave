@@ -51,10 +51,7 @@ impl prost_build::ServiceGenerator for MesaTEEServiceGenerator {
 pub fn get_default_config() -> prost_build::Config {
     let mut config = prost_build::Config::new();
     config.service_generator(Box::new(MesaTEEServiceGenerator));
-    config.type_attribute(
-        ".",
-        "#[derive(serde_derive::Serialize, serde_derive::Deserialize)]",
-    );
+    config.type_attribute(".", "#[derive(serde::Serialize, serde::Deserialize)]");
     config
 }
 

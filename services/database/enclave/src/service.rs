@@ -167,14 +167,14 @@ impl TeaclaveDatabase for TeaclaveDatabaseService {
 
     fn put(&self, request: PutRequest) -> TeaclaveServiceResponseResult<PutResponse> {
         match self.database.borrow_mut().put(&request.key, &request.value) {
-            Ok(_) => Ok(PutResponse {}),
+            Ok(_) => Ok(PutResponse),
             Err(_) => Err(TeaclaveDatabaseError::LevelDbError.into()),
         }
     }
 
     fn delete(&self, request: DeleteRequest) -> TeaclaveServiceResponseResult<DeleteResponse> {
         match self.database.borrow_mut().delete(&request.key) {
-            Ok(_) => Ok(DeleteResponse {}),
+            Ok(_) => Ok(DeleteResponse),
             Err(_) => Err(TeaclaveDatabaseError::LevelDbError.into()),
         }
     }
@@ -182,7 +182,7 @@ impl TeaclaveDatabase for TeaclaveDatabaseService {
     fn enqueue(&self, request: EnqueueRequest) -> TeaclaveServiceResponseResult<EnqueueResponse> {
         let mut db = self.database.borrow_mut();
         let mut queue = DBQueue::open(&mut db, &request.key);
-        queue.enqueue(&request.value).map(|_| EnqueueResponse {})
+        queue.enqueue(&request.value).map(|_| EnqueueResponse)
     }
 
     fn dequeue(&self, request: DequeueRequest) -> TeaclaveServiceResponseResult<DequeueResponse> {

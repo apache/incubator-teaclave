@@ -1,4 +1,5 @@
 use anyhow::{Error, Result};
+use serde::{Deserialize, Serialize};
 use std::prelude::v1::*;
 
 use crate::teaclave_database_service_proto as proto;
@@ -7,48 +8,48 @@ pub use proto::TeaclaveDatabaseClient;
 pub use proto::TeaclaveDatabaseRequest;
 pub use proto::TeaclaveDatabaseResponse;
 
-#[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct GetRequest {
     pub key: Vec<u8>,
 }
 
-#[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct GetResponse {
     pub value: Vec<u8>,
 }
 
-#[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct PutRequest {
     pub key: Vec<u8>,
     pub value: Vec<u8>,
 }
 
-#[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
-pub struct PutResponse {}
+#[derive(Serialize, Deserialize, Debug)]
+pub struct PutResponse;
 
-#[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct DeleteRequest {
     pub key: Vec<u8>,
 }
 
-#[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
-pub struct DeleteResponse {}
+#[derive(Serialize, Deserialize, Debug)]
+pub struct DeleteResponse;
 
-#[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct EnqueueRequest {
     pub key: Vec<u8>,
     pub value: Vec<u8>,
 }
 
-#[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
-pub struct EnqueueResponse {}
+#[derive(Serialize, Deserialize, Debug)]
+pub struct EnqueueResponse;
 
-#[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct DequeueRequest {
     pub key: Vec<u8>,
 }
 
-#[derive(serde_derive::Serialize, serde_derive::Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct DequeueResponse {
     pub value: Vec<u8>,
 }
