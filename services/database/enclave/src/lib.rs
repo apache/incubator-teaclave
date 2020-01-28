@@ -26,11 +26,10 @@ use std::prelude::v1::*;
 
 use anyhow::Result;
 
-use teaclave_ipc::protos::ecall::{
-    FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
+use teaclave_ipc::protos::{
+    ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
     StartServiceInput, StartServiceOutput,
 };
-use teaclave_ipc::protos::ECallCommand;
 
 use teaclave_ipc::{handle_ecall, register_ecall_handler};
 

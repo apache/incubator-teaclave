@@ -23,9 +23,9 @@ use serde::Serialize;
 
 use anyhow::Result;
 use teaclave_ipc::channel::ECallChannel;
-use teaclave_ipc::protos::ecall::{FinalizeEnclaveInput, FinalizeEnclaveOutput};
-use teaclave_ipc::protos::ecall::{InitEnclaveInput, InitEnclaveOutput};
-use teaclave_ipc::protos::ECallCommand;
+use teaclave_ipc::protos::{
+    ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
+};
 use teaclave_ipc::IpcSender;
 
 static ENCLAVE_FILE_SUFFIX: &str = "_enclave.signed.so";
