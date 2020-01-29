@@ -2,8 +2,6 @@
 #[cfg(feature = "mesalock_sgx")]
 #[macro_use]
 extern crate sgx_tstd as std;
-#[macro_use]
-extern crate log;
 
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;

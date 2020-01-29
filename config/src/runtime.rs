@@ -6,6 +6,7 @@ use std::prelude::v1::*;
 #[cfg(feature = "mesalock_sgx")]
 use std::untrusted::fs;
 
+use anyhow::{bail, Context};
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::net::SocketAddr;
@@ -63,27 +64,17 @@ pub struct IasConfig {
 }
 
 impl RuntimeConfig {
-    pub fn from_toml<T: AsRef<Path>>(path: T) -> Option<Self> {
-        let contents = match fs::read_to_string(path) {
-            Ok(c) => c,
-            Err(_) => {
-                error!("Something went wrong when reading the runtime config file.");
-                return None;
-            }
-        };
-        let mut config: RuntimeConfig = match toml::from_str(&contents) {
-            Ok(c) => c,
-            Err(_) => {
-                error!("Cannot parse the runtime config file.");
-                return None;
-            }
-        };
+    pub fn from_toml<T: AsRef<Path>>(path: T) -> anyhow::Result<Self> {
+        let contents = fs::read_to_string(path)
+            .context("Something went wrong when reading the runtime config file")?;
+        let mut config: RuntimeConfig =
+            toml::from_str(&contents).context("Cannot parse the runtime config file")?;
 
         config.audit.enclave_info_bytes = match &config.audit.enclave_info_source {
             ConfigSource::Path(ref enclave_info_path) => {
-                let content = fs::read(enclave_info_path).unwrap_or_else(|_| {
-                    panic!("Cannot find enclave info at {:?}.", enclave_info_path)
-                });
+                let content = fs::read(enclave_info_path).with_context(|| {
+                    format!("Cannot read enclave_info from {:?}", enclave_info_path)
+                })?;
                 Some(content)
             }
         };
@@ -92,7 +83,7 @@ impl RuntimeConfig {
         for source in &config.audit.auditor_signatures_source {
             let signature = match source {
                 ConfigSource::Path(ref path) => fs::read(path)
-                    .unwrap_or_else(|_| panic!("Cannot find signature file {:?}.", path)),
+                    .with_context(|| format!("Cannot read auditor file from {:?}", path))?,
             };
             signatures.push(signature);
         }
@@ -115,10 +106,9 @@ impl RuntimeConfig {
             || config.ias.as_ref().unwrap().ias_spid.len() != 32
             || config.ias.as_ref().unwrap().ias_key.len() != 32
         {
-            error!("Cannot find IAS SPID/key or format error.");
-            return None;
+            bail!("Cannot find IAS SPID/key or format error");
         }
 
-        Some(config)
+        Ok(config)
     }
 }
