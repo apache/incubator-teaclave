@@ -1,6 +1,5 @@
 use anyhow;
 use serde_json;
-use sgx_tunittest::*;
 use std::io::Write;
 use std::prelude::v1::*;
 use std::untrusted::fs;
@@ -9,8 +8,9 @@ use teaclave_proto::teaclave_execution_service::*;
 use teaclave_rpc::endpoint::Endpoint;
 use teaclave_types::AesGcm128CryptoInfo;
 
-pub fn run_tests() {
-    rsgx_unit_tests!(test_invoke_success,);
+pub fn run_tests() -> bool {
+    use teaclave_test_utils::*;
+    run_tests!(test_invoke_success,)
 }
 
 fn setup_client() -> TeaclaveExecutionClient {

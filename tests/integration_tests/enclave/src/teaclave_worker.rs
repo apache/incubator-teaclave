@@ -1,4 +1,3 @@
-use sgx_tunittest::*;
 use std::io::Write;
 use std::prelude::v1::*;
 use std::untrusted::fs;
@@ -81,6 +80,8 @@ fn test_start_worker() {
     assert_eq!(&result[..], &expected[..]);
 }
 
-pub fn run_tests() {
-    rsgx_unit_tests!(test_start_worker);
+pub fn run_tests() -> bool {
+    use teaclave_test_utils::*;
+
+    run_tests!(test_start_worker)
 }

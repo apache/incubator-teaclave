@@ -39,5 +39,6 @@ fn start_enclave_integration_tests(tee: &TeeBinder) -> anyhow::Result<()> {
 }
 
 fn run_app_integration_tests() {
-    teaclave_config_tests::run_tests();
+    let ret = teaclave_config_tests::run_tests();
+    assert_eq!(ret, true);
 }

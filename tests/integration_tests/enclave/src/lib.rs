@@ -42,10 +42,12 @@ mod teaclave_worker;
 
 #[handle_ecall]
 fn handle_run_test(_args: &RunTestInput) -> Result<RunTestOutput> {
-    rusty_leveldb_sgx::run_tests();
-    protected_fs_rs::run_tests();
-    teaclave_rpc::run_tests();
-    teaclave_worker::run_tests();
+    let ret = rusty_leveldb_sgx::run_tests()
+        & protected_fs_rs::run_tests()
+        & teaclave_rpc::run_tests()
+        & teaclave_worker::run_tests();
+
+    assert_eq!(ret, true);
 
     Ok(RunTestOutput::default())
 }

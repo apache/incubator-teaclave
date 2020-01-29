@@ -61,8 +61,8 @@ pub fn read_write_large_file() {
     assert_eq!(remove_protected_file(fname).is_ok(), true);
 }
 
-pub fn run_tests() {
-    use sgx_tunittest::*;
+pub fn run_tests() -> bool {
+    use teaclave_test_utils::*;
 
-    rsgx_unit_tests!(read_write_large_file);
+    run_tests!(read_write_large_file)
 }

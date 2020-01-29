@@ -37,10 +37,10 @@ pub use raw_io::RawIoRuntime;
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
-    use sgx_tunittest::*;
+    use teaclave_test_utils::*;
 
-    pub fn run_tests() -> usize {
-        rsgx_unit_tests!(
+    pub fn run_tests() -> bool {
+        run_tests!(
             //DefultRuntime::tests::test_open_input();
             //DefultRuntime::tests::test_create_output();
         )

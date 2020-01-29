@@ -119,10 +119,10 @@ register_ecall_handler!(
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
-    use sgx_tunittest::*;
+    use teaclave_test_utils::*;
 
-    pub fn run_tests() -> usize {
-        rsgx_unit_tests!(
+    pub fn run_tests() -> bool {
+        run_tests!(
             service::tests::test_user_login,
             service::tests::test_user_authenticate,
             service::tests::test_user_register,

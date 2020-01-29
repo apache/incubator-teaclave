@@ -23,7 +23,7 @@ macro_rules! should_panic {
 }
 
 #[macro_export]
-macro_rules! tests {
+macro_rules! run_tests {
     (
         $($f : expr),* $(,)?
     ) => {
@@ -41,7 +41,7 @@ pub fn test_start() {
     println!("\nstart running tests");
 }
 
-pub fn test_end(ntestcases: u64, failurecases: Vec<String>) -> usize {
+pub fn test_end(ntestcases: u64, failurecases: Vec<String>) -> bool {
     let ntotal = ntestcases as usize;
     let nsucc = ntestcases as usize - failurecases.len();
 
@@ -67,7 +67,7 @@ pub fn test_end(ntestcases: u64, failurecases: Vec<String>) -> usize {
         nsucc,
         ntotal - nsucc
     );
-    failurecases.len()
+    failurecases.is_empty()
 }
 
 #[allow(clippy::print_literal)]

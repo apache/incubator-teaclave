@@ -90,7 +90,6 @@ register_ecall_handler!(
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
-    use sgx_tunittest::*;
 
-    pub fn run_tests() -> usize {}
+    pub fn run_tests() -> bool {}
 }

@@ -1,10 +1,11 @@
-use sgx_tunittest::*;
 use std::prelude::v1::*;
 use teaclave_proto::teaclave_database_service::*;
 use teaclave_rpc::endpoint::Endpoint;
 
-pub fn run_tests() {
-    rsgx_unit_tests!(
+pub fn run_tests() -> bool {
+    use teaclave_test_utils::*;
+
+    run_tests!(
         test_get_success,
         test_get_fail,
         test_put_success,
@@ -12,7 +13,7 @@ pub fn run_tests() {
         test_enqueue_success,
         test_dequeue_success,
         test_dequeue_fail,
-    );
+    )
 }
 
 fn test_get_success() {

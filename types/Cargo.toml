@@ -14,7 +14,7 @@ mesalock_sgx = [
     "sgx_tstd",
     "protected_fs_rs/mesalock_sgx",
 ]
-enclave_unit_test = []
+enclave_unit_test = ["teaclave_test_utils/mesalock_sgx"]
 
 [dependencies]
 protected_fs_rs  = { path = "../common/protected_fs_rs", default-features = false}
@@ -26,5 +26,7 @@ serde        = { version = "1.0.92", features = ["derive"] }
 toml         = { version = "0.5.3" }
 ring         = { version = "0.16.5" }
 thiserror    = { version = "1.0.9" }
+
+teaclave_test_utils = { path = "../tests/test_utils", optional = true }
 
 sgx_tstd = { version = "1.1.0", features = ["net", "backtrace"], optional = true }
