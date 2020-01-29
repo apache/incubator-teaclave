@@ -50,8 +50,8 @@ impl {{ service.proto_name }}Client {
     }
 
     {% for m in service.methods %}
-    pub fn {{ m.name }}(&mut self, request: {{ m.input_type }}) -> teaclave_types::TeaclaveServiceResponseResult<{{ m.output_type }}> {
-        let request = {{ service.proto_name }}Request::{{ m.proto_name }}(request);
+    pub fn {{ m.name }}<T: Into<{{ m.input_type }}>>(&mut self, request: T) -> teaclave_types::TeaclaveServiceResponseResult<{{ m.output_type }}> {
+        let request = {{ service.proto_name }}Request::{{ m.proto_name }}(request.into());
         let response = match self.channel.invoke(request) {
             Ok(response_result) => {
                 response_result
