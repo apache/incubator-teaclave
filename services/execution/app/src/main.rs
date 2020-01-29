@@ -20,22 +20,22 @@ extern crate log;
 
 use teaclave_ipc::protos::{ECallCommand, StartServiceInput, StartServiceOutput};
 
-use anyhow;
+use anyhow::Result;
 use std::net::TcpListener;
 use std::os::unix::io::IntoRawFd;
 
 use teaclave_binder::TeeBinder;
 
-fn main() -> anyhow::Result<()> {
+fn main() -> Result<()> {
     env_logger::init();
     let tee = TeeBinder::new(env!("CARGO_PKG_NAME"), 1)?;
     run(&tee)?;
     Ok(())
 }
 
-fn start_enclave_service(tee: &TeeBinder) -> anyhow::Result<()> {
+fn start_enclave_service(tee: &TeeBinder) -> Result<()> {
     info!("Start enclave service");
-    let config = teaclave_config::RuntimeConfig::from_toml("runtime.config.toml").unwrap();
+    let config = teaclave_config::RuntimeConfig::from_toml("runtime.config.toml")?;
     let listen_address = config.internal_endpoints.execution.listen_address;
     let listener = TcpListener::bind(listen_address)?;
     let fd = listener.into_raw_fd();
@@ -46,7 +46,7 @@ fn start_enclave_service(tee: &TeeBinder) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn run(tee: &TeeBinder) -> anyhow::Result<()> {
+fn run(tee: &TeeBinder) -> Result<()> {
     start_enclave_service(tee)?;
     Ok(())
 }
