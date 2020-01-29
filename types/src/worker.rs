@@ -3,9 +3,18 @@ use std::prelude::v1::*;
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::format;
+use std::io::{self, Read};
+
+use protected_fs::ProtectedFile;
+
+#[cfg(feature = "mesalock_sgx")]
+use std::untrusted::fs::File;
+
+#[cfg(not(feature = "mesalock_sgx"))]
+use std::fs::File;
 
 use anyhow;
-use std::format;
 
 use crate::TeaclaveFileCryptoInfo;
 
@@ -38,10 +47,61 @@ impl std::fmt::Display for TeaclaveExecutorSelector {
     }
 }
 
+pub struct ReadBuffer {
+    bytes: Vec<u8>,
+    remaining: usize,
+}
+
+impl ReadBuffer {
+    pub fn from_vec(bytes: Vec<u8>) -> Self {
+        let remaining = bytes.len();
+        ReadBuffer { bytes, remaining }
+    }
+}
+
+impl io::Read for ReadBuffer {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        let amt = std::cmp::min(buf.len(), self.remaining);
+        let cur = self.bytes.len() - self.remaining;
+        buf[..amt].copy_from_slice(&self.bytes[cur..cur + amt]);
+        self.remaining -= amt;
+        Ok(amt)
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TeaclaveWorkerFileInfo {
     pub path: std::path::PathBuf,
     pub crypto_info: TeaclaveFileCryptoInfo,
+}
+
+fn read_all_bytes<P: AsRef<std::path::Path>>(path: P) -> anyhow::Result<Vec<u8>> {
+    let mut content = Vec::new();
+    let mut file = File::open(path)?;
+    file.read_to_end(&mut content)?;
+    Ok(content)
+}
+
+impl TeaclaveWorkerFileInfo {
+    pub fn get_readable_io(&self) -> anyhow::Result<Box<dyn io::Read>> {
+        let readable: Box<dyn io::Read> = match &self.crypto_info {
+            TeaclaveFileCryptoInfo::AesGcm128(crypto) => {
+                let mut bytes = read_all_bytes(&self.path)?;
+                crypto.decrypt(&mut bytes)?;
+                Box::new(ReadBuffer::from_vec(bytes))
+            }
+            TeaclaveFileCryptoInfo::AesGcm256(crypto) => {
+                let mut bytes = read_all_bytes(&self.path)?;
+                crypto.decrypt(&mut bytes)?;
+                Box::new(ReadBuffer::from_vec(bytes))
+            }
+            TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(crypto) => {
+                let f = ProtectedFile::open_ex(&self.path, &crypto.key)?;
+                Box::new(f)
+            }
+        };
+        Ok(readable)
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -110,4 +170,16 @@ pub struct WorkerInvocation {
     pub function_args: TeaclaveFunctionArguments,
     pub input_files: TeaclaveWorkerFileRegistry,
     pub output_files: TeaclaveWorkerFileRegistry,
+}
+
+#[cfg(feature = "enclave_unit_test")]
+pub mod tests {
+    use super::*;
+    //use crate::unit_tests;
+    //use crate::unittest::*;
+
+    pub fn run_tests() -> usize {
+        //unit_tests!()
+        0
+    }
 }

@@ -7,10 +7,18 @@ license = "Apache-2.0"
 edition = "2018"
 
 [features]
-default = []
-mesalock_sgx = ["sgx_tstd"]
+default = [
+    "protected_fs_rs/default",
+]
+mesalock_sgx = [
+    "sgx_tstd",
+    "protected_fs_rs/mesalock_sgx",
+]
+enclave_unit_test = []
 
 [dependencies]
+protected_fs_rs  = { path = "../common/protected_fs_rs", default-features = false}
+
 anyhow       = { version = "1.0.26" }
 sgx_types    = { version = "1.1.0" }
 hex          = { version = "0.4.0" }

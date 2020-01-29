@@ -50,8 +50,9 @@ impl TeaclaveRuntime for DefaultRuntime {
             .entries
             .get(identifier)
             .ok_or_else(|| anyhow::anyhow!("Invalid input file identifier."))?;
-        let f = File::open(&file_info.path)?;
-        Ok(Box::new(f))
+
+        let readable = file_info.get_readable_io()?;
+        Ok(readable)
     }
 
     fn create_output(&self, identifier: &str) -> anyhow::Result<Box<dyn io::Write>> {

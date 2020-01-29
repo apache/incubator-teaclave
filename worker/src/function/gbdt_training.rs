@@ -126,7 +126,7 @@ fn parse_training_data(input: impl io::Read, feature_size: usize) -> anyhow::Res
 pub mod tests {
     use super::*;
     use crate::function::TeaclaveFunction;
-    use crate::runtime::DefaultRuntime;
+    use crate::runtime::RawIoRuntime;
     use std::untrusted::fs;
     use teaclave_types::{TeaclaveFunctionArguments, TeaclaveWorkerFileRegistry};
 
@@ -176,7 +176,7 @@ pub mod tests {
         let func_args: TeaclaveFunctionArguments = serde_json::from_str(&args_json).unwrap();
         let input_files: TeaclaveWorkerFileRegistry = serde_json::from_str(&input_json).unwrap();
         let output_files: TeaclaveWorkerFileRegistry = serde_json::from_str(&output_json).unwrap();
-        let runtime = Box::new(DefaultRuntime::new(input_files, output_files));
+        let runtime = Box::new(RawIoRuntime::new(input_files, output_files));
 
         let function = GbdtTraining;
         let summary = function.execute(runtime, func_args).unwrap();
