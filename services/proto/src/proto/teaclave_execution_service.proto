@@ -4,8 +4,8 @@ package teaclave_execution_service_proto;
 import "teaclave_common.proto";
 
 message WorkerFileInfo {
-   string path = 1;
-   teaclave_common_proto.FileCryptoInfo crypto_info = 2;
+  string path = 1;
+  teaclave_common_proto.FileCryptoInfo crypto_info = 2;
 }
 
 message StagedFunctionExecuteRequest {

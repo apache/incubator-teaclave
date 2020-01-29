@@ -1,0 +1,19 @@
+[package]
+name = "teaclave_frontend_service"
+version = "0.1.0"
+authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
+description = "Teaclave Frontend Service"
+license = "Apache-2.0"
+build = "build.rs"
+edition = "2018"
+
+[dependencies]
+log        = { version = "0.4.6" }
+env_logger = { version = "0.7.1" }
+anyhow     = { version = "1.0.26" }
+
+teaclave_ipc               = { path = "../../../ipc" }
+teaclave_binder            = { path = "../../../binder" }
+teaclave_config            = { path = "../../../config" }
+
+sgx_types = { version = "1.1.0" }

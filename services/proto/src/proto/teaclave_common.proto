@@ -7,7 +7,7 @@ message UserCredential {
 }
 
 message FileCryptoInfo {
-    string schema = 1;
-    bytes key = 2;
-    bytes iv = 3;
+  string schema = 1;
+  bytes key = 2;
+  bytes iv = 3;
 }

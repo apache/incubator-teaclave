@@ -8,8 +8,7 @@ message UserRegisterRequest {
   string password = 2;
 }
 
-message UserRegisterResponse {
-}
+message UserRegisterResponse { }
 
 message UserLoginRequest {
   string id = 1;
