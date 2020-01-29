@@ -37,9 +37,12 @@ fn main() -> Result<()> {
 fn start_enclave_service(tee: &TeeBinder) -> Result<()> {
     info!("Start enclave service");
     let config = teaclave_config::RuntimeConfig::from_toml("runtime.config.toml")?;
-    let listen_address = &config.api_endpoints.authentication.listen_address;
-    let listener = TcpListener::bind(listen_address)?;
-    let fds = vec![listener.into_raw_fd()];
+    let api_listen_address = &config.api_endpoints.authentication.listen_address;
+    let internal_listen_address = &config.internal_endpoints.authentication.listen_address;
+    let api_listener = TcpListener::bind(api_listen_address)?;
+    let internal_listener = TcpListener::bind(internal_listen_address)?;
+    let fds = vec![api_listener.into_raw_fd(), internal_listener.into_raw_fd()];
+
     let input = StartServiceInput { fds, config };
     let cmd = ECallCommand::StartService;
     let _ = tee.invoke::<StartServiceInput, StartServiceOutput>(cmd.into(), input);

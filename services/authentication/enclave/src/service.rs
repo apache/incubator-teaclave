@@ -1,4 +1,4 @@
-use crate::user_db::{Database, DbClient, DbError};
+use crate::user_db::{DbClient, DbError};
 use crate::user_info::{UserInfo, JWT_SECRET_LEN};
 use rand::RngCore;
 use std::prelude::v1::*;
@@ -38,18 +38,17 @@ impl From<TeaclaveAuthenticationError> for TeaclaveServiceResponseError {
 #[derive(Clone)]
 pub(crate) struct TeaclaveAuthenticationService {
     db_client: DbClient,
-    secret: Vec<u8>,
+    jwt_secret: Vec<u8>,
 }
 
 impl TeaclaveAuthenticationService {
-    pub(crate) fn init() -> anyhow::Result<Self> {
-        let database = Database::open()?;
-        let mut secret = vec![0; JWT_SECRET_LEN];
+    pub(crate) fn new(db_client: DbClient) -> anyhow::Result<Self> {
+        let mut jwt_secret = vec![0; JWT_SECRET_LEN];
         let mut rng = rand::thread_rng();
-        rng.fill_bytes(&mut secret);
+        rng.fill_bytes(&mut jwt_secret);
         Ok(Self {
-            db_client: database.get_client(),
-            secret,
+            db_client,
+            jwt_secret,
         })
     }
 }
@@ -94,7 +93,7 @@ impl TeaclaveAuthentication for TeaclaveAuthenticationService {
                 .duration_since(UNIX_EPOCH)
                 .map_err(|_| TeaclaveAuthenticationError::ServiceUnavailable)?;
             let exp = (now + Duration::from_secs(24 * 60)).as_secs();
-            match user.get_token(exp, &self.secret) {
+            match user.get_token(exp, &self.jwt_secret) {
                 Ok(token) => Ok(UserLoginResponse { token }),
                 Err(_) => Err(TeaclaveAuthenticationError::ServiceUnavailable.into()),
             }
@@ -113,7 +112,7 @@ impl TeaclaveAuthentication for TeaclaveAuthenticationService {
             Err(_) => return Ok(UserAuthenticateResponse { accept: false }),
         };
         Ok(UserAuthenticateResponse {
-            accept: user.validate_token(&self.secret, &request.credential.token),
+            accept: user.validate_token(&self.jwt_secret, &request.credential.token),
         })
     }
 }
@@ -121,12 +120,14 @@ impl TeaclaveAuthentication for TeaclaveAuthenticationService {
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
+    use crate::user_db::*;
     use crate::user_info::*;
     use std::vec;
     use teaclave_proto::teaclave_common::UserCredential;
 
     fn get_mock_service() -> TeaclaveAuthenticationService {
-        TeaclaveAuthenticationService::init().unwrap()
+        let database = Database::open().unwrap();
+        TeaclaveAuthenticationService::new(database.get_client()).unwrap()
     }
 
     pub fn test_user_register() {
@@ -177,7 +178,7 @@ pub mod tests {
         };
         let token = service.user_login(request).unwrap().token;
         info!("login token: {}", token);
-        dump_token(&service.secret, &token);
+        dump_token(&service.jwt_secret, &token);
 
         let response = get_authenticate_response(id, &token, &service);
         assert!(response.accept);
@@ -187,40 +188,40 @@ pub mod tests {
         let token = gen_token(
             my_claims,
             Some(jsonwebtoken::Algorithm::HS256),
-            &service.secret,
+            &service.jwt_secret,
         );
-        dump_token(&service.secret, &token);
+        dump_token(&service.jwt_secret, &token);
         let response = get_authenticate_response(id, &token, &service);
         assert!(!response.accept);
 
         info!("test wrong issuer");
         let mut my_claims = get_correct_claim();
         my_claims.iss = "wrong issuer".to_string();
-        let token = gen_token(my_claims, None, &service.secret);
-        dump_token(&service.secret, &token);
+        let token = gen_token(my_claims, None, &service.jwt_secret);
+        dump_token(&service.jwt_secret, &token);
         let response = get_authenticate_response(id, &token, &service);
         assert!(!response.accept);
 
         info!("test wrong user");
         let mut my_claims = get_correct_claim();
         my_claims.sub = "wrong user".to_string();
-        let token = gen_token(my_claims, None, &service.secret);
-        dump_token(&service.secret, &token);
+        let token = gen_token(my_claims, None, &service.jwt_secret);
+        dump_token(&service.jwt_secret, &token);
         let response = get_authenticate_response(id, &token, &service);
         assert!(!response.accept);
 
         info!("test expired token");
         let mut my_claims = get_correct_claim();
         my_claims.exp -= 24 * 60 + 1;
-        let token = gen_token(my_claims, None, &service.secret);
-        dump_token(&service.secret, &token);
+        let token = gen_token(my_claims, None, &service.jwt_secret);
+        dump_token(&service.jwt_secret, &token);
         let response = get_authenticate_response(id, &token, &service);
         assert!(!response.accept);
 
         info!("test wrong secret");
         let my_claims = get_correct_claim();
         let token = gen_token(my_claims, None, b"bad secret");
-        dump_token(&service.secret, &token);
+        dump_token(&service.jwt_secret, &token);
         let response = get_authenticate_response(id, &token, &service);
         assert!(!response.accept);
     }
