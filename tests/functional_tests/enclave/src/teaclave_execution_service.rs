@@ -80,7 +80,7 @@ fn test_invoke_success() {
     enc_input_file().unwrap();
 
     let mut client = setup_client();
-    let response_result = client.invoke_function(request.into());
+    let response_result = client.invoke_function(request);
     info!("{:?}", response_result);
     assert!(response_result.is_ok());
 }

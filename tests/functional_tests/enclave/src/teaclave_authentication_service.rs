@@ -41,16 +41,14 @@ fn test_login_success() {
     let request = UserRegisterRequest {
         id: "test_login_id1".to_string(),
         password: "test_password".to_string(),
-    }
-    .into();
+    };
     let response_result = client.user_register(request);
     assert!(response_result.is_ok());
 
     let request = UserLoginRequest {
         id: "test_login_id1".to_string(),
         password: "test_password".to_string(),
-    }
-    .into();
+    };
     let response_result = client.user_login(request);
     info!("{:?}", response_result);
     assert!(response_result.is_ok());
@@ -62,16 +60,14 @@ fn test_login_fail() {
     let request = UserRegisterRequest {
         id: "test_login_id2".to_string(),
         password: "test_password".to_string(),
-    }
-    .into();
+    };
     let response_result = client.user_register(request);
     assert!(response_result.is_ok());
 
     let request = UserLoginRequest {
         id: "test_login_id2".to_string(),
         password: "wrong_password".to_string(),
-    }
-    .into();
+    };
     let response_result = client.user_login(request);
     info!("{:?}", response_result);
     assert!(response_result.is_err());
@@ -83,23 +79,21 @@ fn test_authenticate_success() {
     let request = UserRegisterRequest {
         id: "test_authenticate_id1".to_string(),
         password: "test_password".to_string(),
-    }
-    .into();
+    };
     let response_result = client.user_register(request);
     assert!(response_result.is_ok());
 
     let request = UserLoginRequest {
         id: "test_authenticate_id1".to_string(),
         password: "test_password".to_string(),
-    }
-    .into();
+    };
     let response_result = client.user_login(request);
     assert!(response_result.is_ok());
     let credential = UserCredential {
         id: "test_authenticate_id1".to_string(),
         token: response_result.unwrap().token,
     };
-    let request = UserAuthenticateRequest { credential }.into();
+    let request = UserAuthenticateRequest { credential };
     let response_result = client.user_authenticate(request);
     info!("{:?}", response_result);
     assert!(response_result.unwrap().accept);
@@ -111,23 +105,21 @@ fn test_authenticate_fail() {
     let request = UserRegisterRequest {
         id: "test_authenticate_id2".to_string(),
         password: "test_password".to_string(),
-    }
-    .into();
+    };
     let response_result = client.user_register(request);
     assert!(response_result.is_ok());
 
     let request = UserLoginRequest {
         id: "test_authenticate_id2".to_string(),
         password: "test_password".to_string(),
-    }
-    .into();
+    };
     let response_result = client.user_login(request);
     assert!(response_result.is_ok());
     let credential = UserCredential {
         id: "test_authenticate_id2".to_string(),
         token: "wrong_token".to_string(),
     };
-    let request = UserAuthenticateRequest { credential }.into();
+    let request = UserAuthenticateRequest { credential };
     let response_result = client.user_authenticate(request);
     info!("{:?}", response_result);
     assert!(!response_result.unwrap().accept);
@@ -139,8 +131,7 @@ fn test_register_success() {
     let request = UserRegisterRequest {
         id: "test_register_id1".to_string(),
         password: "test_password".to_string(),
-    }
-    .into();
+    };
     let response_result = client.user_register(request);
     info!("{:?}", response_result);
     assert!(response_result.is_ok());
@@ -152,15 +143,13 @@ fn test_register_fail() {
     let request = UserRegisterRequest {
         id: "test_register_id2".to_string(),
         password: "test_password".to_string(),
-    }
-    .into();
+    };
     let response_result = client.user_register(request);
     assert!(response_result.is_ok());
     let request = UserRegisterRequest {
         id: "test_register_id2".to_string(),
         password: "test_password".to_string(),
-    }
-    .into();
+    };
     let response_result = client.user_register(request);
     info!("{:?}", response_result);
     assert!(response_result.is_err());
