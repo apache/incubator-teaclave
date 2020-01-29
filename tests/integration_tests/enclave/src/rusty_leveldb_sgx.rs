@@ -62,8 +62,8 @@ fn test_write_a_lot() {
     fs::remove_dir_all("/tmp/leveldb_testdb").expect("Cannot remove directory");
 }
 
-pub fn run_tests() {
-    use sgx_tunittest::*;
+pub fn run_tests() -> bool {
+    use teaclave_test_utils::*;
 
-    rsgx_unit_tests!(test_write_a_lot);
+    run_tests!(test_write_a_lot)
 }

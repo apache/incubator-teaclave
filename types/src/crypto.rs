@@ -160,11 +160,10 @@ pub fn aead_encrypt(
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
-    use crate::unit_tests;
-    use crate::unittest::*;
+    use teaclave_test_utils::*;
 
-    pub fn run_tests() -> usize {
-        unit_tests!(test_aead_enc_then_dec, test_crypto_info,)
+    pub fn run_tests() -> bool {
+        run_tests!(test_aead_enc_then_dec, test_crypto_info,)
     }
 
     fn test_aead_enc_then_dec() {

@@ -41,9 +41,11 @@ mod teaclave_execution_service;
 
 #[handle_ecall]
 fn handle_run_test(_args: &RunTestInput) -> Result<RunTestOutput> {
-    teaclave_authentication_service::run_tests();
-    teaclave_database_service::run_tests();
-    teaclave_execution_service::run_tests();
+    let ret = teaclave_authentication_service::run_tests()
+        & teaclave_database_service::run_tests()
+        & teaclave_execution_service::run_tests();
+
+    assert_eq!(ret, true);
     Ok(RunTestOutput::default())
 }
 

@@ -21,6 +21,7 @@ mesalock_sgx = [
   "teaclave_config/mesalock_sgx",
   "teaclave_service_enclave_utils/mesalock_sgx",
   "teaclave_types/mesalock_sgx",
+  "teaclave_test_utils/mesalock_sgx",
 ]
 cov = ["teaclave_service_enclave_utils/cov"]
 
@@ -38,7 +39,7 @@ teaclave_rpc                   = { path = "../../../rpc" }
 teaclave_service_enclave_utils = { path = "../../../utils/service_enclave_utils" }
 teaclave_types                 = { path = "../../../types" }
 teaclave_proto                 = { path = "../../../services/proto" }
+teaclave_test_utils            = { path = "../../../tests/test_utils" }
 
 sgx_tstd      = { version = "1.1.0", features = ["net", "thread", "backtrace"], optional = true }
-sgx_tunittest = { version = "1.1.0" }
 sgx_types     = { version = "1.1.0" }

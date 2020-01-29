@@ -178,8 +178,8 @@ pub mod tests {
     //use crate::unit_tests;
     //use crate::unittest::*;
 
-    pub fn run_tests() -> usize {
+    pub fn run_tests() -> bool {
         //unit_tests!()
-        0
+        true
     }
 }

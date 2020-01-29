@@ -22,7 +22,6 @@ extern crate sgx_tstd as std;
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-//#[macro_use]
 extern crate log;
 
 mod function;
@@ -35,8 +34,7 @@ pub use worker::Worker;
 pub mod tests {
     use super::*;
 
-    pub fn run_tests() {
-        function::tests::run_tests();
-        runtime::tests::run_tests();
+    pub fn run_tests() -> bool {
+        function::tests::run_tests() & runtime::tests::run_tests()
     }
 }

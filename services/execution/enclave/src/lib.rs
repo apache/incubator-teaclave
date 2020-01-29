@@ -92,11 +92,8 @@ fn handle_finalize_enclave(_args: &FinalizeEnclaveInput) -> Result<FinalizeEncla
 
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
-    //use super::*;
-    //use sgx_tunittest::*;
 
-    pub fn run_tests() -> usize {
-        //rsgx_unit_tests!()
-        0
+    pub fn run_tests() -> bool {
+        true
     }
 }

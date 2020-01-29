@@ -19,8 +19,6 @@ mod crypto;
 pub use crypto::*;
 mod worker;
 pub use worker::*;
-mod unittest;
-pub use unittest::*;
 
 /// Status for Ecall
 #[repr(C)]
@@ -178,8 +176,7 @@ pub type TeaclaveServiceResponseResult<T> = std::result::Result<T, TeaclaveServi
 pub mod tests {
     use super::*;
 
-    pub fn run_tests() {
-        worker::tests::run_tests();
-        crypto::tests::run_tests();
+    pub fn run_tests() -> bool {
+        worker::tests::run_tests() & crypto::tests::run_tests()
     }
 }

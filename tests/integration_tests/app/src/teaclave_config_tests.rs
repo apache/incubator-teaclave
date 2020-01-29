@@ -1,11 +1,11 @@
 use std::env;
 use teaclave_config;
 
-pub fn run_tests() {
-    teaclave_test_utils::tests!(runtime_config, runtime_config_with_env_vars);
+pub fn run_tests() -> bool {
+    teaclave_test_utils::run_tests!(test_runtime_config, test_runtime_config_with_env_vars)
 }
 
-fn runtime_config() {
+fn test_runtime_config() {
     env::remove_var("IAS_KEY");
     env::remove_var("IAS_SPID");
     let config =
@@ -34,7 +34,7 @@ fn runtime_config() {
     )
 }
 
-fn runtime_config_with_env_vars() {
+fn test_runtime_config_with_env_vars() {
     env::set_var("IAS_KEY", "12345678901234567890123456789012");
     env::set_var("IAS_SPID", "90123456789012345678901234567890");
     let config =

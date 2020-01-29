@@ -1,4 +1,3 @@
-use sgx_tunittest::*;
 use std::prelude::v1::*;
 use teaclave_attestation::verifier;
 use teaclave_config::RuntimeConfig;
@@ -9,15 +8,17 @@ use teaclave_rpc::config::SgxTrustedTlsClientConfig;
 use teaclave_rpc::endpoint::Endpoint;
 use teaclave_types::EnclaveInfo;
 
-pub fn run_tests() {
-    rsgx_unit_tests!(
+pub fn run_tests() -> bool {
+    use teaclave_test_utils::*;
+
+    run_tests!(
         test_login_success,
         test_login_fail,
         test_authenticate_success,
         test_authenticate_fail,
         test_register_success,
         test_register_fail,
-    );
+    )
 }
 
 fn test_login_success() {

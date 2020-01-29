@@ -24,7 +24,7 @@ mesalock_sgx = [
   "rusty-leveldb/mesalock_sgx",
 ]
 cov = ["teaclave_service_enclave_utils/cov"]
-enclave_unit_test = ["teaclave_ipc/enclave_unit_test", "sgx_tunittest"]
+enclave_unit_test = ["teaclave_ipc/enclave_unit_test", "teaclave_test_utils/mesalock_sgx"]
 
 [dependencies]
 anyhow    = { version = "1.0.26" }
@@ -41,8 +41,8 @@ teaclave_ipc                   = { path = "../../../ipc" }
 teaclave_rpc                   = { path = "../../../rpc" }
 teaclave_service_enclave_utils = { path = "../../../utils/service_enclave_utils" }
 teaclave_types                 = { path = "../../../types" }
+teaclave_test_utils            = { path = "../../../tests/test_utils", optional = true }
 
 
 sgx_tstd      = { version = "1.1.0", features = ["net", "thread", "backtrace"], optional = true }
-sgx_tunittest = { version = "1.1.0", optional = true }
 sgx_types     = { version = "1.1.0" }

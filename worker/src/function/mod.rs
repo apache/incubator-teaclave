@@ -42,10 +42,10 @@ pub use mesapy::Mesapy;
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
-    use sgx_tunittest::*;
+    use teaclave_test_utils::*;
 
-    pub fn run_tests() -> usize {
-        rsgx_unit_tests!(
+    pub fn run_tests() -> bool {
+        run_tests!(
             gbdt_training::tests::test_gbdt_parse_training_data,
             gbdt_training::tests::test_gbdt_training,
         )

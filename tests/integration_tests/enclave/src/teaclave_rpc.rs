@@ -1,7 +1,6 @@
 use anyhow::Result;
 use rustls::internal::pemfile;
 use serde::{Deserialize, Serialize};
-use sgx_tunittest::*;
 use std::io;
 use std::net::TcpListener;
 use std::prelude::v1::*;
@@ -78,8 +77,9 @@ impl EchoClient {
     }
 }
 
-pub fn run_tests() {
-    rsgx_unit_tests!(echo_success);
+pub fn run_tests() -> bool {
+    use teaclave_test_utils::*;
+    run_tests!(echo_success)
 }
 
 fn echo_success() {
