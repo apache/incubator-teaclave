@@ -46,8 +46,14 @@ impl AttestationReportVerifier {
 
     fn verify_measures(&self, attestation_report: &AttestationReport) -> bool {
         debug!("verify measures");
-        let this_mr_signer = attestation_report.sgx_quote_body.report_body.mr_signer;
-        let this_mr_enclave = attestation_report.sgx_quote_body.report_body.mr_enclave;
+        let this_mr_signer = attestation_report
+            .sgx_quote_body
+            .isv_enclave_report
+            .mr_signer;
+        let this_mr_enclave = attestation_report
+            .sgx_quote_body
+            .isv_enclave_report
+            .mr_enclave;
 
         self.accepted_enclave_attrs.iter().any(|a| {
             a.measurement.mr_signer == this_mr_signer && a.measurement.mr_enclave == this_mr_enclave
