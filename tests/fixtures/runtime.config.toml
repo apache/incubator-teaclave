@@ -3,6 +3,7 @@ authentication = { listen_address = "0.0.0.0:7776" }
 frontend = { listen_address = "0.0.0.0:7777" }
 
 [internal_endpoints]
+authentication = { listen_address = "0.0.0.0:17776", advertised_address = "localhost:17776" }
 dbs  = { listen_address = "0.0.0.0:7778", advertised_address = "127.0.0.1:7778", inbound_services = ["frontend"] }
 execution = { listen_address = "0.0.0.0:7989", advertised_address = "127.0.0.1:7989" }
 

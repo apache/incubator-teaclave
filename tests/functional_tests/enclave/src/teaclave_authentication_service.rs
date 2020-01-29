@@ -78,7 +78,7 @@ fn test_login_fail() {
 }
 
 fn test_authenticate_success() {
-    let channel = Endpoint::new("localhost:7776").connect().unwrap();
+    let channel = Endpoint::new("localhost:17776").connect().unwrap();
     let mut client = TeaclaveAuthenticationClient::new(channel).unwrap();
     let request = UserRegisterRequest {
         id: "test_authenticate_id1".to_string(),
@@ -106,7 +106,7 @@ fn test_authenticate_success() {
 }
 
 fn test_authenticate_fail() {
-    let channel = Endpoint::new("localhost:7776").connect().unwrap();
+    let channel = Endpoint::new("localhost:17776").connect().unwrap();
     let mut client = TeaclaveAuthenticationClient::new(channel).unwrap();
     let request = UserRegisterRequest {
         id: "test_authenticate_id2".to_string(),

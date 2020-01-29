@@ -25,6 +25,8 @@ extern crate log;
 
 use anyhow::Result;
 use std::prelude::v1::*;
+use std::sync::Arc;
+use std::thread;
 use teaclave_attestation::RemoteAttestation;
 use teaclave_ipc::proto::{
     ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
@@ -42,13 +44,11 @@ mod service;
 mod user_db;
 mod user_info;
 
-#[handle_ecall]
-fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> {
-    debug!("handle_start_service");
-    let listener = std::net::TcpListener::new(args.fds[0])?;
-    let ias_config = &args.config.ias.as_ref().unwrap();
-    let attestation =
-        RemoteAttestation::generate_and_endorse(&ias_config.ias_key, &ias_config.ias_spid).unwrap();
+fn start_endpoint(
+    listener: std::net::TcpListener,
+    db_client: user_db::DbClient,
+    attestation: Arc<RemoteAttestation>,
+) {
     let config = SgxTrustedTlsServerConfig::new_without_verifier(
         &attestation.cert,
         &attestation.private_key,
@@ -60,13 +60,39 @@ fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> 
         TeaclaveAuthenticationRequest,
     >::new(listener, &config);
 
-    let service = service::TeaclaveAuthenticationService::init().unwrap();
+    let service = service::TeaclaveAuthenticationService::new(db_client).unwrap();
     match server.start(service) {
         Ok(_) => (),
         Err(e) => {
             error!("Service exit, error: {}.", e);
         }
     }
+}
+
+#[handle_ecall]
+fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> {
+    debug!("handle_start_service");
+    let api_listener = std::net::TcpListener::new(args.fds[0])?;
+    let internal_listener = std::net::TcpListener::new(args.fds[1])?;
+    let ias_config = &args.config.ias.as_ref().unwrap();
+    let attestation = Arc::new(
+        RemoteAttestation::generate_and_endorse(&ias_config.ias_key, &ias_config.ias_spid).unwrap(),
+    );
+    let database = user_db::Database::open()?;
+
+    let attestation_ref = attestation.clone();
+    let client = database.get_client();
+    let api_endpoint_thread_handler = thread::spawn(move || {
+        start_endpoint(api_listener, client, attestation_ref);
+    });
+
+    let client = database.get_client();
+    let internal_endpoint_thread_handler = thread::spawn(move || {
+        start_endpoint(internal_listener, client, attestation);
+    });
+
+    api_endpoint_thread_handler.join().unwrap();
+    internal_endpoint_thread_handler.join().unwrap();
 
     Ok(StartServiceOutput::default())
 }
