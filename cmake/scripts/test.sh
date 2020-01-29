@@ -30,7 +30,7 @@ echo_title "encalve unit tests"
 echo_title "integration tests"
 ./teaclave_integration_tests
 
-echo_title "protect_fs_rs tests (untrusted)"
+echo_title "protected_fs_rs tests (untrusted)"
 cargo test --manifest-path ${MESATEE_PROJECT_ROOT}/common/protected_fs_rs/Cargo.toml \
       --target-dir ${MESATEE_TARGET_DIR}/untrusted
 

@@ -29,7 +29,7 @@ mod service;
 
 use anyhow::Result;
 
-use teaclave_ipc::protos::{
+use teaclave_ipc::proto::{
     ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
     StartServiceInput, StartServiceOutput,
 };
@@ -53,7 +53,7 @@ register_ecall_handler!(
 
 #[handle_ecall]
 fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> {
-    let listener = std::net::TcpListener::new(args.fd)?;
+    let listener = std::net::TcpListener::new(args.fds[0])?;
     let ias_config = &args.config.ias.as_ref().unwrap();
     let attestation =
         RemoteAttestation::generate_and_endorse(&ias_config.ias_key, &ias_config.ias_spid).unwrap();
