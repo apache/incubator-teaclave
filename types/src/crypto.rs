@@ -2,6 +2,7 @@
 use std::prelude::v1::*;
 
 use anyhow;
+use ring;
 use serde::{Deserialize, Serialize};
 use std::format;
 
@@ -30,6 +31,17 @@ impl AesGcm256CryptoInfo {
         info.key.copy_from_slice(key);
         info.iv.copy_from_slice(iv);
         Ok(info)
+    }
+
+    pub fn decrypt(&self, in_out: &mut Vec<u8>) -> anyhow::Result<()> {
+        let plaintext_len =
+            aead_decrypt(&ring::aead::AES_256_GCM, in_out, &self.key, &self.iv)?.len();
+        in_out.truncate(plaintext_len);
+        Ok(())
+    }
+
+    pub fn encrypt(&self, in_out: &mut Vec<u8>) -> anyhow::Result<()> {
+        aead_encrypt(&ring::aead::AES_128_GCM, in_out, &self.key, &self.iv)
     }
 }
 
@@ -61,6 +73,17 @@ impl AesGcm128CryptoInfo {
         info.iv.copy_from_slice(iv);
         Ok(info)
     }
+
+    pub fn decrypt(&self, in_out: &mut Vec<u8>) -> anyhow::Result<()> {
+        let plaintext_len =
+            aead_decrypt(&ring::aead::AES_128_GCM, in_out, &self.key, &self.iv)?.len();
+        in_out.truncate(plaintext_len);
+        Ok(())
+    }
+
+    pub fn encrypt(&self, in_out: &mut Vec<u8>) -> anyhow::Result<()> {
+        aead_encrypt(&ring::aead::AES_128_GCM, in_out, &self.key, &self.iv)
+    }
 }
 
 const TEACLAVE_FILE_ROOT_KEY_128_LENGTH: usize = 16;
@@ -89,4 +112,84 @@ pub enum TeaclaveFileCryptoInfo {
     AesGcm128(AesGcm128CryptoInfo),
     AesGcm256(AesGcm256CryptoInfo),
     TeaclaveFileRootKey128(TeaclaveFileRootKey128),
+}
+
+fn make_teaclave_aad() -> ring::aead::Aad<[u8; 8]> {
+    let bytes = [0u8; 8];
+    ring::aead::Aad::from(bytes)
+}
+
+pub fn aead_decrypt<'a>(
+    alg: &'static ring::aead::Algorithm,
+    in_out: &'a mut [u8],
+    key: &[u8],
+    iv: &[u8],
+) -> anyhow::Result<&'a mut [u8]> {
+    let key = ring::aead::UnboundKey::new(alg, key)
+        .map_err(|_| anyhow::anyhow!("Aead unbound key init error"))?;
+    let nonce = ring::aead::Nonce::try_assume_unique_for_key(iv)
+        .map_err(|_| anyhow::anyhow!("Aead iv init error"))?;
+    let aad = make_teaclave_aad();
+
+    let dec_key = ring::aead::LessSafeKey::new(key);
+    let slice = dec_key
+        .open_in_place(nonce, aad, in_out)
+        .map_err(|_| anyhow::anyhow!("Aead open_in_place error"))?;
+    Ok(slice)
+}
+
+pub fn aead_encrypt(
+    alg: &'static ring::aead::Algorithm,
+    in_out: &mut Vec<u8>,
+    key: &[u8],
+    iv: &[u8],
+) -> anyhow::Result<()> {
+    let key = ring::aead::UnboundKey::new(alg, key)
+        .map_err(|_| anyhow::anyhow!("Aead unbound key init error"))?;
+    let nonce = ring::aead::Nonce::try_assume_unique_for_key(iv)
+        .map_err(|_| anyhow::anyhow!("Aead iv init error"))?;
+    let aad = make_teaclave_aad();
+
+    let enc_key = ring::aead::LessSafeKey::new(key);
+    enc_key
+        .seal_in_place_append_tag(nonce, aad, in_out)
+        .map_err(|_| anyhow::anyhow!("Aead seal_in_place_append_tag error"))?;
+    Ok(())
+}
+
+#[cfg(feature = "enclave_unit_test")]
+pub mod tests {
+    use super::*;
+    use crate::unit_tests;
+    use crate::unittest::*;
+
+    pub fn run_tests() -> usize {
+        unit_tests!(test_aead_enc_then_dec, test_crypto_info,)
+    }
+
+    fn test_aead_enc_then_dec() {
+        let plain_text: [u8; 5] = [0xde, 0xff, 0xab, 0xcd, 0x90];
+        let key = [0x90u8; AES_GCM_128_KEY_LENGTH];
+        let iv = [0x89u8; 12];
+
+        let mut buf = plain_text.to_vec();
+        aead_encrypt(&ring::aead::AES_128_GCM, &mut buf, &key, &iv).unwrap();
+        let result = aead_decrypt(&ring::aead::AES_128_GCM, &mut buf, &key, &iv).unwrap();
+        assert_eq!(&result[..], &plain_text[..]);
+    }
+
+    fn test_crypto_info() {
+        let key = [0x90u8; AES_GCM_128_KEY_LENGTH];
+        let iv = [0x89u8; AES_GCM_128_IV_LENGTH];
+        let crypto_info = AesGcm128CryptoInfo { key, iv };
+
+        let plain_text: [u8; 5] = [0xde, 0xff, 0xab, 0xcd, 0x90];
+        let mut buf = plain_text.to_vec();
+
+        crypto_info.encrypt(&mut buf).unwrap();
+        assert_ne!(&buf[..], &plain_text[..]);
+
+        crypto_info.decrypt(&mut buf).unwrap();
+        assert_eq!(&buf[..], &plain_text[..]);
+    }
 }

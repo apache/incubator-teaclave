@@ -1,5 +1,6 @@
 #![cfg_attr(feature = "mesalock_sgx", no_std)]
 #[cfg(feature = "mesalock_sgx")]
+#[macro_use]
 extern crate sgx_tstd as std;
 
 #[cfg(feature = "mesalock_sgx")]
@@ -18,6 +19,8 @@ mod crypto;
 pub use crypto::*;
 mod worker;
 pub use worker::*;
+mod unittest;
+pub use unittest::*;
 
 /// Status for Ecall
 #[repr(C)]
@@ -170,3 +173,13 @@ pub enum TeaclaveServiceResponseError {
 }
 
 pub type TeaclaveServiceResponseResult<T> = std::result::Result<T, TeaclaveServiceResponseError>;
+
+#[cfg(feature = "enclave_unit_test")]
+pub mod tests {
+    use super::*;
+
+    pub fn run_tests() {
+        worker::tests::run_tests();
+        crypto::tests::run_tests();
+    }
+}
