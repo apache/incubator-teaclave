@@ -6,7 +6,7 @@ use std::prelude::v1::*;
 #[cfg(feature = "mesalock_sgx")]
 use std::untrusted::fs;
 
-use anyhow::{bail, Context};
+use anyhow::{bail, Context, Result};
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::path::Path;
@@ -64,7 +64,7 @@ pub struct IasConfig {
 }
 
 impl RuntimeConfig {
-    pub fn from_toml<T: AsRef<Path>>(path: T) -> anyhow::Result<Self> {
+    pub fn from_toml<T: AsRef<Path>>(path: T) -> Result<Self> {
         let contents = fs::read_to_string(path)
             .context("Something went wrong when reading the runtime config file")?;
         let mut config: RuntimeConfig =
@@ -102,13 +102,19 @@ impl RuntimeConfig {
             });
         }
 
-        if config.ias.is_none()
-            || config.ias.as_ref().unwrap().ias_spid.len() != 32
-            || config.ias.as_ref().unwrap().ias_key.len() != 32
-        {
-            bail!("Cannot find IAS SPID/key or format error");
-        }
+        validate_config(&config)?;
 
         Ok(config)
     }
+}
+
+fn validate_config(config: &RuntimeConfig) -> Result<()> {
+    if config.ias.is_none()
+        || config.ias.as_ref().unwrap().ias_spid.len() != 32
+        || config.ias.as_ref().unwrap().ias_key.len() != 32
+    {
+        bail!("Cannot find IAS SPID/key or format error");
+    }
+
+    Ok(())
 }
