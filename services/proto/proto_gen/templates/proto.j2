@@ -1,10 +1,9 @@
 use anyhow;
+use teaclave_types;
 use teaclave_rpc;
 use core::convert::TryFrom;
 use teaclave_types::TeaclaveServiceResponseError;
 use std::prelude::v1::*;
-
-type Result<T> = std::result::Result<T, TeaclaveServiceResponseError>;
 
 #[derive(Clone, serde::Serialize, serde::Deserialize, Debug)]
 #[serde(tag = "request", rename_all = "snake_case")]
@@ -24,9 +23,9 @@ pub enum {{ service.proto_name }}Response {
 
 pub trait {{ service.proto_name }} {
     {% for m in service.methods %}
-    fn {{ m.name }}(&self, request: crate::{{ proto_impl_mod_name }}::{{ m.input_type }}) -> Result<crate::{{ proto_impl_mod_name }}::{{ m.output_type }}>;
+    fn {{ m.name }}(&self, request: crate::{{ proto_impl_mod_name }}::{{ m.input_type }}) -> teaclave_types::TeaclaveServiceResponseResult<crate::{{ proto_impl_mod_name }}::{{ m.output_type }}>;
     {% endfor %}
-    fn dispatch(&self, request: {{ service.proto_name }}Request) -> Result<{{ service.proto_name }}Response> {
+    fn dispatch(&self, request: {{ service.proto_name }}Request) -> teaclave_types::TeaclaveServiceResponseResult<{{ service.proto_name }}Response> {
         match request {
             {% for m in service.methods %}
             {{ service.proto_name }}Request::{{ m.proto_name }}(request) => {

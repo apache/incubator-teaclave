@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package teaclave_frontend_service_proto;
+
+import "teaclave_common.proto";
+
+message RegisterInputFileRequest {
+  string uri = 1;
+  string hash = 2;
+  teaclave_common_proto.FileCryptoInfo crypto_info = 3;
+  teaclave_common_proto.UserCredential credential = 99;
+}
+
+message RegisterInputFileResponse {
+  string data_id = 1;
+}
+
+message RegisterOutputFileRequest {
+  string uri = 1;
+  teaclave_common_proto.FileCryptoInfo crypto_info = 2;
+  teaclave_common_proto.UserCredential credential = 99;
+}
+
+message RegisterOutputFileResponse {
+  string data_id = 1;
+}
+
+service TeaclaveFrontend {
+  rpc RegisterInputFile (RegisterInputFileRequest) returns (RegisterInputFileResponse);
+  rpc RegisterOutputFile (RegisterOutputFileRequest) returns (RegisterOutputFileResponse);
+}
