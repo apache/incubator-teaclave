@@ -1,6 +1,9 @@
 #![allow(dead_code)]
 
 use std::prelude::v1::*;
+use std::sync::Arc;
+use teaclave_config::RuntimeConfig;
+use teaclave_proto::teaclave_authentication_service::TeaclaveAuthenticationClient;
 use teaclave_proto::teaclave_frontend_service::{
     RegisterInputFileRequest, RegisterInputFileResponse, RegisterOutputFileRequest,
     RegisterOutputFileResponse, TeaclaveFrontend,
@@ -23,7 +26,15 @@ impl From<TeaclaveFrontendError> for TeaclaveServiceResponseError {
 
 #[teaclave_service(teaclave_frontend_service, TeaclaveFrontend, TeaclaveFrontendError)]
 #[derive(Clone)]
-pub(crate) struct TeaclaveFrontendService;
+pub(crate) struct TeaclaveFrontendService {
+    authentication_client: Arc<TeaclaveAuthenticationClient>,
+}
+
+impl TeaclaveFrontendService {
+    pub(crate) fn new(_config: &RuntimeConfig) -> Self {
+        unimplemented!()
+    }
+}
 
 impl TeaclaveFrontend for TeaclaveFrontendService {
     fn register_input_file(

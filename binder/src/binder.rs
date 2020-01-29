@@ -23,7 +23,7 @@ use serde::Serialize;
 
 use anyhow::Result;
 use teaclave_ipc::channel::ECallChannel;
-use teaclave_ipc::protos::{
+use teaclave_ipc::proto::{
     ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
 };
 use teaclave_ipc::IpcSender;

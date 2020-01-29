@@ -69,5 +69,5 @@ pub trait IpcReceiver {
 
 pub mod channel;
 pub mod macros;
-pub mod protos;
+pub mod proto;
 pub use teaclave_ipc_attribute::handle_ecall;

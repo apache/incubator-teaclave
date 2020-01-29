@@ -26,7 +26,7 @@ extern crate log;
 use anyhow::Result;
 use std::prelude::v1::*;
 use teaclave_attestation::RemoteAttestation;
-use teaclave_ipc::protos::{
+use teaclave_ipc::proto::{
     ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
     StartServiceInput, StartServiceOutput,
 };
@@ -43,7 +43,7 @@ mod service;
 #[handle_ecall]
 fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> {
     debug!("handle_start_service");
-    let listener = std::net::TcpListener::new(args.fd)?;
+    let listener = std::net::TcpListener::new(args.fds[0])?;
     let ias_config = &args.config.ias.as_ref().unwrap();
     let attestation =
         RemoteAttestation::generate_and_endorse(&ias_config.ias_key, &ias_config.ias_spid).unwrap();
@@ -57,7 +57,7 @@ fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> 
         listener, &config,
     );
 
-    let service = service::TeaclaveFrontendService;
+    let service = service::TeaclaveFrontendService::new(&args.config);
     match server.start(service) {
         Ok(_) => (),
         Err(e) => {

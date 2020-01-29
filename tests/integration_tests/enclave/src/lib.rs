@@ -28,7 +28,7 @@ use std::prelude::v1::*;
 use anyhow::Result;
 use teaclave_types;
 
-use teaclave_ipc::protos::{
+use teaclave_ipc::proto::{
     ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
     RunTestInput, RunTestOutput,
 };
