@@ -1,19 +1,16 @@
+use anyhow;
 use serde_json;
 use sgx_tunittest::*;
+use std::io::Write;
 use std::prelude::v1::*;
+use std::untrusted::fs;
+
 use teaclave_proto::teaclave_execution_service::*;
 use teaclave_rpc::endpoint::Endpoint;
+use teaclave_types::AesGcm128CryptoInfo;
 
 pub fn run_tests() {
-    rsgx_unit_tests!(
-        test_get_success,
-        //test_get_fail,
-        //test_put_success,
-        //test_delete_success,
-        //test_enqueue_success,
-        //test_dequeue_success,
-        //test_dequeue_fail,
-    );
+    rsgx_unit_tests!(test_invoke_success,);
 }
 
 fn setup_client() -> TeaclaveExecutionClient {
@@ -21,7 +18,24 @@ fn setup_client() -> TeaclaveExecutionClient {
     TeaclaveExecutionClient::new(channel).unwrap()
 }
 
-fn test_get_success() {
+fn enc_input_file() -> anyhow::Result<()> {
+    let crypto_info_str = r#"{
+            "key": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+            "iv": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    }"#;
+    let crypto_info: AesGcm128CryptoInfo = serde_json::from_str(crypto_info_str)?;
+
+    let plain_input = "test_cases/gbdt_training/train.txt";
+    let enc_input = "test_cases/gbdt_training/train.enc";
+    let mut bytes = fs::read_to_string(plain_input)?.into_bytes();
+    crypto_info.encrypt(&mut bytes)?;
+
+    let mut file = fs::File::create(enc_input)?;
+    file.write_all(&bytes)?;
+    Ok(())
+}
+
+fn test_invoke_success() {
     let request_payload = r#"{
         "runtime_name": "default",
         "executor_type": "native",
@@ -40,7 +54,7 @@ fn test_get_success() {
         },
         "input_files": {
             "training_data": {
-                "path": "test_cases/gbdt_training/train.txt",
+                "path": "test_cases/gbdt_training/train.enc",
                 "crypto_info": {
                     "aes_gcm128": {
                         "key": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
@@ -63,6 +77,7 @@ fn test_get_success() {
     }"#;
 
     let request: StagedFunctionExecuteRequest = serde_json::from_str(request_payload).unwrap();
+    enc_input_file().unwrap();
 
     let mut client = setup_client();
     let response_result = client.invoke_function(request.into());

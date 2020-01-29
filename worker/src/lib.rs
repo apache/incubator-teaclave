@@ -37,5 +37,6 @@ pub mod tests {
 
     pub fn run_tests() {
         function::tests::run_tests();
+        runtime::tests::run_tests();
     }
 }
