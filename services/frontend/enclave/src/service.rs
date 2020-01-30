@@ -1,7 +1,7 @@
 use std::prelude::v1::*;
 use std::sync::{Arc, SgxMutex as Mutex};
 use teaclave_config::RuntimeConfig;
-use teaclave_proto::teaclave_authentication_service::TeaclaveAuthenticationClient;
+use teaclave_proto::teaclave_authentication_service::TeaclaveAuthenticationInternalClient;
 use teaclave_proto::teaclave_authentication_service::UserAuthenticateRequest;
 use teaclave_proto::teaclave_common::UserCredential;
 use teaclave_proto::teaclave_frontend_service::{
@@ -29,7 +29,7 @@ impl From<TeaclaveFrontendError> for TeaclaveServiceResponseError {
 #[teaclave_service(teaclave_frontend_service, TeaclaveFrontend, TeaclaveFrontendError)]
 #[derive(Clone)]
 pub(crate) struct TeaclaveFrontendService {
-    authentication_client: Arc<Mutex<TeaclaveAuthenticationClient>>,
+    authentication_client: Arc<Mutex<TeaclaveAuthenticationInternalClient>>,
 }
 
 impl TeaclaveFrontendService {
@@ -37,7 +37,7 @@ impl TeaclaveFrontendService {
         let channel = Endpoint::new(&config.internal_endpoints.authentication.advertised_address)
             .connect()
             .unwrap();
-        let client = TeaclaveAuthenticationClient::new(channel).unwrap();
+        let client = TeaclaveAuthenticationInternalClient::new(channel).unwrap();
         Self {
             authentication_client: Arc::new(Mutex::new(client)),
         }

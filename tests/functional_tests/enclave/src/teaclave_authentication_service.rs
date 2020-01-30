@@ -21,7 +21,7 @@ pub fn run_tests() -> bool {
     )
 }
 
-fn test_login_success() {
+fn get_api_client() -> TeaclaveAuthenticationApiClient {
     let runtime_config = RuntimeConfig::from_toml("runtime.config.toml").expect("runtime");
     let enclave_info =
         EnclaveInfo::from_bytes(&runtime_config.audit.enclave_info_bytes.as_ref().unwrap());
@@ -38,7 +38,36 @@ fn test_login_success() {
         .config(config)
         .connect()
         .unwrap();
-    let mut client = TeaclaveAuthenticationClient::new(channel).unwrap();
+    TeaclaveAuthenticationApiClient::new(channel).unwrap()
+}
+
+fn get_internal_client() -> TeaclaveAuthenticationInternalClient {
+    let runtime_config = RuntimeConfig::from_toml("runtime.config.toml").expect("runtime");
+    let enclave_info =
+        EnclaveInfo::from_bytes(&runtime_config.audit.enclave_info_bytes.as_ref().unwrap());
+    let enclave_attr = enclave_info
+        .get_enclave_attr("teaclave_authentication_service")
+        .expect("authentication");
+    let config = SgxTrustedTlsClientConfig::new_with_attestation_report_verifier(
+        vec![enclave_attr],
+        BUILD_CONFIG.ias_root_ca_cert,
+        verifier::universal_quote_verifier,
+    );
+
+    let channel = Endpoint::new(
+        &runtime_config
+            .internal_endpoints
+            .authentication
+            .advertised_address,
+    )
+    .config(config)
+    .connect()
+    .unwrap();
+    TeaclaveAuthenticationInternalClient::new(channel).unwrap()
+}
+
+fn test_login_success() {
+    let mut client = get_api_client();
     let request = UserRegisterRequest {
         id: "test_login_id1".to_string(),
         password: "test_password".to_string(),
@@ -56,8 +85,7 @@ fn test_login_success() {
 }
 
 fn test_login_fail() {
-    let channel = Endpoint::new("localhost:7776").connect().unwrap();
-    let mut client = TeaclaveAuthenticationClient::new(channel).unwrap();
+    let mut client = get_api_client();
     let request = UserRegisterRequest {
         id: "test_login_id2".to_string(),
         password: "test_password".to_string(),
@@ -75,60 +103,54 @@ fn test_login_fail() {
 }
 
 fn test_authenticate_success() {
-    let channel = Endpoint::new("localhost:17776").connect().unwrap();
-    let mut client = TeaclaveAuthenticationClient::new(channel).unwrap();
+    let mut api_client = get_api_client();
+    let mut internal_client = get_internal_client();
     let request = UserRegisterRequest {
         id: "test_authenticate_id1".to_string(),
         password: "test_password".to_string(),
     };
-    let response_result = client.user_register(request);
+    let response_result = api_client.user_register(request);
     assert!(response_result.is_ok());
 
     let request = UserLoginRequest {
         id: "test_authenticate_id1".to_string(),
         password: "test_password".to_string(),
     };
-    let response_result = client.user_login(request);
+    let response_result = api_client.user_login(request);
     assert!(response_result.is_ok());
     let credential = UserCredential {
         id: "test_authenticate_id1".to_string(),
         token: response_result.unwrap().token,
     };
     let request = UserAuthenticateRequest { credential };
-    let response_result = client.user_authenticate(request);
+    let response_result = internal_client.user_authenticate(request);
     info!("{:?}", response_result);
     assert!(response_result.unwrap().accept);
 }
 
 fn test_authenticate_fail() {
-    let channel = Endpoint::new("localhost:17776").connect().unwrap();
-    let mut client = TeaclaveAuthenticationClient::new(channel).unwrap();
+    let mut api_client = get_api_client();
+    let mut internal_client = get_internal_client();
+
     let request = UserRegisterRequest {
         id: "test_authenticate_id2".to_string(),
         password: "test_password".to_string(),
     };
-    let response_result = client.user_register(request);
+    let response_result = api_client.user_register(request);
     assert!(response_result.is_ok());
 
-    let request = UserLoginRequest {
-        id: "test_authenticate_id2".to_string(),
-        password: "test_password".to_string(),
-    };
-    let response_result = client.user_login(request);
-    assert!(response_result.is_ok());
     let credential = UserCredential {
         id: "test_authenticate_id2".to_string(),
         token: "wrong_token".to_string(),
     };
     let request = UserAuthenticateRequest { credential };
-    let response_result = client.user_authenticate(request);
+    let response_result = internal_client.user_authenticate(request);
     info!("{:?}", response_result);
     assert!(!response_result.unwrap().accept);
 }
 
 fn test_register_success() {
-    let channel = Endpoint::new("localhost:7776").connect().unwrap();
-    let mut client = TeaclaveAuthenticationClient::new(channel).unwrap();
+    let mut client = get_api_client();
     let request = UserRegisterRequest {
         id: "test_register_id1".to_string(),
         password: "test_password".to_string(),
@@ -139,8 +161,7 @@ fn test_register_success() {
 }
 
 fn test_register_fail() {
-    let channel = Endpoint::new("localhost:7776").connect().unwrap();
-    let mut client = TeaclaveAuthenticationClient::new(channel).unwrap();
+    let mut client = get_api_client();
     let request = UserRegisterRequest {
         id: "test_register_id2".to_string(),
         password: "test_password".to_string(),
@@ -149,7 +170,7 @@ fn test_register_fail() {
     assert!(response_result.is_ok());
     let request = UserRegisterRequest {
         id: "test_register_id2".to_string(),
-        password: "test_password".to_string(),
+        password: "test_password2".to_string(),
     };
     let response_result = client.user_register(request);
     info!("{:?}", response_result);
