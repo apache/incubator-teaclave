@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use std::prelude::v1::*;
 use std::sync::{Arc, SgxMutex as Mutex};
 use teaclave_config::RuntimeConfig;
@@ -11,6 +9,7 @@ use teaclave_proto::teaclave_frontend_service::{
     RegisterOutputFileResponse, TeaclaveFrontend,
 };
 use teaclave_rpc::endpoint::Endpoint;
+use teaclave_rpc::Request;
 use teaclave_service_enclave_utils::teaclave_service;
 use teaclave_types::{TeaclaveServiceResponseError, TeaclaveServiceResponseResult};
 use thiserror::Error;
@@ -48,10 +47,11 @@ impl TeaclaveFrontendService {
 impl TeaclaveFrontend for TeaclaveFrontendService {
     fn register_input_file(
         &self,
-        request: RegisterInputFileRequest,
+        request: Request<RegisterInputFileRequest>,
     ) -> TeaclaveServiceResponseResult<RegisterInputFileResponse> {
-        if !self.authenticate(request.credential) {
-            return Err(TeaclaveFrontendError::AuthenticationError.into());
+        match self.authenticate(&request) {
+            Ok(r) if r => (),
+            _ => return Err(TeaclaveFrontendError::AuthenticationError.into()),
         }
         let response = RegisterInputFileResponse {
             data_id: "".to_string(),
@@ -61,10 +61,11 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
 
     fn register_output_file(
         &self,
-        request: RegisterOutputFileRequest,
+        request: Request<RegisterOutputFileRequest>,
     ) -> TeaclaveServiceResponseResult<RegisterOutputFileResponse> {
-        if !self.authenticate(request.credential) {
-            return Err(TeaclaveFrontendError::AuthenticationError.into());
+        match self.authenticate(&request) {
+            Ok(r) if r => (),
+            _ => return Err(TeaclaveFrontendError::AuthenticationError.into()),
         }
         let response = RegisterOutputFileResponse {
             data_id: "".to_string(),
@@ -74,14 +75,24 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
 }
 
 impl TeaclaveFrontendService {
-    fn authenticate(&self, credential: UserCredential) -> bool {
+    fn authenticate<T>(&self, request: &Request<T>) -> anyhow::Result<bool> {
+        use anyhow::anyhow;
+        let id = request
+            .metadata
+            .get("id")
+            .ok_or_else(|| anyhow!("Missing credential"))?;
+        let token = request
+            .metadata
+            .get("token")
+            .ok_or_else(|| anyhow!("Missing credential"))?;
+        let credential = UserCredential::new(&id, &token);
         let auth_request = UserAuthenticateRequest { credential };
         let auth_response = self
             .authentication_client
             .clone()
             .lock()
-            .unwrap()
+            .map_err(|_| anyhow!("Cannot lock authentication client"))?
             .user_authenticate(auth_request);
-        auth_response.unwrap().accept
+        Ok(auth_response?.accept)
     }
 }

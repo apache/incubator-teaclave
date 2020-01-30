@@ -163,6 +163,7 @@ impl EnclaveInfo {
 }
 
 #[derive(Error, Debug, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "snake_case")]
 pub enum TeaclaveServiceResponseError {
     #[error("Request error: {0}")]
     RequestError(String),

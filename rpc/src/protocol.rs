@@ -66,3 +66,29 @@ where
         Ok(())
     }
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(tag = "result")]
+#[serde(rename_all = "snake_case")]
+pub enum JsonProtocolResult<T, E> {
+    Ok(T),
+    Err(E),
+}
+
+impl<T, E> From<std::result::Result<T, E>> for JsonProtocolResult<T, E> {
+    fn from(result: std::result::Result<T, E>) -> Self {
+        match result {
+            Ok(t) => JsonProtocolResult::Ok(t),
+            Err(e) => JsonProtocolResult::Err(e),
+        }
+    }
+}
+
+impl<T, E> From<JsonProtocolResult<T, E>> for std::result::Result<T, E> {
+    fn from(result: JsonProtocolResult<T, E>) -> Self {
+        match result {
+            JsonProtocolResult::Ok(t) => Ok(t),
+            JsonProtocolResult::Err(e) => Err(e),
+        }
+    }
+}

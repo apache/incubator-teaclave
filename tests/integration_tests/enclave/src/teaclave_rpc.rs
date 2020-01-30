@@ -18,6 +18,7 @@ const END_FULLCHAIN: &str = "./fixtures/end_fullchain.pem";
 const END_KEY: &str = "./fixtures/end_key.pem";
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(tag = "request", rename_all = "snake_case")]
 enum EchoRequest {
     Say(SayRequest),
 }
@@ -28,6 +29,7 @@ struct SayRequest {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(tag = "response", rename_all = "snake_case")]
 enum EchoResponse {
     Say(SayResponse),
 }
@@ -41,9 +43,12 @@ struct SayResponse {
 struct EchoService;
 
 impl TeaclaveService<EchoRequest, EchoResponse> for EchoService {
-    fn handle_request(&self, request: EchoRequest) -> TeaclaveServiceResponseResult<EchoResponse> {
+    fn handle_request(
+        &self,
+        request: teaclave_rpc::Request<EchoRequest>,
+    ) -> TeaclaveServiceResponseResult<EchoResponse> {
         info!("handle request: {:?}", request);
-        let message = match request {
+        let message = match request.message {
             EchoRequest::Say(s) => s.message,
         };
         Ok(EchoResponse::Say(SayResponse { message }))
@@ -51,18 +56,20 @@ impl TeaclaveService<EchoRequest, EchoResponse> for EchoService {
 }
 
 struct EchoClient {
-    channel: SgxTrustedTlsChannel<EchoRequest, TeaclaveServiceResponseResult<EchoResponse>>,
+    channel: SgxTrustedTlsChannel<EchoRequest, EchoResponse>,
 }
 
 impl EchoClient {
-    fn new(
-        channel: SgxTrustedTlsChannel<EchoRequest, TeaclaveServiceResponseResult<EchoResponse>>,
-    ) -> Result<Self> {
+    fn new(channel: SgxTrustedTlsChannel<EchoRequest, EchoResponse>) -> Result<Self> {
         Ok(Self { channel })
     }
 
     fn say(&mut self, request: SayRequest) -> TeaclaveServiceResponseResult<SayResponse> {
         let request = EchoRequest::Say(request);
+        let request = Request {
+            metadata: std::collections::HashMap::<String, String>::new(),
+            message: request,
+        };
         let response = match self.channel.invoke(request) {
             Ok(response_result) => response_result,
             Err(_) => {
@@ -70,7 +77,7 @@ impl EchoClient {
                     "internal".to_string(),
                 ));
             }
-        }?;
+        };
         match response {
             EchoResponse::Say(r) => Ok(r),
         }

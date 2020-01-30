@@ -8,6 +8,7 @@ use teaclave_proto::teaclave_authentication_service::{
     TeaclaveAuthentication, UserAuthenticateRequest, UserAuthenticateResponse, UserLoginRequest,
     UserLoginResponse, UserRegisterRequest, UserRegisterResponse,
 };
+use teaclave_rpc::Request;
 use teaclave_service_enclave_utils::teaclave_service;
 use teaclave_types::{TeaclaveServiceResponseError, TeaclaveServiceResponseResult};
 use thiserror::Error;
@@ -56,8 +57,9 @@ impl TeaclaveAuthenticationService {
 impl TeaclaveAuthentication for TeaclaveAuthenticationService {
     fn user_register(
         &self,
-        request: UserRegisterRequest,
+        request: Request<UserRegisterRequest>,
     ) -> TeaclaveServiceResponseResult<UserRegisterResponse> {
+        let request = request.message;
         if request.id.is_empty() {
             return Err(TeaclaveAuthenticationError::InvalidUserId.into());
         }
@@ -74,8 +76,9 @@ impl TeaclaveAuthentication for TeaclaveAuthenticationService {
 
     fn user_login(
         &self,
-        request: UserLoginRequest,
+        request: Request<UserLoginRequest>,
     ) -> TeaclaveServiceResponseResult<UserLoginResponse> {
+        let request = request.message;
         if request.id.is_empty() {
             return Err(TeaclaveAuthenticationError::InvalidUserId.into());
         }
@@ -102,8 +105,9 @@ impl TeaclaveAuthentication for TeaclaveAuthenticationService {
 
     fn user_authenticate(
         &self,
-        request: UserAuthenticateRequest,
+        request: Request<UserAuthenticateRequest>,
     ) -> TeaclaveServiceResponseResult<UserAuthenticateResponse> {
+        let request = request.message;
         if request.credential.id.is_empty() || request.credential.token.is_empty() {
             return Ok(UserAuthenticateResponse { accept: false });
         }
@@ -135,6 +139,7 @@ pub mod tests {
             id: "test_register_id".to_string(),
             password: "test_password".to_string(),
         };
+        let request = Request::new(request);
         let service = get_mock_service();
         assert!(service.user_register(request).is_ok());
     }
@@ -145,11 +150,13 @@ pub mod tests {
             id: "test_login_id".to_string(),
             password: "test_password".to_string(),
         };
+        let request = Request::new(request);
         assert!(service.user_register(request).is_ok());
         let request = UserLoginRequest {
             id: "test_login_id".to_string(),
             password: "test_password".to_string(),
         };
+        let request = Request::new(request);
         assert!(service.user_login(request).is_ok());
 
         info!(
@@ -160,6 +167,7 @@ pub mod tests {
             id: "test_login_id".to_string(),
             password: "test_password1".to_string(),
         };
+        let request = Request::new(request);
         assert!(service.user_login(request).is_err());
     }
 
@@ -170,12 +178,14 @@ pub mod tests {
             id: id.to_string(),
             password: "test_password".to_string(),
         };
+        let request = Request::new(request);
         assert!(service.user_register(request).is_ok());
 
         let request = UserLoginRequest {
             id: id.to_string(),
             password: "test_password".to_string(),
         };
+        let request = Request::new(request);
         let token = service.user_login(request).unwrap().token;
         info!("login token: {}", token);
         dump_token(&service.jwt_secret, &token);
@@ -254,6 +264,7 @@ pub mod tests {
             token: token.to_string(),
         };
         let request = UserAuthenticateRequest { credential };
+        let request = Request::new(request);
         service.user_authenticate(request).unwrap()
     }
 

@@ -16,6 +16,15 @@ pub struct UserCredential {
     pub token: std::string::String,
 }
 
+impl UserCredential {
+    pub fn new(id: &str, token: &str) -> Self {
+        Self {
+            id: id.to_owned(),
+            token: token.to_owned(),
+        }
+    }
+}
+
 impl std::convert::TryFrom<proto::UserCredential> for UserCredential {
     type Error = Error;
 

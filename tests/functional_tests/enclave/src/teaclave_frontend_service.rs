@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::prelude::v1::*;
 use teaclave_proto::teaclave_common::*;
 use teaclave_proto::teaclave_frontend_service::*;
@@ -24,8 +25,12 @@ fn test_register_input_file_authentication_error() {
         },
     };
 
+    let mut metadata = HashMap::new();
+    metadata.insert("id".to_string(), "".to_string());
+    metadata.insert("token".to_string(), "".to_string());
+
     let channel = Endpoint::new("localhost:7777").connect().unwrap();
-    let mut client = TeaclaveFrontendClient::new(channel).unwrap();
+    let mut client = TeaclaveFrontendClient::new_with_metadata(channel, metadata).unwrap();
     let response = client.register_input_file(request);
 
     assert_eq!(
