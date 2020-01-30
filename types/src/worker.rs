@@ -102,6 +102,17 @@ impl TeaclaveWorkerFileInfo {
         };
         Ok(readable)
     }
+
+    pub fn get_writable_io(&self) -> anyhow::Result<Box<dyn io::Write>> {
+        let writable: Box<dyn io::Write> = match &self.crypto_info {
+            TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(crypto) => {
+                let f = ProtectedFile::create_ex(&self.path, &crypto.key)?;
+                Box::new(f)
+            }
+            _ => anyhow::bail!("Output file encryption type not supported"),
+        };
+        Ok(writable)
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
