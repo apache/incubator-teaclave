@@ -1,5 +1,6 @@
 use crate::config::SgxTrustedTlsClientConfig;
 use crate::transport::{ClientTransport, SgxTrustedTlsTransport};
+use crate::Request;
 use anyhow::anyhow;
 use anyhow::Result;
 use http::Uri;
@@ -37,7 +38,10 @@ where
         })
     }
 
-    pub fn invoke(&mut self, input: U) -> Result<V> {
+    pub fn invoke(
+        &mut self,
+        input: Request<U>,
+    ) -> teaclave_types::TeaclaveServiceResponseResult<V> {
         self.transport.send(input)
     }
 }

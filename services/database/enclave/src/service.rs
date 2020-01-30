@@ -7,6 +7,7 @@ use teaclave_proto::teaclave_database_service::{
     DeleteRequest, DeleteResponse, DequeueRequest, DequeueResponse, EnqueueRequest,
     EnqueueResponse, GetRequest, GetResponse, PutRequest, PutResponse, TeaclaveDatabase,
 };
+use teaclave_rpc::Request;
 use teaclave_service_enclave_utils::teaclave_service;
 use teaclave_types::{TeaclaveServiceResponseError, TeaclaveServiceResponseResult};
 use thiserror::Error;
@@ -158,34 +159,48 @@ impl TeaclaveDatabaseService {
     }
 }
 impl TeaclaveDatabase for TeaclaveDatabaseService {
-    fn get(&self, request: GetRequest) -> TeaclaveServiceResponseResult<GetResponse> {
+    fn get(&self, request: Request<GetRequest>) -> TeaclaveServiceResponseResult<GetResponse> {
+        let request = request.message;
         match self.database.borrow_mut().get(&request.key) {
             Some(value) => Ok(GetResponse { value }),
             None => Err(TeaclaveDatabaseError::KeyNotExist.into()),
         }
     }
 
-    fn put(&self, request: PutRequest) -> TeaclaveServiceResponseResult<PutResponse> {
+    fn put(&self, request: Request<PutRequest>) -> TeaclaveServiceResponseResult<PutResponse> {
+        let request = request.message;
         match self.database.borrow_mut().put(&request.key, &request.value) {
             Ok(_) => Ok(PutResponse),
             Err(_) => Err(TeaclaveDatabaseError::LevelDbError.into()),
         }
     }
 
-    fn delete(&self, request: DeleteRequest) -> TeaclaveServiceResponseResult<DeleteResponse> {
+    fn delete(
+        &self,
+        request: Request<DeleteRequest>,
+    ) -> TeaclaveServiceResponseResult<DeleteResponse> {
+        let request = request.message;
         match self.database.borrow_mut().delete(&request.key) {
             Ok(_) => Ok(DeleteResponse),
             Err(_) => Err(TeaclaveDatabaseError::LevelDbError.into()),
         }
     }
 
-    fn enqueue(&self, request: EnqueueRequest) -> TeaclaveServiceResponseResult<EnqueueResponse> {
+    fn enqueue(
+        &self,
+        request: Request<EnqueueRequest>,
+    ) -> TeaclaveServiceResponseResult<EnqueueResponse> {
+        let request = request.message;
         let mut db = self.database.borrow_mut();
         let mut queue = DBQueue::open(&mut db, &request.key);
         queue.enqueue(&request.value).map(|_| EnqueueResponse)
     }
 
-    fn dequeue(&self, request: DequeueRequest) -> TeaclaveServiceResponseResult<DequeueResponse> {
+    fn dequeue(
+        &self,
+        request: Request<DequeueRequest>,
+    ) -> TeaclaveServiceResponseResult<DequeueResponse> {
+        let request = request.message;
         let mut db = self.database.borrow_mut();
         let mut queue = DBQueue::open(&mut db, &request.key);
         queue.dequeue().map(|value| DequeueResponse { value })
@@ -230,6 +245,7 @@ pub mod tests {
         let request = GetRequest {
             key: b"test_get_key".to_vec(),
         };
+        let request = Request::new(request);
         assert!(service.get(request).is_ok());
     }
 
@@ -239,10 +255,12 @@ pub mod tests {
             key: b"test_put_key".to_vec(),
             value: b"test_put_value".to_vec(),
         };
+        let request = Request::new(request);
         assert!(service.put(request).is_ok());
         let request = GetRequest {
             key: b"test_put_key".to_vec(),
         };
+        let request = Request::new(request);
         assert!(service.get(request).is_ok());
     }
 
@@ -251,10 +269,12 @@ pub mod tests {
         let request = DeleteRequest {
             key: b"test_delete_key".to_vec(),
         };
+        let request = Request::new(request);
         assert!(service.delete(request).is_ok());
         let request = GetRequest {
             key: b"test_delete_key".to_vec(),
         };
+        let request = Request::new(request);
         assert!(service.get(request).is_err());
     }
 
@@ -264,11 +284,13 @@ pub mod tests {
             key: b"test_enqueue_key".to_vec(),
             value: b"1".to_vec(),
         };
+        let request = Request::new(request);
         assert!(service.enqueue(request).is_ok());
         let request = EnqueueRequest {
             key: b"test_enqueue_key".to_vec(),
             value: b"2".to_vec(),
         };
+        let request = Request::new(request);
         assert!(service.enqueue(request).is_ok());
     }
 
@@ -277,24 +299,29 @@ pub mod tests {
         let request = DequeueRequest {
             key: b"test_dequeue_key".to_vec(),
         };
+        let request = Request::new(request);
         assert!(service.dequeue(request).is_err());
         let request = EnqueueRequest {
             key: b"test_dequeue_key".to_vec(),
             value: b"1".to_vec(),
         };
+        let request = Request::new(request);
         assert!(service.enqueue(request).is_ok());
         let request = EnqueueRequest {
             key: b"test_dequeue_key".to_vec(),
             value: b"2".to_vec(),
         };
+        let request = Request::new(request);
         assert!(service.enqueue(request).is_ok());
         let request = DequeueRequest {
             key: b"test_dequeue_key".to_vec(),
         };
+        let request = Request::new(request);
         assert_eq!(service.dequeue(request).unwrap().value, b"1");
         let request = DequeueRequest {
             key: b"test_dequeue_key".to_vec(),
         };
+        let request = Request::new(request);
         assert_eq!(service.dequeue(request).unwrap().value, b"2");
     }
 }

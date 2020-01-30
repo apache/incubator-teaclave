@@ -26,6 +26,7 @@ use teaclave_proto::teaclave_execution_service::{
 use teaclave_service_enclave_utils::teaclave_service;
 use teaclave_types::{TeaclaveServiceResponseError, TeaclaveServiceResponseResult};
 
+use teaclave_rpc::Request;
 use teaclave_worker::Worker;
 use thiserror::Error;
 
@@ -58,8 +59,9 @@ impl TeaclaveExecutionService {
 impl TeaclaveExecution for TeaclaveExecutionService {
     fn invoke_function(
         &self,
-        request: StagedFunctionExecuteRequest,
+        request: Request<StagedFunctionExecuteRequest>,
     ) -> TeaclaveServiceResponseResult<StagedFunctionExecuteResponse> {
+        let request = request.message;
         match self.worker.invoke_function(request.into()) {
             Ok(summary) => {
                 info!("[+] Invoking function ok: {}", summary);

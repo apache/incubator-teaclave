@@ -4,6 +4,7 @@ use std::sync::mpsc::{channel, Sender};
 use teaclave_proto::teaclave_database_service::{
     TeaclaveDatabaseRequest, TeaclaveDatabaseResponse,
 };
+use teaclave_rpc::Request;
 use teaclave_types::TeaclaveServiceResponseResult;
 
 #[derive(Clone)]
@@ -16,7 +17,7 @@ impl teaclave_rpc::TeaclaveService<TeaclaveDatabaseRequest, TeaclaveDatabaseResp
 {
     fn handle_request(
         &self,
-        request: TeaclaveDatabaseRequest,
+        request: Request<TeaclaveDatabaseRequest>,
     ) -> TeaclaveServiceResponseResult<TeaclaveDatabaseResponse> {
         let (sender, receiver) = channel();
         self.sender
@@ -31,5 +32,5 @@ impl teaclave_rpc::TeaclaveService<TeaclaveDatabaseRequest, TeaclaveDatabaseResp
 #[derive(Clone)]
 pub(crate) struct ProxyRequest {
     pub sender: Sender<TeaclaveServiceResponseResult<TeaclaveDatabaseResponse>>,
-    pub request: TeaclaveDatabaseRequest,
+    pub request: Request<TeaclaveDatabaseRequest>,
 }

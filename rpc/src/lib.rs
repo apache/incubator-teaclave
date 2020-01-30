@@ -11,13 +11,18 @@ where
     U: Serialize + std::fmt::Debug,
     V: for<'de> Deserialize<'de> + std::fmt::Debug,
 {
-    fn handle_request(&self, request: V) -> std::result::Result<U, TeaclaveServiceResponseError>;
+    fn handle_request(
+        &self,
+        request: Request<V>,
+    ) -> std::result::Result<U, TeaclaveServiceResponseError>;
 }
 
 pub mod channel;
 pub mod config;
 pub mod endpoint;
 mod protocol;
+mod request;
+pub use request::Request;
 pub mod server;
 mod transport;
 mod utils;
