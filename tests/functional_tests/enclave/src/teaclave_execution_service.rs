@@ -18,15 +18,8 @@ fn setup_client() -> TeaclaveExecutionClient {
     TeaclaveExecutionClient::new(channel).unwrap()
 }
 
-fn enc_input_file() -> anyhow::Result<()> {
-    let crypto_info_str = r#"{
-            "key": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-            "iv": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-    }"#;
-    let crypto_info: AesGcm128CryptoInfo = serde_json::from_str(crypto_info_str)?;
-
-    let plain_input = "test_cases/gbdt_training/train.txt";
-    let enc_input = "test_cases/gbdt_training/train.enc";
+fn enc_input_file(input_crypto: &str, plain_input: &str, enc_input: &str) -> anyhow::Result<()> {
+    let crypto_info: AesGcm128CryptoInfo = serde_json::from_str(input_crypto)?;
     let mut bytes = fs::read_to_string(plain_input)?.into_bytes();
     crypto_info.encrypt(&mut bytes)?;
 
@@ -65,22 +58,26 @@ fn test_invoke_success() {
         },
         "output_files": {
             "trained_model": {
-                "path": "test_cases/gbdt_training/model.txt.out",
+                "path": "test_cases/gbdt_training/model.enc.out",
                 "crypto_info": {
-                    "aes_gcm128": {
-                        "key": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-                        "iv": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+                    "teaclave_file_root_key128": {
+                        "key": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
                     }
                 }
             }
         }
     }"#;
 
-    let request: StagedFunctionExecuteRequest = serde_json::from_str(request_payload).unwrap();
-    enc_input_file().unwrap();
+    let input_crypto = r#"{
+            "key": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+            "iv": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    }"#;
+    let enc_input = "test_cases/gbdt_training/train.enc";
+    let plain_input = "test_cases/gbdt_training/train.txt";
 
+    enc_input_file(input_crypto, plain_input, enc_input).unwrap();
+    let request: StagedFunctionExecuteRequest = serde_json::from_str(request_payload).unwrap();
     let mut client = setup_client();
     let response_result = client.invoke_function(request);
-    info!("{:?}", response_result);
     assert!(response_result.is_ok());
 }

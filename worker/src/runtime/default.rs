@@ -18,10 +18,8 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use std::io;
-use std::untrusted::fs::File;
-
 use anyhow;
+use std::io;
 
 use super::TeaclaveRuntime;
 use teaclave_types::TeaclaveWorkerFileRegistry;
@@ -61,7 +59,8 @@ impl TeaclaveRuntime for DefaultRuntime {
             .entries
             .get(identifier)
             .ok_or_else(|| anyhow::anyhow!("Invalide output file identifier"))?;
-        let f = File::create(&file_info.path)?;
-        Ok(Box::new(f))
+
+        let writable = file_info.get_writable_io()?;
+        Ok(writable)
     }
 }
