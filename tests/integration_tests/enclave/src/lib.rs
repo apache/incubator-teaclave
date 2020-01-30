@@ -34,6 +34,7 @@ use teaclave_ipc::proto::{
 };
 use teaclave_ipc::{handle_ecall, register_ecall_handler};
 use teaclave_service_enclave_utils::ServiceEnclave;
+use teaclave_test_utils::check_all_passed;
 
 mod protected_fs_rs;
 mod rusty_leveldb_sgx;
@@ -42,11 +43,12 @@ mod teaclave_worker;
 
 #[handle_ecall]
 fn handle_run_test(_args: &RunTestInput) -> Result<RunTestOutput> {
-    let ret = rusty_leveldb_sgx::run_tests()
-        & protected_fs_rs::run_tests()
-        & teaclave_rpc::run_tests()
-        & teaclave_worker::run_tests();
-
+    let ret = check_all_passed!(
+        rusty_leveldb_sgx::run_tests(),
+        protected_fs_rs::run_tests(),
+        teaclave_rpc::run_tests(),
+        teaclave_worker::run_tests()
+    );
     assert_eq!(ret, true);
 
     Ok(RunTestOutput::default())
