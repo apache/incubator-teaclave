@@ -5,10 +5,14 @@ use serde::{Deserialize, Serialize};
 
 use crate::teaclave_authentication_service_proto as proto;
 use crate::teaclave_common;
-pub use proto::TeaclaveAuthentication;
-pub use proto::TeaclaveAuthenticationClient;
-pub use proto::TeaclaveAuthenticationRequest;
-pub use proto::TeaclaveAuthenticationResponse;
+pub use proto::TeaclaveAuthenticationApi;
+pub use proto::TeaclaveAuthenticationApiClient;
+pub use proto::TeaclaveAuthenticationApiRequest;
+pub use proto::TeaclaveAuthenticationApiResponse;
+pub use proto::TeaclaveAuthenticationInternal;
+pub use proto::TeaclaveAuthenticationInternalClient;
+pub use proto::TeaclaveAuthenticationInternalRequest;
+pub use proto::TeaclaveAuthenticationInternalResponse;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct UserRegisterRequest {

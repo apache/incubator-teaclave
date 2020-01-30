@@ -27,8 +27,11 @@ message UserAuthenticateResponse {
   bool accept = 1;
 }
 
-service TeaclaveAuthentication {
+service TeaclaveAuthenticationApi {
   rpc UserRegister(UserRegisterRequest) returns (UserRegisterResponse);
   rpc UserLogin (UserLoginRequest) returns (UserLoginResponse);
+}
+
+service TeaclaveAuthenticationInternal {
   rpc UserAuthenticate (UserAuthenticateRequest) returns (UserAuthenticateResponse);
 }

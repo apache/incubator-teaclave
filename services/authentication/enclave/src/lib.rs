@@ -24,6 +24,7 @@ extern crate sgx_tstd as std;
 extern crate log;
 
 use anyhow::Result;
+use rand::RngCore;
 use std::prelude::v1::*;
 use std::sync::Arc;
 use std::thread;
@@ -34,19 +35,22 @@ use teaclave_ipc::proto::{
 };
 use teaclave_ipc::{handle_ecall, register_ecall_handler};
 use teaclave_proto::teaclave_authentication_service::{
-    TeaclaveAuthenticationRequest, TeaclaveAuthenticationResponse,
+    TeaclaveAuthenticationApiRequest, TeaclaveAuthenticationApiResponse,
+    TeaclaveAuthenticationInternalRequest, TeaclaveAuthenticationInternalResponse,
 };
 use teaclave_rpc::config::SgxTrustedTlsServerConfig;
 use teaclave_rpc::server::SgxTrustedTlsServer;
 use teaclave_service_enclave_utils::ServiceEnclave;
 
-mod service;
+mod api_service;
+mod internal_service;
 mod user_db;
 mod user_info;
 
-fn start_endpoint(
+fn start_internal_endpoint(
     listener: std::net::TcpListener,
     db_client: user_db::DbClient,
+    jwt_secret: Vec<u8>,
     attestation: Arc<RemoteAttestation>,
 ) {
     let config = SgxTrustedTlsServerConfig::new_without_verifier(
@@ -56,11 +60,45 @@ fn start_endpoint(
     .unwrap();
 
     let mut server = SgxTrustedTlsServer::<
-        TeaclaveAuthenticationResponse,
-        TeaclaveAuthenticationRequest,
+        TeaclaveAuthenticationInternalResponse,
+        TeaclaveAuthenticationInternalRequest,
     >::new(listener, &config);
 
-    let service = service::TeaclaveAuthenticationService::new(db_client).unwrap();
+    let service = internal_service::TeaclaveAuthenticationInternalService {
+        db_client,
+        jwt_secret,
+    };
+
+    match server.start(service) {
+        Ok(_) => (),
+        Err(e) => {
+            error!("Service exit, error: {}.", e);
+        }
+    }
+}
+
+fn start_api_endpoint(
+    listener: std::net::TcpListener,
+    db_client: user_db::DbClient,
+    jwt_secret: Vec<u8>,
+    attestation: Arc<RemoteAttestation>,
+) {
+    let config = SgxTrustedTlsServerConfig::new_without_verifier(
+        &attestation.cert,
+        &attestation.private_key,
+    )
+    .unwrap();
+
+    let mut server = SgxTrustedTlsServer::<
+        TeaclaveAuthenticationApiResponse,
+        TeaclaveAuthenticationApiRequest,
+    >::new(listener, &config);
+
+    let service = api_service::TeaclaveAuthenticationApiService {
+        db_client,
+        jwt_secret,
+    };
+
     match server.start(service) {
         Ok(_) => (),
         Err(e) => {
@@ -79,16 +117,20 @@ fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> 
         RemoteAttestation::generate_and_endorse(&ias_config.ias_key, &ias_config.ias_spid).unwrap(),
     );
     let database = user_db::Database::open()?;
+    let mut api_jwt_secret = vec![0; user_info::JWT_SECRET_LEN];
+    let mut rng = rand::thread_rng();
+    rng.fill_bytes(&mut api_jwt_secret);
+    let internal_jwt_secret = api_jwt_secret.to_owned();
 
     let attestation_ref = attestation.clone();
     let client = database.get_client();
     let api_endpoint_thread_handler = thread::spawn(move || {
-        start_endpoint(api_listener, client, attestation_ref);
+        start_api_endpoint(api_listener, client, api_jwt_secret, attestation_ref);
     });
 
     let client = database.get_client();
     let internal_endpoint_thread_handler = thread::spawn(move || {
-        start_endpoint(internal_listener, client, attestation);
+        start_internal_endpoint(internal_listener, client, internal_jwt_secret, attestation);
     });
 
     api_endpoint_thread_handler.join().unwrap();
@@ -123,9 +165,14 @@ pub mod tests {
 
     pub fn run_tests() -> bool {
         run_tests!(
-            service::tests::test_user_login,
-            service::tests::test_user_authenticate,
-            service::tests::test_user_register,
+            api_service::tests::test_user_login,
+            api_service::tests::test_user_register,
+            internal_service::tests::test_user_authenticate,
+            internal_service::tests::test_invalid_algorithm,
+            internal_service::tests::test_invalid_issuer,
+            internal_service::tests::test_expired_token,
+            internal_service::tests::test_invalid_user,
+            internal_service::tests::test_wrong_secret,
         )
     }
 }
