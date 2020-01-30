@@ -162,7 +162,7 @@ impl EnclaveInfo {
     }
 }
 
-#[derive(Error, Debug, Serialize, Deserialize)]
+#[derive(Error, Debug, Serialize, Deserialize, PartialEq)]
 pub enum TeaclaveServiceResponseError {
     #[error("Request error: {0}")]
     RequestError(String),

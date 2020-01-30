@@ -38,12 +38,14 @@ use teaclave_service_enclave_utils::ServiceEnclave;
 mod teaclave_authentication_service;
 mod teaclave_database_service;
 mod teaclave_execution_service;
+mod teaclave_frontend_service;
 
 #[handle_ecall]
 fn handle_run_test(_args: &RunTestInput) -> Result<RunTestOutput> {
     let ret = teaclave_authentication_service::run_tests()
         & teaclave_database_service::run_tests()
-        & teaclave_execution_service::run_tests();
+        & teaclave_execution_service::run_tests()
+        & teaclave_frontend_service::run_tests();
 
     assert_eq!(ret, true);
     Ok(RunTestOutput::default())
