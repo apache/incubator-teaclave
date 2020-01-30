@@ -23,6 +23,21 @@ macro_rules! should_panic {
 }
 
 #[macro_export]
+macro_rules! check_all_passed {
+    (
+        $($f : expr),* $(,)?
+    ) => {
+        {
+            let mut v: Vec<bool> = Vec::new();
+            $(
+                v.push($f);
+            )*
+            v.iter().all(|&x| x)
+        }
+    }
+}
+
+#[macro_export]
 macro_rules! run_tests {
     (
         $($f : expr),* $(,)?

@@ -33,8 +33,9 @@ pub use worker::Worker;
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
+    use teaclave_test_utils::check_all_passed;
 
     pub fn run_tests() -> bool {
-        function::tests::run_tests() & runtime::tests::run_tests()
+        check_all_passed!(function::tests::run_tests(), runtime::tests::run_tests(),)
     }
 }
