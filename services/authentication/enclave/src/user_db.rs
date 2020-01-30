@@ -99,7 +99,7 @@ impl Database {
                 let call: DBCall = match receiver.recv() {
                     Ok(req) => req,
                     Err(e) => {
-                        error!("mspc receive error: {}", e);
+                        info!("mspc receive error: {}", e);
                         break;
                     }
                 };
@@ -120,7 +120,7 @@ impl Database {
                 };
                 match sender.send(response) {
                     Ok(_) => (),
-                    Err(e) => error!("mpsc send error: {}", e),
+                    Err(e) => info!("mpsc send error: {}", e),
                 }
             }
         });
