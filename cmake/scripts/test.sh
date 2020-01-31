@@ -46,4 +46,6 @@ popd
 sleep 3    # wait for other services
 ./teaclave_functional_tests
 
+./scripts/functional_tests.py -v
+
 popd
