@@ -59,7 +59,6 @@ impl Into<u32> for ECallCommand {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct StartServiceInput {
-    pub fds: Vec<c_int>,
     pub config: teaclave_config::RuntimeConfig,
 }
 

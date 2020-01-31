@@ -18,13 +18,9 @@
 #[macro_use]
 extern crate log;
 
-use teaclave_ipc::proto::{ECallCommand, StartServiceInput, StartServiceOutput};
-
 use anyhow::Result;
-use std::net::TcpListener;
-use std::os::unix::io::IntoRawFd;
-
 use teaclave_binder::TeeBinder;
+use teaclave_ipc::proto::{ECallCommand, StartServiceInput, StartServiceOutput};
 
 fn main() -> Result<()> {
     env_logger::init();
@@ -37,13 +33,7 @@ fn main() -> Result<()> {
 fn start_enclave_service(tee: &TeeBinder) -> Result<()> {
     info!("Start enclave service");
     let config = teaclave_config::RuntimeConfig::from_toml("runtime.config.toml")?;
-    let api_listen_address = &config.api_endpoints.authentication.listen_address;
-    let internal_listen_address = &config.internal_endpoints.authentication.listen_address;
-    let api_listener = TcpListener::bind(api_listen_address)?;
-    let internal_listener = TcpListener::bind(internal_listen_address)?;
-    let fds = vec![api_listener.into_raw_fd(), internal_listener.into_raw_fd()];
-
-    let input = StartServiceInput { fds, config };
+    let input = StartServiceInput { config };
     let cmd = ECallCommand::StartService;
     let _ = tee.invoke::<StartServiceInput, StartServiceOutput>(cmd.into(), input);
 
