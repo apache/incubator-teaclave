@@ -1,37 +1,34 @@
-use crate::teaclave_common;
 use crate::teaclave_frontend_service_proto as proto;
 use anyhow::anyhow;
 use anyhow::{Error, Result};
 use core::convert::TryInto;
-use serde::{Deserialize, Serialize};
 use teaclave_types::TeaclaveFileCryptoInfo;
+use url::Url;
 
 pub use proto::TeaclaveFrontend;
 pub use proto::TeaclaveFrontendClient;
 pub use proto::TeaclaveFrontendRequest;
 pub use proto::TeaclaveFrontendResponse;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug)]
 pub struct RegisterInputFileRequest {
-    pub uri: std::string::String,
+    pub url: Url,
     pub hash: std::string::String,
     pub crypto_info: TeaclaveFileCryptoInfo,
-    pub credential: teaclave_common::UserCredential,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug)]
 pub struct RegisterInputFileResponse {
     pub data_id: std::string::String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug)]
 pub struct RegisterOutputFileRequest {
-    pub uri: std::string::String,
+    pub url: Url,
     pub crypto_info: TeaclaveFileCryptoInfo,
-    pub credential: teaclave_common::UserCredential,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug)]
 pub struct RegisterOutputFileResponse {
     pub data_id: std::string::String,
 }
@@ -41,15 +38,11 @@ impl std::convert::TryFrom<proto::RegisterInputFileRequest> for RegisterInputFil
 
     fn try_from(proto: proto::RegisterInputFileRequest) -> Result<Self> {
         let ret = Self {
-            uri: proto.uri,
+            url: Url::parse(&proto.url)?,
             hash: proto.hash,
             crypto_info: proto
                 .crypto_info
                 .ok_or_else(|| anyhow!("missing crypto_info"))?
-                .try_into()?,
-            credential: proto
-                .credential
-                .ok_or_else(|| anyhow!("missing credential"))?
                 .try_into()?,
         };
 
@@ -60,10 +53,9 @@ impl std::convert::TryFrom<proto::RegisterInputFileRequest> for RegisterInputFil
 impl From<RegisterInputFileRequest> for proto::RegisterInputFileRequest {
     fn from(request: RegisterInputFileRequest) -> Self {
         Self {
-            uri: request.uri,
+            url: request.url.into_string(),
             hash: request.hash,
             crypto_info: Some(request.crypto_info.into()),
-            credential: Some(request.credential.into()),
         }
     }
 }
@@ -91,14 +83,10 @@ impl std::convert::TryFrom<proto::RegisterOutputFileRequest> for RegisterOutputF
 
     fn try_from(proto: proto::RegisterOutputFileRequest) -> Result<Self> {
         let ret = Self {
-            uri: proto.uri,
+            url: Url::parse(&proto.url)?,
             crypto_info: proto
                 .crypto_info
                 .ok_or_else(|| anyhow!("missing crypto_info"))?
-                .try_into()?,
-            credential: proto
-                .credential
-                .ok_or_else(|| anyhow!("missing credential"))?
                 .try_into()?,
         };
 
@@ -109,9 +97,8 @@ impl std::convert::TryFrom<proto::RegisterOutputFileRequest> for RegisterOutputF
 impl From<RegisterOutputFileRequest> for proto::RegisterOutputFileRequest {
     fn from(request: RegisterOutputFileRequest) -> Self {
         Self {
-            uri: request.uri,
+            url: request.url.into_string(),
             crypto_info: Some(request.crypto_info.into()),
-            credential: Some(request.credential.into()),
         }
     }
 }

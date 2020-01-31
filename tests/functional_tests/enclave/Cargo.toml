@@ -31,6 +31,7 @@ anyhow      = { version = "1.0.26" }
 serde       = { version = "1.0.92" }
 serde_json  = { version = "1.0.39" }
 thiserror   = { version = "1.0.9" }
+url         = { version = "2.1.1" }
 
 teaclave_attestation           = { path = "../../../attestation" }
 teaclave_config                = { path = "../../../config" }

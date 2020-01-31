@@ -1,7 +1,6 @@
 use anyhow::anyhow;
 use anyhow::{Error, Result};
 use core::convert::TryInto;
-use serde::{Deserialize, Serialize};
 
 use crate::teaclave_authentication_service_proto as proto;
 use crate::teaclave_common;
@@ -14,32 +13,32 @@ pub use proto::TeaclaveAuthenticationInternalClient;
 pub use proto::TeaclaveAuthenticationInternalRequest;
 pub use proto::TeaclaveAuthenticationInternalResponse;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug)]
 pub struct UserRegisterRequest {
     pub id: std::string::String,
     pub password: std::string::String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug)]
 pub struct UserRegisterResponse {}
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug)]
 pub struct UserLoginRequest {
     pub id: std::string::String,
     pub password: std::string::String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug)]
 pub struct UserLoginResponse {
     pub token: std::string::String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug)]
 pub struct UserAuthenticateRequest {
     pub credential: teaclave_common::UserCredential,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug)]
 pub struct UserAuthenticateResponse {
     pub accept: bool,
 }

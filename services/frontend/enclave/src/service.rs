@@ -50,7 +50,7 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
         request: Request<RegisterInputFileRequest>,
     ) -> TeaclaveServiceResponseResult<RegisterInputFileResponse> {
         match self.authenticate(&request) {
-            Ok(r) if r => (),
+            Ok(true) => (),
             _ => return Err(TeaclaveFrontendError::AuthenticationError.into()),
         }
         let response = RegisterInputFileResponse {
@@ -64,7 +64,7 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
         request: Request<RegisterOutputFileRequest>,
     ) -> TeaclaveServiceResponseResult<RegisterOutputFileResponse> {
         match self.authenticate(&request) {
-            Ok(r) if r => (),
+            Ok(true) => (),
             _ => return Err(TeaclaveFrontendError::AuthenticationError.into()),
         }
         let response = RegisterOutputFileResponse {
