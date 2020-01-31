@@ -23,6 +23,7 @@ RUN apt-get update && apt-get install -q -y \
     libtool \
     wget \
     python \
+    python3 \
     libssl-dev \
     libcurl3 \
     libprotobuf9v5
