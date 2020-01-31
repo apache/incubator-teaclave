@@ -3,23 +3,23 @@ name: sgx-debug-ubuntu-1804
 
 steps:
 - name: prepare
-  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
   commands:
   - . /root/.cargo/env
   - mkdir -p build
   - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DTEST_MODE=ON ..
 - name: check
-  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && make check
 - name: compile
-  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && make VERBOSE=1 -j2
 - name: test
-  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
   environment:
     IAS_KEY:
       from_secret: V5_KEY
@@ -53,23 +53,23 @@ name: sgx-release-ubuntu-1804
 
 steps:
 - name: prepare
-  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
   commands:
   - . /root/.cargo/env
   - mkdir -p build
   - cd build && cmake -DTEST_MODE=ON ..
 - name: check
-  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && make check
 - name: compile
-  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && make VERBOSE=1 -j2
 - name: test
-  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
   privileged: true
   environment:
     IAS_KEY:
@@ -103,23 +103,23 @@ name: sim-debug-ubuntu-1804
 
 steps:
 - name: prepare
-  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
   commands:
   - . /root/.cargo/env
   - mkdir -p build
   - cd build && cmake -DTEST_MODE=ON ..
 - name: check
-  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && make check
 - name: compile
-  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DSGX_SIM_MODE=ON .. && make VERBOSE=1 -j2
 - name: test
-  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && make run-test
@@ -134,23 +134,23 @@ name: sim-release-ubuntu-1804
 
 steps:
 - name: prepare
-  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
   commands:
   - . /root/.cargo/env
   - mkdir -p build
   - cd build && cmake -DTEST_MODE=YES ..
 - name: check
-  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && make check
 - name: compile
-  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && cmake -DSGX_SIM_MODE=ON .. && make VERBOSE=1 -j2
 - name: test
-  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && make run-test
@@ -165,23 +165,23 @@ name: sgx-debug-ubuntu-1604
 
 steps:
 - name: prepare
-  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1604:0.1.0
   commands:
   - . /root/.cargo/env
   - mkdir -p build
   - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DTEST_MODE=ON ..
 - name: check
-  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1604:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && make check
 - name: compile
-  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1604:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && make VERBOSE=1 -j2
 - name: test
-  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1604:0.1.0
   environment:
     IAS_KEY:
       from_secret: V5_KEY
@@ -215,23 +215,23 @@ name: sgx-release-ubuntu-1604
 
 steps:
 - name: prepare
-  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1604:0.1.0
   commands:
   - . /root/.cargo/env
   - mkdir -p build
   - cd build && cmake -DTEST_MODE=ON ..
 - name: check
-  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1604:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && make check
 - name: compile
-  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1604:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && make VERBOSE=1 -j2
 - name: test
-  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1604:0.1.0
   privileged: true
   environment:
     IAS_KEY:
@@ -265,23 +265,23 @@ name: sim-debug-ubuntu-1604
 
 steps:
 - name: prepare
-  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1604:0.1.0
   commands:
   - . /root/.cargo/env
   - mkdir -p build
   - cd build && cmake -DTEST_MODE=ON ..
 - name: check
-  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1604:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && make check
 - name: compile
-  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1604:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DSGX_SIM_MODE=ON .. && make VERBOSE=1 -j2
 - name: test
-  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1604:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && make run-test
@@ -296,23 +296,23 @@ name: sim-release-ubuntu-1604
 
 steps:
 - name: prepare
-  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1604:0.1.0
   commands:
   - . /root/.cargo/env
   - mkdir -p build
   - cd build && cmake ..
 - name: check
-  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1604:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && make check
 - name: compile
-  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1604:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && cmake -DSGX_SIM_MODE=ON -DTEST_MODE=ON .. && make VERBOSE=1 -j2
 - name: test
-  image: mesalocklinux/mesatee-build-ubuntu-1604:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1604:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && make run-test
@@ -327,18 +327,18 @@ name: lint
 
 steps:
 - name: prepare
-  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
   commands:
   - . /root/.cargo/env
   - mkdir -p build
   - cd build && cmake -DRUSTFLAGS="-D warnings" ..
 - name: check
-  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && make check
 - name: clippy
-  image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && make CLP=1
@@ -353,24 +353,24 @@ node:
 
 # steps:
 # - name: prepare
-#   image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+#   image: teaclave/teaclave-build-ubuntu-1804:0.1.0
 #   commands:
 #   - . /root/.cargo/env
 #   - mkdir -p build
 #   - cd build && cmake -DCMAKE_BUILD_TYPE=DEBUG -DCOV=ON -DTEST_MODE=ON ..
 # - name: check
-#   image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+#   image: teaclave/teaclave-build-ubuntu-1804:0.1.0
 #   commands:
 #   - . /root/.cargo/env
 #   - cd build && make check
 # - name: compile
-#   image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+#   image: teaclave/teaclave-build-ubuntu-1804:0.1.0
 #   commands:
 #   - . /root/.cargo/env
 #   - export RUSTFLAGS="-D warnings"
 #   - cd build && make VERBOSE=1 -j2
 # - name: test
-#   image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+#   image: teaclave/teaclave-build-ubuntu-1804:0.1.0
 #   environment:
 #     IAS_KEY:
 #       from_secret: V5_KEY
@@ -387,7 +387,7 @@ node:
 #   - cd build && make run-test
 # - name: coverage
 #   failure: ignore
-#   image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+#   image: teaclave/teaclave-build-ubuntu-1804:0.1.0
 #   commands:
 #   - cd build && make cov
 #   - bash -c "bash <(curl -s https://codecov.io/bash) -f intermediate/cov.info"
@@ -419,13 +419,13 @@ node:
 
 # steps:
 # - name: prepare
-#   image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+#   image: teaclave/teaclave-build-ubuntu-1804:0.1.0
 #   commands:
 #   - . /root/.cargo/env
 #   - mkdir -p build
 #   - cd build && cmake ..
 # - name: doc
-#   image: mesalocklinux/mesatee-build-ubuntu-1804:0.1.2
+#   image: teaclave/teaclave-build-ubuntu-1804:0.1.0
 #   failure: ignore
 #   commands:
 #   - . /root/.cargo/env
