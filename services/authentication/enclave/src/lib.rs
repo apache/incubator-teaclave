@@ -48,7 +48,7 @@ mod user_db;
 mod user_info;
 
 fn start_internal_endpoint(
-    listener: std::net::TcpListener,
+    addr: std::net::SocketAddr,
     db_client: user_db::DbClient,
     jwt_secret: Vec<u8>,
     attestation: Arc<RemoteAttestation>,
@@ -62,7 +62,7 @@ fn start_internal_endpoint(
     let mut server = SgxTrustedTlsServer::<
         TeaclaveAuthenticationInternalResponse,
         TeaclaveAuthenticationInternalRequest,
-    >::new(listener, &config);
+    >::new(addr, &config);
 
     let service = internal_service::TeaclaveAuthenticationInternalService {
         db_client,
@@ -78,7 +78,7 @@ fn start_internal_endpoint(
 }
 
 fn start_api_endpoint(
-    listener: std::net::TcpListener,
+    addr: std::net::SocketAddr,
     db_client: user_db::DbClient,
     jwt_secret: Vec<u8>,
     attestation: Arc<RemoteAttestation>,
@@ -92,7 +92,7 @@ fn start_api_endpoint(
     let mut server = SgxTrustedTlsServer::<
         TeaclaveAuthenticationApiResponse,
         TeaclaveAuthenticationApiRequest,
-    >::new(listener, &config);
+    >::new(addr, &config);
 
     let service = api_service::TeaclaveAuthenticationApiService {
         db_client,
@@ -110,9 +110,9 @@ fn start_api_endpoint(
 #[handle_ecall]
 fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> {
     debug!("handle_start_service");
-    let api_listener = std::net::TcpListener::new(args.fds[0])?;
-    let internal_listener = std::net::TcpListener::new(args.fds[1])?;
-    let ias_config = &args.config.ias.as_ref().unwrap();
+    let api_listen_address = args.config.api_endpoints.authentication.listen_address;
+    let internal_listen_address = args.config.internal_endpoints.authentication.listen_address;
+    let ias_config = args.config.ias.as_ref().unwrap();
     let attestation = Arc::new(
         RemoteAttestation::generate_and_endorse(&ias_config.ias_key, &ias_config.ias_spid).unwrap(),
     );
@@ -125,12 +125,17 @@ fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> 
     let attestation_ref = attestation.clone();
     let client = database.get_client();
     let api_endpoint_thread_handler = thread::spawn(move || {
-        start_api_endpoint(api_listener, client, api_jwt_secret, attestation_ref);
+        start_api_endpoint(api_listen_address, client, api_jwt_secret, attestation_ref);
     });
 
     let client = database.get_client();
     let internal_endpoint_thread_handler = thread::spawn(move || {
-        start_internal_endpoint(internal_listener, client, internal_jwt_secret, attestation);
+        start_internal_endpoint(
+            internal_listen_address,
+            client,
+            internal_jwt_secret,
+            attestation,
+        );
     });
 
     api_endpoint_thread_handler.join().unwrap();

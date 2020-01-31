@@ -11,7 +11,7 @@ where
     U: Serialize + std::fmt::Debug,
     V: for<'de> Deserialize<'de> + std::fmt::Debug,
 {
-    listener: std::net::TcpListener,
+    addr: std::net::SocketAddr,
     tls_config: std::sync::Arc<rustls::ServerConfig>,
     maker: std::marker::PhantomData<(U, V)>,
 }
@@ -22,11 +22,11 @@ where
     V: for<'de> Deserialize<'de> + std::fmt::Debug,
 {
     pub fn new(
-        listener: std::net::TcpListener,
+        addr: std::net::SocketAddr,
         server_config: &SgxTrustedTlsServerConfig,
     ) -> SgxTrustedTlsServer<U, V> {
         Self {
-            listener,
+            addr,
             tls_config: server_config.config.clone(),
             maker: std::marker::PhantomData::<(U, V)>,
         }
@@ -38,7 +38,8 @@ where
     {
         let n_workers = utils::get_tcs_num();
         let pool = threadpool::ThreadPool::new(n_workers);
-        for stream in self.listener.incoming() {
+        let listener = std::net::TcpListener::bind(self.addr)?;
+        for stream in listener.incoming() {
             let session = rustls::ServerSession::new(&self.tls_config);
             let tls_stream = rustls::StreamOwned::new(session, stream.unwrap());
             let mut transport = SgxTrustedTlsTransport::new(tls_stream);

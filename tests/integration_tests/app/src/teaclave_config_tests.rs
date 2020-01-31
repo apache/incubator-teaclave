@@ -11,9 +11,12 @@ fn test_runtime_config() {
     let config =
         teaclave_config::RuntimeConfig::from_toml("./fixtures/runtime.config.toml").unwrap();
     let authentication_config = config.api_endpoints.authentication;
-    assert_eq!(authentication_config.listen_address, "0.0.0.0:7776");
+    assert_eq!(
+        authentication_config.listen_address,
+        "0.0.0.0:7776".parse().unwrap()
+    );
     let dbs_config = config.internal_endpoints.dbs;
-    assert_eq!(dbs_config.listen_address, "0.0.0.0:7778");
+    assert_eq!(dbs_config.listen_address, "0.0.0.0:7778".parse().unwrap());
     assert_eq!(
         dbs_config.inbound_services,
         Some(vec!["frontend".to_string()])

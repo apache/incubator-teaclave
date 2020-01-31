@@ -9,6 +9,7 @@ use std::untrusted::fs;
 use anyhow::{bail, Context, Result};
 use serde::{Deserialize, Serialize};
 use std::env;
+use std::net;
 use std::path::Path;
 use std::string::String;
 use std::vec::Vec;
@@ -37,12 +38,12 @@ pub struct InternalEndpointsConfig {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ApiEndpoint {
-    pub listen_address: String,
+    pub listen_address: net::SocketAddr,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InternalEndpoint {
-    pub listen_address: String,
+    pub listen_address: net::SocketAddr,
     pub advertised_address: String,
     pub inbound_services: Option<Vec<String>>,
 }

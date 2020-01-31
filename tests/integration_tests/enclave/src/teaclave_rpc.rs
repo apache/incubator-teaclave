@@ -2,7 +2,6 @@ use anyhow::Result;
 use rustls::internal::pemfile;
 use serde::{Deserialize, Serialize};
 use std::io;
-use std::net::TcpListener;
 use std::prelude::v1::*;
 use std::untrusted::fs;
 use teaclave_rpc::channel::*;
@@ -103,11 +102,11 @@ fn start_echo_service() {
         let private_key =
             &pemfile::pkcs8_private_keys(&mut io::BufReader::new(fs::File::open(END_KEY).unwrap()))
                 .unwrap()[0];
-        let listener = TcpListener::bind("127.0.0.1:12345").unwrap();
+        let addr = "127.0.0.1:12345".parse().unwrap();
         let config =
             SgxTrustedTlsServerConfig::new_without_verifier(&cert[0].as_ref(), &private_key.0)
                 .unwrap();
-        let mut server = SgxTrustedTlsServer::<EchoResponse, EchoRequest>::new(listener, &config);
+        let mut server = SgxTrustedTlsServer::<EchoResponse, EchoRequest>::new(addr, &config);
         server.start(EchoService).unwrap();
     });
     thread::sleep(Duration::from_secs(3));

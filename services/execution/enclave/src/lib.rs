@@ -53,8 +53,8 @@ register_ecall_handler!(
 
 #[handle_ecall]
 fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> {
-    let listener = std::net::TcpListener::new(args.fds[0])?;
-    let ias_config = &args.config.ias.as_ref().unwrap();
+    let listen_address = args.config.internal_endpoints.execution.listen_address;
+    let ias_config = args.config.ias.as_ref().unwrap();
     let attestation =
         RemoteAttestation::generate_and_endorse(&ias_config.ias_key, &ias_config.ias_spid).unwrap();
     let config = SgxTrustedTlsServerConfig::new_without_verifier(
@@ -65,7 +65,8 @@ fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> 
 
     let mut server =
         SgxTrustedTlsServer::<TeaclaveExecutionResponse, TeaclaveExecutionRequest>::new(
-            listener, &config,
+            listen_address,
+            &config,
         );
     match server.start(service::TeaclaveExecutionService::new()) {
         Ok(_) => (),
