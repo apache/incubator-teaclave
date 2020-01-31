@@ -1,7 +1,7 @@
 use crate::protocol;
 use crate::Request;
 use crate::TeaclaveService;
-use anyhow::{bail, Result};
+use anyhow::Result;
 use log::debug;
 use rustls;
 use serde::{Deserialize, Serialize};
@@ -77,7 +77,9 @@ where
         V: for<'de> Deserialize<'de> + std::fmt::Debug,
         X: TeaclaveService<V, U>,
     {
-        let mut protocol = protocol::JsonProtocol::new(&mut self.stream);
+        use crate::protocol::{JsonProtocol, JsonProtocolResult};
+        use teaclave_types::TeaclaveServiceResponseError;
+        let mut protocol = JsonProtocol::new(&mut self.stream);
 
         loop {
             let request: Request<V> = match protocol.read_message::<Request<V>>() {
@@ -87,13 +89,20 @@ where
                         debug!("Connection disconnected.");
                         return Ok(());
                     }
-                    _ => bail!("InternalError"),
+                    protocol::ProtocolError::SerdeError(_) => {
+                        debug!("{:?}", e);
+                        let response: JsonProtocolResult<U, TeaclaveServiceResponseError> =
+                            Err(TeaclaveServiceResponseError::RequestError(
+                                "invalid request".to_string(),
+                            ))
+                            .into();
+                        protocol.write_message(response)?;
+                        continue;
+                    }
                 },
             };
-            let response: protocol::JsonProtocolResult<
-                U,
-                teaclave_types::TeaclaveServiceResponseError,
-            > = service.handle_request(request).into();
+            let response: JsonProtocolResult<U, TeaclaveServiceResponseError> =
+                service.handle_request(request).into();
             protocol.write_message(response)?;
         }
     }

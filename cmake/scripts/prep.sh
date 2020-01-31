@@ -27,6 +27,7 @@ rm -rf ${MESATEE_SERVICE_INSTALL_DIR}/test_cases
 ln -s ${MESATEE_TEST_INSTALL_DIR}/test_cases ${MESATEE_SERVICE_INSTALL_DIR}/test_cases
 cp -r ${CMAKE_SOURCE_DIR}/tests/fixtures/ ${MESATEE_SERVICE_INSTALL_DIR}
 cp -r ${CMAKE_SOURCE_DIR}/tests/fixtures/ ${MESATEE_TEST_INSTALL_DIR}
+cp -r ${CMAKE_SOURCE_DIR}/tests/scripts/ ${MESATEE_TEST_INSTALL_DIR}
 # create the following symlinks to make remapped paths accessible and avoid repeated building
 mkdir -p /tmp/mesatee_symlinks
 ln -snf ${HOME}/.cargo /tmp/mesatee_symlinks/cargo_home

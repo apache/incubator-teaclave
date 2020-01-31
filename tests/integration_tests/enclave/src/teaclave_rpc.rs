@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 use std::io;
 use std::net::TcpListener;
 use std::prelude::v1::*;
-use std::thread;
 use std::untrusted::fs;
 use teaclave_rpc::channel::*;
 use teaclave_rpc::config::*;
@@ -86,12 +85,16 @@ impl EchoClient {
 
 pub fn run_tests() -> bool {
     use teaclave_test_utils::*;
+
+    start_echo_service();
+
     run_tests!(echo_success)
 }
 
-fn echo_success() {
+fn start_echo_service() {
     use super::*;
-
+    use std::thread;
+    use std::time::Duration;
     thread::spawn(move || {
         let cert = pemfile::certs(&mut io::BufReader::new(
             fs::File::open(END_FULLCHAIN).unwrap(),
@@ -107,7 +110,11 @@ fn echo_success() {
         let mut server = SgxTrustedTlsServer::<EchoResponse, EchoRequest>::new(listener, &config);
         server.start(EchoService).unwrap();
     });
-    thread::sleep(std::time::Duration::from_secs(1));
+    thread::sleep(Duration::from_secs(3));
+}
+
+fn echo_success() {
+    use super::*;
 
     let channel = Endpoint::new("localhost:12345").connect().unwrap();
     let mut client = EchoClient::new(channel).unwrap();
