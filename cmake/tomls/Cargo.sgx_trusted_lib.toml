@@ -14,6 +14,8 @@ exclude = [
 ]
 
 [patch.crates-io]
+# Patched sgx crates to vendored, uncomment below crate when needed.
+
 # Rust SGX SDK
 sgx_alloc         = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.0" }
 sgx_build_helper  = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.0" }
@@ -25,34 +27,34 @@ sgx_tprotected_fs = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = 
 sgx_trts          = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.0" }
 sgx_tse           = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.0" }
 sgx_tstd          = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.0" }
-sgx_tunittest     = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.0" }
+# sgx_tunittest     = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.0" }
 sgx_types         = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.0" }
 sgx_unwind        = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.0" }
 
 # SGX crates
-adler32           = { git = "https://github.com/mesalock-linux/adler32-rs-sgx" }
+# adler32           = { git = "https://github.com/mesalock-linux/adler32-rs-sgx" }
 aho-corasick      = { git = "https://github.com/mesalock-linux/aho-corasick-sgx" }
 base64            = { git = "https://github.com/mesalock-linux/rust-base64-sgx" }
 byteorder         = { git = "https://github.com/mesalock-linux/byteorder-sgx" }
 bytes             = { git = "https://github.com/mesalock-linux/bytes-sgx" }
 chrono            = { git = "https://github.com/mesalock-linux/chrono-sgx" }
-color_quant       = { git = "https://github.com/mesalock-linux/color_quant-sgx" }
-crc32fast         = { git = "https://github.com/mesalock-linux/rust-crc32fast-sgx" }
-deflate           = { git = "https://github.com/mesalock-linux/deflate-rs-sgx", branch = "dev" }
+# color_quant       = { git = "https://github.com/mesalock-linux/color_quant-sgx" }
+# crc32fast         = { git = "https://github.com/mesalock-linux/rust-crc32fast-sgx" }
+# deflate           = { git = "https://github.com/mesalock-linux/deflate-rs-sgx", branch = "dev" }
 gbdt              = { git = "https://github.com/mesalock-linux/gbdt-rs", branch = "mesatee-sgx" }
 getrandom         = { git = "https://github.com/mesalock-linux/getrandom-sgx" }
-gif               = { git = "https://github.com/mesalock-linux/image-gif-sgx" }
-image             = { git = "https://github.com/mesalock-linux/image-sgx" }
-inflate           = { git = "https://github.com/mesalock-linux/inflate-sgx" }
+# gif               = { git = "https://github.com/mesalock-linux/image-gif-sgx" }
+# image             = { git = "https://github.com/mesalock-linux/image-sgx" }
+# inflate           = { git = "https://github.com/mesalock-linux/inflate-sgx" }
 itoa              = { git = "https://github.com/mesalock-linux/itoa-sgx" }
-jpeg-decoder      = { git = "https://github.com/mesalock-linux/jpeg-decoder-sgx" }
+# jpeg-decoder      = { git = "https://github.com/mesalock-linux/jpeg-decoder-sgx" }
 log               = { git = "https://github.com/mesalock-linux/log-sgx" }
-lzw               = { git = "https://github.com/mesalock-linux/lzw-sgx" }
+# lzw               = { git = "https://github.com/mesalock-linux/lzw-sgx" }
 num-bigint        = { git = "https://github.com/mesalock-linux/num-bigint-sgx" }
 num-traits        = { git = "https://github.com/mesalock-linux/num-traits-sgx" }
-parity-wasm       = { git = "https://github.com/mesalock-linux/parity-wasm-sgx" }
+# parity-wasm       = { git = "https://github.com/mesalock-linux/parity-wasm-sgx" }
 percent-encoding  = { git = "https://github.com/mesalock-linux/rust-url-sgx" }
-png               = { git = "https://github.com/mesalock-linux/image-png-sgx" }
+# png               = { git = "https://github.com/mesalock-linux/image-png-sgx" }
 profiler_builtins = { git = "https://github.com/mesalock-linux/sgx-fake-profiler-builtins" }
 prost             = { git = "https://github.com/mesalock-linux/prost-sgx" }
 quick-error       = { git = "https://github.com/mesalock-linux/quick-error-sgx" }
@@ -60,16 +62,16 @@ rand              = { git = "https://github.com/mesalock-linux/rand-sgx", tag = 
 regex             = { git = "https://github.com/mesalock-linux/regex-sgx" }
 ring              = { git = "https://github.com/mesalock-linux/ring-sgx", tag = "v0.16.5" }
 rustls            = { git = "https://github.com/mesalock-linux/rustls", branch = "mesalock_sgx" }
-rusty-machine     = { git = "https://github.com/mesalock-linux/rusty-machine-sgx" }
+# rusty-machine     = { git = "https://github.com/mesalock-linux/rusty-machine-sgx" }
 sct               = { git = "https://github.com/mesalock-linux/sct.rs", branch = "mesalock_sgx" }
 serde             = { git = "https://github.com/mesalock-linux/serde-sgx" }
 serde_derive      = { git = "https://github.com/mesalock-linux/serde-sgx" }
 serde_json        = { git = "https://github.com/mesalock-linux/serde-json-sgx" }
-tiff              = { git = "https://github.com/mesalock-linux/image-tiff-sgx" }
+# tiff              = { git = "https://github.com/mesalock-linux/image-tiff-sgx" }
 toml              = { git = "https://github.com/mesalock-linux/toml-rs-sgx" }
 uuid              = { git = "https://github.com/mesalock-linux/uuid-sgx" }
-wabt              = { git = "https://github.com/mesalock-linux/wabt-rs-sgx", branch = "v0.9-core" }
-wasmi             = { git = "https://github.com/mesalock-linux/wasmi-sgx" }
+# wabt              = { git = "https://github.com/mesalock-linux/wabt-rs-sgx", branch = "v0.9-core" }
+# wasmi             = { git = "https://github.com/mesalock-linux/wasmi-sgx" }
 webpki            = { git = "https://github.com/mesalock-linux/webpki", branch = "mesalock_sgx" }
 webpki-roots      = { git = "https://github.com/mesalock-linux/webpki-roots", branch = "mesalock_sgx" }
 yasna             = { git = "https://github.com/mesalock-linux/yasna.rs-sgx" }
