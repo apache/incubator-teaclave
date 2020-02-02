@@ -40,7 +40,7 @@ macro_rules! register_ecall_handler {
 
         struct ServeInstance<U, V>
         where
-            U: HandleRequest<V> + serde::de::DeserializeOwned,
+            U: HandleRequest<V> + for<'de> serde::Deserialize<'de>,
             V: serde::Serialize,
         {
             u: std::marker::PhantomData<U>,
@@ -49,7 +49,7 @@ macro_rules! register_ecall_handler {
 
         impl<U, V> ServeInstance<U, V>
         where
-            U: HandleRequest<V> + serde::de::DeserializeOwned,
+            U: HandleRequest<V> + for<'de> serde::Deserialize<'de>,
             V: serde::Serialize,
         {
             fn new() -> ServeInstance<U, V> {
@@ -62,7 +62,7 @@ macro_rules! register_ecall_handler {
 
         impl<U, V> IpcService<U, V> for ServeInstance<U, V>
         where
-            U: HandleRequest<V> + serde::de::DeserializeOwned,
+            U: HandleRequest<V> + for<'de> serde::Deserialize<'de>,
             V: serde::Serialize,
         {
             fn handle_invoke(&self, input: U) -> anyhow::Result<V> {
@@ -72,7 +72,7 @@ macro_rules! register_ecall_handler {
 
         fn dispatch_helper<U, V>(input: &[u8]) -> anyhow::Result<Vec<u8>>
         where
-            U: HandleRequest<V> + serde::de::DeserializeOwned,
+            U: HandleRequest<V> + for<'de> serde::Deserialize<'de>,
             V: serde::Serialize,
         {
             let instance = ServeInstance::<U, V>::new();

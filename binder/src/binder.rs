@@ -18,8 +18,7 @@
 use sgx_types::*;
 use sgx_urts::SgxEnclave;
 
-use serde::de::DeserializeOwned;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use anyhow::Result;
 use teaclave_ipc::channel::ECallChannel;
@@ -53,7 +52,7 @@ impl TeeBinder {
     pub fn invoke<U, V>(&self, cmd: u32, args_info: U) -> Result<V>
     where
         U: Serialize,
-        V: DeserializeOwned,
+        V: for<'de> Deserialize<'de>,
     {
         let mut channel = ECallChannel::new(self.enclave.geteid());
         channel.invoke::<U, V>(cmd, args_info)
