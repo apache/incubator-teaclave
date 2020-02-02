@@ -33,7 +33,7 @@ pub struct ECallReceiver {}
 impl IpcReceiver for ECallReceiver {
     fn dispatch<U, V, X>(input_payload: &[u8], x: X) -> Result<Vec<u8>>
     where
-        U: serde::de::DeserializeOwned,
+        U: for<'de> serde::Deserialize<'de>,
         V: serde::Serialize,
         X: IpcService<U, V>,
     {

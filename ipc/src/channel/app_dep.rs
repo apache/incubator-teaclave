@@ -19,8 +19,7 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use serde::de::DeserializeOwned;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use sgx_types::{sgx_enclave_id_t, sgx_status_t};
 
@@ -136,7 +135,7 @@ impl IpcSender for ECallChannel {
     fn invoke<U, V>(&mut self, cmd: u32, input: U) -> Result<V>
     where
         U: Serialize,
-        V: DeserializeOwned,
+        V: for<'de> Deserialize<'de>,
     {
         let request_payload = serde_json::to_vec(&input)?;
         let result_buf = self.ecall_ipc_app_to_tee(cmd, request_payload)?;

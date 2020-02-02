@@ -27,8 +27,7 @@ extern crate log;
 use std::prelude::v1::*;
 
 use anyhow::Result;
-use serde::de::DeserializeOwned;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 // Intra-Process-Communication
 // Developer should split a process into two partitions, App and TEE.
@@ -40,7 +39,7 @@ pub trait IpcSender {
     fn invoke<U, V>(&mut self, cmd: u32, input: U) -> Result<V>
     where
         U: Serialize,
-        V: DeserializeOwned;
+        V: for<'de> Deserialize<'de>;
 }
 
 // Service Instance of an IPC function
@@ -48,7 +47,7 @@ pub trait IpcSender {
 // Generic V: ReturnInfo type
 pub trait IpcService<U, V>
 where
-    U: DeserializeOwned,
+    U: for<'de> Deserialize<'de>,
     V: Serialize,
 {
     fn handle_invoke(&self, input: U) -> Result<V>;
@@ -62,7 +61,7 @@ where
 pub trait IpcReceiver {
     fn dispatch<U, V, X>(input: &[u8], x: X) -> Result<Vec<u8>>
     where
-        U: DeserializeOwned,
+        U: for<'de> Deserialize<'de>,
         V: Serialize,
         X: IpcService<U, V>;
 }
