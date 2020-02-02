@@ -16,10 +16,14 @@ pub struct UserCredential {
 }
 
 impl UserCredential {
-    pub fn new(id: &str, token: &str) -> Self {
+    pub fn new<S, T>(id: S, token: T) -> Self
+    where
+        S: Into<String>,
+        T: Into<String>,
+    {
         Self {
-            id: id.to_owned(),
-            token: token.to_owned(),
+            id: id.into(),
+            token: token.into(),
         }
     }
 }
