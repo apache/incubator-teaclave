@@ -85,7 +85,7 @@ impl TeaclaveFrontendService {
             .metadata
             .get("token")
             .ok_or_else(|| anyhow!("Missing credential"))?;
-        let credential = UserCredential::new(&id, &token);
+        let credential = UserCredential::new(id, token);
         let auth_request = UserAuthenticateRequest { credential };
         let auth_response = self
             .authentication_client

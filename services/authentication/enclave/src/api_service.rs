@@ -111,10 +111,7 @@ pub mod tests {
     }
 
     pub fn test_user_register() {
-        let request = UserRegisterRequest {
-            id: "test_register_id".to_string(),
-            password: "test_password".to_string(),
-        };
+        let request = UserRegisterRequest::new("test_register_id", "test_password");
         let request = Request::new(request);
         let service = get_mock_service();
         assert!(service.user_register(request).is_ok());
@@ -122,16 +119,10 @@ pub mod tests {
 
     pub fn test_user_login() {
         let service = get_mock_service();
-        let request = UserRegisterRequest {
-            id: "test_login_id".to_string(),
-            password: "test_password".to_string(),
-        };
+        let request = UserRegisterRequest::new("test_login_id", "test_password");
         let request = Request::new(request);
         assert!(service.user_register(request).is_ok());
-        let request = UserLoginRequest {
-            id: "test_login_id".to_string(),
-            password: "test_password".to_string(),
-        };
+        let request = UserLoginRequest::new("test_login_id", "test_password");
         let request = Request::new(request);
         let response = service.user_login(request);
         assert!(response.is_ok());
@@ -140,10 +131,7 @@ pub mod tests {
         assert!(user.validate_token(&service.jwt_secret, &token));
 
         info!("saved user_info: {:?}", user);
-        let request = UserLoginRequest {
-            id: "test_login_id".to_string(),
-            password: "test_password1".to_string(),
-        };
+        let request = UserLoginRequest::new("test_login_id", "test_password1");
         let request = Request::new(request);
         assert!(service.user_login(request).is_err());
     }

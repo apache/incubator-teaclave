@@ -1,6 +1,7 @@
 use anyhow::anyhow;
 use anyhow::{Error, Result};
 use core::convert::TryInto;
+use std::prelude::v1::*;
 
 use crate::teaclave_authentication_service_proto as proto;
 use crate::teaclave_common;
@@ -19,8 +20,21 @@ pub struct UserRegisterRequest {
     pub password: std::string::String,
 }
 
-#[derive(Debug)]
-pub struct UserRegisterResponse {}
+impl UserRegisterRequest {
+    pub fn new<S, T>(id: S, password: T) -> Self
+    where
+        S: Into<String>,
+        T: Into<String>,
+    {
+        Self {
+            id: id.into(),
+            password: password.into(),
+        }
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct UserRegisterResponse;
 
 #[derive(Debug)]
 pub struct UserLoginRequest {
@@ -28,9 +42,33 @@ pub struct UserLoginRequest {
     pub password: std::string::String,
 }
 
+impl UserLoginRequest {
+    pub fn new<S, T>(id: S, password: T) -> Self
+    where
+        S: Into<String>,
+        T: Into<String>,
+    {
+        Self {
+            id: id.into(),
+            password: password.into(),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct UserLoginResponse {
     pub token: std::string::String,
+}
+
+impl UserLoginResponse {
+    pub fn new<S>(token: S) -> Self
+    where
+        S: Into<String>,
+    {
+        Self {
+            token: token.into(),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -38,9 +76,21 @@ pub struct UserAuthenticateRequest {
     pub credential: teaclave_common::UserCredential,
 }
 
+impl UserAuthenticateRequest {
+    pub fn new(credential: teaclave_common::UserCredential) -> Self {
+        Self { credential }
+    }
+}
+
 #[derive(Debug)]
 pub struct UserAuthenticateResponse {
     pub accept: bool,
+}
+
+impl UserAuthenticateResponse {
+    pub fn new(accept: bool) -> Self {
+        Self { accept }
+    }
 }
 
 impl std::convert::TryFrom<proto::UserRegisterRequest> for UserRegisterRequest {
