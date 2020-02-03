@@ -21,11 +21,7 @@ pub struct UserRegisterRequest {
 }
 
 impl UserRegisterRequest {
-    pub fn new<S, T>(id: S, password: T) -> Self
-    where
-        S: Into<String>,
-        T: Into<String>,
-    {
+    pub fn new(id: impl Into<String>, password: impl Into<String>) -> Self {
         Self {
             id: id.into(),
             password: password.into(),
@@ -43,11 +39,7 @@ pub struct UserLoginRequest {
 }
 
 impl UserLoginRequest {
-    pub fn new<S, T>(id: S, password: T) -> Self
-    where
-        S: Into<String>,
-        T: Into<String>,
-    {
+    pub fn new(id: impl Into<String>, password: impl Into<String>) -> Self {
         Self {
             id: id.into(),
             password: password.into(),
@@ -61,10 +53,7 @@ pub struct UserLoginResponse {
 }
 
 impl UserLoginResponse {
-    pub fn new<S>(token: S) -> Self
-    where
-        S: Into<String>,
-    {
+    pub fn new(token: impl Into<String>) -> Self {
         Self {
             token: token.into(),
         }
