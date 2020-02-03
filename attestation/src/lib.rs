@@ -50,15 +50,19 @@ pub struct DcapConfig {}
 
 impl AttestationConfig {
     pub fn ias(ias_key: &str, ias_spid: &str) -> Self {
-        use core::convert::TryFrom;
+        if cfg!(sgx_sim) {
+            Self::NoAttestation
+        } else {
+            use core::convert::TryFrom;
 
-        let mut spid = sgx_types::sgx_spid_t::default();
-        let hex = hex::decode(ias_spid).expect("Illegal SPID provided");
-        spid.id = <[u8; 16]>::try_from(hex.as_slice()).expect("Illegal SPID provided");
-        Self::SgxIas(IasConfig {
-            api_key: ias_key.to_string(),
-            spid,
-        })
+            let mut spid = sgx_types::sgx_spid_t::default();
+            let hex = hex::decode(ias_spid).expect("Illegal SPID provided");
+            spid.id = <[u8; 16]>::try_from(hex.as_slice()).expect("Illegal SPID provided");
+            Self::SgxIas(IasConfig {
+                api_key: ias_key.to_string(),
+                spid,
+            })
+        }
     }
 }
 
