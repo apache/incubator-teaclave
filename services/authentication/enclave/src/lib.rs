@@ -28,7 +28,7 @@ use rand::RngCore;
 use std::prelude::v1::*;
 use std::sync::Arc;
 use std::thread;
-use teaclave_attestation::RemoteAttestation;
+use teaclave_attestation::{AttestationConfig, RemoteAttestation};
 use teaclave_ipc::proto::{
     ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
     StartServiceInput, StartServiceOutput,
@@ -109,7 +109,11 @@ fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> 
     let internal_listen_address = args.config.internal_endpoints.authentication.listen_address;
     let ias_config = args.config.ias.as_ref().unwrap();
     let attestation = Arc::new(
-        RemoteAttestation::generate_and_endorse(&ias_config.ias_key, &ias_config.ias_spid).unwrap(),
+        RemoteAttestation::generate_and_endorse(&AttestationConfig::ias(
+            &ias_config.ias_key,
+            &ias_config.ias_spid,
+        ))
+        .unwrap(),
     );
     let database = user_db::Database::open()?;
     let mut api_jwt_secret = vec![0; user_info::JWT_SECRET_LEN];

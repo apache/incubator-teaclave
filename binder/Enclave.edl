@@ -40,23 +40,18 @@ enclave {
 
     include "sgx_quote.h"
     untrusted {
-        sgx_status_t ocall_sgx_init_quote([out] sgx_target_info_t *p_target_info,
-                                          [out] sgx_epid_group_id_t *p_gid);
-
         int ocall_sgx_get_ias_socket();
 
-        sgx_status_t ocall_sgx_calc_quote_size([in, size=sig_rl_size] uint8_t * p_sig_rl,
-                                               uint32_t sig_rl_size,
-                                               [out] uint32_t *p_quote_size);
+        sgx_status_t ocall_sgx_init_quote([out] sgx_att_key_id_t *p_att_key_id,
+                                          [out] sgx_target_info_t *p_target_info);
+
+        sgx_status_t ocall_sgx_get_quote_size([in] sgx_att_key_id_t *p_att_key_id,
+                                              [out] uint32_t *p_quote_size);
 
         sgx_status_t ocall_sgx_get_quote([in] sgx_report_t *p_report,
-                                         sgx_quote_sign_type_t quote_type,
-                                         [in] sgx_spid_t *p_spid,
-                                         [in] sgx_quote_nonce_t *p_nonce,
-                                         [in, size=sig_rl_size] uint8_t *p_sig_rl,
-                                         uint32_t sig_rl_size,
-                                         [out] sgx_report_t *p_qe_report,
-                                         [out, size=quote_size] sgx_quote_t *p_quote,
+                                         [in] sgx_att_key_id_t *p_att_key_id,
+                                         [in, out] sgx_qe_report_info_t *p_qe_report_info,
+                                         [out, size=quote_size] uint8_t *p_quote,
                                          uint32_t quote_size);
     };
 };

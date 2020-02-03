@@ -16,7 +16,7 @@
 // under the License.
 
 use crate::AttestationError;
-use crate::IasReport;
+use crate::EndorsedAttestationReport;
 use anyhow::Error;
 use anyhow::Result;
 use anyhow::{anyhow, bail};
@@ -34,18 +34,24 @@ extern "C" {
     fn ocall_sgx_get_ias_socket(p_retval: *mut i32) -> sgx_status_t;
 }
 
-impl IasReport {
-    pub(crate) fn new(
+impl EndorsedAttestationReport {
+    pub(crate) fn from_ias(
         pub_k: sgx_types::sgx_ec256_public_t,
         ias_key: &str,
-        ias_spid: &str,
+        ias_spid: &sgx_spid_t,
     ) -> anyhow::Result<Self> {
         use crate::platform;
-        let (target_info, epid_group_id) = platform::init_sgx_quote()?;
         let mut ias_client = IasClient::new(ias_key);
-        let sigrl = ias_client.get_sigrl(u32::from_le_bytes(epid_group_id))?;
-        let sgx_report = platform::create_sgx_report(pub_k, target_info)?;
-        let quote = platform::get_sgx_quote(&sigrl, sgx_report, target_info, ias_spid)?;
+        let (mut ak_id, qe_target_info) = platform::init_sgx_quote()?;
+
+        // For IAS-based attestation, we need to fill our SPID (obtained from Intel)
+        // into the attestation key id.
+        const SPID_OFFSET: usize = std::mem::size_of::<sgx_ql_att_key_id_t>();
+        ak_id.att_key_id[SPID_OFFSET..(SPID_OFFSET + ias_spid.id.len())]
+            .clone_from_slice(&ias_spid.id);
+
+        let sgx_report = platform::create_sgx_isv_enclave_report(pub_k, qe_target_info)?;
+        let quote = platform::get_sgx_quote(&ak_id, sgx_report)?;
         let ias_report = ias_client.get_report(&quote)?;
         Ok(ias_report)
     }
@@ -83,51 +89,7 @@ impl IasClient {
         Ok(stream)
     }
 
-    fn get_sigrl(&mut self, epid_group_id: u32) -> Result<Vec<u8>> {
-        let sigrl_uri = format!("/sgx/dev/attestation/v3/sigrl/{:08x}", epid_group_id);
-        let request = format!(
-            "GET {} HTTP/1.1\r\n\
-             HOST: {}\r\n\
-             Ocp-Apim-Subscription-Key: {}\r\n\
-             Connection: Close\r\n\r\n",
-            sigrl_uri, self.ias_hostname, self.ias_key
-        );
-
-        let mut stream = self.new_tls_stream()?;
-        stream.write_all(request.as_bytes())?;
-        let mut response = Vec::new();
-        stream.read_to_end(&mut response)?;
-
-        let mut headers = [httparse::EMPTY_HEADER; 16];
-        let mut http_response = httparse::Response::new(&mut headers);
-        let header_len = match http_response
-            .parse(&response)
-            .map_err(|_| Error::new(AttestationError::IasError))?
-        {
-            httparse::Status::Complete(s) => s,
-            _ => bail!(AttestationError::IasError),
-        };
-
-        let header_map = parse_headers(&http_response);
-
-        if !header_map.contains_key("Content-Length")
-            || header_map
-                .get("Content-Length")
-                .unwrap()
-                .parse::<u32>()
-                .unwrap_or(0)
-                == 0
-        {
-            Ok(Vec::new())
-        } else {
-            let base64 = std::str::from_utf8(&response[header_len..])?;
-
-            let decoded = base64::decode(base64)?;
-            Ok(decoded)
-        }
-    }
-
-    fn get_report(&mut self, quote: &[u8]) -> Result<IasReport> {
+    fn get_report(&mut self, quote: &[u8]) -> Result<EndorsedAttestationReport> {
         debug!("get_report");
         let report_uri = "/sgx/dev/attestation/v3/report";
         let encoded_quote = base64::encode(quote);
@@ -161,10 +123,10 @@ impl IasClient {
         debug!("http_response.parse");
         let header_len = match http_response
             .parse(&response)
-            .map_err(|_| Error::new(AttestationError::IasError))?
+            .map_err(|_| Error::new(AttestationError::AttestationServiceError))?
         {
             httparse::Status::Complete(s) => s,
-            _ => bail!(AttestationError::IasError),
+            _ => bail!(AttestationError::AttestationServiceError),
         };
 
         let header_map = parse_headers(&http_response);
@@ -178,19 +140,19 @@ impl IasClient {
                 .unwrap_or(0)
                 == 0
         {
-            bail!(AttestationError::IasError);
+            bail!(AttestationError::AttestationServiceError);
         }
 
         debug!("get_signature");
         let signature = header_map
             .get("X-IASReport-Signature")
-            .ok_or_else(|| Error::new(AttestationError::IasError))?;
+            .ok_or_else(|| Error::new(AttestationError::AttestationServiceError))?;
         let signature = base64::decode(signature)?;
         debug!("get_signing_cert");
         let signing_cert = {
             let cert_str = header_map
                 .get("X-IASReport-Signing-Certificate")
-                .ok_or_else(|| Error::new(AttestationError::IasError))?;
+                .ok_or_else(|| Error::new(AttestationError::AttestationServiceError))?;
             let decoded_cert = percent_encoding::percent_decode_str(cert_str).decode_utf8()?;
             let certs = rustls::internal::pemfile::certs(&mut decoded_cert.as_bytes())
                 .map_err(|_| anyhow!("pemfile error"))?;
@@ -198,7 +160,7 @@ impl IasClient {
         };
 
         let report = response[header_len..].to_vec();
-        Ok(IasReport {
+        Ok(EndorsedAttestationReport {
             report,
             signature,
             signing_cert,

@@ -1,5 +1,6 @@
 use crate::key;
-use crate::IasReport;
+use crate::AttestationConfig;
+use crate::EndorsedAttestationReport;
 use anyhow::Result;
 use std::prelude::v1::*;
 use std::time::{self, SystemTime};
@@ -15,12 +16,14 @@ pub struct RemoteAttestation {
 }
 
 impl RemoteAttestation {
-    pub fn generate_and_endorse(ias_key: &str, ias_spid: &str) -> Result<Self> {
+    pub fn generate_and_endorse(att_config: &AttestationConfig) -> Result<Self> {
         let key_pair = key::Secp256k1KeyPair::new()?;
-        let report = if cfg!(sgx_sim) {
-            IasReport::default()
-        } else {
-            IasReport::new(key_pair.pub_k, ias_key, ias_spid)?
+        let report = match att_config {
+            AttestationConfig::NoAttestation => EndorsedAttestationReport::default(),
+            AttestationConfig::SgxIas(config) => {
+                EndorsedAttestationReport::from_ias(key_pair.pub_k, &config.api_key, &config.spid)?
+            }
+            AttestationConfig::SgxDcap(_) => unimplemented!(),
         };
 
         let cert_extension = serde_json::to_vec(&report)?;
