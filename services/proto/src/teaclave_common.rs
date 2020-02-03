@@ -51,11 +51,11 @@ impl std::convert::TryFrom<proto::FileCryptoInfo> for TeaclaveFileCryptoInfo {
     fn try_from(proto: proto::FileCryptoInfo) -> Result<Self> {
         let info = match proto.schema.as_str() {
             "aes_gcm_128" => {
-                let info = AesGcm128CryptoInfo::try_new(&proto.key, &proto.iv)?;
+                let info = AesGcm128CryptoInfo::new(&proto.key, &proto.iv)?;
                 TeaclaveFileCryptoInfo::AesGcm128(info)
             }
             "aes_gcm_256" => {
-                let info = AesGcm256CryptoInfo::try_new(&proto.key, &proto.iv)?;
+                let info = AesGcm256CryptoInfo::new(&proto.key, &proto.iv)?;
                 TeaclaveFileCryptoInfo::AesGcm256(info)
             }
             "teaclave_file_root_key_128" => {
@@ -63,7 +63,7 @@ impl std::convert::TryFrom<proto::FileCryptoInfo> for TeaclaveFileCryptoInfo {
                     proto.iv.is_empty(),
                     "IV is not empty for teaclave_file_root_key_128"
                 );
-                let info = TeaclaveFileRootKey128::try_new(&proto.key)?;
+                let info = TeaclaveFileRootKey128::new(&proto.key)?;
                 TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(info)
             }
             _ => bail!("Invalid crypto schema: {}", proto.schema.as_str()),
