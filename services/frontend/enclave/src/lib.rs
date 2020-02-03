@@ -25,7 +25,9 @@ extern crate log;
 
 use anyhow::Result;
 use std::prelude::v1::*;
+use teaclave_attestation::verifier;
 use teaclave_attestation::{AttestationConfig, RemoteAttestation};
+use teaclave_config::BUILD_CONFIG;
 use teaclave_ipc::proto::{
     ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
     StartServiceInput, StartServiceOutput,
@@ -34,7 +36,9 @@ use teaclave_ipc::{handle_ecall, register_ecall_handler};
 use teaclave_proto::teaclave_frontend_service::{
     TeaclaveFrontendRequest, TeaclaveFrontendResponse,
 };
+use teaclave_rpc::config::SgxTrustedTlsClientConfig;
 use teaclave_rpc::config::SgxTrustedTlsServerConfig;
+use teaclave_rpc::endpoint::Endpoint;
 use teaclave_rpc::server::SgxTrustedTlsServer;
 use teaclave_service_enclave_utils::ServiceEnclave;
 
@@ -61,13 +65,28 @@ fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> 
         &config,
     );
 
-    let service = service::TeaclaveFrontendService::new(
-        &args
-            .config
-            .internal_endpoints
-            .authentication
-            .advertised_address,
+    let enclave_info = teaclave_types::EnclaveInfo::from_bytes(
+        &args.config.audit.enclave_info_bytes.as_ref().unwrap(),
     );
+    let enclave_attr = enclave_info
+        .get_enclave_attr("teaclave_authentication_service")
+        .expect("authentication");
+    let config = SgxTrustedTlsClientConfig::new()
+        .client_cert(&attestation.cert, &attestation.private_key)
+        .attestation_report_verifier(
+            vec![enclave_attr],
+            BUILD_CONFIG.ias_root_ca_cert,
+            verifier::universal_quote_verifier,
+        );
+    let authentication_service_address = &args
+        .config
+        .internal_endpoints
+        .authentication
+        .advertised_address;
+    let authentication_service_endpoint =
+        Endpoint::new(authentication_service_address).config(config);
+
+    let service = service::TeaclaveFrontendService::new(authentication_service_endpoint)?;
     match server.start(service) {
         Ok(_) => (),
         Err(e) => {

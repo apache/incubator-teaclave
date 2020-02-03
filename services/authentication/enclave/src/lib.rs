@@ -28,7 +28,9 @@ use rand::RngCore;
 use std::prelude::v1::*;
 use std::sync::Arc;
 use std::thread;
+use teaclave_attestation::verifier;
 use teaclave_attestation::{AttestationConfig, RemoteAttestation};
+use teaclave_config::BUILD_CONFIG;
 use teaclave_ipc::proto::{
     ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
     StartServiceInput, StartServiceOutput,
@@ -41,6 +43,7 @@ use teaclave_proto::teaclave_authentication_service::{
 use teaclave_rpc::config::SgxTrustedTlsServerConfig;
 use teaclave_rpc::server::SgxTrustedTlsServer;
 use teaclave_service_enclave_utils::ServiceEnclave;
+use teaclave_types::EnclaveInfo;
 
 mod api_service;
 mod internal_service;
@@ -52,12 +55,21 @@ fn start_internal_endpoint(
     db_client: user_db::DbClient,
     jwt_secret: Vec<u8>,
     attestation: Arc<RemoteAttestation>,
+    accepted_enclave_attrs: Vec<teaclave_types::EnclaveAttr>,
 ) {
-    let config = SgxTrustedTlsServerConfig::new_without_verifier(
-        &attestation.cert,
-        &attestation.private_key,
-    )
-    .unwrap();
+    let config = if cfg!(test_mode) {
+        SgxTrustedTlsServerConfig::new_without_verifier(&attestation.cert, &attestation.private_key)
+            .unwrap()
+    } else {
+        SgxTrustedTlsServerConfig::new_with_attestation_report_verifier(
+            accepted_enclave_attrs,
+            &attestation.cert,
+            &attestation.private_key,
+            BUILD_CONFIG.ias_root_ca_cert,
+            verifier::universal_quote_verifier,
+        )
+        .unwrap()
+    };
 
     let mut server = SgxTrustedTlsServer::<
         TeaclaveAuthenticationInternalResponse,
@@ -105,6 +117,34 @@ fn start_api_endpoint(
 #[handle_ecall]
 fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> {
     debug!("handle_start_service");
+    let enclave_info = EnclaveInfo::verify_and_new(
+        args.config
+            .audit
+            .enclave_info_bytes
+            .as_ref()
+            .expect("enclave_info"),
+        BUILD_CONFIG.auditor_public_keys,
+        args.config
+            .audit
+            .auditor_signatures_bytes
+            .as_ref()
+            .expect("auditor signatures"),
+    )?;
+    let inbound_services = args
+        .config
+        .internal_endpoints
+        .authentication
+        .inbound_services
+        .as_ref()
+        .expect("inbound_service");
+    let accepted_enclave_attrs: Vec<teaclave_types::EnclaveAttr> = inbound_services
+        .iter()
+        .map(|service| {
+            enclave_info
+                .get_enclave_attr(&format!("teaclave_{}_service", service))
+                .expect("enclave_info")
+        })
+        .collect();
     let api_listen_address = args.config.api_endpoints.authentication.listen_address;
     let internal_listen_address = args.config.internal_endpoints.authentication.listen_address;
     let ias_config = args.config.ias.as_ref().unwrap();
@@ -134,6 +174,7 @@ fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> 
             client,
             internal_jwt_secret,
             attestation,
+            accepted_enclave_attrs,
         );
     });
 

@@ -93,7 +93,7 @@ pub struct EnclaveInfo {
 struct EnclaveInfoToml(HashMap<String, EnclaveMeasurement>);
 
 impl EnclaveInfo {
-    pub fn load_and_verify<T, U>(
+    pub fn verify_and_new<T, U>(
         enclave_info: &[u8],
         public_keys: &[T],
         signatures: &[U],
@@ -133,9 +133,9 @@ impl EnclaveInfo {
     {
         use ring::signature;
 
-        for k in public_keys {
+        for s in signatures {
             let mut verified = false;
-            for s in signatures {
+            for k in public_keys {
                 if signature::UnparsedPublicKey::new(&signature::RSA_PKCS1_2048_8192_SHA256, k)
                     .verify(enclave_info, s.as_ref())
                     .is_ok()
