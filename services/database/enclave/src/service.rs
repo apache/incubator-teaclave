@@ -35,8 +35,14 @@ pub(crate) struct TeaclaveDatabaseService {
     // Current LevelDB implementation is not concurrent, so we need to wrap the
     // DB with RefCell. This service is running in a single thread, it's safe to
     // use RefCell.
-    pub database: RefCell<DB>,
-    pub receiver: Receiver<ProxyRequest>,
+    database: RefCell<DB>,
+    receiver: Receiver<ProxyRequest>,
+}
+
+impl TeaclaveDatabaseService {
+    pub(crate) fn new(database: RefCell<DB>, receiver: Receiver<ProxyRequest>) -> Self {
+        Self { database, receiver }
+    }
 }
 
 // queue-key-head: u32; include element

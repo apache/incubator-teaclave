@@ -1,6 +1,5 @@
 use std::prelude::v1::*;
 use std::sync::{Arc, SgxMutex as Mutex};
-use teaclave_config::RuntimeConfig;
 use teaclave_proto::teaclave_authentication_service::TeaclaveAuthenticationInternalClient;
 use teaclave_proto::teaclave_authentication_service::UserAuthenticateRequest;
 use teaclave_proto::teaclave_common::UserCredential;
@@ -33,8 +32,8 @@ pub(crate) struct TeaclaveFrontendService {
 }
 
 impl TeaclaveFrontendService {
-    pub(crate) fn new(config: &RuntimeConfig) -> Self {
-        let channel = Endpoint::new(&config.internal_endpoints.authentication.advertised_address)
+    pub(crate) fn new(authentication_service_address: &str) -> Self {
+        let channel = Endpoint::new(authentication_service_address)
             .connect()
             .unwrap();
         let client = TeaclaveAuthenticationInternalClient::new(channel).unwrap();

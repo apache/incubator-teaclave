@@ -11,8 +11,17 @@ use teaclave_types::TeaclaveServiceResponseResult;
 #[teaclave_service(teaclave_authentication_service, TeaclaveAuthenticationInternal)]
 #[derive(Clone)]
 pub(crate) struct TeaclaveAuthenticationInternalService {
-    pub(crate) db_client: DbClient,
-    pub(crate) jwt_secret: Vec<u8>,
+    db_client: DbClient,
+    jwt_secret: Vec<u8>,
+}
+
+impl TeaclaveAuthenticationInternalService {
+    pub(crate) fn new(db_client: DbClient, jwt_secret: Vec<u8>) -> Self {
+        Self {
+            db_client,
+            jwt_secret,
+        }
+    }
 }
 
 impl TeaclaveAuthenticationInternal for TeaclaveAuthenticationInternalService {

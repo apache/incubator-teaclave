@@ -67,10 +67,8 @@ fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> 
     thread::spawn(move || {
         let opt = rusty_leveldb::in_memory();
         let database = DB::open("teaclave_db", opt).unwrap();
-        let mut database_service = service::TeaclaveDatabaseService {
-            database: RefCell::new(database),
-            receiver,
-        };
+        let mut database_service =
+            service::TeaclaveDatabaseService::new(RefCell::new(database), receiver);
         database_service.start();
     });
 
@@ -79,7 +77,7 @@ fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> 
         &config,
     );
 
-    let service = proxy::ProxyService { sender };
+    let service = proxy::ProxyService::new(sender);
 
     match server.start(service) {
         Ok(_) => (),
