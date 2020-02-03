@@ -11,12 +11,12 @@ const AES_GCM_256_IV_LENGTH: usize = 12;
 
 #[derive(Default, Debug, Serialize, Deserialize)]
 pub struct AesGcm256CryptoInfo {
-    pub key: [u8; 32],
-    pub iv: [u8; 12],
+    pub key: [u8; AES_GCM_256_KEY_LENGTH],
+    pub iv: [u8; AES_GCM_256_IV_LENGTH],
 }
 
 impl AesGcm256CryptoInfo {
-    pub fn try_new(key: &[u8], iv: &[u8]) -> anyhow::Result<Self> {
+    pub fn new(key: &[u8], iv: &[u8]) -> anyhow::Result<Self> {
         anyhow::ensure!(
             key.len() == AES_GCM_256_KEY_LENGTH,
             "Invalid key length for AesGcm256: {}",
@@ -55,7 +55,7 @@ pub struct AesGcm128CryptoInfo {
 }
 
 impl AesGcm128CryptoInfo {
-    pub fn try_new(key: &[u8], iv: &[u8]) -> anyhow::Result<Self> {
+    pub fn new(key: &[u8], iv: &[u8]) -> anyhow::Result<Self> {
         anyhow::ensure!(
             key.len() == AES_GCM_128_KEY_LENGTH,
             "Invalid key length for AesGcm128: {}",
@@ -94,7 +94,7 @@ pub struct TeaclaveFileRootKey128 {
 }
 
 impl TeaclaveFileRootKey128 {
-    pub fn try_new(key: &[u8]) -> anyhow::Result<Self> {
+    pub fn new(key: &[u8]) -> anyhow::Result<Self> {
         anyhow::ensure!(
             key.len() == TEACLAVE_FILE_ROOT_KEY_128_LENGTH,
             "Invalid key length for teaclave_file_root_key_128: {}",
