@@ -5,6 +5,7 @@ use crate::TeaclaveService;
 use anyhow::Result;
 use log::debug;
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 
 pub struct SgxTrustedTlsServer<U, V>
 where
@@ -27,7 +28,7 @@ where
     ) -> SgxTrustedTlsServer<U, V> {
         Self {
             addr,
-            tls_config: server_config.config.clone(),
+            tls_config: Arc::new(server_config.config.clone()),
             maker: std::marker::PhantomData::<(U, V)>,
         }
     }

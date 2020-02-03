@@ -1,3 +1,4 @@
+use anyhow::Result;
 use std::prelude::v1::*;
 use std::sync::{Arc, SgxMutex as Mutex};
 use teaclave_proto::teaclave_authentication_service::TeaclaveAuthenticationInternalClient;
@@ -32,14 +33,12 @@ pub(crate) struct TeaclaveFrontendService {
 }
 
 impl TeaclaveFrontendService {
-    pub(crate) fn new(authentication_service_address: &str) -> Self {
-        let channel = Endpoint::new(authentication_service_address)
-            .connect()
-            .unwrap();
-        let client = TeaclaveAuthenticationInternalClient::new(channel).unwrap();
-        Self {
+    pub(crate) fn new(authentication_service_endpoint: Endpoint) -> Result<Self> {
+        let channel = authentication_service_endpoint.connect()?;
+        let client = TeaclaveAuthenticationInternalClient::new(channel)?;
+        Ok(Self {
             authentication_client: Arc::new(Mutex::new(client)),
-        }
+        })
     }
 }
 

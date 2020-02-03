@@ -11,7 +11,7 @@ pub struct Endpoint {
 
 impl Endpoint {
     pub fn new(url: &str) -> Self {
-        let config = SgxTrustedTlsClientConfig::new_without_verifier();
+        let config = SgxTrustedTlsClientConfig::new();
         Self {
             url: url.to_string(),
             config,
