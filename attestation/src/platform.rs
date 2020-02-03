@@ -90,7 +90,7 @@ pub(crate) fn get_sgx_quote(ak_id: &sgx_att_key_id_t, report: sgx_report_t) -> R
 
     let mut rng = SgxRng::new()?;
     rng.fill_bytes(&mut quote_nonce.rand);
-    qe_report_info.nonce = quote_nonce.clone();
+    qe_report_info.nonce = quote_nonce;
 
     let mut quote = vec![0; quote_len as usize];
 
