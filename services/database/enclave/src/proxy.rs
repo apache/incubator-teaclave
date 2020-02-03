@@ -9,7 +9,13 @@ use teaclave_types::TeaclaveServiceResponseResult;
 
 #[derive(Clone)]
 pub(crate) struct ProxyService {
-    pub sender: Sender<ProxyRequest>,
+    sender: Sender<ProxyRequest>,
+}
+
+impl ProxyService {
+    pub(crate) fn new(sender: Sender<ProxyRequest>) -> Self {
+        Self { sender }
+    }
 }
 
 impl teaclave_rpc::TeaclaveService<TeaclaveDatabaseRequest, TeaclaveDatabaseResponse>

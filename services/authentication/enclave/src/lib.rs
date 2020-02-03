@@ -64,10 +64,8 @@ fn start_internal_endpoint(
         TeaclaveAuthenticationInternalRequest,
     >::new(addr, &config);
 
-    let service = internal_service::TeaclaveAuthenticationInternalService {
-        db_client,
-        jwt_secret,
-    };
+    let service =
+        internal_service::TeaclaveAuthenticationInternalService::new(db_client, jwt_secret);
 
     match server.start(service) {
         Ok(_) => (),
@@ -94,10 +92,7 @@ fn start_api_endpoint(
         TeaclaveAuthenticationApiRequest,
     >::new(addr, &config);
 
-    let service = api_service::TeaclaveAuthenticationApiService {
-        db_client,
-        jwt_secret,
-    };
+    let service = api_service::TeaclaveAuthenticationApiService::new(db_client, jwt_secret);
 
     match server.start(service) {
         Ok(_) => (),

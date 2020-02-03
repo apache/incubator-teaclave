@@ -37,8 +37,17 @@ impl From<TeaclaveAuthenticationApiError> for TeaclaveServiceResponseError {
 )]
 #[derive(Clone)]
 pub(crate) struct TeaclaveAuthenticationApiService {
-    pub(crate) db_client: DbClient,
-    pub(crate) jwt_secret: Vec<u8>,
+    db_client: DbClient,
+    jwt_secret: Vec<u8>,
+}
+
+impl TeaclaveAuthenticationApiService {
+    pub(crate) fn new(db_client: DbClient, jwt_secret: Vec<u8>) -> Self {
+        Self {
+            db_client,
+            jwt_secret,
+        }
+    }
 }
 
 impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {

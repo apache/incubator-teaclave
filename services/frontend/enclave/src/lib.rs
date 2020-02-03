@@ -58,7 +58,13 @@ fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> 
         &config,
     );
 
-    let service = service::TeaclaveFrontendService::new(&args.config);
+    let service = service::TeaclaveFrontendService::new(
+        &args
+            .config
+            .internal_endpoints
+            .authentication
+            .advertised_address,
+    );
     match server.start(service) {
         Ok(_) => (),
         Err(e) => {
