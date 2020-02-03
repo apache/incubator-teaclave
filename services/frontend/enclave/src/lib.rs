@@ -25,7 +25,7 @@ extern crate log;
 
 use anyhow::Result;
 use std::prelude::v1::*;
-use teaclave_attestation::RemoteAttestation;
+use teaclave_attestation::{AttestationConfig, RemoteAttestation};
 use teaclave_ipc::proto::{
     ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
     StartServiceInput, StartServiceOutput,
@@ -45,8 +45,11 @@ fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> 
     debug!("handle_start_service");
     let listen_address = args.config.api_endpoints.frontend.listen_address;
     let ias_config = args.config.ias.as_ref().unwrap();
-    let attestation =
-        RemoteAttestation::generate_and_endorse(&ias_config.ias_key, &ias_config.ias_spid).unwrap();
+    let attestation = RemoteAttestation::generate_and_endorse(&AttestationConfig::ias(
+        &ias_config.ias_key,
+        &ias_config.ias_spid,
+    ))
+    .unwrap();
     let config = SgxTrustedTlsServerConfig::new_without_verifier(
         &attestation.cert,
         &attestation.private_key,

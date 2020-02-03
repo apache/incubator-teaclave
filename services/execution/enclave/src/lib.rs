@@ -37,7 +37,7 @@ use teaclave_ipc::{handle_ecall, register_ecall_handler};
 
 use teaclave_service_enclave_utils::ServiceEnclave;
 
-use teaclave_attestation::RemoteAttestation;
+use teaclave_attestation::{AttestationConfig, RemoteAttestation};
 use teaclave_proto::teaclave_execution_service::{
     TeaclaveExecutionRequest, TeaclaveExecutionResponse,
 };
@@ -55,8 +55,11 @@ register_ecall_handler!(
 fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> {
     let listen_address = args.config.internal_endpoints.execution.listen_address;
     let ias_config = args.config.ias.as_ref().unwrap();
-    let attestation =
-        RemoteAttestation::generate_and_endorse(&ias_config.ias_key, &ias_config.ias_spid).unwrap();
+    let attestation = RemoteAttestation::generate_and_endorse(&AttestationConfig::ias(
+        &ias_config.ias_key,
+        &ias_config.ias_spid,
+    ))
+    .unwrap();
     let config = SgxTrustedTlsServerConfig::new_without_verifier(
         &attestation.cert,
         &attestation.private_key,
