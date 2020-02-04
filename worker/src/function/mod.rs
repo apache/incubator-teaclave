@@ -38,6 +38,7 @@ mod gbdt_training;
 mod mesapy;
 pub use gbdt_training::GbdtTraining;
 pub use mesapy::Mesapy;
+mod context;
 
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
@@ -45,9 +46,10 @@ pub mod tests {
     use teaclave_test_utils::*;
 
     pub fn run_tests() -> bool {
-        run_tests!(
-            gbdt_training::tests::test_gbdt_parse_training_data,
-            gbdt_training::tests::test_gbdt_training,
+        check_all_passed!(
+            gbdt_training::tests::run_tests(),
+            mesapy::tests::run_tests(),
+            context::tests::run_tests(),
         )
     }
 }

@@ -19,21 +19,31 @@
 use std::prelude::v1::*;
 
 use anyhow;
+use itertools::Itertools;
 
 use crate::function::TeaclaveFunction;
 use crate::runtime::TeaclaveRuntime;
 use teaclave_types::TeaclaveFunctionArguments;
 
-/* TODO: export wrapped io stream handle to mesapy-sgx
-extern "C"
-t_open(context, file_identifier) -> handle  () {
-    runtime = c_to_rust(context);  // thread_local
-    runtime.open(file_identifier);
+use crate::function::context::reset_thread_context;
+use crate::function::context::set_thread_context;
+use crate::function::context::Context;
+use std::ffi::CString;
+use std::format;
+
+const MAXPYBUFLEN: usize = 20480;
+const MESAPY_ERROR_BUFFER_TOO_SHORT: i64 = -1i64;
+const MESAPY_EXEC_ERROR: i64 = -2i64;
+
+extern "C" {
+    fn mesapy_exec(
+        input: *const u8,
+        argc: usize,
+        argv: *const *const sgx_types::c_char,
+        output: *mut u8,
+        buflen: u64,
+    ) -> i64;
 }
-t_read(context, handle, buf);
-t_write(context, handle, buf);
-t_close(context, handle);
-*/
 
 #[derive(Default)]
 pub struct Mesapy;
@@ -41,13 +51,123 @@ pub struct Mesapy;
 impl TeaclaveFunction for Mesapy {
     fn execute(
         &self,
-        _runtime: Box<dyn TeaclaveRuntime + Send + Sync>,
-        _args: TeaclaveFunctionArguments,
+        runtime: Box<dyn TeaclaveRuntime + Send + Sync>,
+        args: TeaclaveFunctionArguments,
     ) -> anyhow::Result<String> {
-        // TODO:
-        // args.get("py_payload")
-        // args.get("py_args")
-        // mesapy_exec();
-        unimplemented!()
+        let script = args.try_get::<String>("py_payload")?;
+        let py_args = args.try_get::<String>("py_args")?;
+        let py_args: TeaclaveFunctionArguments = serde_json::from_str(&py_args)?;
+        let py_argv = py_args.into_vec();
+        let cstr_argv: Vec<_> = py_argv
+            .iter()
+            .map(|arg| CString::new(arg.as_str()).unwrap())
+            .collect();
+
+        let mut script_bytes = script.into_bytes();
+        script_bytes.push(0u8);
+
+        let mut p_argv: Vec<_> = cstr_argv
+            .iter() // do NOT into_iter()
+            .map(|arg| arg.as_ptr())
+            .collect();
+
+        p_argv.push(std::ptr::null());
+
+        let mut py_result = [0u8; MAXPYBUFLEN];
+
+        set_thread_context(Context::new(runtime))?;
+
+        let result = unsafe {
+            mesapy_exec(
+                script_bytes.as_ptr(),
+                p_argv.len() - 1,
+                p_argv.as_ptr(),
+                &mut py_result as *mut _ as *mut u8,
+                MAXPYBUFLEN as u64,
+            )
+        };
+
+        reset_thread_context()?;
+        match result {
+            MESAPY_ERROR_BUFFER_TOO_SHORT => Ok("MESAPY_ERROR_BUFFER_TOO_SHORT".to_string()),
+            MESAPY_EXEC_ERROR => Ok("MESAPY_EXEC_ERROR".to_string()),
+            len => {
+                let r: Vec<u8> = py_result.iter().take(len as usize).copied().collect();
+                let payload = format!("marshal.loads(b\"\\x{:02X}\")", r.iter().format("\\x"));
+                Ok(payload)
+            }
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! hashmap {
+    ($( $key: expr => $val: expr ),*) => {{
+         let mut map = ::std::collections::HashMap::new();
+         $( map.insert($key, $val); )*
+         map
+    }}
+}
+
+#[cfg(feature = "enclave_unit_test")]
+pub mod tests {
+    use super::*;
+    use teaclave_test_utils::*;
+
+    use crate::function::TeaclaveFunction;
+    use crate::runtime::RawIoRuntime;
+    use std::path::PathBuf;
+    use std::str::FromStr;
+    use teaclave_types::AesGcm256CryptoInfo;
+    use teaclave_types::TeaclaveFileCryptoInfo;
+    use teaclave_types::TeaclaveFunctionArguments;
+    use teaclave_types::TeaclaveWorkerFileInfo;
+    use teaclave_types::TeaclaveWorkerFileRegistry;
+
+    pub fn run_tests() -> bool {
+        run_tests!(test_mesapy,)
+    }
+
+    fn test_mesapy() {
+        let py_args = hashmap!("--name" => "Teaclave");
+        let py_payload = "
+import sys
+def entrypoint(argv):
+    print argv[0]
+    print argv[1]
+";
+
+        let input = PathBuf::from_str("test_cases/mesapy/input.txt").unwrap();
+        let output = PathBuf::from_str("test_cases/mesapy/output.txt").unwrap();
+
+        let input_info = TeaclaveWorkerFileInfo {
+            path: input,
+            crypto_info: TeaclaveFileCryptoInfo::AesGcm256(AesGcm256CryptoInfo::default()),
+        };
+
+        let output_info = TeaclaveWorkerFileInfo {
+            path: output,
+            crypto_info: TeaclaveFileCryptoInfo::AesGcm256(AesGcm256CryptoInfo::default()),
+        };
+
+        let input_files = TeaclaveWorkerFileRegistry {
+            entries: hashmap!("in_f1".to_string() => input_info),
+        };
+
+        let output_files = TeaclaveWorkerFileRegistry {
+            entries: hashmap!("out_f1".to_string() => output_info),
+        };
+        let runtime = Box::new(RawIoRuntime::new(input_files, output_files));
+
+        let func_args = TeaclaveFunctionArguments {
+            args: hashmap!(
+                "py_payload".to_string() => py_payload.to_string(),
+                "py_args".to_string() => serde_json::to_string(&py_args).unwrap()
+            ),
+        };
+
+        let function = Mesapy;
+        let summary = function.execute(runtime, func_args).unwrap();
+        assert_eq!(summary, "marshal.loads(b\"\\x4E\")");
     }
 }
