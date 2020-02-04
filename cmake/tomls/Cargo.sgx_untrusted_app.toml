@@ -1,6 +1,7 @@
 [workspace]
 
 members = [
+  "services/access_control/app",
   "services/authentication/app",
   "services/storage/app",
   "services/execution/app",

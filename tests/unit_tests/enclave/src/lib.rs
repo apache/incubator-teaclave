@@ -34,6 +34,7 @@ use teaclave_ipc::proto::{
 use teaclave_ipc::{handle_ecall, register_ecall_handler};
 use teaclave_service_enclave_utils::ServiceEnclave;
 
+use teaclave_access_control_service_enclave;
 use teaclave_authentication_service_enclave;
 use teaclave_execution_service_enclave;
 use teaclave_test_utils::check_all_passed;
@@ -43,10 +44,11 @@ use teaclave_worker;
 fn handle_run_test(_args: &RunTestInput) -> Result<RunTestOutput> {
     let ret = check_all_passed!(
         teaclave_storage_service_enclave::tests::run_tests(),
+        teaclave_access_control_service_enclave::tests::run_tests(),
         teaclave_execution_service_enclave::tests::run_tests(),
         teaclave_authentication_service_enclave::tests::run_tests(),
         teaclave_worker::tests::run_tests(),
-        teaclave_types::tests::run_tests()
+        teaclave_types::tests::run_tests(),
     );
 
     assert_eq!(ret, true);

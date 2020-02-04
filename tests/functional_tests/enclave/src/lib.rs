@@ -36,6 +36,7 @@ use teaclave_ipc::{handle_ecall, register_ecall_handler};
 use teaclave_service_enclave_utils::ServiceEnclave;
 use teaclave_test_utils::check_all_passed;
 
+mod teaclave_access_control_service;
 mod teaclave_authentication_service;
 mod teaclave_execution_service;
 mod teaclave_frontend_service;
@@ -44,6 +45,7 @@ mod teaclave_storage_service;
 #[handle_ecall]
 fn handle_run_test(_args: &RunTestInput) -> Result<RunTestOutput> {
     let ret = check_all_passed!(
+        teaclave_access_control_service::run_tests(),
         teaclave_authentication_service::run_tests(),
         teaclave_storage_service::run_tests(),
         teaclave_execution_service::run_tests(),
