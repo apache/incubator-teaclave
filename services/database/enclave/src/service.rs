@@ -248,85 +248,56 @@ pub mod tests {
 
     pub fn test_get_key() {
         let service = get_mock_service();
-        let request = GetRequest {
-            key: b"test_get_key".to_vec(),
-        };
+        let request = GetRequest::new("test_get_key");
         let request = Request::new(request);
         assert!(service.get(request).is_ok());
     }
 
     pub fn test_put_key() {
         let service = get_mock_service();
-        let request = PutRequest {
-            key: b"test_put_key".to_vec(),
-            value: b"test_put_value".to_vec(),
-        };
+        let request = PutRequest::new("test_put_key", "test_put_value");
         let request = Request::new(request);
         assert!(service.put(request).is_ok());
-        let request = GetRequest {
-            key: b"test_put_key".to_vec(),
-        };
+        let request = GetRequest::new("test_put_key");
         let request = Request::new(request);
         assert!(service.get(request).is_ok());
     }
 
     pub fn test_delete_key() {
         let service = get_mock_service();
-        let request = DeleteRequest {
-            key: b"test_delete_key".to_vec(),
-        };
+        let request = DeleteRequest::new("test_delete_key");
         let request = Request::new(request);
         assert!(service.delete(request).is_ok());
-        let request = GetRequest {
-            key: b"test_delete_key".to_vec(),
-        };
+        let request = GetRequest::new("test_delete_key");
         let request = Request::new(request);
         assert!(service.get(request).is_err());
     }
 
     pub fn test_enqueue() {
         let service = get_mock_service();
-        let request = EnqueueRequest {
-            key: b"test_enqueue_key".to_vec(),
-            value: b"1".to_vec(),
-        };
+        let request = EnqueueRequest::new("test_enqueue_key", "1");
         let request = Request::new(request);
         assert!(service.enqueue(request).is_ok());
-        let request = EnqueueRequest {
-            key: b"test_enqueue_key".to_vec(),
-            value: b"2".to_vec(),
-        };
+        let request = EnqueueRequest::new("test_enqueue_key", "2");
         let request = Request::new(request);
         assert!(service.enqueue(request).is_ok());
     }
 
     pub fn test_dequeue() {
         let service = get_mock_service();
-        let request = DequeueRequest {
-            key: b"test_dequeue_key".to_vec(),
-        };
+        let request = DequeueRequest::new("test_dequeue_key");
         let request = Request::new(request);
         assert!(service.dequeue(request).is_err());
-        let request = EnqueueRequest {
-            key: b"test_dequeue_key".to_vec(),
-            value: b"1".to_vec(),
-        };
+        let request = EnqueueRequest::new("test_dequeue_key", "1");
         let request = Request::new(request);
         assert!(service.enqueue(request).is_ok());
-        let request = EnqueueRequest {
-            key: b"test_dequeue_key".to_vec(),
-            value: b"2".to_vec(),
-        };
+        let request = EnqueueRequest::new("test_dequeue_key", "2");
         let request = Request::new(request);
         assert!(service.enqueue(request).is_ok());
-        let request = DequeueRequest {
-            key: b"test_dequeue_key".to_vec(),
-        };
+        let request = DequeueRequest::new("test_dequeue_key");
         let request = Request::new(request);
         assert_eq!(service.dequeue(request).unwrap().value, b"1");
-        let request = DequeueRequest {
-            key: b"test_dequeue_key".to_vec(),
-        };
+        let request = DequeueRequest::new("test_dequeue_key");
         let request = Request::new(request);
         assert_eq!(service.dequeue(request).unwrap().value, b"2");
     }
