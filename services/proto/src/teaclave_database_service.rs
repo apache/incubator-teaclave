@@ -12,9 +12,25 @@ pub struct GetRequest {
     pub key: Vec<u8>,
 }
 
+impl GetRequest {
+    pub fn new(key: impl AsRef<[u8]>) -> Self {
+        Self {
+            key: key.as_ref().into(),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct GetResponse {
     pub value: Vec<u8>,
+}
+
+impl GetResponse {
+    pub fn new(value: impl AsRef<[u8]>) -> Self {
+        Self {
+            value: value.as_ref().into(),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -23,7 +39,16 @@ pub struct PutRequest {
     pub value: Vec<u8>,
 }
 
-#[derive(Debug)]
+impl PutRequest {
+    pub fn new(key: impl AsRef<[u8]>, value: impl AsRef<[u8]>) -> Self {
+        Self {
+            key: key.as_ref().into(),
+            value: value.as_ref().into(),
+        }
+    }
+}
+
+#[derive(Debug, Default)]
 pub struct PutResponse;
 
 #[derive(Debug)]
@@ -31,7 +56,15 @@ pub struct DeleteRequest {
     pub key: Vec<u8>,
 }
 
-#[derive(Debug)]
+impl DeleteRequest {
+    pub fn new(key: impl AsRef<[u8]>) -> Self {
+        Self {
+            key: key.as_ref().into(),
+        }
+    }
+}
+
+#[derive(Debug, Default)]
 pub struct DeleteResponse;
 
 #[derive(Debug)]
@@ -40,7 +73,16 @@ pub struct EnqueueRequest {
     pub value: Vec<u8>,
 }
 
-#[derive(Debug)]
+impl EnqueueRequest {
+    pub fn new(key: impl AsRef<[u8]>, value: impl AsRef<[u8]>) -> Self {
+        Self {
+            key: key.as_ref().into(),
+            value: value.as_ref().into(),
+        }
+    }
+}
+
+#[derive(Debug, Default)]
 pub struct EnqueueResponse;
 
 #[derive(Debug)]
@@ -48,9 +90,25 @@ pub struct DequeueRequest {
     pub key: Vec<u8>,
 }
 
+impl DequeueRequest {
+    pub fn new(key: impl AsRef<[u8]>) -> Self {
+        Self {
+            key: key.as_ref().into(),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct DequeueResponse {
     pub value: Vec<u8>,
+}
+
+impl DequeueResponse {
+    pub fn new(value: impl AsRef<[u8]>) -> Self {
+        Self {
+            value: value.as_ref().into(),
+        }
+    }
 }
 
 impl std::convert::TryFrom<proto::GetRequest> for GetRequest {
