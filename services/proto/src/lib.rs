@@ -19,6 +19,7 @@
 #[cfg(feature = "mesalock_sgx")]
 extern crate sgx_tstd as std;
 
+pub mod teaclave_access_control_service;
 pub mod teaclave_authentication_service;
 pub mod teaclave_common;
 pub mod teaclave_execution_service;
@@ -54,4 +55,8 @@ pub mod teaclave_frontend_service_proto {
 
 pub mod teaclave_management_service_proto {
     include_proto!("teaclave_management_service_proto");
+}
+
+pub mod teaclave_access_control_service_proto {
+    include_proto!("teaclave_access_control_service_proto");
 }
