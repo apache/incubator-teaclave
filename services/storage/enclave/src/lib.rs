@@ -37,9 +37,7 @@ use teaclave_service_enclave_utils::ServiceEnclave;
 
 use rusty_leveldb::DB;
 use teaclave_attestation::{AttestationConfig, RemoteAttestation};
-use teaclave_proto::teaclave_database_service::{
-    TeaclaveDatabaseRequest, TeaclaveDatabaseResponse,
-};
+use teaclave_proto::teaclave_storage_service::{TeaclaveStorageRequest, TeaclaveStorageResponse};
 use teaclave_rpc::config::SgxTrustedTlsServerConfig;
 use teaclave_rpc::server::SgxTrustedTlsServer;
 
@@ -53,7 +51,7 @@ use std::thread;
 #[handle_ecall]
 fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> {
     debug!("handle_start_service");
-    let listen_address = args.config.internal_endpoints.dbs.listen_address;
+    let listen_address = args.config.internal_endpoints.storage.listen_address;
     let ias_config = args.config.ias.as_ref().unwrap();
     let attestation = RemoteAttestation::generate_and_endorse(&AttestationConfig::ias(
         &ias_config.ias_key,
@@ -69,13 +67,13 @@ fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> 
     let (sender, receiver) = channel();
     thread::spawn(move || {
         let opt = rusty_leveldb::in_memory();
-        let database = DB::open("teaclave_db", opt).unwrap();
-        let mut database_service =
-            service::TeaclaveDatabaseService::new(RefCell::new(database), receiver);
-        database_service.start();
+        let storage = DB::open("teaclave_db", opt).unwrap();
+        let mut storage_service =
+            service::TeaclaveStorageService::new(RefCell::new(storage), receiver);
+        storage_service.start();
     });
 
-    let mut server = SgxTrustedTlsServer::<TeaclaveDatabaseResponse, TeaclaveDatabaseRequest>::new(
+    let mut server = SgxTrustedTlsServer::<TeaclaveStorageResponse, TeaclaveStorageRequest>::new(
         listen_address,
         &config,
     );

@@ -15,10 +15,13 @@ fn test_runtime_config() {
         authentication_config.listen_address,
         "0.0.0.0:7776".parse().unwrap()
     );
-    let dbs_config = config.internal_endpoints.dbs;
-    assert_eq!(dbs_config.listen_address, "0.0.0.0:7778".parse().unwrap());
+    let storage_config = config.internal_endpoints.storage;
     assert_eq!(
-        dbs_config.inbound_services,
+        storage_config.listen_address,
+        "0.0.0.0:7778".parse().unwrap()
+    );
+    assert_eq!(
+        storage_config.inbound_services,
         Some(vec!["frontend".to_string()])
     );
 

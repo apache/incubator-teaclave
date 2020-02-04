@@ -23,8 +23,8 @@ mesalock_sgx = [
   "teaclave_config/mesalock_sgx",
   "teaclave_authentication_service_enclave/mesalock_sgx",
   "teaclave_authentication_service_enclave/enclave_unit_test",
-  "teaclave_database_service_enclave/mesalock_sgx",
-  "teaclave_database_service_enclave/enclave_unit_test",
+  "teaclave_storage_service_enclave/mesalock_sgx",
+  "teaclave_storage_service_enclave/enclave_unit_test",
   "teaclave_execution_service_enclave/mesalock_sgx",
   "teaclave_execution_service_enclave/enclave_unit_test",
   "teaclave_worker/mesalock_sgx",
@@ -39,7 +39,7 @@ serde       = { version = "1.0.92" }
 thiserror   = { version = "1.0.9" }
 
 teaclave_authentication_service_enclave = { path = "../../../services/authentication/enclave" }
-teaclave_database_service_enclave = { path = "../../../services/database/enclave" }
+teaclave_storage_service_enclave = { path = "../../../services/storage/enclave" }
 teaclave_execution_service_enclave = { path = "../../../services/execution/enclave" }
 teaclave_worker                 = { path = "../../../worker" }
 

@@ -23,7 +23,7 @@ fn main() {
     let proto_files = [
         "src/proto/teaclave_authentication_service.proto",
         "src/proto/teaclave_common.proto",
-        "src/proto/teaclave_database_service.proto",
+        "src/proto/teaclave_storage_service.proto",
         "src/proto/teaclave_execution_service.proto",
         "src/proto/teaclave_frontend_service.proto",
         "src/proto/teaclave_management_service.proto",

@@ -1,5 +1,5 @@
 syntax = "proto3";
-package teaclave_database_service_proto;
+package teaclave_storage_service_proto;
 
 message GetRequest {
   bytes key = 1;
@@ -37,7 +37,7 @@ message DequeueResponse {
   bytes value = 1;
 }
 
-service TeaclaveDatabase {
+service TeaclaveStorage {
   rpc Get(GetRequest) returns (GetResponse);
   rpc Put(PutRequest) returns (PutResponse);
   rpc Delete(DeleteRequest) returns (DeleteResponse);

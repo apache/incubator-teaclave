@@ -1,9 +1,7 @@
-use crate::service::TeaclaveDatabaseError;
+use crate::service::TeaclaveStorageError;
 use std::prelude::v1::*;
 use std::sync::mpsc::{channel, Sender};
-use teaclave_proto::teaclave_database_service::{
-    TeaclaveDatabaseRequest, TeaclaveDatabaseResponse,
-};
+use teaclave_proto::teaclave_storage_service::{TeaclaveStorageRequest, TeaclaveStorageResponse};
 use teaclave_rpc::Request;
 use teaclave_types::TeaclaveServiceResponseResult;
 
@@ -18,25 +16,25 @@ impl ProxyService {
     }
 }
 
-impl teaclave_rpc::TeaclaveService<TeaclaveDatabaseRequest, TeaclaveDatabaseResponse>
+impl teaclave_rpc::TeaclaveService<TeaclaveStorageRequest, TeaclaveStorageResponse>
     for ProxyService
 {
     fn handle_request(
         &self,
-        request: Request<TeaclaveDatabaseRequest>,
-    ) -> TeaclaveServiceResponseResult<TeaclaveDatabaseResponse> {
+        request: Request<TeaclaveStorageRequest>,
+    ) -> TeaclaveServiceResponseResult<TeaclaveStorageResponse> {
         let (sender, receiver) = channel();
         self.sender
             .send(ProxyRequest { sender, request })
-            .map_err(|_| TeaclaveDatabaseError::MpscError)?;
+            .map_err(|_| TeaclaveStorageError::MpscError)?;
         receiver
             .recv()
-            .map_err(|_| TeaclaveDatabaseError::MpscError)?
+            .map_err(|_| TeaclaveStorageError::MpscError)?
     }
 }
 
 #[derive(Clone)]
 pub(crate) struct ProxyRequest {
-    pub sender: Sender<TeaclaveServiceResponseResult<TeaclaveDatabaseResponse>>,
-    pub request: Request<TeaclaveDatabaseRequest>,
+    pub sender: Sender<TeaclaveServiceResponseResult<TeaclaveStorageResponse>>,
+    pub request: Request<TeaclaveStorageRequest>,
 }

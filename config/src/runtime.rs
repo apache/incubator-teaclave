@@ -33,7 +33,7 @@ pub struct ApiEndpointsConfig {
 pub struct InternalEndpointsConfig {
     pub authentication: InternalEndpoint,
     pub management: InternalEndpoint,
-    pub dbs: InternalEndpoint,
+    pub storage: InternalEndpoint,
     pub execution: InternalEndpoint,
 }
 

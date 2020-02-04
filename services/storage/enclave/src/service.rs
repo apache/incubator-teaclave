@@ -3,9 +3,9 @@ use rusty_leveldb::DB;
 use std::cell::RefCell;
 use std::prelude::v1::*;
 use std::sync::mpsc::Receiver;
-use teaclave_proto::teaclave_database_service::{
+use teaclave_proto::teaclave_storage_service::{
     DeleteRequest, DeleteResponse, DequeueRequest, DequeueResponse, EnqueueRequest,
-    EnqueueResponse, GetRequest, GetResponse, PutRequest, PutResponse, TeaclaveDatabase,
+    EnqueueResponse, GetRequest, GetResponse, PutRequest, PutResponse, TeaclaveStorage,
 };
 use teaclave_rpc::Request;
 use teaclave_service_enclave_utils::teaclave_service;
@@ -13,7 +13,7 @@ use teaclave_types::{TeaclaveServiceResponseError, TeaclaveServiceResponseResult
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub(crate) enum TeaclaveDatabaseError {
+pub(crate) enum TeaclaveStorageError {
     #[error("key not exist")]
     KeyNotExist,
     #[error("mpsc error")]
@@ -24,14 +24,14 @@ pub(crate) enum TeaclaveDatabaseError {
     QueueEmpty,
 }
 
-impl From<TeaclaveDatabaseError> for TeaclaveServiceResponseError {
-    fn from(error: TeaclaveDatabaseError) -> Self {
+impl From<TeaclaveStorageError> for TeaclaveServiceResponseError {
+    fn from(error: TeaclaveStorageError) -> Self {
         TeaclaveServiceResponseError::RequestError(error.to_string())
     }
 }
 
-#[teaclave_service(teaclave_database_service, TeaclaveDatabase, TeaclaveDatabaseError)]
-pub(crate) struct TeaclaveDatabaseService {
+#[teaclave_service(teaclave_storage_service, TeaclaveStorage, TeaclaveStorageError)]
+pub(crate) struct TeaclaveStorageService {
     // Current LevelDB implementation is not concurrent, so we need to wrap the
     // DB with RefCell. This service is running in a single thread, it's safe to
     // use RefCell.
@@ -39,7 +39,7 @@ pub(crate) struct TeaclaveDatabaseService {
     receiver: Receiver<ProxyRequest>,
 }
 
-impl TeaclaveDatabaseService {
+impl TeaclaveStorageService {
     pub(crate) fn new(database: RefCell<DB>, receiver: Receiver<ProxyRequest>) -> Self {
         Self { database, receiver }
     }
@@ -107,12 +107,12 @@ impl<'a> DBQueue<'a> {
         // put element
         self.database
             .put(&self.get_element_key(tail_index), value)
-            .map_err(|_| TeaclaveDatabaseError::LevelDbError)?;
+            .map_err(|_| TeaclaveStorageError::LevelDbError)?;
         // tail + 1
         tail_index += 1;
         self.database
             .put(&self.get_tail_key(), &tail_index.to_le_bytes())
-            .map_err(|_| TeaclaveDatabaseError::LevelDbError)?;
+            .map_err(|_| TeaclaveStorageError::LevelDbError)?;
         Ok(())
     }
 
@@ -121,18 +121,18 @@ impl<'a> DBQueue<'a> {
         let tail_index = self.get_tail();
         // check whether the queue is empty
         if head_index >= tail_index {
-            Err(TeaclaveDatabaseError::QueueEmpty.into())
+            Err(TeaclaveStorageError::QueueEmpty.into())
         } else {
             let element_key = self.get_element_key(head_index);
             let result = match self.database.get(&element_key) {
                 Some(value) => value,
-                None => return Err(TeaclaveDatabaseError::LevelDbError.into()),
+                None => return Err(TeaclaveStorageError::LevelDbError.into()),
             };
             // update head
             head_index += 1;
             self.database
                 .put(&self.get_head_key(), &head_index.to_le_bytes())
-                .map_err(|_| TeaclaveDatabaseError::LevelDbError)?;
+                .map_err(|_| TeaclaveStorageError::LevelDbError)?;
             // delete element; it's ok to ignore the error
             let _ = self.database.delete(&element_key);
             Ok(result)
@@ -140,7 +140,7 @@ impl<'a> DBQueue<'a> {
     }
 }
 
-impl TeaclaveDatabaseService {
+impl TeaclaveStorageService {
     pub(crate) fn start(&mut self) {
         #[cfg(test_mode)]
         test_mode::repalce_with_mock_database(self);
@@ -164,12 +164,12 @@ impl TeaclaveDatabaseService {
         }
     }
 }
-impl TeaclaveDatabase for TeaclaveDatabaseService {
+impl TeaclaveStorage for TeaclaveStorageService {
     fn get(&self, request: Request<GetRequest>) -> TeaclaveServiceResponseResult<GetResponse> {
         let request = request.message;
         match self.database.borrow_mut().get(&request.key) {
             Some(value) => Ok(GetResponse { value }),
-            None => Err(TeaclaveDatabaseError::KeyNotExist.into()),
+            None => Err(TeaclaveStorageError::KeyNotExist.into()),
         }
     }
 
@@ -177,7 +177,7 @@ impl TeaclaveDatabase for TeaclaveDatabaseService {
         let request = request.message;
         match self.database.borrow_mut().put(&request.key, &request.value) {
             Ok(_) => Ok(PutResponse),
-            Err(_) => Err(TeaclaveDatabaseError::LevelDbError.into()),
+            Err(_) => Err(TeaclaveStorageError::LevelDbError.into()),
         }
     }
 
@@ -188,7 +188,7 @@ impl TeaclaveDatabase for TeaclaveDatabaseService {
         let request = request.message;
         match self.database.borrow_mut().delete(&request.key) {
             Ok(_) => Ok(DeleteResponse),
-            Err(_) => Err(TeaclaveDatabaseError::LevelDbError.into()),
+            Err(_) => Err(TeaclaveStorageError::LevelDbError.into()),
         }
     }
 
@@ -216,7 +216,7 @@ impl TeaclaveDatabase for TeaclaveDatabaseService {
 #[cfg(test_mode)]
 mod test_mode {
     use super::*;
-    pub(crate) fn repalce_with_mock_database(service: &mut TeaclaveDatabaseService) {
+    pub(crate) fn repalce_with_mock_database(service: &mut TeaclaveStorageService) {
         let opt = rusty_leveldb::in_memory();
         let mut database = DB::open("mock_db", opt).unwrap();
         database.put(b"test_get_key", b"test_get_value").unwrap();
@@ -232,7 +232,7 @@ pub mod tests {
     use super::*;
     use std::sync::mpsc::channel;
 
-    fn get_mock_service() -> TeaclaveDatabaseService {
+    fn get_mock_service() -> TeaclaveStorageService {
         let (_sender, receiver) = channel();
         let opt = rusty_leveldb::in_memory();
         let mut database = DB::open("mock_db", opt).unwrap();
@@ -240,7 +240,7 @@ pub mod tests {
         database
             .put(b"test_delete_key", b"test_delete_value")
             .unwrap();
-        TeaclaveDatabaseService {
+        TeaclaveStorageService {
             database: RefCell::new(database),
             receiver,
         }
