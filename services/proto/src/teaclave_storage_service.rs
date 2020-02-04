@@ -1,11 +1,11 @@
 use anyhow::{Error, Result};
 use std::prelude::v1::*;
 
-use crate::teaclave_database_service_proto as proto;
-pub use proto::TeaclaveDatabase;
-pub use proto::TeaclaveDatabaseClient;
-pub use proto::TeaclaveDatabaseRequest;
-pub use proto::TeaclaveDatabaseResponse;
+use crate::teaclave_storage_service_proto as proto;
+pub use proto::TeaclaveStorage;
+pub use proto::TeaclaveStorageClient;
+pub use proto::TeaclaveStorageRequest;
+pub use proto::TeaclaveStorageResponse;
 
 #[derive(Debug)]
 pub struct GetRequest {

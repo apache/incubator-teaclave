@@ -1,13 +1,13 @@
 [package]
-name = "teaclave_database_service_enclave"
+name = "teaclave_storage_service_enclave"
 version = "0.1.0"
 authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
-description = "Teaclave Database Service enclave"
+description = "Teaclave Storage Service enclave"
 license = "Apache-2.0"
 edition = "2018"
 
 [lib]
-name = "teaclave_database_service_enclave"
+name = "teaclave_storage_service_enclave"
 crate-type = ["staticlib", "rlib"]
 
 [features]

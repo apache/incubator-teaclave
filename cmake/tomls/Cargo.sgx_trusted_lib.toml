@@ -2,7 +2,7 @@
 
 members = [
   "services/authentication/enclave",
-  "services/database/enclave",
+  "services/storage/enclave",
   "services/execution/enclave",
   "services/frontend/enclave",
   "services/management/enclave",

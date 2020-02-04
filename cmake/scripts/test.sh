@@ -39,7 +39,7 @@ trap 'kill $(jobs -p)' EXIT
 pushd ${MESATEE_SERVICE_INSTALL_DIR}
 ./teaclave_authentication_service &
 sleep 3    # wait for authentication service
-./teaclave_database_service &
+./teaclave_storage_service &
 ./teaclave_execution_service &
 ./teaclave_frontend_service &
 popd

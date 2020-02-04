@@ -2,7 +2,7 @@
 
 members = [
   "services/authentication/app",
-  "services/database/app",
+  "services/storage/app",
   "services/execution/app",
   "services/frontend/app",
   "services/management/app",
