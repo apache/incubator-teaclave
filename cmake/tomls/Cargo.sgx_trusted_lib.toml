@@ -1,6 +1,7 @@
 [workspace]
 
 members = [
+  "services/access_control/enclave",
   "services/authentication/enclave",
   "services/storage/enclave",
   "services/execution/enclave",

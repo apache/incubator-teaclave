@@ -37,6 +37,7 @@ cargo test --manifest-path ${MESATEE_PROJECT_ROOT}/common/protected_fs_rs/Cargo.
 echo_title "functional tests"
 trap 'kill $(jobs -p)' EXIT
 pushd ${MESATEE_SERVICE_INSTALL_DIR}
+./teaclave_access_control_service &
 ./teaclave_authentication_service &
 sleep 3    # wait for authentication service
 ./teaclave_storage_service &

@@ -92,24 +92,24 @@ foreach(_i RANGE ${SGX_APP_LAST_INDEX})
 endforeach()
 
 # mesapy components
-# add_custom_command(
-#     OUTPUT ${MESATEE_OUT_DIR}/acs_py_enclave.c
-#     COMMAND env
-#     ARGS PYTHONPATH=${PROJECT_SOURCE_DIR}/third_party/mesapy/sgx
-#          PYPY_FFI_OUTDIR=${MESATEE_OUT_DIR}
-#          pypy ${PROJECT_SOURCE_DIR}/mesatee_services/acs/python/ffi.py
-#     DEPENDS prep
-#             ${PROJECT_SOURCE_DIR}/mesatee_services/acs/python/ffi.py
-#             ${PROJECT_SOURCE_DIR}/mesatee_services/acs/python/acs_engine.py
-#     COMMENT "Generating mesapy ffi stubs"
-# )
-# add_library(pycomponent STATIC ${MESATEE_OUT_DIR}/acs_py_enclave.c)
-# set_target_properties(pycomponent PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${MESATEE_OUT_DIR})
-# target_compile_definitions(pycomponent PUBLIC SGX)
-# if(NOT EXISTS "/usr/lib/pypy/include")
-#     message(FATAL_ERROR "pypy development package not found\nFor Ubuntu, please run `apt-get install pypy-dev`")
-# endif()
-# target_compile_options(pycomponent PUBLIC -UWITH_THREAD -O2 -fPIC -Wimplicit -I/usr/lib/pypy/include)
+add_custom_command(
+     OUTPUT ${MESATEE_OUT_DIR}/acs_py_enclave.c
+     COMMAND env
+     ARGS PYTHONPATH=${PROJECT_SOURCE_DIR}/third_party/mesapy/sgx
+          PYPY_FFI_OUTDIR=${MESATEE_OUT_DIR}
+          pypy ${PROJECT_SOURCE_DIR}/services/access_control/python/ffi.py
+     DEPENDS prep
+             ${PROJECT_SOURCE_DIR}/services/access_control/python/ffi.py
+             ${PROJECT_SOURCE_DIR}/services/access_control/python/acs_engine.py
+     COMMENT "Generating mesapy ffi stubs"
+)
+add_library(pycomponent STATIC ${MESATEE_OUT_DIR}/acs_py_enclave.c)
+set_target_properties(pycomponent PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${MESATEE_OUT_DIR})
+target_compile_definitions(pycomponent PUBLIC SGX)
+if(NOT EXISTS "/usr/lib/pypy/include")
+    message(FATAL_ERROR "pypy development package not found\nFor Ubuntu, please run `apt-get install pypy-dev`")
+endif()
+target_compile_options(pycomponent PUBLIC -UWITH_THREAD -O2 -fPIC -Wimplicit -I/usr/lib/pypy/include)
 
 
 # sgx_trusted_lib
@@ -120,8 +120,7 @@ foreach(_i RANGE ${SGX_LIB_LAST_INDEX})
     list(GET SGX_LIB_PATHS ${_i} _pkg_path)
     list(GET SGX_LIB_CATEGORIES ${_i} _category)
     add_sgx_build_target(${_pkg_path} ${_pkg_name}
-        # TODO: DEPENDS prep pycomponent
-        DEPENDS prep
+        DEPENDS prep pycomponent
         INSTALL_DIR ${MESATEE_INSTALL_DIR}/${_category}
     )
 endforeach()

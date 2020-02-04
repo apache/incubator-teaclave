@@ -21,6 +21,7 @@ use std::str;
 
 fn main() {
     let proto_files = [
+        "src/proto/teaclave_access_control_service.proto",
         "src/proto/teaclave_authentication_service.proto",
         "src/proto/teaclave_common.proto",
         "src/proto/teaclave_storage_service.proto",
