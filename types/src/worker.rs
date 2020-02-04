@@ -170,6 +170,15 @@ impl TeaclaveFunctionArguments {
                     .map_err(|_| anyhow::anyhow!("parse argument error"))
             })
     }
+
+    pub fn into_vec(self) -> Vec<String> {
+        let mut vector = Vec::new();
+        self.args.into_iter().for_each(|(k, v)| {
+            vector.push(k);
+            vector.push(v);
+        });
+        vector
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]

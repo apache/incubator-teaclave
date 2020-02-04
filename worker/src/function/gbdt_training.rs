@@ -125,12 +125,18 @@ fn parse_training_data(input: impl io::Read, feature_size: usize) -> anyhow::Res
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
+    use teaclave_test_utils::*;
+
     use crate::function::TeaclaveFunction;
     use crate::runtime::RawIoRuntime;
     use std::untrusted::fs;
     use teaclave_types::{TeaclaveFunctionArguments, TeaclaveWorkerFileRegistry};
 
-    pub fn test_gbdt_training() {
+    pub fn run_tests() -> bool {
+        run_tests!(test_gbdt_training, test_gbdt_parse_training_data,)
+    }
+
+    fn test_gbdt_training() {
         let args_json = r#"
             {
                 "feature_size": "4",
@@ -189,7 +195,7 @@ pub mod tests {
         assert_eq!(&result[..], &expected[..]);
     }
 
-    pub fn test_gbdt_parse_training_data() {
+    fn test_gbdt_parse_training_data() {
         let line = "4.8,3.0,1.4,0.3,3.0";
         let result = parse_data_line(&line, 4);
         assert_eq!(result.is_ok(), true);
