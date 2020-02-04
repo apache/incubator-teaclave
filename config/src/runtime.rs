@@ -32,6 +32,7 @@ pub struct ApiEndpointsConfig {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InternalEndpointsConfig {
     pub authentication: InternalEndpoint,
+    pub management: InternalEndpoint,
     pub dbs: InternalEndpoint,
     pub execution: InternalEndpoint,
 }

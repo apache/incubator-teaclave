@@ -26,18 +26,65 @@ pub struct MesaTEEServiceGenerator;
 
 #[derive(Template)]
 #[template(path = "proto.j2")]
-struct ProtoTemplate<'a> {
-    service: &'a prost_build::Service,
-    proto_impl_mod_name: &'a str,
+struct ProtoTemplate {
+    service: Service,
+}
+
+struct Method {
+    name: String,
+    proto_name: String,
+    input_type: String,
+    impl_input_type: String,
+    output_type: String,
+    impl_output_type: String,
+}
+
+struct Service {
+    proto_name: String,
+    methods: Vec<Method>,
+}
+
+impl Service {
+    fn from_prost(prost_service: &prost_build::Service) -> Self {
+        fn convert_to_impl_type(current_package_name: &str, proto_type: &str) -> String {
+            if proto_type.starts_with("super::") {
+                format!(
+                    "crate::{}",
+                    proto_type
+                        .trim_start_matches("super::")
+                        .replacen("_proto", "", 1)
+                )
+            } else {
+                format!("crate::{}::{}", current_package_name, proto_type)
+            }
+        }
+        let mut methods = vec![];
+        let package_name = prost_service.package.trim_end_matches("_proto");
+        for m in prost_service.methods.iter() {
+            let impl_input_type = convert_to_impl_type(&package_name, &m.input_type);
+            let impl_output_type = convert_to_impl_type(&package_name, &m.output_type);
+
+            let method = Method {
+                name: m.name.clone(),
+                proto_name: m.proto_name.clone(),
+                input_type: m.input_type.clone(),
+                impl_input_type,
+                output_type: m.output_type.clone(),
+                impl_output_type,
+            };
+            methods.push(method);
+        }
+        Self {
+            proto_name: prost_service.proto_name.clone(),
+            methods,
+        }
+    }
 }
 
 impl MesaTEEServiceGenerator {
     fn generate_from_template(&mut self, service: &prost_build::Service, buf: &mut String) {
-        let name_len = service.package.len();
-        let proto_template = ProtoTemplate {
-            service,
-            proto_impl_mod_name: &service.package[0..name_len - "_proto".len()],
-        };
+        let service = Service::from_prost(service);
+        let proto_template = ProtoTemplate { service };
         buf.push_str(&proto_template.render().unwrap());
     }
 }

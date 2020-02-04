@@ -24,6 +24,7 @@ pub mod teaclave_common;
 pub mod teaclave_database_service;
 pub mod teaclave_execution_service;
 pub mod teaclave_frontend_service;
+pub mod teaclave_management_service;
 
 macro_rules! include_proto {
     ($package: tt) => {
@@ -49,4 +50,8 @@ pub mod teaclave_execution_service_proto {
 
 pub mod teaclave_frontend_service_proto {
     include_proto!("teaclave_frontend_service_proto");
+}
+
+pub mod teaclave_management_service_proto {
+    include_proto!("teaclave_management_service_proto");
 }
