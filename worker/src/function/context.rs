@@ -1,0 +1,382 @@
+#[cfg(feature = "mesalock_sgx")]
+use std::prelude::v1::*;
+
+use std::cell::RefCell;
+use std::slice;
+use std::thread_local;
+
+use sgx_types::{c_char, c_int, c_uchar, size_t};
+
+use anyhow;
+use std::collections::HashMap;
+use std::format;
+
+use crate::runtime::TeaclaveRuntime;
+
+const FFI_OK: c_int = 0;
+const FFI_FILE_ERROR: c_int = -1;
+
+pub struct Context {
+    runtime: Box<dyn TeaclaveRuntime + Send + Sync>,
+    seq: Sequence,
+    read_handles: HandleRegistry<Box<dyn std::io::Read>>,
+    write_handles: HandleRegistry<Box<dyn std::io::Write>>,
+}
+
+impl Context {
+    pub fn new(runtime: Box<dyn TeaclaveRuntime + Send + Sync>) -> Context {
+        Context {
+            runtime,
+            seq: Sequence::new(1, 1024),
+            read_handles: HandleRegistry::default(),
+            write_handles: HandleRegistry::default(),
+        }
+    }
+
+    fn open_input(&mut self, fid: &str) -> anyhow::Result<FileHandle> {
+        let file = self.runtime.open_input(fid)?;
+        let handle = self.seq.next()?.into_read_handle();
+        self.read_handles.add(handle, file)?;
+        Ok(handle)
+    }
+
+    fn create_output(&mut self, fid: &str) -> anyhow::Result<FileHandle> {
+        let file = self.runtime.create_output(fid)?;
+        let handle = self.seq.next()?.into_write_handle();
+        self.write_handles.add(handle, file)?;
+        Ok(handle)
+    }
+
+    fn read_handle(&mut self, handle: FileHandle, buf: &mut [u8]) -> anyhow::Result<usize> {
+        let file = self.read_handles.get_mut(handle)?;
+        let size = file.read(buf)?;
+        Ok(size)
+    }
+
+    fn write_handle(&mut self, handle: FileHandle, buf: &[u8]) -> anyhow::Result<usize> {
+        let file = self.write_handles.get_mut(handle)?;
+        let size = file.write(buf)?;
+        Ok(size)
+    }
+
+    fn close_handle(&mut self, handle: FileHandle) -> anyhow::Result<()> {
+        if handle.is_read_handle() {
+            self.read_handles.remove(handle)?;
+        } else {
+            self.write_handles.remove(handle)?;
+        }
+        Ok(())
+    }
+}
+
+trait HandleEncoding {
+    fn into_write_handle(self) -> FileHandle;
+    fn into_read_handle(self) -> FileHandle;
+    fn is_write_handle(&self) -> bool;
+    fn is_read_handle(&self) -> bool;
+}
+
+impl HandleEncoding for FileHandle {
+    fn into_write_handle(self) -> FileHandle {
+        assert!(self < HANDLE_UPPDER_BOUND);
+        0x4000_0000 | self
+    }
+
+    fn is_write_handle(&self) -> bool {
+        0x4000_0000 & self > 0
+    }
+
+    fn into_read_handle(self) -> FileHandle {
+        assert!(self < HANDLE_UPPDER_BOUND);
+        self
+    }
+
+    fn is_read_handle(&self) -> bool {
+        !self.is_write_handle()
+    }
+}
+
+struct Sequence {
+    range: std::ops::Range<FileHandle>,
+}
+
+impl Sequence {
+    fn new(start: FileHandle, end: FileHandle) -> Self {
+        Sequence {
+            range: (start..end),
+        }
+    }
+
+    fn next(&mut self) -> anyhow::Result<FileHandle> {
+        self.range
+            .next()
+            .ok_or_else(|| anyhow::anyhow!("Reached max sequence"))
+    }
+}
+
+type FileHandle = i32;
+const HANDLE_UPPDER_BOUND: FileHandle = 0x1000_0000;
+
+struct HandleRegistry<T> {
+    entries: HashMap<FileHandle, T>,
+}
+
+impl<T> HandleRegistry<T> {
+    fn add(&mut self, handle: FileHandle, obj: T) -> anyhow::Result<()> {
+        anyhow::ensure!(
+            self.entries.get(&handle).is_none(),
+            "Reuse a existed handle: {}",
+            handle
+        );
+        self.entries.insert(handle, obj);
+        Ok(())
+    }
+
+    fn get_mut(&mut self, handle: FileHandle) -> anyhow::Result<&mut T> {
+        self.entries
+            .get_mut(&handle)
+            .ok_or_else(|| anyhow::anyhow!("Get an invalid handle: {}", handle))
+    }
+
+    fn remove(&mut self, handle: FileHandle) -> anyhow::Result<()> {
+        self.entries
+            .remove(&handle)
+            .ok_or_else(|| anyhow::anyhow!("Remove an invalid handle: {}", handle))?;
+        Ok(())
+    }
+}
+
+impl<T> std::default::Default for HandleRegistry<T> {
+    fn default() -> Self {
+        HandleRegistry {
+            entries: HashMap::<FileHandle, T>::new(),
+        }
+    }
+}
+
+thread_local! {
+    pub static CONTEXT: RefCell<Option<Context>> = RefCell::new(None);
+}
+
+pub fn reset_thread_context() -> anyhow::Result<()> {
+    CONTEXT.with(|ctx| {
+        let mut ctx = ctx.borrow_mut();
+        anyhow::ensure!(ctx.is_some(), "Context not initialized");
+        *ctx = None;
+        Ok(())
+    })
+}
+
+pub fn set_thread_context(context: Context) -> anyhow::Result<()> {
+    CONTEXT.with(|ctx| {
+        let mut ctx = ctx.borrow_mut();
+        anyhow::ensure!(ctx.is_none(), "Context already initialized");
+        *ctx = Some(context);
+        Ok(())
+    })
+}
+
+pub fn rtc_open_input(fid: &str) -> anyhow::Result<FileHandle> {
+    CONTEXT.with(|ctx| {
+        let mut ctx = ctx.borrow_mut();
+        anyhow::ensure!(ctx.is_some(), "Context not initialized");
+        ctx.as_mut().unwrap().open_input(fid)
+    })
+}
+
+pub fn rtc_create_output(fid: &str) -> anyhow::Result<FileHandle> {
+    CONTEXT.with(|ctx| {
+        let mut ctx = ctx.borrow_mut();
+        anyhow::ensure!(ctx.is_some(), "Context not initialized");
+        ctx.as_mut().unwrap().create_output(fid)
+    })
+}
+
+pub fn rtc_read_handle(f: FileHandle, buf: &mut [u8]) -> anyhow::Result<usize> {
+    CONTEXT.with(|ctx| {
+        let mut ctx = ctx.borrow_mut();
+        anyhow::ensure!(ctx.is_some(), "Context not initialized");
+        ctx.as_mut().unwrap().read_handle(f, buf)
+    })
+}
+
+pub fn rtc_write_handle(f: FileHandle, buf: &[u8]) -> anyhow::Result<usize> {
+    CONTEXT.with(|ctx| {
+        let mut ctx = ctx.borrow_mut();
+        anyhow::ensure!(ctx.is_some(), "Context not initialized");
+        ctx.as_mut().unwrap().write_handle(f, buf)
+    })
+}
+
+pub fn rtc_close_handle(f: FileHandle) -> anyhow::Result<()> {
+    CONTEXT.with(|ctx| {
+        let mut ctx = ctx.borrow_mut();
+        anyhow::ensure!(ctx.is_some(), "Context not initialized");
+        ctx.as_mut().unwrap().close_handle(f)
+    })
+}
+
+#[cfg(feature = "enclave_unit_test")]
+pub mod tests {
+    use super::*;
+    use crate::hashmap;
+    use crate::runtime::RawIoRuntime;
+    use std::path::PathBuf;
+    use std::str::FromStr;
+    use teaclave_test_utils::*;
+    use teaclave_types::AesGcm256CryptoInfo;
+    use teaclave_types::TeaclaveFileCryptoInfo;
+    use teaclave_types::TeaclaveWorkerFileInfo;
+    use teaclave_types::TeaclaveWorkerFileRegistry;
+
+    pub fn run_tests() -> bool {
+        run_tests!(test_file_handle_encoding, test_rtc_api,)
+    }
+
+    fn test_file_handle_encoding() {
+        assert_eq!(5, 5.into_read_handle());
+        assert_eq!(0x4000_0006, 6.into_write_handle());
+        assert_eq!(true, 0x4000_0000.is_write_handle());
+        assert_eq!(false, 0x4000_0000.is_read_handle());
+        assert_eq!(true, 0x9.is_read_handle());
+        assert_eq!(false, 0xff.is_write_handle());
+    }
+
+    fn test_rtc_api() {
+        let input = PathBuf::from_str("test_cases/mesapy/input.txt").unwrap();
+        let output = PathBuf::from_str("test_cases/mesapy/output.txt.out").unwrap();
+
+        let input_info = TeaclaveWorkerFileInfo {
+            path: input,
+            crypto_info: TeaclaveFileCryptoInfo::AesGcm256(AesGcm256CryptoInfo::default()),
+        };
+
+        let output_info = TeaclaveWorkerFileInfo {
+            path: output,
+            crypto_info: TeaclaveFileCryptoInfo::AesGcm256(AesGcm256CryptoInfo::default()),
+        };
+
+        let in_fid = "in_f1";
+        let out_fid = "out_f1";
+        let input_files = TeaclaveWorkerFileRegistry {
+            entries: hashmap!(in_fid.to_string() => input_info),
+        };
+
+        let output_files = TeaclaveWorkerFileRegistry {
+            entries: hashmap!(out_fid.to_string() => output_info),
+        };
+
+        let runtime = Box::new(RawIoRuntime::new(input_files, output_files));
+        set_thread_context(Context::new(runtime)).unwrap();
+
+        let expected_input = "Hello\nWorld".as_bytes();
+        let f = rtc_open_input(&in_fid).unwrap();
+        let mut buf = [0u8; 128];
+        let size = rtc_read_handle(f, &mut buf).unwrap();
+        assert_eq!(&expected_input[..], &buf[..size]);
+
+        assert!(rtc_close_handle(f).is_ok());
+        assert!(rtc_close_handle(f).is_err());
+
+        let f = rtc_create_output(&out_fid).unwrap();
+        let size = rtc_write_handle(f, &expected_input).unwrap();
+        assert_eq!(size, expected_input.len());
+
+        assert!(rtc_close_handle(f).is_ok());
+        assert!(rtc_close_handle(f).is_err());
+    }
+}
+
+use std::ffi::CStr;
+
+#[allow(unused)]
+#[no_mangle]
+extern "C" fn c_open_input(fid: *mut c_char, out_handle: *mut c_int) -> c_int {
+    let fid = unsafe { CStr::from_ptr(fid).to_string_lossy().into_owned() };
+    match rtc_open_input(&fid) {
+        Ok(handle) => {
+            unsafe {
+                *out_handle = handle;
+            }
+            FFI_OK
+        }
+        Err(e) => {
+            error!("c_open_file: {:?}", e);
+            FFI_FILE_ERROR
+        }
+    }
+}
+
+#[allow(unused)]
+#[no_mangle]
+extern "C" fn c_create_output(fid: *mut c_char, out_handle: *mut c_int) -> c_int {
+    let fid = unsafe { CStr::from_ptr(fid).to_string_lossy().into_owned() };
+    match rtc_create_output(&fid) {
+        Ok(handle) => {
+            unsafe {
+                *out_handle = handle;
+            }
+            FFI_OK
+        }
+        Err(e) => {
+            error!("c_open_file: {:?}", e);
+            FFI_FILE_ERROR
+        }
+    }
+}
+
+#[allow(unused)]
+#[no_mangle]
+extern "C" fn c_read_file(
+    handle: c_int,
+    out_buf: *mut c_uchar,
+    out_buf_size_p: *mut size_t,
+) -> c_int {
+    let out_buf_size = unsafe { *out_buf_size_p };
+    let out: &mut [u8] = unsafe { slice::from_raw_parts_mut(out_buf, out_buf_size) };
+
+    match rtc_read_handle(handle, out) {
+        Ok(size) => {
+            unsafe {
+                *out_buf_size_p = size;
+            }
+            FFI_OK
+        }
+        Err(e) => {
+            error!("c_read_file: {:?}", e);
+            FFI_FILE_ERROR
+        }
+    }
+}
+
+#[allow(unused)]
+#[no_mangle]
+extern "C" fn c_write_file(handle: c_int, in_buf: *mut c_uchar, buf_size_p: *mut size_t) -> c_int {
+    let out_buf_size = unsafe { *buf_size_p };
+    let in_buf: &[u8] = unsafe { slice::from_raw_parts_mut(in_buf, out_buf_size) };
+
+    match rtc_write_handle(handle, in_buf) {
+        Ok(size) => {
+            unsafe {
+                *buf_size_p = size;
+            }
+            FFI_OK
+        }
+        Err(e) => {
+            error!("c_write_file: {:?}", e);
+            FFI_FILE_ERROR
+        }
+    }
+}
+
+#[allow(unused)]
+#[no_mangle]
+extern "C" fn c_close_file(handle: c_int) -> c_int {
+    match rtc_close_handle(handle) {
+        Ok(size) => FFI_OK,
+        Err(e) => {
+            error!("c_close_file: {:?}", e);
+            FFI_FILE_ERROR
+        }
+    }
+}
