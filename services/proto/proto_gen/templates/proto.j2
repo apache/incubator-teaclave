@@ -16,16 +16,22 @@ pub enum {{ service.proto_name }}Response {
 
 pub trait {{ service.proto_name }} {
     {%- for m in service.methods %}
-      fn {{ m.name }}(&self, request: teaclave_rpc::Request<crate::{{ proto_impl_mod_name }}::{{ m.input_type }}>) -> teaclave_types::TeaclaveServiceResponseResult<crate::{{ proto_impl_mod_name }}::{{ m.output_type }}>;
+      fn {{ m.name }}(
+          &self,
+          request: teaclave_rpc::Request<{{ m.impl_input_type }}>
+      ) -> teaclave_types::TeaclaveServiceResponseResult<{{ m.impl_output_type }}>;
     {%- endfor %}
 
-    fn dispatch(&self, request: teaclave_rpc::Request<{{ service.proto_name }}Request>) -> teaclave_types::TeaclaveServiceResponseResult<{{ service.proto_name }}Response> {
+    fn dispatch(
+      &self,
+      request: teaclave_rpc::Request<{{ service.proto_name }}Request>
+    ) -> teaclave_types::TeaclaveServiceResponseResult<{{ service.proto_name }}Response> {
          use core::convert::TryFrom;
          use std::string::ToString;
          match request.message {
              {%- for m in service.methods %}
              {{ service.proto_name }}Request::{{ m.proto_name }}(r) => {
-                 let r = crate::{{ proto_impl_mod_name }}::{{ m.input_type }}::try_from(r)
+                 let r = {{ m.impl_input_type }}::try_from(r)
                      .map_err(|_| teaclave_types::TeaclaveServiceResponseError::InternalError("internal".to_string()))?;
                  let r = teaclave_rpc::Request {
                      metadata: request.metadata,
@@ -67,7 +73,10 @@ impl {{ service.proto_name }}Client {
     }
 
     {%- for m in service.methods %}
-    pub fn {{ m.name }}<T: Into<{{ m.input_type }}>>(&mut self, request: T) -> teaclave_types::TeaclaveServiceResponseResult<{{ m.output_type }}> {
+    pub fn {{ m.name }}<T: Into<{{ m.input_type }}>>(
+        &mut self,
+        request: T
+    ) -> teaclave_types::TeaclaveServiceResponseResult<{{ m.output_type }}> {
         {%- if service.methods.len() > 1 %}
         use std::string::ToString;
         {%- endif %}

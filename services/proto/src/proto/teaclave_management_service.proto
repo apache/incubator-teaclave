@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package teaclave_management_service_proto;
+
+import "teaclave_frontend_service.proto";
+
+service TeaclaveManagement {
+  rpc RegisterInputFile (teaclave_frontend_service_proto.RegisterInputFileRequest) returns (teaclave_frontend_service_proto.RegisterInputFileResponse);
+  rpc RegisterOutputFile (teaclave_frontend_service_proto.RegisterOutputFileRequest) returns (teaclave_frontend_service_proto.RegisterOutputFileResponse);
+}
