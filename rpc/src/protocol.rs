@@ -13,6 +13,8 @@ pub enum ProtocolError {
     IoError(#[from] io::Error),
     #[error("SerdeError")]
     SerdeError(#[from] serde_json::error::Error),
+    #[error(transparent)]
+    Other(#[from] anyhow::Error),
 }
 
 pub(crate) struct JsonProtocol<'a, T>
@@ -20,6 +22,7 @@ where
     T: io::Read + io::Write,
 {
     pub transport: &'a mut T,
+    max_frame_len: u64,
 }
 
 impl<'a, T> JsonProtocol<'a, T>
@@ -27,7 +30,11 @@ where
     T: io::Read + io::Write,
 {
     pub fn new(transport: &'a mut T) -> JsonProtocol<'a, T> {
-        Self { transport }
+        Self {
+            transport,
+            // Default max frame length is 8MB
+            max_frame_len: 8 * 1_024 * 1_024,
+        }
     }
 
     pub fn read_message<V>(&mut self) -> std::result::Result<V, ProtocolError>
@@ -38,6 +45,12 @@ where
 
         self.transport.read_exact(&mut header)?;
         let buf_len = u64::from_be(unsafe { transmute::<[u8; 8], u64>(header) });
+
+        if buf_len > self.max_frame_len {
+            return Err(ProtocolError::Other(anyhow::anyhow!(
+                "Exceed max frame length"
+            )));
+        }
 
         let mut recv_buf: Vec<u8> = vec![0u8; buf_len as usize];
         self.transport.read_exact(&mut recv_buf)?;
