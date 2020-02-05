@@ -47,15 +47,6 @@ typedef struct _sgx_cpu_svn_t
     uint8_t                        svn[SGX_CPUSVN_SIZE];
 } sgx_cpu_svn_t;
 
-// defined in sgx_tae_service.h
-#define SGX_MC_UUID_COUNTER_ID_SIZE 3
-#define SGX_MC_UUID_NONCE_SIZE      13
-typedef struct _mc_uuid {
-    uint8_t counter_id[SGX_MC_UUID_COUNTER_ID_SIZE];
-    uint8_t nonce[SGX_MC_UUID_NONCE_SIZE];
-} sgx_mc_uuid_t;
-
-
 // sgx_attributes.h
 typedef struct _attributes_t
 {
