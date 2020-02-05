@@ -1,6 +1,5 @@
 use crate::teaclave_access_control_service_proto as proto;
 use anyhow::{Error, Result};
-use serde::{Deserialize, Serialize};
 use std::prelude::v1::*;
 
 pub use proto::TeaclaveAccessControl;
@@ -8,40 +7,85 @@ pub use proto::TeaclaveAccessControlClient;
 pub use proto::TeaclaveAccessControlRequest;
 pub use proto::TeaclaveAccessControlResponse;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug)]
 pub struct AuthorizeDataRequest {
     pub subject_user_id: String,
     pub object_data_id: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+impl AuthorizeDataRequest {
+    pub fn new(subject_user_id: impl Into<String>, object_data_id: impl Into<String>) -> Self {
+        Self {
+            subject_user_id: subject_user_id.into(),
+            object_data_id: object_data_id.into(),
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct AuthorizeDataResponse {
     pub accept: bool,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+impl AuthorizeDataResponse {
+    pub fn new(accept: bool) -> Self {
+        Self { accept }
+    }
+}
+
+#[derive(Debug)]
 pub struct AuthorizeFunctionRequest {
     pub subject_user_id: String,
     pub object_function_id: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+impl AuthorizeFunctionRequest {
+    pub fn new(subject_user_id: impl Into<String>, object_function_id: impl Into<String>) -> Self {
+        Self {
+            subject_user_id: subject_user_id.into(),
+            object_function_id: object_function_id.into(),
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct AuthorizeFunctionResponse {
     pub accept: bool,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+impl AuthorizeFunctionResponse {
+    pub fn new(accept: bool) -> Self {
+        Self { accept }
+    }
+}
+
+#[derive(Debug)]
 pub struct AuthorizeTaskRequest {
     pub subject_user_id: String,
     pub object_task_id: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+impl AuthorizeTaskRequest {
+    pub fn new(subject_user_id: impl Into<String>, object_task_id: impl Into<String>) -> Self {
+        Self {
+            subject_user_id: subject_user_id.into(),
+            object_task_id: object_task_id.into(),
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct AuthorizeTaskResponse {
     pub accept: bool,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+impl AuthorizeTaskResponse {
+    pub fn new(accept: bool) -> Self {
+        Self { accept }
+    }
+}
+
+#[derive(Debug)]
 pub struct AuthorizeStagedTaskRequest {
     pub subject_task_id: String,
     pub object_function_id: String,
@@ -49,9 +93,15 @@ pub struct AuthorizeStagedTaskRequest {
     pub object_output_data_id_list: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug)]
 pub struct AuthorizeStagedTaskResponse {
     pub accept: bool,
+}
+
+impl AuthorizeStagedTaskResponse {
+    pub fn new(accept: bool) -> Self {
+        Self { accept }
+    }
 }
 
 impl std::convert::TryFrom<proto::AuthorizeDataRequest> for AuthorizeDataRequest {

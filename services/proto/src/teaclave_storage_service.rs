@@ -13,10 +13,8 @@ pub struct GetRequest {
 }
 
 impl GetRequest {
-    pub fn new(key: impl AsRef<[u8]>) -> Self {
-        Self {
-            key: key.as_ref().into(),
-        }
+    pub fn new(key: impl Into<Vec<u8>>) -> Self {
+        Self { key: key.into() }
     }
 }
 
@@ -26,9 +24,9 @@ pub struct GetResponse {
 }
 
 impl GetResponse {
-    pub fn new(value: impl AsRef<[u8]>) -> Self {
+    pub fn new(value: impl Into<Vec<u8>>) -> Self {
         Self {
-            value: value.as_ref().into(),
+            value: value.into(),
         }
     }
 }
@@ -40,10 +38,10 @@ pub struct PutRequest {
 }
 
 impl PutRequest {
-    pub fn new(key: impl AsRef<[u8]>, value: impl AsRef<[u8]>) -> Self {
+    pub fn new(key: impl Into<Vec<u8>>, value: impl Into<Vec<u8>>) -> Self {
         Self {
-            key: key.as_ref().into(),
-            value: value.as_ref().into(),
+            key: key.into(),
+            value: value.into(),
         }
     }
 }
@@ -57,10 +55,8 @@ pub struct DeleteRequest {
 }
 
 impl DeleteRequest {
-    pub fn new(key: impl AsRef<[u8]>) -> Self {
-        Self {
-            key: key.as_ref().into(),
-        }
+    pub fn new(key: impl Into<Vec<u8>>) -> Self {
+        Self { key: key.into() }
     }
 }
 
@@ -74,10 +70,10 @@ pub struct EnqueueRequest {
 }
 
 impl EnqueueRequest {
-    pub fn new(key: impl AsRef<[u8]>, value: impl AsRef<[u8]>) -> Self {
+    pub fn new(key: impl Into<Vec<u8>>, value: impl Into<Vec<u8>>) -> Self {
         Self {
-            key: key.as_ref().into(),
-            value: value.as_ref().into(),
+            key: key.into(),
+            value: value.into(),
         }
     }
 }
@@ -91,10 +87,8 @@ pub struct DequeueRequest {
 }
 
 impl DequeueRequest {
-    pub fn new(key: impl AsRef<[u8]>) -> Self {
-        Self {
-            key: key.as_ref().into(),
-        }
+    pub fn new(key: impl Into<Vec<u8>>) -> Self {
+        Self { key: key.into() }
     }
 }
 
@@ -104,9 +98,9 @@ pub struct DequeueResponse {
 }
 
 impl DequeueResponse {
-    pub fn new(value: impl AsRef<[u8]>) -> Self {
+    pub fn new(value: impl Into<Vec<u8>>) -> Self {
         Self {
-            value: value.as_ref().into(),
+            value: value.into(),
         }
     }
 }

@@ -51,10 +51,7 @@ fn get_client() -> TeaclaveAccessControlClient {
 fn test_authorize_data_success() {
     let mut client = get_client();
 
-    let request = AuthorizeDataRequest {
-        subject_user_id: "mock_user_a".to_string(),
-        object_data_id: "mock_data".to_string(),
-    };
+    let request = AuthorizeDataRequest::new("mock_user_a", "mock_data");
     let response_result = client.authorize_data(request);
     assert!(response_result.is_ok());
     assert!(response_result.unwrap().accept);
@@ -63,18 +60,12 @@ fn test_authorize_data_success() {
 fn test_authorize_data_fail() {
     let mut client = get_client();
 
-    let request = AuthorizeDataRequest {
-        subject_user_id: "mock_user_d".to_string(),
-        object_data_id: "mock_data".to_string(),
-    };
+    let request = AuthorizeDataRequest::new("mock_user_d", "mock_data");
     let response_result = client.authorize_data(request);
     assert!(response_result.is_ok());
     assert!(!response_result.unwrap().accept);
 
-    let request = AuthorizeDataRequest {
-        subject_user_id: "mock_user_a".to_string(),
-        object_data_id: "mock_data_b".to_string(),
-    };
+    let request = AuthorizeDataRequest::new("mock_user_a", "mock_data_b");
     let response_result = client.authorize_data(request);
     assert!(response_result.is_ok());
     assert!(!response_result.unwrap().accept);
@@ -83,26 +74,20 @@ fn test_authorize_data_fail() {
 fn test_authorize_function_success() {
     let mut client = get_client();
 
-    let request = AuthorizeFunctionRequest {
-        subject_user_id: "mock_public_function_owner".to_string(),
-        object_function_id: "mock_public_function".to_string(),
-    };
+    let request =
+        AuthorizeFunctionRequest::new("mock_public_function_owner", "mock_public_function");
     let response_result = client.authorize_function(request);
     assert!(response_result.is_ok());
     assert!(response_result.unwrap().accept);
 
-    let request = AuthorizeFunctionRequest {
-        subject_user_id: "mock_private_function_owner".to_string(),
-        object_function_id: "mock_private_function".to_string(),
-    };
+    let request =
+        AuthorizeFunctionRequest::new("mock_private_function_owner", "mock_private_function");
     let response_result = client.authorize_function(request);
     assert!(response_result.is_ok());
     assert!(response_result.unwrap().accept);
 
-    let request = AuthorizeFunctionRequest {
-        subject_user_id: "mock_private_function_owner".to_string(),
-        object_function_id: "mock_public_function".to_string(),
-    };
+    let request =
+        AuthorizeFunctionRequest::new("mock_private_function_owner", "mock_public_function");
     let response_result = client.authorize_function(request);
     assert!(response_result.is_ok());
     assert!(response_result.unwrap().accept);
@@ -110,10 +95,8 @@ fn test_authorize_function_success() {
 
 fn test_authorize_function_fail() {
     let mut client = get_client();
-    let request = AuthorizeFunctionRequest {
-        subject_user_id: "mock_public_function_owner".to_string(),
-        object_function_id: "mock_private_function".to_string(),
-    };
+    let request =
+        AuthorizeFunctionRequest::new("mock_public_function_owner", "mock_private_function");
     let response_result = client.authorize_function(request);
     assert!(response_result.is_ok());
     assert!(!response_result.unwrap().accept);
@@ -121,18 +104,12 @@ fn test_authorize_function_fail() {
 
 fn test_authorize_task_success() {
     let mut client = get_client();
-    let request = AuthorizeTaskRequest {
-        subject_user_id: "mock_participant_a".to_string(),
-        object_task_id: "mock_task".to_string(),
-    };
+    let request = AuthorizeTaskRequest::new("mock_participant_a", "mock_task");
     let response_result = client.authorize_task(request);
     assert!(response_result.is_ok());
     assert!(response_result.unwrap().accept);
 
-    let request = AuthorizeTaskRequest {
-        subject_user_id: "mock_participant_b".to_string(),
-        object_task_id: "mock_task".to_string(),
-    };
+    let request = AuthorizeTaskRequest::new("mock_participant_b", "mock_task");
     let response_result = client.authorize_task(request);
     assert!(response_result.is_ok());
     assert!(response_result.unwrap().accept);
@@ -140,10 +117,7 @@ fn test_authorize_task_success() {
 
 fn test_authorize_task_fail() {
     let mut client = get_client();
-    let request = AuthorizeTaskRequest {
-        subject_user_id: "mock_participant_c".to_string(),
-        object_task_id: "mock_task".to_string(),
-    };
+    let request = AuthorizeTaskRequest::new("mock_participant_c", "mock_task");
     let response_result = client.authorize_task(request);
     assert!(response_result.is_ok());
     assert!(!response_result.unwrap().accept);
