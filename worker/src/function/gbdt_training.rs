@@ -35,6 +35,9 @@ use gbdt::gradient_boost::GBDT;
 #[derive(Default)]
 pub struct GbdtTraining;
 
+static IN_DATA: &str = "training_data";
+static OUT_MODEL: &str = "trained_model";
+
 impl TeaclaveFunction for GbdtTraining {
     fn execute(
         &self,
@@ -52,7 +55,7 @@ impl TeaclaveFunction for GbdtTraining {
         let training_optimization_level: u8 = args.try_get("training_optimization_level")?;
 
         // read input
-        let training_file = runtime.open_input("training_data")?;
+        let training_file = runtime.open_input(IN_DATA)?;
         let mut train_dv = parse_training_data(training_file, feature_size)?;
         let data_size = train_dv.len();
 
@@ -75,7 +78,7 @@ impl TeaclaveFunction for GbdtTraining {
         let model_json = serde_json::to_string(&gbdt_train_mod)?;
 
         // save the model to output
-        let mut model_file = runtime.create_output("trained_model")?;
+        let mut model_file = runtime.create_output(OUT_MODEL)?;
         model_file.write_all(model_json.as_bytes())?;
 
         let summary = format!("Trained {} lines of data.", data_size);
@@ -127,69 +130,54 @@ pub mod tests {
     use super::*;
     use teaclave_test_utils::*;
 
+    use std::untrusted::fs;
+
+    use teaclave_types::hashmap;
+    use teaclave_types::TeaclaveFileCryptoInfo;
+    use teaclave_types::TeaclaveFunctionArguments;
+    use teaclave_types::TeaclaveWorkerFileInfo;
+    use teaclave_types::TeaclaveWorkerFileRegistry;
+
     use crate::function::TeaclaveFunction;
     use crate::runtime::RawIoRuntime;
-    use std::untrusted::fs;
-    use teaclave_types::{TeaclaveFunctionArguments, TeaclaveWorkerFileRegistry};
 
     pub fn run_tests() -> bool {
         run_tests!(test_gbdt_training, test_gbdt_parse_training_data,)
     }
 
     fn test_gbdt_training() {
-        let args_json = r#"
-            {
-                "feature_size": "4",
-                "max_depth": "4",
-                "iterations": "100",
-                "shrinkage": "0.1",
-                "feature_sample_ratio": "1.0",
-                "data_sample_ratio": "1.0",
-                "min_leaf_size": "1",
-                "loss": "LAD",
-                "training_optimization_level": "2"
-            }
-        "#;
+        let func_args = TeaclaveFunctionArguments::new(&hashmap!(
+            "feature_size"  => "4",
+            "max_depth"     => "4",
+            "iterations"    => "100",
+            "shrinkage"     => "0.1",
+            "feature_sample_ratio" => "1.0",
+            "data_sample_ratio" => "1.0",
+            "min_leaf_size" => "1",
+            "loss"          => "LAD",
+            "training_optimization_level" => "2"
+        ));
 
-        let input_json = r#"
-            {
-                "training_data": {
-                    "path": "test_cases/gbdt_training/train.txt",
-                    "crypto_info": {
-                        "aes_gcm128": {
-                            "key": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-                            "iv": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-                        }
-                    }
-                }
-            }
-        "#;
+        let plain_input = "test_cases/gbdt_training/train.txt";
+        let plain_output = "test_cases/gbdt_training/training_model.txt.out";
+        let expected_output = "test_cases/gbdt_training/expected_model.txt";
 
-        let output_json = r#"
-            {
-                "trained_model": {
-                    "path": "test_cases/gbdt_training/training_model.txt.out",
-                    "crypto_info": {
-                        "aes_gcm128": {
-                            "key": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-                            "iv": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-                        }
-                    }
-                }
-            }
-        "#;
+        let input_files = TeaclaveWorkerFileRegistry::new(hashmap!(
+            IN_DATA.to_string() =>
+            TeaclaveWorkerFileInfo::new(plain_input, TeaclaveFileCryptoInfo::default())
+        ));
 
-        let func_args: TeaclaveFunctionArguments = serde_json::from_str(&args_json).unwrap();
-        let input_files: TeaclaveWorkerFileRegistry = serde_json::from_str(&input_json).unwrap();
-        let output_files: TeaclaveWorkerFileRegistry = serde_json::from_str(&output_json).unwrap();
+        let output_files = TeaclaveWorkerFileRegistry::new(hashmap!(
+            OUT_MODEL.to_string() =>
+            TeaclaveWorkerFileInfo::new(plain_output, TeaclaveFileCryptoInfo::default())
+        ));
+
         let runtime = Box::new(RawIoRuntime::new(input_files, output_files));
 
         let function = GbdtTraining;
         let summary = function.execute(runtime, func_args).unwrap();
         assert_eq!(summary, "Trained 120 lines of data.");
 
-        let plain_output = "test_cases/gbdt_training/training_model.txt.out";
-        let expected_output = "test_cases/gbdt_training/expected_model.txt";
         let result = fs::read_to_string(&plain_output).unwrap();
         let expected = fs::read_to_string(&expected_output).unwrap();
         assert_eq!(&result[..], &expected[..]);
@@ -198,6 +186,9 @@ pub mod tests {
     fn test_gbdt_parse_training_data() {
         let line = "4.8,3.0,1.4,0.3,3.0";
         let result = parse_data_line(&line, 4);
-        assert_eq!(result.is_ok(), true);
+        assert!(result.is_ok());
+
+        let result = parse_data_line(&line, 3);
+        assert!(result.is_err());
     }
 }

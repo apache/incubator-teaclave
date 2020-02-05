@@ -1,13 +1,9 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use anyhow::{bail, ensure, Error, Result};
-use std::format;
-use teaclave_types::{
-    AesGcm128CryptoInfo, AesGcm256CryptoInfo, TeaclaveFileCryptoInfo, TeaclaveFileRootKey128,
-};
-
 use crate::teaclave_common_proto as proto;
+use anyhow::{Error, Result};
+use teaclave_types::TeaclaveFileCryptoInfo;
 
 #[derive(Debug)]
 pub struct UserCredential {
@@ -49,48 +45,17 @@ impl From<UserCredential> for proto::UserCredential {
 impl std::convert::TryFrom<proto::FileCryptoInfo> for TeaclaveFileCryptoInfo {
     type Error = Error;
     fn try_from(proto: proto::FileCryptoInfo) -> Result<Self> {
-        let info = match proto.schema.as_str() {
-            "aes_gcm_128" => {
-                let info = AesGcm128CryptoInfo::new(&proto.key, &proto.iv)?;
-                TeaclaveFileCryptoInfo::AesGcm128(info)
-            }
-            "aes_gcm_256" => {
-                let info = AesGcm256CryptoInfo::new(&proto.key, &proto.iv)?;
-                TeaclaveFileCryptoInfo::AesGcm256(info)
-            }
-            "teaclave_file_root_key_128" => {
-                ensure!(
-                    proto.iv.is_empty(),
-                    "IV is not empty for teaclave_file_root_key_128"
-                );
-                let info = TeaclaveFileRootKey128::new(&proto.key)?;
-                TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(info)
-            }
-            _ => bail!("Invalid crypto schema: {}", proto.schema.as_str()),
-        };
-
-        Ok(info)
+        TeaclaveFileCryptoInfo::new(&proto.schema, &proto.key, &proto.iv)
     }
 }
 
 impl std::convert::From<TeaclaveFileCryptoInfo> for proto::FileCryptoInfo {
     fn from(crypto: TeaclaveFileCryptoInfo) -> Self {
-        match crypto {
-            TeaclaveFileCryptoInfo::AesGcm128(info) => proto::FileCryptoInfo {
-                schema: "aes_gcm_128".to_string(),
-                key: info.key.to_vec(),
-                iv: info.iv.to_vec(),
-            },
-            TeaclaveFileCryptoInfo::AesGcm256(info) => proto::FileCryptoInfo {
-                schema: "aes_gcm_256".to_string(),
-                key: info.key.to_vec(),
-                iv: info.iv.to_vec(),
-            },
-            TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(info) => proto::FileCryptoInfo {
-                schema: "teaclave_file_root_key_128".to_string(),
-                key: info.key.to_vec(),
-                iv: Vec::new(),
-            },
+        let (key, iv) = crypto.key_iv();
+        proto::FileCryptoInfo {
+            schema: crypto.schema(),
+            key,
+            iv,
         }
     }
 }

@@ -2,35 +2,36 @@
 use std::prelude::v1::*;
 
 use anyhow;
+use rand::prelude::RngCore;
 use ring;
-use serde::{Deserialize, Serialize};
 use std::format;
 
 const AES_GCM_256_KEY_LENGTH: usize = 32;
 const AES_GCM_256_IV_LENGTH: usize = 12;
 
-#[derive(Default, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
 pub struct AesGcm256CryptoInfo {
     pub key: [u8; AES_GCM_256_KEY_LENGTH],
     pub iv: [u8; AES_GCM_256_IV_LENGTH],
 }
 
 impl AesGcm256CryptoInfo {
-    pub fn new(key: &[u8], iv: &[u8]) -> anyhow::Result<Self> {
+    pub fn new(in_key: &[u8], in_iv: &[u8]) -> anyhow::Result<Self> {
         anyhow::ensure!(
-            key.len() == AES_GCM_256_KEY_LENGTH,
+            in_key.len() == AES_GCM_256_KEY_LENGTH,
             "Invalid key length for AesGcm256: {}",
-            key.len()
+            in_key.len()
         );
         anyhow::ensure!(
-            iv.len() == AES_GCM_256_IV_LENGTH,
+            in_iv.len() == AES_GCM_256_IV_LENGTH,
             "Invalid iv length for AesGcm256: {}",
-            iv.len()
+            in_iv.len()
         );
-        let mut info = AesGcm256CryptoInfo::default();
-        info.key.copy_from_slice(key);
-        info.iv.copy_from_slice(iv);
-        Ok(info)
+        let mut key = [0u8; AES_GCM_256_KEY_LENGTH];
+        let mut iv = [0u8; AES_GCM_256_IV_LENGTH];
+        key.copy_from_slice(in_key);
+        iv.copy_from_slice(in_iv);
+        Ok(AesGcm256CryptoInfo { key, iv })
     }
 
     pub fn decrypt(&self, in_out: &mut Vec<u8>) -> anyhow::Result<()> {
@@ -45,33 +46,45 @@ impl AesGcm256CryptoInfo {
     }
 }
 
+impl Default for AesGcm256CryptoInfo {
+    fn default() -> Self {
+        let mut key = [0u8; AES_GCM_256_KEY_LENGTH];
+        let mut iv = [0u8; AES_GCM_256_IV_LENGTH];
+        let mut rng = rand::thread_rng();
+        rng.fill_bytes(&mut key);
+        rng.fill_bytes(&mut iv);
+        AesGcm256CryptoInfo { key, iv }
+    }
+}
+
 const AES_GCM_128_KEY_LENGTH: usize = 16;
 const AES_GCM_128_IV_LENGTH: usize = 12;
 
-#[derive(Default, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
 pub struct AesGcm128CryptoInfo {
     pub key: [u8; AES_GCM_128_KEY_LENGTH],
     pub iv: [u8; AES_GCM_128_IV_LENGTH],
 }
 
 impl AesGcm128CryptoInfo {
-    pub fn new(key: &[u8], iv: &[u8]) -> anyhow::Result<Self> {
+    pub fn new(in_key: &[u8], in_iv: &[u8]) -> anyhow::Result<Self> {
         anyhow::ensure!(
-            key.len() == AES_GCM_128_KEY_LENGTH,
+            in_key.len() == AES_GCM_128_KEY_LENGTH,
             "Invalid key length for AesGcm128: {}",
-            key.len()
+            in_key.len()
         );
 
         anyhow::ensure!(
-            iv.len() == AES_GCM_128_IV_LENGTH,
+            in_iv.len() == AES_GCM_128_IV_LENGTH,
             "Invalid iv length for AesGcm128: {}",
-            iv.len()
+            in_iv.len()
         );
 
-        let mut info = AesGcm128CryptoInfo::default();
-        info.key.copy_from_slice(key);
-        info.iv.copy_from_slice(iv);
-        Ok(info)
+        let mut key = [0u8; AES_GCM_128_KEY_LENGTH];
+        let mut iv = [0u8; AES_GCM_128_IV_LENGTH];
+        key.copy_from_slice(in_key);
+        iv.copy_from_slice(in_iv);
+        Ok(AesGcm128CryptoInfo { key, iv })
     }
 
     pub fn decrypt(&self, in_out: &mut Vec<u8>) -> anyhow::Result<()> {
@@ -86,32 +99,102 @@ impl AesGcm128CryptoInfo {
     }
 }
 
-const TEACLAVE_FILE_ROOT_KEY_128_LENGTH: usize = 16;
-
-#[derive(Default, Debug, Serialize, Deserialize)]
-pub struct TeaclaveFileRootKey128 {
-    pub key: [u8; 16],
-}
-
-impl TeaclaveFileRootKey128 {
-    pub fn new(key: &[u8]) -> anyhow::Result<Self> {
-        anyhow::ensure!(
-            key.len() == TEACLAVE_FILE_ROOT_KEY_128_LENGTH,
-            "Invalid key length for teaclave_file_root_key_128: {}",
-            key.len()
-        );
-        let mut info = TeaclaveFileRootKey128::default();
-        info.key.copy_from_slice(key);
-        Ok(info)
+impl Default for AesGcm128CryptoInfo {
+    fn default() -> Self {
+        let mut key = [0u8; AES_GCM_128_KEY_LENGTH];
+        let mut iv = [0u8; AES_GCM_128_IV_LENGTH];
+        let mut rng = rand::thread_rng();
+        rng.fill_bytes(&mut key);
+        rng.fill_bytes(&mut iv);
+        AesGcm128CryptoInfo { key, iv }
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all(deserialize = "snake_case"))]
+const TEACLAVE_FILE_ROOT_KEY_128_LENGTH: usize = 16;
+
+#[derive(Clone, Debug)]
+pub struct TeaclaveFileRootKey128 {
+    pub key: [u8; TEACLAVE_FILE_ROOT_KEY_128_LENGTH],
+}
+
+impl TeaclaveFileRootKey128 {
+    pub fn new(in_key: &[u8]) -> anyhow::Result<Self> {
+        anyhow::ensure!(
+            in_key.len() == TEACLAVE_FILE_ROOT_KEY_128_LENGTH,
+            "Invalid key length for teaclave_file_root_key_128: {}",
+            in_key.len()
+        );
+        let mut key = [0u8; TEACLAVE_FILE_ROOT_KEY_128_LENGTH];
+        key.copy_from_slice(in_key);
+        Ok(TeaclaveFileRootKey128 { key })
+    }
+}
+
+impl Default for TeaclaveFileRootKey128 {
+    fn default() -> Self {
+        let mut key = [0u8; TEACLAVE_FILE_ROOT_KEY_128_LENGTH];
+        let mut rng = rand::thread_rng();
+        rng.fill_bytes(&mut key);
+        TeaclaveFileRootKey128 { key }
+    }
+}
+
+#[derive(Clone, Debug)]
 pub enum TeaclaveFileCryptoInfo {
     AesGcm128(AesGcm128CryptoInfo),
     AesGcm256(AesGcm256CryptoInfo),
     TeaclaveFileRootKey128(TeaclaveFileRootKey128),
+}
+
+impl TeaclaveFileCryptoInfo {
+    pub fn new(schema: &str, key: &[u8], iv: &[u8]) -> anyhow::Result<Self> {
+        let info = match schema {
+            "aes_gcm_128" => {
+                let info = AesGcm128CryptoInfo::new(key, iv)?;
+                TeaclaveFileCryptoInfo::AesGcm128(info)
+            }
+            "aes_gcm_256" => {
+                let info = AesGcm256CryptoInfo::new(key, iv)?;
+                TeaclaveFileCryptoInfo::AesGcm256(info)
+            }
+            "teaclave_file_root_key_128" => {
+                anyhow::ensure!(
+                    iv.is_empty(),
+                    "IV is not empty for teaclave_file_root_key_128"
+                );
+                let info = TeaclaveFileRootKey128::new(key)?;
+                TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(info)
+            }
+            _ => anyhow::bail!("Invalid crypto schema: {}", schema),
+        };
+        Ok(info)
+    }
+
+    pub fn schema(&self) -> String {
+        match self {
+            TeaclaveFileCryptoInfo::AesGcm128(_) => "aes_gcm_128".to_string(),
+            TeaclaveFileCryptoInfo::AesGcm256(_) => "aes_gcm_256".to_string(),
+            TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(_) => {
+                "teaclave_file_root_key_128".to_string()
+            }
+        }
+    }
+
+    pub fn key_iv(&self) -> (Vec<u8>, Vec<u8>) {
+        match self {
+            TeaclaveFileCryptoInfo::AesGcm128(crypto) => (crypto.key.to_vec(), crypto.iv.to_vec()),
+            TeaclaveFileCryptoInfo::AesGcm256(crypto) => (crypto.key.to_vec(), crypto.iv.to_vec()),
+            TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(crypto) => {
+                (crypto.key.to_vec(), Vec::new())
+            }
+        }
+    }
+}
+
+impl Default for TeaclaveFileCryptoInfo {
+    fn default() -> Self {
+        TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(TeaclaveFileRootKey128::default())
+    }
 }
 
 fn make_teaclave_aad() -> ring::aead::Aad<[u8; 8]> {
