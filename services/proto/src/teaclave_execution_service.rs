@@ -1,5 +1,3 @@
-use serde::{Deserialize, Serialize};
-#[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
 use anyhow::{anyhow, Error, Result};
@@ -12,13 +10,12 @@ pub use proto::TeaclaveExecutionClient;
 pub use proto::TeaclaveExecutionRequest;
 pub use proto::TeaclaveExecutionResponse;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug)]
 pub struct StagedFunctionExecuteRequest {
-    #[serde(flatten)]
-    invocation: WorkerInvocation,
+    pub invocation: WorkerInvocation,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug)]
 pub struct StagedFunctionExecuteResponse {
     pub summary: std::string::String,
 }
@@ -43,7 +40,7 @@ impl std::convert::TryFrom<proto::StagedFunctionExecuteRequest> for StagedFuncti
         let ret = Self {
             invocation: WorkerInvocation {
                 runtime_name: proto.runtime_name,
-                executor_type: proto.executor_type.try_into()?,
+                executor_type: proto.executor_type.as_str().try_into()?,
                 function_name: proto.function_name,
                 function_payload: proto.function_payload,
                 function_args: TeaclaveFunctionArguments {

@@ -100,15 +100,6 @@ impl TeaclaveFunction for Mesapy {
     }
 }
 
-#[macro_export]
-macro_rules! hashmap {
-    ($( $key: expr => $val: expr ),*) => {{
-         let mut map = ::std::collections::HashMap::new();
-         $( map.insert($key, $val); )*
-         map
-    }}
-}
-
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
@@ -116,9 +107,7 @@ pub mod tests {
 
     use crate::function::TeaclaveFunction;
     use crate::runtime::RawIoRuntime;
-    use std::path::PathBuf;
-    use std::str::FromStr;
-    use teaclave_types::AesGcm256CryptoInfo;
+    use teaclave_types::hashmap;
     use teaclave_types::TeaclaveFileCryptoInfo;
     use teaclave_types::TeaclaveFunctionArguments;
     use teaclave_types::TeaclaveWorkerFileInfo;
@@ -129,7 +118,7 @@ pub mod tests {
     }
 
     fn test_mesapy() {
-        let py_args = hashmap!("--name" => "Teaclave");
+        let py_args = TeaclaveFunctionArguments::new(&hashmap!("--name" => "Teaclave"));
         let py_payload = "
 import sys
 def entrypoint(argv):
@@ -137,18 +126,12 @@ def entrypoint(argv):
     print argv[1]
 ";
 
-        let input = PathBuf::from_str("test_cases/mesapy/input.txt").unwrap();
-        let output = PathBuf::from_str("test_cases/mesapy/output.txt").unwrap();
+        let input = "test_cases/mesapy/input.txt";
+        let output = "test_cases/mesapy/output.txt";
 
-        let input_info = TeaclaveWorkerFileInfo {
-            path: input,
-            crypto_info: TeaclaveFileCryptoInfo::AesGcm256(AesGcm256CryptoInfo::default()),
-        };
+        let input_info = TeaclaveWorkerFileInfo::new(input, TeaclaveFileCryptoInfo::default());
 
-        let output_info = TeaclaveWorkerFileInfo {
-            path: output,
-            crypto_info: TeaclaveFileCryptoInfo::AesGcm256(AesGcm256CryptoInfo::default()),
-        };
+        let output_info = TeaclaveWorkerFileInfo::new(output, TeaclaveFileCryptoInfo::default());
 
         let input_files = TeaclaveWorkerFileRegistry {
             entries: hashmap!("in_f1".to_string() => input_info),

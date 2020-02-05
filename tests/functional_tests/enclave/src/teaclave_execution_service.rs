@@ -1,12 +1,16 @@
-use anyhow;
-use serde_json;
-use std::io::Write;
 use std::prelude::v1::*;
-use std::untrusted::fs;
 
+use std::convert::TryInto;
 use teaclave_proto::teaclave_execution_service::*;
 use teaclave_rpc::endpoint::Endpoint;
-use teaclave_types::AesGcm128CryptoInfo;
+
+use teaclave_types::convert_plaintext_file;
+use teaclave_types::hashmap;
+use teaclave_types::TeaclaveFileCryptoInfo;
+use teaclave_types::TeaclaveFunctionArguments;
+use teaclave_types::TeaclaveWorkerFileInfo;
+use teaclave_types::TeaclaveWorkerFileRegistry;
+use teaclave_types::WorkerInvocation;
 
 pub fn run_tests() -> bool {
     use teaclave_test_utils::*;
@@ -18,66 +22,45 @@ fn setup_client() -> TeaclaveExecutionClient {
     TeaclaveExecutionClient::new(channel).unwrap()
 }
 
-fn enc_input_file(input_crypto: &str, plain_input: &str, enc_input: &str) -> anyhow::Result<()> {
-    let crypto_info: AesGcm128CryptoInfo = serde_json::from_str(input_crypto)?;
-    let mut bytes = fs::read_to_string(plain_input)?.into_bytes();
-    crypto_info.encrypt(&mut bytes)?;
-
-    let mut file = fs::File::create(enc_input)?;
-    file.write_all(&bytes)?;
-    Ok(())
-}
-
 fn test_invoke_success() {
-    let request_payload = r#"{
-        "runtime_name": "default",
-        "executor_type": "native",
-        "function_name": "gbdt_training",
-        "function_payload": "",
-        "function_args": {
-            "feature_size": "4",
-            "max_depth": "4",
-            "iterations": "100",
-            "shrinkage": "0.1",
-            "feature_sample_ratio": "1.0",
-            "data_sample_ratio": "1.0",
-            "min_leaf_size": "1",
-            "loss": "LAD",
-            "training_optimization_level": "2"
-        },
-        "input_files": {
-            "training_data": {
-                "path": "test_cases/gbdt_training/train.enc",
-                "crypto_info": {
-                    "aes_gcm128": {
-                        "key": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-                        "iv": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-                    }
-                }
-            }
-        },
-        "output_files": {
-            "trained_model": {
-                "path": "test_cases/gbdt_training/model.enc.out",
-                "crypto_info": {
-                    "teaclave_file_root_key128": {
-                        "key": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-                    }
-                }
-            }
-        }
-    }"#;
+    let mut client = setup_client();
 
-    let input_crypto = r#"{
-            "key": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-            "iv": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-    }"#;
+    let function_args = TeaclaveFunctionArguments::new(&hashmap!(
+        "feature_size"  => "4",
+        "max_depth"     => "4",
+        "iterations"    => "100",
+        "shrinkage"     => "0.1",
+        "feature_sample_ratio" => "1.0",
+        "data_sample_ratio" => "1.0",
+        "min_leaf_size" => "1",
+        "loss"          => "LAD",
+        "training_optimization_level" => "2"
+    ));
+
     let enc_input = "test_cases/gbdt_training/train.enc";
     let plain_input = "test_cases/gbdt_training/train.txt";
+    let enc_output = "test_cases/gbdt_training/model.enc.out";
 
-    enc_input_file(input_crypto, plain_input, enc_input).unwrap();
-    let request: StagedFunctionExecuteRequest = serde_json::from_str(request_payload).unwrap();
-    let mut client = setup_client();
+    let input_info = convert_plaintext_file(plain_input, enc_input).unwrap();
+    let input_files = TeaclaveWorkerFileRegistry::new(hashmap!(
+        "training_data".to_string() => input_info));
+
+    let output_info = TeaclaveWorkerFileInfo::new(enc_output, TeaclaveFileCryptoInfo::default());
+    let output_files = TeaclaveWorkerFileRegistry::new(hashmap!(
+        "trained_model".to_string() => output_info));
+
+    let request = StagedFunctionExecuteRequest {
+        invocation: WorkerInvocation {
+            runtime_name: "default".to_string(),
+            executor_type: "native".try_into().unwrap(),
+            function_name: "gbdt_training".to_string(),
+            function_payload: String::new(),
+            function_args,
+            input_files,
+            output_files,
+        },
+    };
+
     let response_result = client.invoke_function(request);
     assert!(response_result.is_ok());
 }
