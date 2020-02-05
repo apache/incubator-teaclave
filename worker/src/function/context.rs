@@ -219,11 +219,11 @@ pub fn rtc_close_handle(f: FileHandle) -> anyhow::Result<()> {
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
-    use crate::hashmap;
     use crate::runtime::RawIoRuntime;
     use std::path::PathBuf;
     use std::str::FromStr;
     use teaclave_test_utils::*;
+    use teaclave_types::hashmap;
     use teaclave_types::AesGcm256CryptoInfo;
     use teaclave_types::TeaclaveFileCryptoInfo;
     use teaclave_types::TeaclaveWorkerFileInfo;

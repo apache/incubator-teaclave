@@ -21,6 +21,7 @@ protected_fs_rs  = { path = "../common/protected_fs_rs", default-features = fals
 
 anyhow       = { version = "1.0.26" }
 sgx_types    = { version = "1.1.0" }
+rand         = { version = "0.7.0" }
 hex          = { version = "0.4.0" }
 serde        = { version = "1.0.92", features = ["derive"] }
 toml         = { version = "0.5.3" }

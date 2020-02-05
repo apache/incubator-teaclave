@@ -1,95 +1,66 @@
-use protected_fs::ProtectedFile;
-use std::io::{Read, Write};
+use std::convert::TryInto;
+use std::io::Read;
 use std::prelude::v1::*;
-use std::untrusted::fs;
 
-use serde_json;
-
-use anyhow;
-use teaclave_types::AesGcm128CryptoInfo;
-use teaclave_types::TeaclaveFileRootKey128;
+use teaclave_types::convert_plaintext_file;
+use teaclave_types::hashmap;
+use teaclave_types::read_all_bytes;
+use teaclave_types::TeaclaveFileCryptoInfo;
+use teaclave_types::TeaclaveFunctionArguments;
+use teaclave_types::TeaclaveWorkerFileInfo;
+use teaclave_types::TeaclaveWorkerFileRegistry;
 use teaclave_types::WorkerInvocation;
+
 use teaclave_worker::Worker;
 
-fn enc_input_file(input_crypto: &str, plain_input: &str, enc_input: &str) -> anyhow::Result<()> {
-    let crypto_info: AesGcm128CryptoInfo = serde_json::from_str(input_crypto)?;
-    let mut bytes = fs::read_to_string(plain_input)?.into_bytes();
-    crypto_info.encrypt(&mut bytes)?;
-
-    let mut file = fs::File::create(enc_input)?;
-    file.write_all(&bytes)?;
-    Ok(())
-}
-
-fn dec_output_file(output_crypto: &str, enc_output: &str) -> anyhow::Result<String> {
-    let crypto: TeaclaveFileRootKey128 = serde_json::from_str(output_crypto)?;
-    let mut file = ProtectedFile::open_ex(enc_output, &crypto.key)?;
-    let mut result = String::new();
-    file.read_to_string(&mut result)?;
-    Ok(result)
-}
-
 fn test_start_worker() {
-    let request_payload = r#"{
-        "runtime_name": "default",
-        "executor_type": "native",
-        "function_name": "gbdt_training",
-        "function_payload": "",
-        "function_args": {
-            "feature_size": "4",
-            "max_depth": "4",
-            "iterations": "100",
-            "shrinkage": "0.1",
-            "feature_sample_ratio": "1.0",
-            "data_sample_ratio": "1.0",
-            "min_leaf_size": "1",
-            "loss": "LAD",
-            "training_optimization_level": "2"
-        },
-        "input_files": {
-            "training_data": {
-                "path": "test_cases/gbdt_training/train.enc",
-                "crypto_info": {
-                    "aes_gcm128": {
-                        "key": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-                        "iv": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-                    }
-                }
-            }
-        },
-        "output_files": {
-            "trained_model": {
-                "path": "test_cases/gbdt_training/model.enc.out",
-                "crypto_info": {
-                    "teaclave_file_root_key128": {
-                        "key": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-                    }
-                }
-            }
-        }
-    }"#;
+    let function_args = TeaclaveFunctionArguments::new(&hashmap!(
+        "feature_size"  => "4",
+        "max_depth"     => "4",
+        "iterations"    => "100",
+        "shrinkage"     => "0.1",
+        "feature_sample_ratio" => "1.0",
+        "data_sample_ratio" => "1.0",
+        "min_leaf_size" => "1",
+        "loss"          => "LAD",
+        "training_optimization_level" => "2"
+    ));
 
-    let input_crypto = r#"{
-            "key": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-            "iv": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-    }"#;
     let enc_input = "test_cases/gbdt_training/train.enc";
     let plain_input = "test_cases/gbdt_training/train.txt";
 
-    let output_crypto = r#"{
-        "key": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-    }"#;
     let enc_output = "test_cases/gbdt_training/model.enc.out";
     let expected_output = "test_cases/gbdt_training/expected_model.txt";
 
-    enc_input_file(input_crypto, plain_input, enc_input).unwrap();
-    let request: WorkerInvocation = serde_json::from_str(request_payload).unwrap();
+    let input_info = convert_plaintext_file(plain_input, enc_input).unwrap();
+
+    let input_files = TeaclaveWorkerFileRegistry::new(hashmap!(
+        "training_data".to_string() => input_info));
+
+    let output_info = TeaclaveWorkerFileInfo::new(enc_output, TeaclaveFileCryptoInfo::default());
+
+    let output_files = TeaclaveWorkerFileRegistry::new(hashmap!(
+        "trained_model".to_string() => output_info.clone()));
+
+    let request = WorkerInvocation {
+        runtime_name: "default".to_string(),
+        executor_type: "native".try_into().unwrap(),
+        function_name: "gbdt_training".to_string(),
+        function_payload: String::new(),
+        function_args,
+        input_files,
+        output_files,
+    };
+
     let worker = Worker::default();
     let summary = worker.invoke_function(request).unwrap();
     assert_eq!(summary, "Trained 120 lines of data.");
 
-    let result = dec_output_file(output_crypto, enc_output).unwrap();
-    let expected = fs::read_to_string(&expected_output).unwrap();
+    let mut f = output_info.get_readable_io().unwrap();
+    let mut result = Vec::new();
+    f.read_to_end(&mut result).unwrap();
+
+    let expected = read_all_bytes(expected_output).unwrap();
     assert_eq!(&result[..], &expected[..]);
 }
 

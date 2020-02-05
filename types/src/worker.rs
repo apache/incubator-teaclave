@@ -1,12 +1,7 @@
-#[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
-
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::format;
 use std::io::{self, Read};
-
-use protected_fs::ProtectedFile;
+use std::prelude::v1::*;
 
 #[cfg(feature = "mesalock_sgx")]
 use std::untrusted::fs::File;
@@ -17,19 +12,29 @@ use std::fs::File;
 use anyhow;
 
 use crate::TeaclaveFileCryptoInfo;
+use protected_fs::ProtectedFile;
+use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(rename_all(deserialize = "snake_case"))]
+#[macro_export]
+macro_rules! hashmap {
+    ($( $key: expr => $val: expr ),*) => {{
+         let mut map = ::std::collections::HashMap::new();
+         $( map.insert($key, $val); )*
+         map
+    }}
+}
+
+#[derive(Debug)]
 pub enum TeaclaveExecutorSelector {
     Native,
     Python,
 }
 
-impl std::convert::TryFrom<String> for TeaclaveExecutorSelector {
+impl std::convert::TryFrom<&str> for TeaclaveExecutorSelector {
     type Error = anyhow::Error;
 
-    fn try_from(selector: String) -> anyhow::Result<Self> {
-        let sel = match selector.as_ref() {
+    fn try_from(selector: &str) -> anyhow::Result<Self> {
+        let sel = match selector {
             "python" => TeaclaveExecutorSelector::Python,
             "native" => TeaclaveExecutorSelector::Native,
             _ => anyhow::bail!("Invalid executor selector: {}", selector),
@@ -69,17 +74,62 @@ impl io::Read for ReadBuffer {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Debug)]
 pub struct TeaclaveWorkerFileInfo {
     pub path: std::path::PathBuf,
     pub crypto_info: TeaclaveFileCryptoInfo,
 }
 
-fn read_all_bytes<P: AsRef<std::path::Path>>(path: P) -> anyhow::Result<Vec<u8>> {
+impl TeaclaveWorkerFileInfo {
+    pub fn new(
+        path: impl std::convert::Into<std::path::PathBuf>,
+        crypto_info: TeaclaveFileCryptoInfo,
+    ) -> Self {
+        TeaclaveWorkerFileInfo {
+            path: path.into(),
+            crypto_info,
+        }
+    }
+}
+
+pub fn read_all_bytes(path: impl AsRef<std::path::Path>) -> anyhow::Result<Vec<u8>> {
     let mut content = Vec::new();
     let mut file = File::open(path)?;
     file.read_to_end(&mut content)?;
     Ok(content)
+}
+
+fn teaclave_file_with_bytes(path: &str, bytes: &[u8]) -> anyhow::Result<TeaclaveWorkerFileInfo> {
+    let crypto_info = TeaclaveFileCryptoInfo::default();
+    let file_info = TeaclaveWorkerFileInfo::new(path, crypto_info);
+    let mut f = file_info.get_writable_io()?;
+    f.write_all(bytes)?;
+    Ok(file_info)
+}
+
+pub fn convert_plaintext_file(src: &str, dst: &str) -> anyhow::Result<TeaclaveWorkerFileInfo> {
+    let bytes = read_all_bytes(src)?;
+    teaclave_file_with_bytes(dst, &bytes)
+}
+
+pub fn convert_encrypted_file(
+    src: TeaclaveWorkerFileInfo,
+    dst: &str,
+) -> anyhow::Result<TeaclaveWorkerFileInfo> {
+    let plain_text = match &src.crypto_info {
+        TeaclaveFileCryptoInfo::AesGcm128(crypto) => {
+            let mut bytes = read_all_bytes(src.path)?;
+            crypto.decrypt(&mut bytes)?;
+            bytes
+        }
+        TeaclaveFileCryptoInfo::AesGcm256(crypto) => {
+            let mut bytes = read_all_bytes(src.path)?;
+            crypto.decrypt(&mut bytes)?;
+            bytes
+        }
+        TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(_) => return Ok(src),
+    };
+    teaclave_file_with_bytes(dst, &plain_text)
 }
 
 impl TeaclaveWorkerFileInfo {
@@ -115,10 +165,15 @@ impl TeaclaveWorkerFileInfo {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug)]
 pub struct TeaclaveWorkerFileRegistry {
-    #[serde(flatten)]
     pub entries: HashMap<String, TeaclaveWorkerFileInfo>,
+}
+
+impl TeaclaveWorkerFileRegistry {
+    pub fn new(entries: HashMap<String, TeaclaveWorkerFileInfo>) -> Self {
+        TeaclaveWorkerFileRegistry { entries }
+    }
 }
 
 impl<T> std::convert::TryFrom<HashMap<String, T>> for TeaclaveWorkerFileRegistry
@@ -156,11 +211,23 @@ where
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TeaclaveFunctionArguments {
-    #[serde(flatten)]
     pub args: HashMap<String, String>,
 }
 
 impl TeaclaveFunctionArguments {
+    pub fn new<K, V>(input: &HashMap<K, V>) -> Self
+    where
+        K: std::string::ToString,
+        V: std::string::ToString,
+    {
+        let args = input.iter().fold(HashMap::new(), |mut acc, (k, v)| {
+            acc.insert(k.to_string(), v.to_string());
+            acc
+        });
+
+        TeaclaveFunctionArguments { args }
+    }
+
     pub fn try_get<T: std::str::FromStr>(&self, key: &str) -> anyhow::Result<T> {
         self.args
             .get(key)
@@ -181,7 +248,7 @@ impl TeaclaveFunctionArguments {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug)]
 pub struct WorkerInvocation {
     pub runtime_name: String,
     pub executor_type: TeaclaveExecutorSelector, // "native" | "python"
