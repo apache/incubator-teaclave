@@ -89,7 +89,7 @@ where
                         debug!("Connection disconnected.");
                         return Ok(());
                     }
-                    protocol::ProtocolError::SerdeError(_) => {
+                    _ => {
                         debug!("{:?}", e);
                         let response: JsonProtocolResult<U, TeaclaveServiceResponseError> =
                             Err(TeaclaveServiceResponseError::RequestError(
