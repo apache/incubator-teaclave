@@ -17,8 +17,8 @@
 
 use anyhow;
 use log::error;
+use teaclave_binder::proto::{ECallCommand, RunTestInput, RunTestOutput};
 use teaclave_binder::TeeBinder;
-use teaclave_ipc::proto::{ECallCommand, RunTestInput, RunTestOutput};
 use teaclave_types::TeeServiceResult;
 
 fn main() -> anyhow::Result<()> {

@@ -19,8 +19,8 @@
 extern crate log;
 
 use anyhow::Result;
+use teaclave_binder::proto::{ECallCommand, StartServiceInput, StartServiceOutput};
 use teaclave_binder::TeeBinder;
-use teaclave_ipc::proto::{ECallCommand, StartServiceInput, StartServiceOutput};
 use teaclave_types::TeeServiceResult;
 
 fn main() -> Result<()> {

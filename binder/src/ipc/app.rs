@@ -15,16 +15,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// Insert std prelude in the top for the sgx feature
-#[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
 use serde::{Deserialize, Serialize};
 
 use sgx_types::{sgx_enclave_id_t, sgx_status_t};
 
-use crate::IpcError;
-use crate::IpcSender;
+use crate::ipc::IpcError;
+use crate::ipc::IpcSender;
+use log::{debug, error};
 use teaclave_types::EnclaveStatus;
 
 // Delaration of ecall for App, the implementation is in TEE

@@ -18,13 +18,14 @@
 use sgx_types::*;
 use sgx_urts::SgxEnclave;
 
+use log::{debug, info};
 use serde::{Deserialize, Serialize};
 
-use teaclave_ipc::channel::ECallChannel;
-use teaclave_ipc::proto::{
+use crate::ipc::ECallChannel;
+use crate::ipc::IpcSender;
+use crate::proto::{
     ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
 };
-use teaclave_ipc::IpcSender;
 use teaclave_types::TeeServiceResult;
 
 static ENCLAVE_FILE_SUFFIX: &str = "_enclave.signed.so";

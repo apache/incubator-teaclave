@@ -15,23 +15,19 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// Insert std prelude in the top for the sgx feature
-#[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
 use serde;
 use serde_json;
 
-use crate::IpcReceiver;
-use crate::IpcService;
-use anyhow::Result;
+use crate::ipc::{IpcReceiver, IpcService};
 
 // Implementation of Receiver
 // The receiver is TEE, the sender is App
-pub struct ECallReceiver {}
+pub struct ECallReceiver;
 
 impl IpcReceiver for ECallReceiver {
-    fn dispatch<U, V, X>(input_payload: &[u8], x: X) -> Result<Vec<u8>>
+    fn dispatch<U, V, X>(input_payload: &[u8], x: X) -> anyhow::Result<Vec<u8>>
     where
         U: for<'de> serde::Deserialize<'de>,
         V: serde::Serialize,

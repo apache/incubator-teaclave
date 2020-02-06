@@ -15,7 +15,7 @@ default = []
 mesalock_sgx = [
   "sgx_tstd",
   "teaclave_attestation/mesalock_sgx",
-  "teaclave_ipc/mesalock_sgx",
+  "teaclave_binder/mesalock_sgx",
   "teaclave_rpc/mesalock_sgx",
   "teaclave_service_enclave_utils/mesalock_sgx",
   "teaclave_types/mesalock_sgx",
@@ -49,7 +49,7 @@ teaclave_worker                 = { path = "../../../worker" }
 teaclave_test_utils            = { path = "../../test_utils" }
 teaclave_attestation           = { path = "../../../attestation" }
 teaclave_config                = { path = "../../../config" }
-teaclave_ipc                   = { path = "../../../ipc" }
+teaclave_binder                = { path = "../../../binder" }
 teaclave_rpc                   = { path = "../../../rpc" }
 teaclave_service_enclave_utils = { path = "../../../utils/service_enclave_utils" }
 teaclave_types                 = { path = "../../../types" }

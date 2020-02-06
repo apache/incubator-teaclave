@@ -29,12 +29,12 @@ use std::sync::Arc;
 use std::thread;
 use teaclave_attestation::verifier;
 use teaclave_attestation::{AttestationConfig, RemoteAttestation};
-use teaclave_config::BUILD_CONFIG;
-use teaclave_ipc::proto::{
+use teaclave_binder::proto::{
     ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
     StartServiceInput, StartServiceOutput,
 };
-use teaclave_ipc::{handle_ecall, register_ecall_handler};
+use teaclave_binder::{handle_ecall, register_ecall_handler};
+use teaclave_config::BUILD_CONFIG;
 use teaclave_proto::teaclave_authentication_service::{
     TeaclaveAuthenticationApiRequest, TeaclaveAuthenticationApiResponse,
     TeaclaveAuthenticationInternalRequest, TeaclaveAuthenticationInternalResponse,
