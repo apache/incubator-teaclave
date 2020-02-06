@@ -14,14 +14,12 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub(crate) enum TeaclaveStorageError {
-    #[error("key not exist")]
-    KeyNotExist,
-    #[error("mpsc error")]
-    MpscError,
+    #[error("connection error")]
+    Connection,
     #[error("leveldb error")]
-    LevelDbError,
-    #[error("queue empty")]
-    QueueEmpty,
+    LevelDb(#[from] rusty_leveldb::Status),
+    #[error("none error")]
+    None,
 }
 
 impl From<TeaclaveStorageError> for TeaclaveServiceResponseError {
@@ -107,12 +105,12 @@ impl<'a> DBQueue<'a> {
         // put element
         self.database
             .put(&self.get_element_key(tail_index), value)
-            .map_err(|_| TeaclaveStorageError::LevelDbError)?;
+            .map_err(TeaclaveStorageError::LevelDb)?;
         // tail + 1
         tail_index += 1;
         self.database
             .put(&self.get_tail_key(), &tail_index.to_le_bytes())
-            .map_err(|_| TeaclaveStorageError::LevelDbError)?;
+            .map_err(TeaclaveStorageError::LevelDb)?;
         Ok(())
     }
 
@@ -121,18 +119,18 @@ impl<'a> DBQueue<'a> {
         let tail_index = self.get_tail();
         // check whether the queue is empty
         if head_index >= tail_index {
-            Err(TeaclaveStorageError::QueueEmpty.into())
+            Err(TeaclaveStorageError::None.into())
         } else {
             let element_key = self.get_element_key(head_index);
             let result = match self.database.get(&element_key) {
                 Some(value) => value,
-                None => return Err(TeaclaveStorageError::LevelDbError.into()),
+                None => return Err(TeaclaveStorageError::None.into()),
             };
             // update head
             head_index += 1;
             self.database
                 .put(&self.get_head_key(), &head_index.to_le_bytes())
-                .map_err(|_| TeaclaveStorageError::LevelDbError)?;
+                .map_err(TeaclaveStorageError::LevelDb)?;
             // delete element; it's ok to ignore the error
             let _ = self.database.delete(&element_key);
             Ok(result)
@@ -169,16 +167,17 @@ impl TeaclaveStorage for TeaclaveStorageService {
         let request = request.message;
         match self.database.borrow_mut().get(&request.key) {
             Some(value) => Ok(GetResponse { value }),
-            None => Err(TeaclaveStorageError::KeyNotExist.into()),
+            None => Err(TeaclaveStorageError::None.into()),
         }
     }
 
     fn put(&self, request: Request<PutRequest>) -> TeaclaveServiceResponseResult<PutResponse> {
         let request = request.message;
-        match self.database.borrow_mut().put(&request.key, &request.value) {
-            Ok(_) => Ok(PutResponse),
-            Err(_) => Err(TeaclaveStorageError::LevelDbError.into()),
-        }
+        self.database
+            .borrow_mut()
+            .put(&request.key, &request.value)
+            .map_err(TeaclaveStorageError::LevelDb)?;
+        Ok(PutResponse)
     }
 
     fn delete(
@@ -186,10 +185,11 @@ impl TeaclaveStorage for TeaclaveStorageService {
         request: Request<DeleteRequest>,
     ) -> TeaclaveServiceResponseResult<DeleteResponse> {
         let request = request.message;
-        match self.database.borrow_mut().delete(&request.key) {
-            Ok(_) => Ok(DeleteResponse),
-            Err(_) => Err(TeaclaveStorageError::LevelDbError.into()),
-        }
+        self.database
+            .borrow_mut()
+            .delete(&request.key)
+            .map_err(TeaclaveStorageError::LevelDb)?;
+        Ok(DeleteResponse)
     }
 
     fn enqueue(

@@ -26,10 +26,10 @@ impl teaclave_rpc::TeaclaveService<TeaclaveStorageRequest, TeaclaveStorageRespon
         let (sender, receiver) = channel();
         self.sender
             .send(ProxyRequest { sender, request })
-            .map_err(|_| TeaclaveStorageError::MpscError)?;
+            .map_err(|_| TeaclaveStorageError::Connection)?;
         receiver
             .recv()
-            .map_err(|_| TeaclaveStorageError::MpscError)?
+            .map_err(|_| TeaclaveStorageError::Connection)?
     }
 }
 
