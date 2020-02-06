@@ -23,8 +23,8 @@ use serde::{Deserialize, Serialize};
 
 use sgx_types::{sgx_enclave_id_t, sgx_status_t};
 
+use crate::IpcError;
 use crate::IpcSender;
-use anyhow::{bail, Result};
 use teaclave_types::EnclaveStatus;
 
 // Delaration of ecall for App, the implementation is in TEE
@@ -59,7 +59,11 @@ impl ECallChannel {
         }
     }
 
-    fn ecall_ipc_app_to_tee(&mut self, cmd: u32, request_payload: Vec<u8>) -> Result<Vec<u8>> {
+    fn ecall_ipc_app_to_tee(
+        &mut self,
+        cmd: u32,
+        request_payload: Vec<u8>,
+    ) -> std::result::Result<Vec<u8>, IpcError> {
         debug! {"ecall_ipc_app_to_tee: {:x}, {:x} bytes", cmd, request_payload.len()};
 
         let in_ptr: *const u8 = request_payload.as_ptr();
@@ -87,17 +91,15 @@ impl ECallChannel {
                 )
             };
 
-            /* Check sgx return values */
+            // Check sgx return values
             if sgx_status != sgx_status_t::SGX_SUCCESS {
                 error!("ecall_ipc_entry_point, app sgx_error:{}", sgx_status);
-                bail!(sgx_status);
+                return Err(IpcError::SgxError(sgx_status as i32));
             }
 
-            /*
-             * Check rust logic return values
-             * If out_buf is not big enough, realloc based on the returned out_len
-             * We only retry once for once invocation.
-             */
+            // Check rust logic return values
+            // If out_buf is not big enough, realloc based on the returned out_len
+            // We only retry once for once invocation.
             if ecall_ret.is_err_ffi_outbuf() && !retried {
                 debug!(
                     "ecall_ipc_entry_point, expand app request buffer size: {:?}",
@@ -110,13 +112,11 @@ impl ECallChannel {
                 continue;
             }
 
-            /*
-             * Check rust logic return values
-             * Transparent deliever the errors to outer logic.
-             */
+            // Check rust logic return values
+            // Transparent deliever the errors to outer logic.
             if ecall_ret.is_err() {
                 error!("ecall_ipc_entry_point, app api_error: {:?}", ecall_ret);
-                bail!("ecall error");
+                return Err(IpcError::EnclaveError(ecall_ret));
             }
 
             unsafe {
@@ -132,14 +132,14 @@ impl ECallChannel {
 }
 
 impl IpcSender for ECallChannel {
-    fn invoke<U, V>(&mut self, cmd: u32, input: U) -> Result<V>
+    fn invoke<U, V>(&mut self, cmd: u32, input: U) -> std::result::Result<V, IpcError>
     where
         U: Serialize,
         V: for<'de> Deserialize<'de>,
     {
-        let request_payload = serde_json::to_vec(&input)?;
+        let request_payload = serde_json::to_vec(&input).map_err(|_| IpcError::SerdeError)?;
         let result_buf = self.ecall_ipc_app_to_tee(cmd, request_payload)?;
-        let response: V = serde_json::from_slice(&result_buf)?;
+        let response: V = serde_json::from_slice(&result_buf).map_err(|_| IpcError::SerdeError)?;
         Ok(response)
     }
 }

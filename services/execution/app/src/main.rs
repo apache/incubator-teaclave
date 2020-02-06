@@ -21,11 +21,13 @@ extern crate log;
 use anyhow::Result;
 use teaclave_binder::TeeBinder;
 use teaclave_ipc::proto::{ECallCommand, StartServiceInput, StartServiceOutput};
+use teaclave_types::TeeServiceResult;
 
 fn main() -> Result<()> {
     env_logger::init();
-    let tee = TeeBinder::new(env!("CARGO_PKG_NAME"), 1)?;
+    let tee = TeeBinder::new(env!("CARGO_PKG_NAME"))?;
     run(&tee)?;
+
     Ok(())
 }
 
@@ -34,12 +36,17 @@ fn start_enclave_service(tee: &TeeBinder) -> Result<()> {
     let config = teaclave_config::RuntimeConfig::from_toml("runtime.config.toml")?;
     let input = StartServiceInput { config };
     let cmd = ECallCommand::StartService;
-    let _ = tee.invoke::<StartServiceInput, StartServiceOutput>(cmd.into(), input);
+    match tee.invoke::<StartServiceInput, TeeServiceResult<StartServiceOutput>>(cmd, input) {
+        Err(e) => error!("{:?}", e),
+        Ok(Err(e)) => error!("{:?}", e),
+        _ => (),
+    }
 
     Ok(())
 }
 
 fn run(tee: &TeeBinder) -> Result<()> {
     start_enclave_service(tee)?;
+
     Ok(())
 }

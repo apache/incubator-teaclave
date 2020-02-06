@@ -35,7 +35,7 @@ macro_rules! register_ecall_handler {
         // Declear a local trait, the [handle_ecall] attribute macro
         // will help implement this trait and call user defined function.
         trait HandleRequest<V> {
-            fn handle(&self) -> anyhow::Result<V>;
+            fn handle(&self) -> teaclave_types::TeeServiceResult<V>;
         }
 
         struct ServeInstance<U, V>
@@ -65,7 +65,8 @@ macro_rules! register_ecall_handler {
             U: HandleRequest<V> + for<'de> serde::Deserialize<'de>,
             V: serde::Serialize,
         {
-            fn handle_invoke(&self, input: U) -> anyhow::Result<V> {
+            fn handle_invoke(&self, input: U) -> teaclave_types::TeeServiceResult<V> {
+                log::debug!("handle_invoke");
                 input.handle()
             }
         }
@@ -113,21 +114,19 @@ macro_rules! register_ecall_handler {
 
             if inner_len > out_max {
                 debug!("tee before copy out_buf check: out_max={:x} < inner={:x}", out_max, inner_len);
-                return teaclave_types::EnclaveStatus(0x0000_000c); // TODO: Error::from(mesatee_core::ErrorKind::FFICallerOutBufferTooSmall).into();
+                return teaclave_types::EnclaveStatus(0x0000_000c);
             }
 
-            // you can use anything to fill out the output buf
-            // another example could be found at crypto sample
-            // https://github.com/baidu/rust-sgx-sdk/blob/master/samplecode/crypto/enclave/src/lib.rs#L151
-            // The following lines use a trick of "constructing a mutable slice in place" using slice::from_raw_parts_mut
-            // You can always use ptr::copy_nonoverlapping to copy a buffer to the output pointer (see the above crypto sample)
+            // The following lines use a trick of "constructing a mutable slice
+            // in place" using slice::from_raw_parts_mut You can always use
+            // ptr::copy_nonoverlapping to copy a buffer to the output pointer
+            // (see the above crypto sample)
             unsafe {
                 std::ptr::copy_nonoverlapping(inner_vec.as_ptr(), out_buf, inner_len);
             }
 
             // out_len would be used in `set_len` in the untrusted app
             // so out_len cannot be larger than out_max. Additional checks are **required**.
-            // TODO: Ok(()).into()
             teaclave_types::EnclaveStatus::default()
         }
     }

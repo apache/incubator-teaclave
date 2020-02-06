@@ -14,5 +14,6 @@ anyhow     = { version = "1.0.26" }
 
 teaclave_ipc               = { path = "../../../ipc" }
 teaclave_binder            = { path = "../../../binder" }
+teaclave_types             = { path = "../../../types" }
 
 sgx_types = { version = "1.1.0" }

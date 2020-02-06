@@ -36,7 +36,7 @@ use serde::{Deserialize, Serialize};
 // Generic U: ArgmentsInfo type
 // Generic V: ReturnInfo type
 pub trait IpcSender {
-    fn invoke<U, V>(&mut self, cmd: u32, input: U) -> Result<V>
+    fn invoke<U, V>(&mut self, cmd: u32, input: U) -> std::result::Result<V, IpcError>
     where
         U: Serialize,
         V: for<'de> Deserialize<'de>;
@@ -50,7 +50,7 @@ where
     U: for<'de> Deserialize<'de>,
     V: Serialize,
 {
-    fn handle_invoke(&self, input: U) -> Result<V>;
+    fn handle_invoke(&self, input: U) -> teaclave_types::TeeServiceResult<V>;
 }
 
 // Callee of an IPC function
@@ -64,6 +64,18 @@ pub trait IpcReceiver {
         U: for<'de> Deserialize<'de>,
         V: Serialize,
         X: IpcService<U, V>;
+}
+
+#[derive(thiserror::Error, Debug, Serialize, Deserialize)]
+pub enum IpcError {
+    #[error("SgxError")]
+    SgxError(i32),
+    #[error("EnclaveError")]
+    EnclaveError(teaclave_types::EnclaveStatus),
+    #[error("SerdeError")]
+    SerdeError,
+    #[error("TeeServiceError")]
+    TeeServiceError,
 }
 
 pub mod channel;

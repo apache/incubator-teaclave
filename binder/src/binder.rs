@@ -20,49 +20,69 @@ use sgx_urts::SgxEnclave;
 
 use serde::{Deserialize, Serialize};
 
-use anyhow::Result;
 use teaclave_ipc::channel::ECallChannel;
 use teaclave_ipc::proto::{
     ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
 };
 use teaclave_ipc::IpcSender;
+use teaclave_types::TeeServiceResult;
 
 static ENCLAVE_FILE_SUFFIX: &str = "_enclave.signed.so";
+
+#[derive(thiserror::Error, Debug)]
+pub enum TeeBinderError {
+    #[error("IpcError")]
+    IpcError,
+    #[error("SgxError")]
+    SgxError(sgx_types::sgx_status_t),
+    #[error("TeeServiceError")]
+    TeeServiceError,
+}
 
 pub struct TeeBinder {
     enclave: SgxEnclave,
 }
 
 impl TeeBinder {
-    pub fn new(name: &str, debug_launch: i32) -> Result<TeeBinder> {
-        let enclave = create_sgx_enclave(&name, debug_launch)?;
+    pub fn new(name: &str) -> std::result::Result<TeeBinder, TeeBinderError> {
+        let enclave = if cfg!(production) {
+            create_sgx_enclave(&name, false)?
+        } else {
+            create_sgx_enclave(&name, true)?
+        };
         debug!("EnclaveID: {}", enclave.geteid());
 
         let tee = TeeBinder { enclave };
 
-        let args_info = InitEnclaveInput::default();
-        let _ret_info = tee.invoke::<InitEnclaveInput, InitEnclaveOutput>(
-            ECallCommand::InitEnclave.into(),
-            args_info,
+        let input = InitEnclaveInput::default();
+        let _ = tee.invoke::<InitEnclaveInput, TeeServiceResult<InitEnclaveOutput>>(
+            ECallCommand::InitEnclave,
+            input,
         )?;
 
         Ok(tee)
     }
 
-    pub fn invoke<U, V>(&self, cmd: u32, args_info: U) -> Result<V>
+    pub fn invoke<U, V>(
+        &self,
+        command: ECallCommand,
+        input: U,
+    ) -> std::result::Result<V, TeeBinderError>
     where
         U: Serialize,
         V: for<'de> Deserialize<'de>,
     {
         let mut channel = ECallChannel::new(self.enclave.geteid());
-        channel.invoke::<U, V>(cmd, args_info)
+        channel
+            .invoke::<U, V>(command.into(), input)
+            .map_err(|_| TeeBinderError::IpcError)
     }
 
     pub fn finalize(&self) {
-        let args_info = FinalizeEnclaveInput::default();
-        match self.invoke::<FinalizeEnclaveInput, FinalizeEnclaveOutput>(
-            ECallCommand::FinalizeEnclave.into(),
-            args_info,
+        let input = FinalizeEnclaveInput::default();
+        match self.invoke::<FinalizeEnclaveInput, TeeServiceResult<FinalizeEnclaveOutput>>(
+            ECallCommand::FinalizeEnclave,
+            input,
         ) {
             Ok(_) => {}
             Err(e) => info!("{:?}", e),
@@ -77,7 +97,10 @@ impl Drop for TeeBinder {
     }
 }
 
-fn create_sgx_enclave(enclave_name: &str, debug_launch: i32) -> Result<SgxEnclave> {
+fn create_sgx_enclave(
+    enclave_name: &str,
+    debug_launch: bool,
+) -> std::result::Result<SgxEnclave, TeeBinderError> {
     let mut launch_token: sgx_launch_token_t = [0; 1024]; // launch_token is deprecated
     let mut launch_token_updated: i32 = 0; // launch_token is deprecated
 
@@ -90,12 +113,12 @@ fn create_sgx_enclave(enclave_name: &str, debug_launch: i32) -> Result<SgxEnclav
 
     let enclave = SgxEnclave::create(
         enclave_file,
-        debug_launch,
+        debug_launch as i32,
         &mut launch_token,         // launch_token is deprecated
         &mut launch_token_updated, // launch_token is deprecated
         &mut misc_attr,
     )
-    .map_err(|_| anyhow::anyhow!("sgx error"))?;
+    .map_err(TeeBinderError::SgxError)?;
 
     Ok(enclave)
 }
