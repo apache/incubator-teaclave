@@ -25,11 +25,11 @@ extern crate log;
 
 use std::prelude::v1::*;
 use teaclave_attestation::{AttestationConfig, RemoteAttestation};
-use teaclave_ipc::proto::{
+use teaclave_binder::proto::{
     ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
     StartServiceInput, StartServiceOutput,
 };
-use teaclave_ipc::{handle_ecall, register_ecall_handler};
+use teaclave_binder::{handle_ecall, register_ecall_handler};
 use teaclave_proto::teaclave_access_control_service::{
     TeaclaveAccessControlRequest, TeaclaveAccessControlResponse,
 };

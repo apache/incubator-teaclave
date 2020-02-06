@@ -15,9 +15,20 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#[macro_use]
-extern crate log;
+#![cfg_attr(feature = "mesalock_sgx", no_std)]
+#[cfg(feature = "mesalock_sgx")]
+extern crate sgx_tstd as std;
 
-mod binder;
-mod ocall;
-pub use binder::TeeBinder;
+pub mod ipc;
+pub mod proto;
+
+cfg_if::cfg_if! {
+    if #[cfg(feature = "app")]  {
+        mod binder;
+        mod ocall;
+        pub use binder::TeeBinder;
+    } else if #[cfg(feature = "mesalock_sgx")] {
+        mod macros;
+        pub use teaclave_binder_attribute::handle_ecall;
+    }
+}

@@ -16,6 +16,7 @@
 // under the License.
 
 // ATTN: Must bring `use ipc::IpcReceiver` into scope when use!!
+#[cfg(feature = "mesalock_sgx")]
 #[macro_export]
 macro_rules! register_ecall_handler {
     ( type $cmd_type: ty, $( ($cmd: path, $arg: ty, $ret: ty), )* ) =>
@@ -29,8 +30,7 @@ macro_rules! register_ecall_handler {
                 _ => anyhow::bail!("ECallCommandNotRegistered"),
             }
         }
-        use teaclave_ipc::IpcService;
-        use teaclave_ipc::IpcReceiver;
+        use teaclave_binder::ipc::IpcReceiver;
 
         // Declear a local trait, the [handle_ecall] attribute macro
         // will help implement this trait and call user defined function.
@@ -60,7 +60,7 @@ macro_rules! register_ecall_handler {
             }
         }
 
-        impl<U, V> IpcService<U, V> for ServeInstance<U, V>
+        impl<U, V> teaclave_binder::ipc::IpcService<U, V> for ServeInstance<U, V>
         where
             U: HandleRequest<V> + for<'de> serde::Deserialize<'de>,
             V: serde::Serialize,
@@ -77,7 +77,7 @@ macro_rules! register_ecall_handler {
             V: serde::Serialize,
         {
             let instance = ServeInstance::<U, V>::new();
-            teaclave_ipc::channel::ECallReceiver::dispatch(input, instance)
+            teaclave_binder::ipc::ECallReceiver::dispatch(input, instance)
         }
 
         /// The actual ecall function defined in .edl.

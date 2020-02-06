@@ -6,7 +6,17 @@ description = "Abstract communication interfaces between TEE untrusted/trusted w
 license = "Apache-2.0"
 edition = "2018"
 
+[features]
+default = []
+app = ["sgx_urts"]
+mesalock_sgx = [
+    "sgx_tstd",
+    "teaclave_binder_attribute"
+]
+enclave_unit_test = []
+
 [dependencies]
+cfg-if     = { version = "0.1.9" }
 anyhow       = { version = "1.0.26" }
 env_logger   = { version = "0.7.1" }
 log          = { version = "0.4.6" }
@@ -14,8 +24,10 @@ serde        = { version = "1.0.92", features = ["derive"] }
 serde_json   = { version = "1.0.39" }
 thiserror    = { version = "1.0.9" }
 
-teaclave_ipc = { path = "../ipc" }
 teaclave_types = { path = "../types" }
+teaclave_config = { path = "../config" }
+teaclave_binder_attribute = { path = "./attribute", optional = true }
 
 sgx_types = { version = "1.1.0" }
-sgx_urts  = { version = "1.1.0", features = ["global_init"] }
+sgx_urts  = { version = "1.1.0", features = ["global_init"], optional = true }
+sgx_tstd  = { version = "1.1.0", features = ["net", "backtrace"], optional = true }

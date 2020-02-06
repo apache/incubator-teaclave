@@ -27,11 +27,11 @@ use std::prelude::v1::*;
 
 use teaclave_types;
 
-use teaclave_ipc::proto::{
+use teaclave_binder::proto::{
     ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
     RunTestInput, RunTestOutput,
 };
-use teaclave_ipc::{handle_ecall, register_ecall_handler};
+use teaclave_binder::{handle_ecall, register_ecall_handler};
 use teaclave_service_enclave_utils::ServiceEnclave;
 use teaclave_test_utils::check_all_passed;
 use teaclave_types::TeeServiceResult;

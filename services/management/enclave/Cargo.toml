@@ -16,14 +16,14 @@ mesalock_sgx = [
   "sgx_tstd",
   "teaclave_attestation/mesalock_sgx",
   "teaclave_proto/mesalock_sgx",
-  "teaclave_ipc/mesalock_sgx",
+  "teaclave_binder/mesalock_sgx",
   "teaclave_rpc/mesalock_sgx",
   "teaclave_service_enclave_utils/mesalock_sgx",
   "teaclave_types/mesalock_sgx",
   "teaclave_config/mesalock_sgx",
 ]
 cov = ["teaclave_service_enclave_utils/cov"]
-enclave_unit_test = ["teaclave_ipc/enclave_unit_test", "teaclave_test_utils/mesalock_sgx"]
+enclave_unit_test = ["teaclave_binder/enclave_unit_test", "teaclave_test_utils/mesalock_sgx"]
 
 [dependencies]
 anyhow    = { version = "1.0.26" }
@@ -38,7 +38,7 @@ rand      = { version = "0.7.0" }
 teaclave_attestation           = { path = "../../../attestation" }
 teaclave_config                = { path = "../../../config" }
 teaclave_proto                 = { path = "../../proto" }
-teaclave_ipc                   = { path = "../../../ipc" }
+teaclave_binder                = { path = "../../../binder" }
 teaclave_rpc                   = { path = "../../../rpc" }
 teaclave_service_enclave_utils = { path = "../../../utils/service_enclave_utils" }
 teaclave_types                 = { path = "../../../types" }
