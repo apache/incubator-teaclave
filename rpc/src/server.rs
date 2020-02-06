@@ -4,6 +4,8 @@ use crate::utils;
 use crate::TeaclaveService;
 use anyhow::Result;
 use log::debug;
+use log::error;
+use log::warn;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
@@ -14,6 +16,7 @@ where
 {
     addr: std::net::SocketAddr,
     tls_config: std::sync::Arc<rustls::ServerConfig>,
+    tcp_nodelay: bool,
     maker: std::marker::PhantomData<(U, V)>,
 }
 
@@ -29,7 +32,15 @@ where
         Self {
             addr,
             tls_config: Arc::new(server_config.config.clone()),
+            tcp_nodelay: true,
             maker: std::marker::PhantomData::<(U, V)>,
+        }
+    }
+
+    pub fn tcp_nodelay(self, enabled: bool) -> Self {
+        Self {
+            tcp_nodelay: enabled,
+            ..self
         }
     }
 
@@ -41,16 +52,27 @@ where
         let pool = threadpool::ThreadPool::new(n_workers);
         let listener = std::net::TcpListener::bind(self.addr)?;
         for stream in listener.incoming() {
-            let session = rustls::ServerSession::new(&self.tls_config);
-            let tls_stream = rustls::StreamOwned::new(session, stream.unwrap());
-            let mut transport = SgxTrustedTlsTransport::new(tls_stream);
-            let service = service.clone();
-            pool.execute(move || match transport.serve(service) {
-                Ok(_) => (),
-                Err(e) => {
-                    debug!("serve error: {:?}", e);
+            match stream {
+                Ok(stream) => {
+                    if let Err(e) = stream.set_nodelay(self.tcp_nodelay) {
+                        warn!("Cannot set_nodelay: {:}", e);
+                        continue;
+                    }
+                    let session = rustls::ServerSession::new(&self.tls_config);
+                    let tls_stream = rustls::StreamOwned::new(session, stream);
+                    let mut transport = SgxTrustedTlsTransport::new(tls_stream);
+                    let service = service.clone();
+                    pool.execute(move || match transport.serve(service) {
+                        Ok(_) => (),
+                        Err(e) => {
+                            debug!("serve error: {:?}", e);
+                        }
+                    });
                 }
-            });
+                Err(e) => {
+                    error!("Incoming error: {:}", e);
+                }
+            }
         }
         Ok(())
     }
