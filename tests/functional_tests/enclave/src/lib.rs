@@ -25,7 +25,6 @@ extern crate log;
 
 use std::prelude::v1::*;
 
-use anyhow::Result;
 use teaclave_types;
 
 use teaclave_ipc::proto::{
@@ -35,6 +34,7 @@ use teaclave_ipc::proto::{
 use teaclave_ipc::{handle_ecall, register_ecall_handler};
 use teaclave_service_enclave_utils::ServiceEnclave;
 use teaclave_test_utils::check_all_passed;
+use teaclave_types::TeeServiceResult;
 
 mod teaclave_access_control_service;
 mod teaclave_authentication_service;
@@ -43,7 +43,7 @@ mod teaclave_frontend_service;
 mod teaclave_storage_service;
 
 #[handle_ecall]
-fn handle_run_test(_args: &RunTestInput) -> Result<RunTestOutput> {
+fn handle_run_test(_args: &RunTestInput) -> TeeServiceResult<RunTestOutput> {
     let ret = check_all_passed!(
         teaclave_access_control_service::run_tests(),
         teaclave_authentication_service::run_tests(),
@@ -57,13 +57,15 @@ fn handle_run_test(_args: &RunTestInput) -> Result<RunTestOutput> {
 }
 
 #[handle_ecall]
-fn handle_init_enclave(_args: &InitEnclaveInput) -> Result<InitEnclaveOutput> {
+fn handle_init_enclave(_args: &InitEnclaveInput) -> TeeServiceResult<InitEnclaveOutput> {
     ServiceEnclave::init(env!("CARGO_PKG_NAME"))?;
     Ok(InitEnclaveOutput::default())
 }
 
 #[handle_ecall]
-fn handle_finalize_enclave(_args: &FinalizeEnclaveInput) -> Result<FinalizeEnclaveOutput> {
+fn handle_finalize_enclave(
+    _args: &FinalizeEnclaveInput,
+) -> TeeServiceResult<FinalizeEnclaveOutput> {
     ServiceEnclave::finalize()?;
     Ok(FinalizeEnclaveOutput::default())
 }

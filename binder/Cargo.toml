@@ -12,8 +12,10 @@ env_logger   = { version = "0.7.1" }
 log          = { version = "0.4.6" }
 serde        = { version = "1.0.92", features = ["derive"] }
 serde_json   = { version = "1.0.39" }
+thiserror    = { version = "1.0.9" }
 
 teaclave_ipc = { path = "../ipc" }
+teaclave_types = { path = "../types" }
 
 sgx_types = { version = "1.1.0" }
 sgx_urts  = { version = "1.1.0", features = ["global_init"] }

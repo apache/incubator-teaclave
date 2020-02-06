@@ -3,8 +3,6 @@
 #[macro_use]
 extern crate sgx_tstd as std;
 
-use anyhow::{bail, Result};
-
 use log::debug;
 use log::error;
 use std::backtrace;
@@ -21,7 +19,7 @@ global_dtors_object! {
 pub struct ServiceEnclave;
 
 impl ServiceEnclave {
-    pub fn init(name: &str) -> Result<()> {
+    pub fn init(name: &str) -> teaclave_types::TeeServiceResult<()> {
         env_logger::init();
 
         debug!("Enclave initializing");
@@ -30,13 +28,13 @@ impl ServiceEnclave {
             .is_err()
         {
             error!("Cannot enable backtrace");
-            bail!("ecall error");
+            return Err(teaclave_types::TeeServiceError::SgxError);
         }
 
         Ok(())
     }
 
-    pub fn finalize() -> Result<()> {
+    pub fn finalize() -> teaclave_types::TeeServiceResult<()> {
         debug!("Enclave finalizing");
 
         Ok(())

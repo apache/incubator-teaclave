@@ -22,7 +22,7 @@ pub use worker::*;
 
 /// Status for Ecall
 #[repr(C)]
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct EnclaveStatus(pub u32);
 
 /// Status for Ocall
@@ -44,6 +44,18 @@ impl EnclaveStatus {
         self.0 == 0x0000_000c
     }
 }
+
+#[derive(thiserror::Error, Debug, Serialize, Deserialize)]
+pub enum TeeServiceError {
+    #[error("SgxError")]
+    SgxError,
+    #[error("ServiceError")]
+    ServiceError,
+    #[error("CommandNotRegistered")]
+    CommandNotRegistered,
+}
+
+pub type TeeServiceResult<T> = std::result::Result<T, TeeServiceError>;
 
 pub type SgxMeasurement = [u8; sgx_types::SGX_HASH_SIZE];
 

@@ -16,5 +16,6 @@ teaclave_ipc               = { path = "../../../ipc" }
 teaclave_binder            = { path = "../../../binder" }
 teaclave_config            = { path = "../../../config" }
 teaclave_test_utils        = { path = "../../test_utils" }
+teaclave_types             = { path = "../../../types" }
 
 sgx_types = { version = "1.1.0" }

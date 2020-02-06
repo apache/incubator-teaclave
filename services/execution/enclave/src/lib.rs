@@ -27,8 +27,6 @@ extern crate log;
 
 mod service;
 
-use anyhow::Result;
-
 use teaclave_ipc::proto::{
     ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
     StartServiceInput, StartServiceOutput,
@@ -43,16 +41,9 @@ use teaclave_proto::teaclave_execution_service::{
 };
 use teaclave_rpc::config::SgxTrustedTlsServerConfig;
 use teaclave_rpc::server::SgxTrustedTlsServer;
+use teaclave_types::{TeeServiceError, TeeServiceResult};
 
-register_ecall_handler!(
-    type ECallCommand,
-    (ECallCommand::StartService, StartServiceInput, StartServiceOutput),
-    (ECallCommand::InitEnclave, InitEnclaveInput, InitEnclaveOutput),
-    (ECallCommand::FinalizeEnclave, FinalizeEnclaveInput, FinalizeEnclaveOutput),
-);
-
-#[handle_ecall]
-fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> {
+fn start_service(args: &StartServiceInput) -> anyhow::Result<()> {
     let listen_address = args.config.internal_endpoints.execution.listen_address;
     let ias_config = args.config.ias.as_ref().unwrap();
     let attestation = RemoteAttestation::generate_and_endorse(&AttestationConfig::ias(
@@ -77,22 +68,36 @@ fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> 
             error!("Service exit, error: {}.", e);
         }
     }
+    Ok(())
+}
 
+#[handle_ecall]
+fn handle_start_service(args: &StartServiceInput) -> TeeServiceResult<StartServiceOutput> {
+    start_service(args).map_err(|_| TeeServiceError::ServiceError)?;
     Ok(StartServiceOutput::default())
 }
 
 #[handle_ecall]
-fn handle_init_enclave(_args: &InitEnclaveInput) -> Result<InitEnclaveOutput> {
+fn handle_init_enclave(_args: &InitEnclaveInput) -> TeeServiceResult<InitEnclaveOutput> {
     ServiceEnclave::init(env!("CARGO_PKG_NAME"))?;
     info!("Worker started");
     Ok(InitEnclaveOutput::default())
 }
 
 #[handle_ecall]
-fn handle_finalize_enclave(_args: &FinalizeEnclaveInput) -> Result<FinalizeEnclaveOutput> {
+fn handle_finalize_enclave(
+    _args: &FinalizeEnclaveInput,
+) -> TeeServiceResult<FinalizeEnclaveOutput> {
     ServiceEnclave::finalize()?;
     Ok(FinalizeEnclaveOutput::default())
 }
+
+register_ecall_handler!(
+    type ECallCommand,
+    (ECallCommand::StartService, StartServiceInput, StartServiceOutput),
+    (ECallCommand::InitEnclave, InitEnclaveInput, InitEnclaveOutput),
+    (ECallCommand::FinalizeEnclave, FinalizeEnclaveInput, FinalizeEnclaveOutput),
+);
 
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {

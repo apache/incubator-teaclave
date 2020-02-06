@@ -23,7 +23,6 @@ extern crate sgx_tstd as std;
 #[macro_use]
 extern crate log;
 
-use anyhow::Result;
 use rand::RngCore;
 use std::prelude::v1::*;
 use std::sync::Arc;
@@ -43,7 +42,7 @@ use teaclave_proto::teaclave_authentication_service::{
 use teaclave_rpc::config::SgxTrustedTlsServerConfig;
 use teaclave_rpc::server::SgxTrustedTlsServer;
 use teaclave_service_enclave_utils::ServiceEnclave;
-use teaclave_types::EnclaveInfo;
+use teaclave_types::{EnclaveInfo, TeeServiceError, TeeServiceResult};
 
 mod api_service;
 mod internal_service;
@@ -114,9 +113,7 @@ fn start_api_endpoint(
     }
 }
 
-#[handle_ecall]
-fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> {
-    debug!("handle_start_service");
+fn start_service(args: &StartServiceInput) -> anyhow::Result<()> {
     let enclave_info = EnclaveInfo::verify_and_new(
         args.config
             .audit
@@ -148,13 +145,9 @@ fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> 
     let api_listen_address = args.config.api_endpoints.authentication.listen_address;
     let internal_listen_address = args.config.internal_endpoints.authentication.listen_address;
     let ias_config = args.config.ias.as_ref().unwrap();
-    let attestation = Arc::new(
-        RemoteAttestation::generate_and_endorse(&AttestationConfig::ias(
-            &ias_config.ias_key,
-            &ias_config.ias_spid,
-        ))
-        .unwrap(),
-    );
+    let attestation = Arc::new(RemoteAttestation::generate_and_endorse(
+        &AttestationConfig::ias(&ias_config.ias_key, &ias_config.ias_spid),
+    )?);
     let database = user_db::Database::open()?;
     let mut api_jwt_secret = vec![0; user_info::JWT_SECRET_LEN];
     let mut rng = rand::thread_rng();
@@ -181,17 +174,23 @@ fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> 
     api_endpoint_thread_handler.join().unwrap();
     internal_endpoint_thread_handler.join().unwrap();
 
+    Ok(())
+}
+
+#[handle_ecall]
+fn handle_start_service(args: &StartServiceInput) -> TeeServiceResult<StartServiceOutput> {
+    start_service(args).map_err(|_| TeeServiceError::ServiceError)?;
     Ok(StartServiceOutput::default())
 }
 
 #[handle_ecall]
-fn handle_init_enclave(_args: &InitEnclaveInput) -> Result<InitEnclaveOutput> {
+fn handle_init_enclave(_: &InitEnclaveInput) -> TeeServiceResult<InitEnclaveOutput> {
     ServiceEnclave::init(env!("CARGO_PKG_NAME"))?;
     Ok(InitEnclaveOutput::default())
 }
 
 #[handle_ecall]
-fn handle_finalize_enclave(_args: &FinalizeEnclaveInput) -> Result<FinalizeEnclaveOutput> {
+fn handle_finalize_enclave(_: &FinalizeEnclaveInput) -> TeeServiceResult<FinalizeEnclaveOutput> {
     ServiceEnclave::finalize()?;
     Ok(FinalizeEnclaveOutput::default())
 }

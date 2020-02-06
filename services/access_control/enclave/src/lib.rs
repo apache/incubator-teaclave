@@ -23,7 +23,6 @@ extern crate sgx_tstd as std;
 #[macro_use]
 extern crate log;
 
-use anyhow::Result;
 use std::prelude::v1::*;
 use teaclave_attestation::{AttestationConfig, RemoteAttestation};
 use teaclave_ipc::proto::{
@@ -37,13 +36,12 @@ use teaclave_proto::teaclave_access_control_service::{
 use teaclave_rpc::config::SgxTrustedTlsServerConfig;
 use teaclave_rpc::server::SgxTrustedTlsServer;
 use teaclave_service_enclave_utils::ServiceEnclave;
+use teaclave_types::{TeeServiceError, TeeServiceResult};
 
 mod acs;
 mod service;
 
-#[handle_ecall]
-fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> {
-    debug!("handle_start_service");
+fn start_service(args: &StartServiceInput) -> anyhow::Result<()> {
     let listen_address = args.config.internal_endpoints.access_control.listen_address;
     let ias_config = args.config.ias.as_ref().unwrap();
     let attestation = RemoteAttestation::generate_and_endorse(&AttestationConfig::ias(
@@ -69,18 +67,25 @@ fn handle_start_service(args: &StartServiceInput) -> Result<StartServiceOutput> 
             error!("Service exit, error: {}.", e);
         }
     }
+    Ok(())
+}
 
+#[handle_ecall]
+fn handle_start_service(args: &StartServiceInput) -> TeeServiceResult<StartServiceOutput> {
+    start_service(args).map_err(|_| TeeServiceError::ServiceError)?;
     Ok(StartServiceOutput::default())
 }
 
 #[handle_ecall]
-fn handle_init_enclave(_args: &InitEnclaveInput) -> Result<InitEnclaveOutput> {
+fn handle_init_enclave(_args: &InitEnclaveInput) -> TeeServiceResult<InitEnclaveOutput> {
     ServiceEnclave::init(env!("CARGO_PKG_NAME"))?;
     Ok(InitEnclaveOutput::default())
 }
 
 #[handle_ecall]
-fn handle_finalize_enclave(_args: &FinalizeEnclaveInput) -> Result<FinalizeEnclaveOutput> {
+fn handle_finalize_enclave(
+    _args: &FinalizeEnclaveInput,
+) -> TeeServiceResult<FinalizeEnclaveOutput> {
     ServiceEnclave::finalize()?;
     Ok(FinalizeEnclaveOutput::default())
 }

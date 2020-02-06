@@ -25,8 +25,8 @@ extern crate log;
 
 use std::prelude::v1::*;
 
-use anyhow::Result;
 use teaclave_types;
+use teaclave_types::TeeServiceResult;
 
 use teaclave_ipc::proto::{
     ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
@@ -42,7 +42,7 @@ mod teaclave_rpc;
 mod teaclave_worker;
 
 #[handle_ecall]
-fn handle_run_test(_args: &RunTestInput) -> Result<RunTestOutput> {
+fn handle_run_test(_args: &RunTestInput) -> TeeServiceResult<RunTestOutput> {
     let ret = check_all_passed!(
         rusty_leveldb_sgx::run_tests(),
         protected_fs_rs::run_tests(),
@@ -55,13 +55,15 @@ fn handle_run_test(_args: &RunTestInput) -> Result<RunTestOutput> {
 }
 
 #[handle_ecall]
-fn handle_init_enclave(_args: &InitEnclaveInput) -> Result<InitEnclaveOutput> {
+fn handle_init_enclave(_args: &InitEnclaveInput) -> TeeServiceResult<InitEnclaveOutput> {
     ServiceEnclave::init(env!("CARGO_PKG_NAME"))?;
     Ok(InitEnclaveOutput::default())
 }
 
 #[handle_ecall]
-fn handle_finalize_enclave(_args: &FinalizeEnclaveInput) -> Result<FinalizeEnclaveOutput> {
+fn handle_finalize_enclave(
+    _args: &FinalizeEnclaveInput,
+) -> TeeServiceResult<FinalizeEnclaveOutput> {
     ServiceEnclave::finalize()?;
     Ok(FinalizeEnclaveOutput::default())
 }

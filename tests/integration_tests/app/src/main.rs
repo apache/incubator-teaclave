@@ -16,29 +16,32 @@
 // under the License.
 
 use anyhow;
+use log::error;
 use teaclave_binder::TeeBinder;
 use teaclave_ipc::proto::{ECallCommand, RunTestInput, RunTestOutput};
-
-mod teaclave_config_tests;
+use teaclave_types::TeeServiceResult;
 
 fn main() -> anyhow::Result<()> {
     env_logger::init();
-
-    let tee = TeeBinder::new(env!("CARGO_PKG_NAME"), 1)?;
-    run_app_integration_tests();
-    start_enclave_integration_tests(&tee)?;
+    let tee = TeeBinder::new(env!("CARGO_PKG_NAME"))?;
+    run(&tee)?;
 
     Ok(())
 }
 
-fn start_enclave_integration_tests(tee: &TeeBinder) -> anyhow::Result<()> {
+fn start_enclave_unit_test_driver(tee: &TeeBinder) -> anyhow::Result<()> {
     let cmd = ECallCommand::RunTest;
-    tee.invoke::<RunTestInput, RunTestOutput>(cmd.into(), RunTestInput)?;
+    match tee.invoke::<RunTestInput, TeeServiceResult<RunTestOutput>>(cmd, RunTestInput) {
+        Err(e) => error!("{:?}", e),
+        Ok(Err(e)) => error!("{:?}", e),
+        _ => (),
+    }
 
     Ok(())
 }
 
-fn run_app_integration_tests() {
-    let ret = teaclave_config_tests::run_tests();
-    assert_eq!(ret, true);
+fn run(tee: &TeeBinder) -> anyhow::Result<()> {
+    start_enclave_unit_test_driver(tee)?;
+
+    Ok(())
 }
