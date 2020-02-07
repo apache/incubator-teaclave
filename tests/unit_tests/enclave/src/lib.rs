@@ -37,12 +37,14 @@ use teaclave_service_enclave_utils::ServiceEnclave;
 use teaclave_access_control_service_enclave;
 use teaclave_authentication_service_enclave;
 use teaclave_execution_service_enclave;
+use teaclave_management_service_enclave;
 use teaclave_test_utils::check_all_passed;
 use teaclave_worker;
 
 #[handle_ecall]
 fn handle_run_test(_args: &RunTestInput) -> TeeServiceResult<RunTestOutput> {
     let ret = check_all_passed!(
+        teaclave_management_service_enclave::tests::run_tests(),
         teaclave_storage_service_enclave::tests::run_tests(),
         teaclave_access_control_service_enclave::tests::run_tests(),
         teaclave_execution_service_enclave::tests::run_tests(),

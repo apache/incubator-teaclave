@@ -24,20 +24,24 @@ extern crate sgx_tstd as std;
 extern crate log;
 
 use std::prelude::v1::*;
+use teaclave_attestation::verifier;
 use teaclave_attestation::{AttestationConfig, RemoteAttestation};
 use teaclave_binder::proto::{
     ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
     StartServiceInput, StartServiceOutput,
 };
 use teaclave_binder::{handle_ecall, register_ecall_handler};
+use teaclave_config::BUILD_CONFIG;
 use teaclave_proto::teaclave_management_service::{
     TeaclaveManagementRequest, TeaclaveManagementResponse,
 };
+use teaclave_rpc::config::SgxTrustedTlsClientConfig;
 use teaclave_rpc::config::SgxTrustedTlsServerConfig;
+use teaclave_rpc::endpoint::Endpoint;
 use teaclave_rpc::server::SgxTrustedTlsServer;
 use teaclave_service_enclave_utils::ServiceEnclave;
 use teaclave_types::{TeeServiceError, TeeServiceResult};
-
+mod file;
 mod service;
 
 fn start_service(args: &StartServiceInput) -> anyhow::Result<()> {
@@ -59,7 +63,25 @@ fn start_service(args: &StartServiceInput) -> anyhow::Result<()> {
             listen_address,
             &config,
         );
-    let service = service::TeaclaveManagementService;
+
+    let enclave_info = teaclave_types::EnclaveInfo::from_bytes(
+        &args.config.audit.enclave_info_bytes.as_ref().unwrap(),
+    );
+    let enclave_attr = enclave_info
+        .get_enclave_attr("teaclave_storage_service")
+        .expect("storage");
+    let config = SgxTrustedTlsClientConfig::new()
+        .client_cert(&attestation.cert, &attestation.private_key)
+        .attestation_report_verifier(
+            vec![enclave_attr],
+            BUILD_CONFIG.ias_root_ca_cert,
+            verifier::universal_quote_verifier,
+        );
+    let storage_service_address = &args.config.internal_endpoints.storage.advertised_address;
+
+    let storage_service_endpoint = Endpoint::new(storage_service_address).config(config);
+
+    let service = service::TeaclaveManagementService::new(storage_service_endpoint)?;
     match server.start(service) {
         Ok(_) => (),
         Err(e) => {
@@ -99,6 +121,12 @@ register_ecall_handler!(
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
+    use teaclave_test_utils::*;
 
-    pub fn run_tests() -> bool {}
+    pub fn run_tests() -> bool {
+        run_tests!(
+            service::tests::handle_input_file,
+            service::tests::handle_output_file,
+        )
+    }
 }

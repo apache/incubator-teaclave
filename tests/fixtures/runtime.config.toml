@@ -6,8 +6,8 @@ frontend = { listen_address = "0.0.0.0:7777" }
 access_control = { listen_address = "0.0.0.0:7779", advertised_address = "localhost:7779" }
 authentication = { listen_address = "0.0.0.0:17776", advertised_address = "localhost:17776" }
 management = { listen_address = "0.0.0.0:17777", advertised_address = "localhost:17777" }
-storage = { listen_address = "0.0.0.0:7778", advertised_address = "127.0.0.1:7778", inbound_services = ["frontend"] }
-execution = { listen_address = "0.0.0.0:7989", advertised_address = "127.0.0.1:7989" }
+storage = { listen_address = "0.0.0.0:7778", advertised_address = "localhost:7778", inbound_services = ["frontend", "management"] }
+execution = { listen_address = "0.0.0.0:7989", advertised_address = "localhost:7989" }
 
 [audit]
 enclave_info = { path = "fixtures/enclave_info.toml" }
