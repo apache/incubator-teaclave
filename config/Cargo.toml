@@ -11,10 +11,8 @@ default = []
 mesalock_sgx = ["sgx_tstd"]
 
 [dependencies]
-anyhow     = { version = "1.0.26" }
-lazy_static  = { version = "1.0.2", features = ["spin_no_std"] }
-log          = { version = "0.4.6" }
-serde         = { version = "1.0.92", features = ["derive"] }
-toml         = { version = "0.5.1" }
+anyhow = { version = "1.0.26" }
+serde  = { version = "1.0.92", features = ["derive"] }
+toml   = { version = "0.5.1" }
 
 sgx_tstd = { version = "1.1.0", optional = true }
