@@ -1,6 +1,6 @@
 #[derive(Debug)]
 pub struct BuildConfig {
-    pub ias_root_ca_cert: &'static [u8],
+    pub as_root_ca_cert: &'static [u8],
     pub auditor_public_keys: &'static [&'static [u8]; {{ auditor_public_keys.len() }}],
     pub rpc_max_message_size: u64,
     pub inbound: Inbounds,
@@ -14,8 +14,8 @@ pub struct Inbounds {
     pub storage: &'static [&'static str; {{ inbound.storage.len() }}],
 }
 
-pub const BUILD_CONFIG: BuildConfig = BuildConfig {
-    ias_root_ca_cert: &{{ ias_root_ca_cert }},
+pub static BUILD_CONFIG: BuildConfig = BuildConfig {
+    as_root_ca_cert: &{{ as_root_ca_cert }},
     auditor_public_keys: &[
         {%- for k in auditor_public_keys %}
         &{{ k }},

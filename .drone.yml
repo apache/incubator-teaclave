@@ -21,9 +21,11 @@ steps:
 - name: test
   image: teaclave/teaclave-build-ubuntu-1804:0.1.0
   environment:
-    IAS_KEY:
+    AS_ALGO: sgx_epid
+    AS_URL: https://api.trustedservices.intel.com:443
+    AS_KEY:
       from_secret: V5_KEY
-    IAS_SPID:
+    AS_SPID:
       from_secret: V5_SPID
   privileged: true
   volumes:
@@ -72,9 +74,11 @@ steps:
   image: teaclave/teaclave-build-ubuntu-1804:0.1.0
   privileged: true
   environment:
-    IAS_KEY:
+    AS_ALGO: sgx_epid
+    AS_URL: https://api.trustedservices.intel.com:443
+    AS_KEY:
       from_secret: V5_KEY
-    IAS_SPID:
+    AS_SPID:
       from_secret: V5_SPID
   volumes:
   - name: isgx
@@ -183,9 +187,11 @@ steps:
 - name: test
   image: teaclave/teaclave-build-ubuntu-1604:0.1.0
   environment:
-    IAS_KEY:
+    AS_ALGO: sgx_epid
+    AS_URL: https://api.trustedservices.intel.com:443
+    AS_KEY:
       from_secret: V5_KEY
-    IAS_SPID:
+    AS_SPID:
       from_secret: V5_SPID
   privileged: true
   volumes:
@@ -234,9 +240,11 @@ steps:
   image: teaclave/teaclave-build-ubuntu-1604:0.1.0
   privileged: true
   environment:
-    IAS_KEY:
+    AS_ALGO: sgx_epid
+    AS_URL: https://api.trustedservices.intel.com:443
+    AS_KEY:
       from_secret: V5_KEY
-    IAS_SPID:
+    AS_SPID:
       from_secret: V5_SPID
   volumes:
   - name: isgx
@@ -372,9 +380,11 @@ node:
 # - name: test
 #   image: teaclave/teaclave-build-ubuntu-1804:0.1.0
 #   environment:
-#     IAS_KEY:
+#     AS_ALGO: sgx_epid
+#     AS_URL: https://api.trustedservices.intel.com:443
+#     AS_KEY:
 #       from_secret: V5_KEY
-#     IAS_SPID:
+#     AS_SPID:
 #       from_secret: V5_SPID
 #   privileged: true
 #   volumes:

@@ -9,8 +9,8 @@ fi
 
 source ${SGX_SDK}/environment
 if [ "${SGX_MODE}" = "HW" ]; then
-	if [ -z ${IAS_SPID} ] || [ -z ${IAS_KEY} ] ; then
-        echo "Please set IAS_SPID and IAS_KEY environment variables."
+	if [ -z ${AS_ALGO} ] || [ -z ${AS_URL} ] || [ -z ${AS_SPID} ] || [ -z ${AS_KEY} ] ; then
+        echo "Please set AS_ALGO, AS_URL, AS_SPID and AS_KEY environment variables."
         exit 1;
     fi
 fi

@@ -22,3 +22,9 @@ auditor_signatures = [
     { path = "auditors/optimus_prime/optimus_prime.sign.sha256" },
     { path = "auditors/albus_dumbledore/albus_dumbledore.sign.sha256" },
 ]
+
+[attestation]
+algorithm = "sgx_epid"
+url = "https://api.trustedservices.intel.com:443"
+key = "00000000000000000000000000000000"
+spid = "00000000000000000000000000000000"

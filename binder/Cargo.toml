@@ -23,6 +23,7 @@ log          = { version = "0.4.6" }
 serde        = { version = "1.0.92", features = ["derive"] }
 serde_json   = { version = "1.0.39" }
 thiserror    = { version = "1.0.9" }
+url          = { version = "2.1.1" }
 
 teaclave_types = { path = "../types" }
 teaclave_config = { path = "../config" }

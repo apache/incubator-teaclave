@@ -32,7 +32,7 @@ fn get_client() -> TeaclaveAccessControlClient {
         .expect("access_control");
     let config = SgxTrustedTlsClientConfig::new().attestation_report_verifier(
         vec![enclave_attr],
-        BUILD_CONFIG.ias_root_ca_cert,
+        BUILD_CONFIG.as_root_ca_cert,
         verifier::universal_quote_verifier,
     );
 

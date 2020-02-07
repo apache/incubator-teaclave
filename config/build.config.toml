@@ -1,7 +1,9 @@
 # Teaclave Build Config
 
 # Intel Attestation Service root CA certificate to verify attestation report
-ias_root_ca_cert = { path = "../keys/ias_root_ca_cert.pem" }
+as_root_ca_cert = { path = "../keys/ias_root_ca_cert.pem" }
+# For DCAP, use the following cert
+#as_root_ca_cert = { path = "../keys/dcap_root_ca_cert.pem" }
 
 # Auditors' public keys to verify their endorsement signatures
 auditor_public_keys = [

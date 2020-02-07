@@ -30,7 +30,7 @@ fn get_api_client() -> TeaclaveAuthenticationApiClient {
         .expect("authentication");
     let config = SgxTrustedTlsClientConfig::new().attestation_report_verifier(
         vec![enclave_attr],
-        BUILD_CONFIG.ias_root_ca_cert,
+        BUILD_CONFIG.as_root_ca_cert,
         verifier::universal_quote_verifier,
     );
 
@@ -50,7 +50,7 @@ fn get_internal_client() -> TeaclaveAuthenticationInternalClient {
         .expect("authentication");
     let config = SgxTrustedTlsClientConfig::new().attestation_report_verifier(
         vec![enclave_attr],
-        BUILD_CONFIG.ias_root_ca_cert,
+        BUILD_CONFIG.as_root_ca_cert,
         verifier::universal_quote_verifier,
     );
 

@@ -11,7 +11,7 @@ use structopt::StructOpt;
 
 #[derive(Serialize, Deserialize)]
 struct BuildConfigToml {
-    ias_root_ca_cert: ConfigSource,
+    as_root_ca_cert: ConfigSource,
     auditor_public_keys: Vec<ConfigSource>,
     rpc_max_message_size: u32,
     inbound: Inbound,
@@ -50,7 +50,7 @@ fn display_config_source(config: &ConfigSource) -> String {
 #[derive(Template)]
 #[template(path = "config.j2")]
 struct ConfigTemplate {
-    ias_root_ca_cert: String,
+    as_root_ca_cert: String,
     auditor_public_keys: Vec<String>,
     rpc_max_message_size: u32,
     inbound: Inbound,
@@ -60,7 +60,7 @@ fn generate_build_config(toml: &Path, out: &Path) {
     let contents = fs::read_to_string(toml).expect("Something went wrong reading the file");
     let config: BuildConfigToml = toml::from_str(&contents).expect("Failed to parse the config.");
 
-    let ias_root_ca_cert = display_config_source(&config.ias_root_ca_cert);
+    let as_root_ca_cert = display_config_source(&config.as_root_ca_cert);
 
     let mut auditor_public_keys: Vec<String> = vec![];
     for key in &config.auditor_public_keys {
@@ -68,7 +68,7 @@ fn generate_build_config(toml: &Path, out: &Path) {
         auditor_public_keys.push(auditor_pulic_key);
     }
     let config_template = ConfigTemplate {
-        ias_root_ca_cert,
+        as_root_ca_cert,
         auditor_public_keys,
         rpc_max_message_size: config.rpc_max_message_size,
         inbound: config.inbound,

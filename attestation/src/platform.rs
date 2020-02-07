@@ -32,6 +32,14 @@ extern "C" {
         p_quote: *mut u8,
         quote_size: u32,
     ) -> sgx_status_t;
+
+    fn ocall_sgx_get_remote_socket(
+        p_retval: *mut i32,
+        p_url: *const u8,
+        len: usize,
+    ) -> sgx_status_t;
+
+    fn sgx_self_target(p_target_info: *mut sgx_target_info_t) -> sgx_status_t;
 }
 
 pub(crate) fn init_sgx_quote() -> Result<(sgx_att_key_id_t, sgx_target_info_t)> {
@@ -92,6 +100,15 @@ pub(crate) fn get_sgx_quote(ak_id: &sgx_att_key_id_t, report: sgx_report_t) -> R
     rng.fill_bytes(&mut quote_nonce.rand);
     qe_report_info.nonce = quote_nonce;
 
+    debug!("sgx_self_target");
+    // Provide the target information of ourselves so that we can verify the QE report
+    // returned with the quote
+    let res = unsafe { sgx_self_target(&mut qe_report_info.app_enclave_target_info as _) };
+
+    if res != sgx_status_t::SGX_SUCCESS {
+        bail!(AttestationError::PlatformError);
+    }
+
     let mut quote = vec![0; quote_len as usize];
 
     debug!("ocall_sgx_get_quote");
@@ -113,7 +130,7 @@ pub(crate) fn get_sgx_quote(ak_id: &sgx_att_key_id_t, report: sgx_report_t) -> R
     debug!("rsgx_verify_report");
     let qe_report = qe_report_info.qe_report;
     // Perform a check on qe_report to verify if the qe_report is valid.
-    rsgx_verify_report(&qe_report).unwrap(); //map_err(|_| Error::new(AttestationError::PlatformError)).expect("verify report failed");
+    rsgx_verify_report(&qe_report).map_err(|_| Error::new(AttestationError::PlatformError))?;
 
     // Check qe_report to defend against replay attack. The purpose of
     // p_qe_report is for the ISV enclave to confirm the QUOTE it received
@@ -135,4 +152,17 @@ pub(crate) fn get_sgx_quote(ak_id: &sgx_att_key_id_t, report: sgx_report_t) -> R
     }
 
     Ok(quote)
+}
+
+pub(crate) fn get_attestation_service_socket(url: &str) -> Result<c_int> {
+    debug!("get_attestation_service_socket");
+    let mut fd: c_int = -1;
+    let res =
+        unsafe { ocall_sgx_get_remote_socket(&mut fd as _, url.as_bytes().as_ptr(), url.len()) };
+
+    if res != sgx_status_t::SGX_SUCCESS || fd < 0 {
+        bail!(AttestationError::OCallError)
+    } else {
+        Ok(fd)
+    }
 }

@@ -155,8 +155,11 @@ pub enum SgxEcdsaQuoteAkType {
 #[derive(PartialEq, Debug)]
 pub enum SgxQuoteStatus {
     OK,
-    GroupOutOfDate,
+    AttestationKeyRevoked,
+    TcbOutOfDate,
     ConfigurationNeeded,
+    TcbOutOfDateAndConfigurationNeeded,
+    SignatureInvalid,
     UnknownBadStatus,
 }
 
@@ -164,8 +167,13 @@ impl From<&str> for SgxQuoteStatus {
     fn from(status: &str) -> Self {
         match status {
             "OK" => SgxQuoteStatus::OK,
-            "GROUP_OUT_OF_DATE" => SgxQuoteStatus::GroupOutOfDate,
+            "KEY_REVOKED" => SgxQuoteStatus::AttestationKeyRevoked,
+            "GROUP_OUT_OF_DATE" | "TCB_OUT_OF_DATE" => SgxQuoteStatus::TcbOutOfDate,
             "CONFIGURATION_NEEDED" => SgxQuoteStatus::ConfigurationNeeded,
+            "OUT_OF_DATE_CONFIGURATION_NEEDED" => {
+                SgxQuoteStatus::TcbOutOfDateAndConfigurationNeeded
+            }
+            "SIGNATURE_INVALID" => SgxQuoteStatus::SignatureInvalid,
             _ => SgxQuoteStatus::UnknownBadStatus,
         }
     }
@@ -264,7 +272,7 @@ pub struct AttestationReport {
 }
 
 impl AttestationReport {
-    pub fn from_cert(cert: &[u8], ias_report_ca_cert: &[u8]) -> Result<Self> {
+    pub fn from_cert(cert: &[u8], report_ca_cert: &[u8]) -> Result<Self> {
         // Before we reach here, Webpki already verifed the cert is properly signed
         use super::cert::*;
 
@@ -285,7 +293,7 @@ impl AttestationReport {
 
         let mut root_store = rustls::RootCertStore::empty();
         root_store
-            .add(&rustls::Certificate(ias_report_ca_cert.to_vec()))
+            .add(&rustls::Certificate(report_ca_cert.to_vec()))
             .expect("Failed to add CA");
 
         let trust_anchors: Vec<webpki::TrustAnchor> = root_store
@@ -294,7 +302,7 @@ impl AttestationReport {
             .map(|cert| cert.to_trust_anchor())
             .collect();
 
-        let chain: Vec<&[u8]> = vec![ias_report_ca_cert];
+        let chain: Vec<&[u8]> = vec![report_ca_cert];
 
         let time = webpki::Time::try_from(SystemTime::now())
             .map_err(|_| anyhow!("Cannot convert time."))?;

@@ -69,7 +69,7 @@ impl AttestationReportVerifier {
         let report = match AttestationReport::from_cert(&cert_der, &self.root_ca) {
             Ok(report) => report,
             Err(e) => {
-                error!("{:?}", e);
+                error!("cert verification error {:?}", e);
                 return false;
             }
         };

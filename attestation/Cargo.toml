@@ -33,6 +33,7 @@ thiserror        = { version = "1.0.9" }
 uuid             = { version = "0.7.4", features = ["v4"] }
 webpki           = { version = "0.21.0" }
 webpki-roots     = { version = "0.17.0" }
+url              = { version = "2.1.1" }
 yasna            = { version = "0.3.0", features = ["bit-vec", "num-bigint", "chrono"] }
 
 teaclave_types  = { path = "../types" }
