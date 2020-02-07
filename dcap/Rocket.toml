@@ -1,0 +1,7 @@
+[global]
+port = 8080
+
+# The certificate is self-signed. DO NOT use in production.
+[global.tls]
+certs = "../keys/dcap_server_cert.pem"
+key = "../keys/dcap_server_key.pem"

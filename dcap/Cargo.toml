@@ -1,0 +1,28 @@
+[package]
+name = "teaclave_dcap_ref_as"
+version = "0.1.0"
+authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
+description = "Teaclave DCAP Attestation Service (Reference Implementation)"
+license = "Apache-2.0"
+edition = "2018"
+
+[features]
+default = []
+
+[dependencies]
+base64           = { version = "0.10.1" }
+hex              = { version = "0.4.0" }
+serde            = { version = "1.0.92", features = ["derive"] }
+serde_json       = { version = "1.0.39" }
+rocket           = { git = "https://github.com/SergioBenitez/Rocket", features = ["tls"] }
+libc             = { version = "*" }
+rand             = { version = "0.7.3" }
+ring             = { version = "*" }
+untrusted        = { version = "*" }
+uuid             = { version = "*", features = ["v4"] }
+chrono           = { version = "*" }
+lazy_static      = { version = "*" }
+percent-encoding = { version = "2.1.0" }
+
+sgx_types        = { git = "https://github.com/apache/incubator-teaclave-sgx-sdk" }
+sgx_ucrypto      = { git = "https://github.com/apache/incubator-teaclave-sgx-sdk" }

@@ -40,7 +40,7 @@ enclave {
 
     include "sgx_quote.h"
     untrusted {
-        int ocall_sgx_get_ias_socket();
+        int ocall_sgx_get_remote_socket([in, size=len] const uint8_t *url, size_t len);
 
         sgx_status_t ocall_sgx_init_quote([out] sgx_att_key_id_t *p_att_key_id,
                                           [out] sgx_target_info_t *p_target_info);

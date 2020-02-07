@@ -17,6 +17,8 @@ auditor_signatures = [
     { path = "fixtures/auditors/albus_dumbledore.sign.sha256" },
 ]
 
-[ias]
-ias_key  = "ias_key_AAAABBBBCCCCDDDDEEEEFFFF"
-ias_spid = "ias_spid_AAAABBBBCCCCDDDDEEEEFFF"
+[attestation]
+algorithm = "sgx_epid"
+url = "api.trustedservices.intel.com:443"
+key  = "ias_key_AAAABBBBCCCCDDDDEEEEFFFF"
+spid = "ias_spid_AAAABBBBCCCCDDDDEEEEFFF"

@@ -20,7 +20,7 @@ pub struct RuntimeConfig {
     pub api_endpoints: ApiEndpointsConfig,
     pub internal_endpoints: InternalEndpointsConfig,
     pub audit: AuditConfig,
-    pub ias: Option<IasConfig>,
+    pub attestation: AttestationServiceConfig,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -61,9 +61,11 @@ pub struct AuditConfig {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct IasConfig {
-    pub ias_spid: String,
-    pub ias_key: String,
+pub struct AttestationServiceConfig {
+    pub algorithm: String,
+    pub url: String,
+    pub key: String,
+    pub spid: String,
 }
 
 impl RuntimeConfig {
@@ -92,17 +94,21 @@ impl RuntimeConfig {
         }
         config.audit.auditor_signatures_bytes = Some(signatures);
 
-        if env::var("IAS_SPID").is_ok() && env::var("IAS_KEY").is_ok() {
-            let ias_spid = env::var("IAS_SPID").unwrap();
-            let ias_key = env::var("IAS_KEY").unwrap();
-            config.ias = Some(IasConfig { ias_spid, ias_key });
-        }
-
-        if cfg!(sgx_sim) && config.ias.is_none() {
-            config.ias = Some(IasConfig {
-                ias_spid: "SGX_SIMULATION_MODE_IAS_SPID_123".to_string(),
-                ias_key: "SGX_SIMULATION_MODE_IAS_KEY_1234".to_string(),
-            });
+        if env::var("AS_ALGO").is_ok()
+            && env::var("AS_URL").is_ok()
+            && env::var("AS_SPID").is_ok()
+            && env::var("AS_KEY").is_ok()
+        {
+            let algorithm = env::var("AS_ALGO").unwrap();
+            let url = env::var("AS_URL").unwrap();
+            let spid = env::var("AS_SPID").unwrap();
+            let key = env::var("AS_KEY").unwrap();
+            config.attestation = AttestationServiceConfig {
+                algorithm,
+                url,
+                key,
+                spid,
+            };
         }
 
         validate_config(&config)?;
@@ -112,11 +118,16 @@ impl RuntimeConfig {
 }
 
 fn validate_config(config: &RuntimeConfig) -> Result<()> {
-    if config.ias.is_none()
-        || config.ias.as_ref().unwrap().ias_spid.len() != 32
-        || config.ias.as_ref().unwrap().ias_key.len() != 32
-    {
-        bail!("Cannot find IAS SPID/key or format error");
+    match config.attestation.algorithm.as_str() {
+        "sgx_epid" | "sgx_ecdsa" => (),
+        _ => bail!(
+            "Invalid attestation algorithm {}",
+            config.attestation.algorithm
+        ),
+    }
+
+    if config.attestation.spid.len() != 32 || config.attestation.key.len() != 32 {
+        bail!("Cannot find Attestation Service SPID/key or format error");
     }
 
     Ok(())

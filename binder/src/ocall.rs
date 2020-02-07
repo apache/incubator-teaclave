@@ -47,9 +47,17 @@ extern "C" {
 }
 
 #[no_mangle]
-pub extern "C" fn ocall_sgx_get_ias_socket() -> i32 {
-    let ias_addr = "api.trustedservices.intel.com:443";
-    match TcpStream::connect(ias_addr) {
+pub extern "C" fn ocall_sgx_get_remote_socket(url: *const u8, len: usize) -> i32 {
+    let bytes = unsafe { std::slice::from_raw_parts(url, len) };
+    let url = url::Url::parse(std::str::from_utf8(&bytes).unwrap()).unwrap();
+    match TcpStream::connect(
+        &*url
+            .socket_addrs(|| match url.scheme() {
+                "https" => Some(443),
+                _ => None,
+            })
+            .unwrap(),
+    ) {
         Ok(socket) => socket.into_raw_fd(),
         Err(_) => -1,
     }

@@ -20,10 +20,9 @@ impl RemoteAttestation {
         let key_pair = key::Secp256k1KeyPair::new()?;
         let report = match att_config {
             AttestationConfig::NoAttestation => EndorsedAttestationReport::default(),
-            AttestationConfig::SgxIas(config) => {
-                EndorsedAttestationReport::from_ias(key_pair.pub_k, &config.api_key, &config.spid)?
+            AttestationConfig::WithAttestation(config) => {
+                EndorsedAttestationReport::new(&config, key_pair.pub_k)?
             }
-            AttestationConfig::SgxDcap(_) => unimplemented!(),
         };
 
         let cert_extension = serde_json::to_vec(&report)?;

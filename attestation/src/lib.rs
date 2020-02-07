@@ -37,32 +37,49 @@ pub enum AttestationError {
 
 pub enum AttestationConfig {
     NoAttestation,
-    SgxIas(IasConfig),
-    SgxDcap(DcapConfig), // not supported yet
+    WithAttestation(AttestationServiceConfig),
 }
 
-pub struct IasConfig {
-    pub api_key: String,
-    pub spid: sgx_types::sgx_spid_t,
+pub(crate) enum AttestationAlgorithm {
+    SgxEpid,
+    SgxEcdsa,
+}
+
+pub struct AttestationServiceConfig {
+    algo: AttestationAlgorithm,
+    as_url: url::Url,
+    api_key: String,
+    spid: sgx_types::sgx_spid_t,
 }
 
 pub struct DcapConfig {}
 
 impl AttestationConfig {
-    pub fn ias(ias_key: &str, ias_spid: &str) -> Self {
+    pub fn new(algorithm: &str, url: &str, api_key: &str, spid_str: &str) -> Self {
         if cfg!(sgx_sim) {
-            Self::NoAttestation
-        } else {
-            use core::convert::TryFrom;
-
-            let mut spid = sgx_types::sgx_spid_t::default();
-            let hex = hex::decode(ias_spid).expect("Illegal SPID provided");
-            spid.id = <[u8; 16]>::try_from(hex.as_slice()).expect("Illegal SPID provided");
-            Self::SgxIas(IasConfig {
-                api_key: ias_key.to_string(),
-                spid,
-            })
+            return Self::NoAttestation;
         }
+
+        use core::convert::TryFrom;
+
+        let mut spid = sgx_types::sgx_spid_t::default();
+        let hex = hex::decode(spid_str).expect("Illegal SPID provided");
+        spid.id = <[u8; 16]>::try_from(hex.as_slice()).expect("Illegal SPID provided");
+
+        let algo = match algorithm {
+            "sgx_epid" => AttestationAlgorithm::SgxEpid,
+            "sgx_ecdsa" => AttestationAlgorithm::SgxEcdsa,
+            _ => panic!("Unsupported remote attestation algorithm"),
+        };
+
+        let att_service_cfg = AttestationServiceConfig {
+            algo,
+            as_url: url::Url::parse(url).unwrap(),
+            api_key: api_key.to_string(),
+            spid,
+        };
+
+        Self::WithAttestation(att_service_cfg)
     }
 }
 
@@ -86,7 +103,7 @@ pub mod verifier;
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "mesalock_sgx")]  {
-        mod ias;
+        mod service;
         mod key;
         mod platform;
         mod attestation;

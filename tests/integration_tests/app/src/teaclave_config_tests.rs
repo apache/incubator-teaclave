@@ -6,8 +6,8 @@ pub fn run_tests() -> bool {
 }
 
 fn test_runtime_config() {
-    env::remove_var("IAS_KEY");
-    env::remove_var("IAS_SPID");
+    env::remove_var("AS_KEY");
+    env::remove_var("AS_SPID");
     let config =
         teaclave_config::RuntimeConfig::from_toml("./fixtures/runtime.config.toml").unwrap();
     let authentication_config = config.api_endpoints.authentication;
@@ -25,14 +25,8 @@ fn test_runtime_config() {
         Some(vec!["frontend".to_string()])
     );
 
-    assert_eq!(
-        config.ias.as_ref().unwrap().ias_key,
-        "ias_key_AAAABBBBCCCCDDDDEEEEFFFF"
-    );
-    assert_eq!(
-        config.ias.as_ref().unwrap().ias_spid,
-        "ias_spid_AAAABBBBCCCCDDDDEEEEFFF"
-    );
+    assert_eq!(config.attestation.key, "ias_key_AAAABBBBCCCCDDDDEEEEFFFF");
+    assert_eq!(config.attestation.spid, "ias_spid_AAAABBBBCCCCDDDDEEEEFFF");
 
     assert_eq!(
         config.audit.auditor_signatures_bytes.as_ref().unwrap()[0],
@@ -41,16 +35,13 @@ fn test_runtime_config() {
 }
 
 fn test_runtime_config_with_env_vars() {
-    env::set_var("IAS_KEY", "12345678901234567890123456789012");
-    env::set_var("IAS_SPID", "90123456789012345678901234567890");
+    env::set_var("AS_URL", "xxx.yy.zz:8080");
+    env::set_var("AS_ALGO", "sgx_epid");
+    env::set_var("AS_KEY", "12345678901234567890123456789012");
+    env::set_var("AS_SPID", "90123456789012345678901234567890");
     let config =
         teaclave_config::RuntimeConfig::from_toml("./fixtures/runtime.config.toml").unwrap();
-    assert_eq!(
-        config.ias.as_ref().unwrap().ias_key,
-        "12345678901234567890123456789012"
-    );
-    assert_eq!(
-        config.ias.as_ref().unwrap().ias_spid,
-        "90123456789012345678901234567890"
-    );
+    assert_eq!(config.attestation.url, "xxx.yy.zz:8080");
+    assert_eq!(config.attestation.key, "12345678901234567890123456789012");
+    assert_eq!(config.attestation.spid, "90123456789012345678901234567890");
 }
