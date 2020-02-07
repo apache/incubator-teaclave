@@ -40,6 +40,7 @@ mod teaclave_access_control_service;
 mod teaclave_authentication_service;
 mod teaclave_execution_service;
 mod teaclave_frontend_service;
+mod teaclave_management_service;
 mod teaclave_storage_service;
 
 #[handle_ecall]
@@ -50,6 +51,7 @@ fn handle_run_test(_args: &RunTestInput) -> TeeServiceResult<RunTestOutput> {
         teaclave_storage_service::run_tests(),
         teaclave_execution_service::run_tests(),
         teaclave_frontend_service::run_tests(),
+        teaclave_management_service::run_tests(),
     );
 
     assert_eq!(ret, true);
