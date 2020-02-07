@@ -8,7 +8,7 @@ use std::path::PathBuf;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
-pub enum ConfigSource {
+pub(crate) enum ConfigSource {
     Path(PathBuf),
 }
 
