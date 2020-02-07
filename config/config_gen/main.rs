@@ -14,6 +14,15 @@ struct BuildConfigToml {
     ias_root_ca_cert: ConfigSource,
     auditor_public_keys: Vec<ConfigSource>,
     rpc_max_message_size: u32,
+    inbound: Inbound,
+}
+
+#[derive(Serialize, Deserialize)]
+struct Inbound {
+    access_control: Vec<String>,
+    authentication: Vec<String>,
+    management: Vec<String>,
+    storage: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -44,6 +53,7 @@ struct ConfigTemplate {
     ias_root_ca_cert: String,
     auditor_public_keys: Vec<String>,
     rpc_max_message_size: u32,
+    inbound: Inbound,
 }
 
 fn generate_build_config(toml: &Path, out: &Path) {
@@ -61,6 +71,7 @@ fn generate_build_config(toml: &Path, out: &Path) {
         ias_root_ca_cert,
         auditor_public_keys,
         rpc_max_message_size: config.rpc_max_message_size,
+        inbound: config.inbound,
     };
     let mut f = File::create(out).expect(&format!("Failed to create file: {}", out.display()));
     f.write_all(&config_template.render().unwrap().as_bytes())
