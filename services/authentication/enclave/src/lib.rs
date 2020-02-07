@@ -127,18 +127,13 @@ fn start_service(args: &StartServiceInput) -> anyhow::Result<()> {
             .as_ref()
             .expect("auditor signatures"),
     )?;
-    let inbound_services = args
-        .config
-        .internal_endpoints
+    let accepted_enclave_attrs: Vec<teaclave_types::EnclaveAttr> = BUILD_CONFIG
+        .inbound
         .authentication
-        .inbound_services
-        .as_ref()
-        .expect("inbound_service");
-    let accepted_enclave_attrs: Vec<teaclave_types::EnclaveAttr> = inbound_services
         .iter()
         .map(|service| {
             enclave_info
-                .get_enclave_attr(&format!("teaclave_{}_service", service))
+                .get_enclave_attr(service)
                 .expect("enclave_info")
         })
         .collect();

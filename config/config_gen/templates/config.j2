@@ -1,16 +1,47 @@
 #[derive(Debug)]
-pub struct BuildConfig<'a> {
-    pub ias_root_ca_cert: &'a [u8],
-    pub auditor_public_keys: &'a [&'a [u8]; {{ auditor_public_keys.len() }}],
+pub struct BuildConfig {
+    pub ias_root_ca_cert: &'static [u8],
+    pub auditor_public_keys: &'static [&'static [u8]; {{ auditor_public_keys.len() }}],
     pub rpc_max_message_size: u64,
+    pub inbound: Inbounds,
 }
 
-pub static BUILD_CONFIG: BuildConfig<'static> = BuildConfig {
+#[derive(Debug)]
+pub struct Inbounds {
+    pub access_control: &'static [&'static str; {{ inbound.access_control.len() }}],
+    pub authentication: &'static [&'static str; {{ inbound.authentication.len() }}],
+    pub management: &'static [&'static str; {{ inbound.management.len() }}],
+    pub storage: &'static [&'static str; {{ inbound.storage.len() }}],
+}
+
+pub const BUILD_CONFIG: BuildConfig = BuildConfig {
     ias_root_ca_cert: &{{ ias_root_ca_cert }},
     auditor_public_keys: &[
-{% for k in auditor_public_keys %}
-    &{{ k }},
-{% endfor %}
+        {%- for k in auditor_public_keys %}
+        &{{ k }},
+        {%- endfor %}
     ],
     rpc_max_message_size: {{ rpc_max_message_size }},
+    inbound: Inbounds {
+        access_control: &[
+            {%- for s in inbound.access_control %}
+            "{{ s }}",
+            {%- endfor %}
+        ],
+        authentication: &[
+            {%- for s in inbound.authentication %}
+            "{{ s }}",
+            {%- endfor %}
+        ],
+        management: &[
+            {%- for s in inbound.management %}
+            "{{ s }}",
+            {%- endfor %}
+        ],
+        storage: &[
+            {%- for s in inbound.storage %}
+            "{{ s }}",
+            {%- endfor %}
+        ],
+    }
 };

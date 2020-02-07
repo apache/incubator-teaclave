@@ -12,3 +12,10 @@ auditor_public_keys = [
 
 # RPC max message size
 rpc_max_message_size = 409600
+
+# Specify accepted inbound services to enforce incoming connections via mutual attestation
+[inbound]
+access_control = ["teaclave_management_service"]
+authentication = ["teaclave_frontend_service"]
+storage = ["teaclave_frontend_service", "teaclave_management_service"]
+management = ["teaclave_frontend_service"]
