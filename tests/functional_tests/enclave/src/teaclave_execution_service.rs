@@ -4,6 +4,7 @@ use std::convert::TryInto;
 use teaclave_proto::teaclave_execution_service::*;
 use teaclave_rpc::endpoint::Endpoint;
 
+use teaclave_config::RuntimeConfig;
 use teaclave_types::convert_plaintext_file;
 use teaclave_types::hashmap;
 use teaclave_types::TeaclaveFileCryptoInfo;
@@ -17,13 +18,21 @@ pub fn run_tests() -> bool {
     run_tests!(test_invoke_success,)
 }
 
-fn setup_client() -> TeaclaveExecutionClient {
-    let channel = Endpoint::new("localhost:7989").connect().unwrap();
-    TeaclaveExecutionClient::new(channel).unwrap()
+fn get_client() -> TeaclaveExecutionClient {
+    let runtime_config = RuntimeConfig::from_toml("runtime.config.toml").expect("runtime");
+    let channel = Endpoint::new(
+        &runtime_config
+            .internal_endpoints
+            .execution
+            .advertised_address,
+    )
+    .connect()
+    .expect("channel");
+    TeaclaveExecutionClient::new(channel).expect("client")
 }
 
 fn test_invoke_success() {
-    let mut client = setup_client();
+    let mut client = get_client();
 
     let function_args = TeaclaveFunctionArguments::new(&hashmap!(
         "feature_size"  => "4",

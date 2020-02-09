@@ -47,7 +47,6 @@ pub struct ApiEndpoint {
 pub struct InternalEndpoint {
     pub listen_address: net::SocketAddr,
     pub advertised_address: String,
-    pub inbound_services: Option<Vec<String>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

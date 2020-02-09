@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::prelude::v1::*;
+use teaclave_config::RuntimeConfig;
 use teaclave_proto::teaclave_frontend_service::*;
 use teaclave_rpc::endpoint::Endpoint;
 use teaclave_types::*;
@@ -9,6 +10,15 @@ pub fn run_tests() -> bool {
     use teaclave_test_utils::*;
 
     run_tests!(test_register_input_file_authentication_error)
+}
+
+fn get_client() -> TeaclaveFrontendClient {
+    let runtime_config = RuntimeConfig::from_toml("runtime.config.toml").expect("runtime");
+    let port = &runtime_config.api_endpoints.frontend.listen_address.port();
+    let channel = Endpoint::new(&format!("localhost:{}", port))
+        .connect()
+        .unwrap();
+    TeaclaveFrontendClient::new(channel).unwrap()
 }
 
 fn test_register_input_file_authentication_error() {
@@ -25,8 +35,7 @@ fn test_register_input_file_authentication_error() {
     metadata.insert("id".to_string(), "".to_string());
     metadata.insert("token".to_string(), "".to_string());
 
-    let channel = Endpoint::new("localhost:7777").connect().unwrap();
-    let mut client = TeaclaveFrontendClient::new_with_metadata(channel, metadata).unwrap();
+    let mut client = get_client();
     let response = client.register_input_file(request);
 
     assert_eq!(

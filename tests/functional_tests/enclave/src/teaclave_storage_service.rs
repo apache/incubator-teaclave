@@ -1,4 +1,5 @@
 use std::prelude::v1::*;
+use teaclave_config::RuntimeConfig;
 use teaclave_proto::teaclave_storage_service::*;
 use teaclave_rpc::endpoint::Endpoint;
 
@@ -16,9 +17,16 @@ pub fn run_tests() -> bool {
     )
 }
 
+fn get_client() -> TeaclaveStorageClient {
+    let runtime_config = RuntimeConfig::from_toml("runtime.config.toml").expect("runtime");
+    let channel = Endpoint::new(&runtime_config.internal_endpoints.storage.advertised_address)
+        .connect()
+        .unwrap();
+    TeaclaveStorageClient::new(channel).unwrap()
+}
+
 fn test_get_success() {
-    let channel = Endpoint::new("localhost:7778").connect().unwrap();
-    let mut client = TeaclaveStorageClient::new(channel).unwrap();
+    let mut client = get_client();
     let request = GetRequest::new("test_get_key");
     let response_result = client.get(request);
     info!("{:?}", response_result);
@@ -26,16 +34,14 @@ fn test_get_success() {
 }
 
 fn test_get_fail() {
-    let channel = Endpoint::new("localhost:7778").connect().unwrap();
-    let mut client = TeaclaveStorageClient::new(channel).unwrap();
+    let mut client = get_client();
     let request = GetRequest::new("test_key_not_exist");
     let response_result = client.get(request);
     assert!(response_result.is_err());
 }
 
 fn test_put_success() {
-    let channel = Endpoint::new("localhost:7778").connect().unwrap();
-    let mut client = TeaclaveStorageClient::new(channel).unwrap();
+    let mut client = get_client();
     let request = PutRequest::new("test_put_key", "test_put_value");
     let response_result = client.put(request);
     info!("{:?}", response_result);
@@ -49,8 +55,7 @@ fn test_put_success() {
 }
 
 fn test_delete_success() {
-    let channel = Endpoint::new("localhost:7778").connect().unwrap();
-    let mut client = TeaclaveStorageClient::new(channel).unwrap();
+    let mut client = get_client();
     let request = DeleteRequest::new("test_delete_key");
     let response_result = client.delete(request);
     info!("{:?}", response_result);
@@ -62,8 +67,7 @@ fn test_delete_success() {
 }
 
 fn test_enqueue_success() {
-    let channel = Endpoint::new("localhost:7778").connect().unwrap();
-    let mut client = TeaclaveStorageClient::new(channel).unwrap();
+    let mut client = get_client();
     let request = EnqueueRequest::new("test_enqueue_key", "test_enqueue_value");
     let response_result = client.enqueue(request);
     info!("{:?}", response_result);
@@ -71,8 +75,7 @@ fn test_enqueue_success() {
 }
 
 fn test_dequeue_success() {
-    let channel = Endpoint::new("localhost:7778").connect().unwrap();
-    let mut client = TeaclaveStorageClient::new(channel).unwrap();
+    let mut client = get_client();
     let request = DequeueRequest::new("test_dequeue_key");
     let response_result = client.dequeue(request);
     assert!(response_result.is_err());
@@ -93,8 +96,7 @@ fn test_dequeue_success() {
 }
 
 fn test_dequeue_fail() {
-    let channel = Endpoint::new("localhost:7778").connect().unwrap();
-    let mut client = TeaclaveStorageClient::new(channel).unwrap();
+    let mut client = get_client();
     let request = DequeueRequest::new("test_dequeue_key");
     let response_result = client.dequeue(request);
     assert!(response_result.is_err());
