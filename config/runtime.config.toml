@@ -6,14 +6,14 @@
 
 [api_endpoints]
 authentication = { listen_address = "0.0.0.0:7776" }
-frontend = { listen_address = "0.0.0.0:7777" }
+frontend       = { listen_address = "0.0.0.0:7777" }
 
 [internal_endpoints]
-access_control = { listen_address = "0.0.0.0:7779", advertised_address = "localhost:7779" }
-authentication = { listen_address = "0.0.0.0:17776", advertised_address = "localhost:17776", inbound_services = ["frontend"] }
-management = { listen_address = "0.0.0.0:17777", advertised_address = "localhost:17777" }
-storage = { listen_address = "0.0.0.0:7778", advertised_address = "localhost:7778", inbound_services = ["frontend", "management"] }
-execution = { listen_address = "0.0.0.0:7989", advertised_address = "localhost:7989" }
+authentication = { listen_address = "0.0.0.0:17776", advertised_address = "localhost:17776" }
+management     = { listen_address = "0.0.0.0:17777", advertised_address = "localhost:17777" }
+storage        = { listen_address = "0.0.0.0:17778", advertised_address = "localhost:17778" }
+access_control = { listen_address = "0.0.0.0:17779", advertised_address = "localhost:17779" }
+execution      = { listen_address = "0.0.0.0:17770", advertised_address = "localhost:17770" }
 
 [audit]
 enclave_info = { path = "enclave_info.toml" }
