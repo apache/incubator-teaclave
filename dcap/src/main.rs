@@ -150,23 +150,22 @@ fn verify_quote(request: String) -> QuoteVerificationResponse {
         rng.fill_bytes(&mut nonce.rand);
         qve_report_info.nonce = nonce;
         let mut expiration_check_date: time_t = 0;
+        let ret = unsafe {
+            sgx_qv_verify_quote(
+                quote.as_ptr(),
+                quote.len() as _,
+                std::ptr::null() as _,
+                libc::time(&mut expiration_check_date),
+                &mut collateral_exp_status as _,
+                &mut quote_verification_result as _,
+                &mut qve_report_info as _,
+                0,
+                std::ptr::null_mut(),
+            )
+        };
 
-        if sgx_quote3_error_t::SGX_QL_SUCCESS
-            != unsafe {
-                sgx_qv_verify_quote(
-                    quote.as_ptr(),
-                    quote.len() as _,
-                    std::ptr::null() as _,
-                    libc::time(&mut expiration_check_date),
-                    &mut collateral_exp_status as _,
-                    &mut quote_verification_result as _,
-                    &mut qve_report_info as _,
-                    0,
-                    std::ptr::null_mut(),
-                )
-            }
-        {
-            eprintln!("sgx_qv_verify_quote fialed");
+        if ret != sgx_quote3_error_t::SGX_QL_SUCCESS {
+            eprintln!("sgx_qv_verify_quote fialed: {:?}", ret);
             return QuoteVerificationResponse::BadRequest;
         };
 
