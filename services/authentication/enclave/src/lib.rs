@@ -27,8 +27,7 @@ use rand::RngCore;
 use std::prelude::v1::*;
 use std::sync::Arc;
 use std::thread;
-use teaclave_attestation::verifier;
-use teaclave_attestation::{AttestationConfig, RemoteAttestation};
+use teaclave_attestation::{verifier, AttestationConfig, RemoteAttestation};
 use teaclave_binder::proto::{
     ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
     StartServiceInput, StartServiceOutput,
@@ -56,19 +55,14 @@ fn start_internal_endpoint(
     attestation: Arc<RemoteAttestation>,
     accepted_enclave_attrs: Vec<teaclave_types::EnclaveAttr>,
 ) {
-    let config = if cfg!(test_mode) {
-        SgxTrustedTlsServerConfig::new_without_verifier(&attestation.cert, &attestation.private_key)
-            .unwrap()
-    } else {
-        SgxTrustedTlsServerConfig::new_with_attestation_report_verifier(
-            accepted_enclave_attrs,
-            &attestation.cert,
-            &attestation.private_key,
-            BUILD_CONFIG.as_root_ca_cert,
-            verifier::universal_quote_verifier,
-        )
-        .unwrap()
-    };
+    let config = SgxTrustedTlsServerConfig::new_with_attestation_report_verifier(
+        accepted_enclave_attrs,
+        &attestation.cert,
+        &attestation.private_key,
+        BUILD_CONFIG.as_root_ca_cert,
+        verifier::universal_quote_verifier,
+    )
+    .unwrap();
 
     let mut server = SgxTrustedTlsServer::<
         TeaclaveAuthenticationInternalResponse,
