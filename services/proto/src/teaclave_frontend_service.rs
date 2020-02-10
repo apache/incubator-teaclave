@@ -33,6 +33,27 @@ pub struct RegisterOutputFileResponse {
     pub data_id: std::string::String,
 }
 
+#[derive(Debug)]
+pub struct GetOutputFileRequest {
+    pub data_id: std::string::String,
+}
+
+#[derive(Debug)]
+pub struct GetOutputFileResponse {
+    pub hash: std::string::String,
+}
+
+#[derive(Debug)]
+pub struct GetFusionDataRequest {
+    pub data_id: std::string::String,
+}
+
+#[derive(Debug)]
+pub struct GetFusionDataResponse {
+    pub hash: std::string::String,
+    pub data_owner_id_list: std::vec::Vec<std::string::String>,
+}
+
 impl std::convert::TryFrom<proto::RegisterInputFileRequest> for RegisterInputFileRequest {
     type Error = Error;
 
@@ -117,6 +138,82 @@ impl From<RegisterOutputFileResponse> for proto::RegisterOutputFileResponse {
     fn from(request: RegisterOutputFileResponse) -> Self {
         Self {
             data_id: request.data_id,
+        }
+    }
+}
+
+impl std::convert::TryFrom<proto::GetOutputFileRequest> for GetOutputFileRequest {
+    type Error = Error;
+
+    fn try_from(proto: proto::GetOutputFileRequest) -> Result<Self> {
+        let ret = Self {
+            data_id: proto.data_id,
+        };
+
+        Ok(ret)
+    }
+}
+
+impl From<GetOutputFileRequest> for proto::GetOutputFileRequest {
+    fn from(request: GetOutputFileRequest) -> Self {
+        Self {
+            data_id: request.data_id,
+        }
+    }
+}
+
+impl std::convert::TryFrom<proto::GetOutputFileResponse> for GetOutputFileResponse {
+    type Error = Error;
+
+    fn try_from(proto: proto::GetOutputFileResponse) -> Result<Self> {
+        Ok(Self { hash: proto.hash })
+    }
+}
+
+impl From<GetOutputFileResponse> for proto::GetOutputFileResponse {
+    fn from(response: GetOutputFileResponse) -> Self {
+        Self {
+            hash: response.hash,
+        }
+    }
+}
+
+impl std::convert::TryFrom<proto::GetFusionDataRequest> for GetFusionDataRequest {
+    type Error = Error;
+
+    fn try_from(proto: proto::GetFusionDataRequest) -> Result<Self> {
+        let ret = Self {
+            data_id: proto.data_id,
+        };
+
+        Ok(ret)
+    }
+}
+
+impl From<GetFusionDataRequest> for proto::GetFusionDataRequest {
+    fn from(request: GetFusionDataRequest) -> Self {
+        Self {
+            data_id: request.data_id,
+        }
+    }
+}
+
+impl std::convert::TryFrom<proto::GetFusionDataResponse> for GetFusionDataResponse {
+    type Error = Error;
+
+    fn try_from(proto: proto::GetFusionDataResponse) -> Result<Self> {
+        Ok(Self {
+            hash: proto.hash,
+            data_owner_id_list: proto.data_owner_id_list,
+        })
+    }
+}
+
+impl From<GetFusionDataResponse> for proto::GetFusionDataResponse {
+    fn from(response: GetFusionDataResponse) -> Self {
+        Self {
+            hash: response.hash,
+            data_owner_id_list: response.data_owner_id_list,
         }
     }
 }
