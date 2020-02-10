@@ -25,6 +25,7 @@ use anyhow::Result;
 use anyhow::{anyhow, bail};
 use log::{debug, trace};
 use percent_encoding;
+use serde_json::json;
 use sgx_types::*;
 use std::collections::HashMap;
 use std::io::{Read, Write};
@@ -88,7 +89,7 @@ fn get_report(
     debug!("get_report");
     let report_uri = "/sgx/dev/attestation/v3/report";
     let encoded_quote = base64::encode(quote);
-    let encoded_json = format!("{{\"isvEnclaveQuote\":\"{}\"}}\r\n", encoded_quote);
+    let encoded_json = json!({ "isvEnclaveQuote": encoded_quote }).to_string();
 
     let request = format!(
         "POST {} HTTP/1.1\r\n\

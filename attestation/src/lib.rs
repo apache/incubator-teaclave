@@ -26,13 +26,15 @@ use std::prelude::v1::*;
 #[derive(thiserror::Error, Debug)]
 pub enum AttestationError {
     #[error("OCall error")]
-    OCallError,
+    OCallError(sgx_types::sgx_status_t),
     #[error("Attestation Service error")]
     AttestationServiceError,
     #[error("Platform error")]
-    PlatformError,
+    PlatformError(sgx_types::sgx_status_t),
     #[error("Report error")]
     ReportError,
+    #[error("Report error")]
+    ConnectionError,
 }
 
 pub enum AttestationConfig {
