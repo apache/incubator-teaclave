@@ -24,19 +24,20 @@ extern crate sgx_tstd as std;
 extern crate log;
 
 use std::prelude::v1::*;
-use teaclave_attestation::{AttestationConfig, RemoteAttestation};
+use teaclave_attestation::{verifier, AttestationConfig, RemoteAttestation};
 use teaclave_binder::proto::{
     ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
     StartServiceInput, StartServiceOutput,
 };
 use teaclave_binder::{handle_ecall, register_ecall_handler};
+use teaclave_config::BUILD_CONFIG;
 use teaclave_proto::teaclave_access_control_service::{
     TeaclaveAccessControlRequest, TeaclaveAccessControlResponse,
 };
 use teaclave_rpc::config::SgxTrustedTlsServerConfig;
 use teaclave_rpc::server::SgxTrustedTlsServer;
 use teaclave_service_enclave_utils::ServiceEnclave;
-use teaclave_types::{TeeServiceError, TeeServiceResult};
+use teaclave_types::{EnclaveInfo, TeeServiceError, TeeServiceResult};
 
 mod acs;
 mod service;
@@ -51,9 +52,35 @@ fn start_service(args: &StartServiceInput) -> anyhow::Result<()> {
         &as_config.spid,
     ))
     .unwrap();
-    let config = SgxTrustedTlsServerConfig::new_without_verifier(
+    let enclave_info = EnclaveInfo::verify_and_new(
+        args.config
+            .audit
+            .enclave_info_bytes
+            .as_ref()
+            .expect("enclave_info"),
+        BUILD_CONFIG.auditor_public_keys,
+        args.config
+            .audit
+            .auditor_signatures_bytes
+            .as_ref()
+            .expect("auditor signatures"),
+    )?;
+    let accepted_enclave_attrs: Vec<teaclave_types::EnclaveAttr> = BUILD_CONFIG
+        .inbound
+        .access_control
+        .iter()
+        .map(|service| {
+            enclave_info
+                .get_enclave_attr(service)
+                .expect("enclave_info")
+        })
+        .collect();
+    let config = SgxTrustedTlsServerConfig::new_with_attestation_report_verifier(
+        accepted_enclave_attrs,
         &attestation.cert,
         &attestation.private_key,
+        BUILD_CONFIG.as_root_ca_cert,
+        verifier::universal_quote_verifier,
     )
     .unwrap();
 

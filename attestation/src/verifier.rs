@@ -28,6 +28,7 @@ pub struct AttestationReportVerifier {
 }
 
 pub fn universal_quote_verifier(report: &AttestationReport) -> bool {
+    debug!("report.sgx_quote_status: {:?}", report.sgx_quote_status);
     report.sgx_quote_status != crate::report::SgxQuoteStatus::UnknownBadStatus
 }
 
@@ -93,6 +94,7 @@ impl rustls::ServerCertVerifier for AttestationReportVerifier {
         _ocsp: &[u8],
     ) -> std::result::Result<rustls::ServerCertVerified, rustls::TLSError> {
         // This call automatically verifies certificate signature
+        debug!("verify server cert");
         if certs.len() != 1 {
             return Err(rustls::TLSError::NoCertificatesPresented);
         }
@@ -107,6 +109,10 @@ impl rustls::ServerCertVerifier for AttestationReportVerifier {
 }
 
 impl rustls::ClientCertVerifier for AttestationReportVerifier {
+    fn offer_client_auth(&self) -> bool {
+        !cfg!(test_mode)
+    }
+
     fn client_auth_root_subjects(&self) -> rustls::DistinguishedNames {
         rustls::DistinguishedNames::new()
     }
@@ -116,6 +122,7 @@ impl rustls::ClientCertVerifier for AttestationReportVerifier {
         certs: &[rustls::Certificate],
     ) -> std::result::Result<rustls::ClientCertVerified, rustls::TLSError> {
         // This call automatically verifies certificate signature
+        debug!("verify client cert");
         if certs.len() != 1 {
             return Err(rustls::TLSError::NoCertificatesPresented);
         }

@@ -24,8 +24,7 @@ extern crate sgx_tstd as std;
 extern crate log;
 
 use std::prelude::v1::*;
-use teaclave_attestation::verifier;
-use teaclave_attestation::{AttestationConfig, RemoteAttestation};
+use teaclave_attestation::{verifier, AttestationConfig, RemoteAttestation};
 use teaclave_binder::proto::{
     ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
     StartServiceInput, StartServiceOutput,
@@ -35,12 +34,11 @@ use teaclave_config::BUILD_CONFIG;
 use teaclave_proto::teaclave_management_service::{
     TeaclaveManagementRequest, TeaclaveManagementResponse,
 };
-use teaclave_rpc::config::SgxTrustedTlsClientConfig;
-use teaclave_rpc::config::SgxTrustedTlsServerConfig;
+use teaclave_rpc::config::{SgxTrustedTlsClientConfig, SgxTrustedTlsServerConfig};
 use teaclave_rpc::endpoint::Endpoint;
 use teaclave_rpc::server::SgxTrustedTlsServer;
 use teaclave_service_enclave_utils::ServiceEnclave;
-use teaclave_types::{TeeServiceError, TeeServiceResult};
+use teaclave_types::{EnclaveInfo, TeeServiceError, TeeServiceResult};
 mod file;
 mod fusion_data;
 mod service;
@@ -55,34 +53,57 @@ fn start_service(args: &StartServiceInput) -> anyhow::Result<()> {
         &as_config.spid,
     ))
     .unwrap();
-    let config = SgxTrustedTlsServerConfig::new_without_verifier(
+    let enclave_info = EnclaveInfo::verify_and_new(
+        args.config
+            .audit
+            .enclave_info_bytes
+            .as_ref()
+            .expect("enclave_info"),
+        BUILD_CONFIG.auditor_public_keys,
+        args.config
+            .audit
+            .auditor_signatures_bytes
+            .as_ref()
+            .expect("auditor signatures"),
+    )?;
+    let accepted_enclave_attrs: Vec<teaclave_types::EnclaveAttr> = BUILD_CONFIG
+        .inbound
+        .management
+        .iter()
+        .map(|service| {
+            enclave_info
+                .get_enclave_attr(service)
+                .expect("enclave_info")
+        })
+        .collect();
+    let config = SgxTrustedTlsServerConfig::new_with_attestation_report_verifier(
+        accepted_enclave_attrs,
         &attestation.cert,
         &attestation.private_key,
+        BUILD_CONFIG.as_root_ca_cert,
+        verifier::universal_quote_verifier,
     )
     .unwrap();
-
     let mut server =
         SgxTrustedTlsServer::<TeaclaveManagementResponse, TeaclaveManagementRequest>::new(
             listen_address,
             &config,
         );
 
-    let enclave_info = teaclave_types::EnclaveInfo::from_bytes(
-        &args.config.audit.enclave_info_bytes.as_ref().unwrap(),
-    );
-    let enclave_attr = enclave_info
+    let storage_service_enclave_attrs = enclave_info
         .get_enclave_attr("teaclave_storage_service")
-        .expect("storage");
-    let config = SgxTrustedTlsClientConfig::new()
-        .client_cert(&attestation.cert, &attestation.private_key)
+        .expect("enclave_info");
+    let storage_service_client_config = SgxTrustedTlsClientConfig::new()
         .attestation_report_verifier(
-            vec![enclave_attr],
+            vec![storage_service_enclave_attrs],
             BUILD_CONFIG.as_root_ca_cert,
             verifier::universal_quote_verifier,
         );
+
     let storage_service_address = &args.config.internal_endpoints.storage.advertised_address;
 
-    let storage_service_endpoint = Endpoint::new(storage_service_address).config(config);
+    let storage_service_endpoint =
+        Endpoint::new(storage_service_address).config(storage_service_client_config);
 
     let service = service::TeaclaveManagementService::new(storage_service_endpoint)?;
     match server.start(service) {
