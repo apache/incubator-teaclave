@@ -24,8 +24,14 @@ add_custom_target(check
 )
 
 if(TEST_MODE)
-    add_custom_target(run-test
+    add_custom_target(run-tests
         COMMAND ${MESATEE_COMMON_ENVS} ${MT_SCRIPT_DIR}/test.sh)
+    add_custom_target(run-unit-tests
+        COMMAND ${MESATEE_COMMON_ENVS} ${MT_SCRIPT_DIR}/test.sh unit)
+    add_custom_target(run-integration-tests
+        COMMAND ${MESATEE_COMMON_ENVS} ${MT_SCRIPT_DIR}/test.sh integration)
+    add_custom_target(run-functional-tests
+        COMMAND ${MESATEE_COMMON_ENVS} ${MT_SCRIPT_DIR}/test.sh functional)
 else()
     add_custom_target(run-test
         COMMAND echo "Note: Testing is not enabled in this build. Run cmake again with -DTEST_MODE=ON")

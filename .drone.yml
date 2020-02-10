@@ -35,7 +35,7 @@ steps:
     path: /var/run/aesmd/aesm.socket
   commands:
   - . /root/.cargo/env
-  - cd build && make run-test
+  - cd build && make run-tests
 
 volumes:
 - name: isgx
@@ -97,7 +97,7 @@ steps:
   - echo "$(ip route | awk 'NR==1 {print $3}') pccs-server" >> /etc/hosts
   - . /root/.cargo/env
   - (cd dcap && target/debug/teaclave_dcap_ref_as &)
-  - cd build && make run-test
+  - cd build && make run-tests
 
 volumes:
 - name: sgx
@@ -155,7 +155,7 @@ steps:
     path: /var/run/aesmd/aesm.socket
   commands:
   - . /root/.cargo/env
-  - cd build && make run-test
+  - cd build && make run-tests
 
 volumes:
 - name: isgx
@@ -194,7 +194,7 @@ steps:
   image: teaclave/teaclave-build-ubuntu-1804:0.1.0
   commands:
   - . /root/.cargo/env
-  - cd build && make run-test
+  - cd build && make run-tests
 
 node:
   instance: mesatee-sgx
@@ -225,7 +225,7 @@ steps:
   image: teaclave/teaclave-build-ubuntu-1804:0.1.0
   commands:
   - . /root/.cargo/env
-  - cd build && make run-test
+  - cd build && make run-tests
 
 node:
   instance: mesatee-sgx
@@ -269,7 +269,7 @@ steps:
     path: /var/run/aesmd/aesm.socket
   commands:
   - . /root/.cargo/env
-  - cd build && make run-test
+  - cd build && make run-tests
 
 volumes:
 - name: isgx
@@ -321,7 +321,7 @@ steps:
     path: /var/run/aesmd/aesm.socket
   commands:
   - . /root/.cargo/env
-  - cd build && make run-test
+  - cd build && make run-tests
 
 volumes:
 - name: isgx
@@ -360,7 +360,7 @@ steps:
   image: teaclave/teaclave-build-ubuntu-1604:0.1.0
   commands:
   - . /root/.cargo/env
-  - cd build && make run-test
+  - cd build && make run-tests
 
 node:
   instance: mesatee-sgx
@@ -391,7 +391,7 @@ steps:
   image: teaclave/teaclave-build-ubuntu-1604:0.1.0
   commands:
   - . /root/.cargo/env
-  - cd build && make run-test
+  - cd build && make run-tests
 
 node:
   instance: mesatee-sgx
@@ -462,7 +462,7 @@ node:
 #     path: /var/run/aesmd/aesm.socket
 #   commands:
 #   - . /root/.cargo/env
-#   - cd build && make run-test
+#   - cd build && make run-tests
 # - name: coverage
 #   failure: ignore
 #   image: teaclave/teaclave-build-ubuntu-1804:0.1.0
