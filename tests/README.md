@@ -1,7 +1,10 @@
 # Tests in Teaclave
 
 ```
-make run-test
+make run-tests
+make run-unit-tests
+make run-integration-tests
+make run-functional-tests
 ```
 
 ## Directory Structure
