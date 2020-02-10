@@ -42,6 +42,7 @@ use teaclave_rpc::server::SgxTrustedTlsServer;
 use teaclave_service_enclave_utils::ServiceEnclave;
 use teaclave_types::{TeeServiceError, TeeServiceResult};
 mod file;
+mod fusion_data;
 mod service;
 
 fn start_service(args: &StartServiceInput) -> anyhow::Result<()> {
@@ -129,6 +130,7 @@ pub mod tests {
         run_tests!(
             service::tests::handle_input_file,
             service::tests::handle_output_file,
+            service::tests::handle_fusion_data,
         )
     }
 }

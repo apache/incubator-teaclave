@@ -7,4 +7,6 @@ import "teaclave_frontend_service.proto";
 service TeaclaveManagement {
   rpc RegisterInputFile (teaclave_frontend_service_proto.RegisterInputFileRequest) returns (teaclave_frontend_service_proto.RegisterInputFileResponse);
   rpc RegisterOutputFile (teaclave_frontend_service_proto.RegisterOutputFileRequest) returns (teaclave_frontend_service_proto.RegisterOutputFileResponse);
+  rpc GetOutputFile (teaclave_frontend_service_proto.GetOutputFileRequest) returns (teaclave_frontend_service_proto.GetOutputFileResponse);
+  rpc GetFusionData (teaclave_frontend_service_proto.GetFusionDataRequest) returns (teaclave_frontend_service_proto.GetFusionDataResponse);
 }

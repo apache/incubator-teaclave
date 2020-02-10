@@ -23,6 +23,23 @@ message RegisterOutputFileResponse {
   string data_id = 1;
 }
 
+message GetOutputFileRequest {
+  string data_id = 1;
+}
+
+message GetOutputFileResponse {
+  string hash = 1;
+}
+
+message GetFusionDataRequest {
+  string data_id = 1;
+}
+
+message GetFusionDataResponse {
+  string hash = 1;
+  repeated string data_owner_id_list = 2;
+}
+
 service TeaclaveFrontend {
   rpc RegisterInputFile (RegisterInputFileRequest) returns (RegisterInputFileResponse);
   rpc RegisterOutputFile (RegisterOutputFileRequest) returns (RegisterOutputFileResponse);

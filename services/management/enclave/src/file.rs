@@ -22,6 +22,8 @@ use teaclave_types::TeaclaveFileCryptoInfo;
 use url::Url;
 use uuid::Uuid;
 
+const INPUT_FILE_PREFIX: &str = "input-file-";
+const OUTPUT_FILE_PREFIX: &str = "output-file-";
 #[derive(Debug, Deserialize, Serialize)]
 pub(crate) struct InputFile {
     pub(crate) url: Url,
@@ -38,12 +40,13 @@ impl InputFile {
         crypto_info: TeaclaveFileCryptoInfo,
         owner: String,
     ) -> InputFile {
+        let data_id = format!("{}{}", INPUT_FILE_PREFIX, Uuid::new_v4().to_string());
         InputFile {
             url,
             hash,
             crypto_info,
             owner,
-            data_id: Uuid::new_v4().to_string(),
+            data_id,
         }
     }
 
@@ -58,13 +61,13 @@ impl InputFile {
         serde_json::to_vec(&self).map_err(|_| anyhow!("failed to Serialize"))
     }
 
-    pub(crate) fn get_key_vec_from_id(id: &str) -> Vec<u8> {
-        let mut key = b"input-file-".to_vec();
-        key.extend_from_slice(id.as_bytes());
-        key
-    }
     pub(crate) fn get_key_vec(&self) -> Vec<u8> {
-        InputFile::get_key_vec_from_id(&self.data_id)
+        self.data_id.as_bytes().to_vec()
+    }
+
+    #[cfg(feature = "enclave_unit_test")]
+    pub(crate) fn is_input_file_id(id: &str) -> bool {
+        id.starts_with(INPUT_FILE_PREFIX)
     }
 }
 
@@ -79,16 +82,16 @@ pub(crate) struct OutputFile {
 
 impl OutputFile {
     pub(crate) fn new(url: Url, crypto_info: TeaclaveFileCryptoInfo, owner: String) -> OutputFile {
+        let data_id = format!("{}{}", OUTPUT_FILE_PREFIX, Uuid::new_v4().to_string());
         OutputFile {
             url,
             hash: None,
             crypto_info,
             owner,
-            data_id: Uuid::new_v4().to_string(),
+            data_id,
         }
     }
 
-    #[cfg(feature = "enclave_unit_test")]
     pub(crate) fn from_slice(bytes: &[u8]) -> Result<Self> {
         serde_json::from_slice(&bytes).map_err(|_| anyhow!("failed to Deserialize"))
     }
@@ -97,12 +100,11 @@ impl OutputFile {
         serde_json::to_vec(&self).map_err(|_| anyhow!("failed to Serialize"))
     }
 
-    pub(crate) fn get_key_vec_from_id(id: &str) -> Vec<u8> {
-        let mut key = b"output-file-".to_vec();
-        key.extend_from_slice(id.as_bytes());
-        key
-    }
     pub(crate) fn get_key_vec(&self) -> Vec<u8> {
-        OutputFile::get_key_vec_from_id(&self.data_id)
+        self.data_id.as_bytes().to_vec()
+    }
+
+    pub(crate) fn is_output_file_id(id: &str) -> bool {
+        id.starts_with(OUTPUT_FILE_PREFIX)
     }
 }
