@@ -34,6 +34,8 @@ use std::os::unix::io::FromRawFd;
 use std::prelude::v1::*;
 use std::sync::Arc;
 
+const DCAP_ROOT_CA_CERT: &str = include_str!("../../keys/dcap_root_ca_cert.pem");
+
 impl EndorsedAttestationReport {
     pub(crate) fn new(
         att_service_cfg: &AttestationServiceConfig,
@@ -65,9 +67,7 @@ fn new_tls_stream(url: &url::Url) -> Result<rustls::StreamOwned<rustls::ClientSe
     let mut config = rustls::ClientConfig::new();
     config
         .root_store
-        .add(&rustls::Certificate(
-            include_bytes!("../../keys/dcap_root_ca_cert.der").to_vec(),
-        ))
+        .add_pem_file(&mut DCAP_ROOT_CA_CERT.to_string().as_bytes())
         .unwrap();
     config
         .root_store

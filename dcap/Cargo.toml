@@ -20,6 +20,7 @@ uuid             = { version = "0.8.1", features = ["v4"] }
 chrono           = { version = "0.4.10" }
 lazy_static      = { version = "1.4.0" }
 percent-encoding = { version = "2.1.0" }
+pem              = { version = "0.7.0" }
 
 sgx_types        = { git = "https://github.com/apache/incubator-teaclave-sgx-sdk" }
 sgx_ucrypto      = { git = "https://github.com/apache/incubator-teaclave-sgx-sdk" }

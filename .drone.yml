@@ -563,6 +563,7 @@ trigger:
 
 depends_on:
   - sgx-debug-ubuntu-1804
+  - sgx-dcap-debug-ubuntu-1804
   - sgx-release-ubuntu-1804
   - sim-debug-ubuntu-1804
   - sim-release-ubuntu-1804

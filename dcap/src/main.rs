@@ -20,7 +20,15 @@ use ring::signature;
 use rocket::{http, response};
 use sgx_types::*;
 
-const REPORT_SIGNING_CERT: &'static str = include_str!("../../keys/dcap_server_cert.pem");
+const REPORT_SIGNING_CERT: &str = include_str!("../../keys/dcap_server_cert.pem");
+const REPORT_SIGNING_KEY: &str = include_str!("../../keys/dcap_server_key.pem");
+
+lazy_static! {
+    static ref SIGNER: signature::RsaKeyPair = {
+        let der = pem::parse(REPORT_SIGNING_KEY).unwrap().contents;
+        signature::RsaKeyPair::from_pkcs8(&der).unwrap()
+    };
+}
 
 #[link(name = "dcap_quoteverify")]
 #[link(name = "sgx_dcap_ql")]
@@ -38,11 +46,6 @@ extern "C" {
         supplemental_data_size: u32,
         p_supplemental_data: *mut u8,
     ) -> sgx_quote3_error_t;
-}
-
-lazy_static! {
-    static ref SIGNER: signature::RsaKeyPair =
-        signature::RsaKeyPair::from_der(include_bytes!("../../keys/dcap_server_key.der")).unwrap();
 }
 
 enum QuoteVerificationResponse {
@@ -65,7 +68,7 @@ impl QuoteVerificationResponse {
     }
 }
 
-fn to_report(rst: &sgx_ql_qv_result_t) -> &'static str {
+fn to_report(rst: sgx_ql_qv_result_t) -> &'static str {
     use sgx_ql_qv_result_t::*;
     match rst {
         SGX_QL_QV_RESULT_OK => "OK",
@@ -79,11 +82,11 @@ fn to_report(rst: &sgx_ql_qv_result_t) -> &'static str {
 }
 
 impl QuoteVerificationResult {
-    pub fn to_json(self) -> String {
+    pub fn to_json(&self) -> String {
         serde_json::json!({
             "id": uuid::Uuid::new_v4().to_simple().to_string(),
             "timestamp": Utc::now().format("%Y-%m-%dT%H:%M:%S%.f").to_string(),
-            "isvEnclaveQuoteStatus": to_report(&self.quote_status),
+            "isvEnclaveQuoteStatus": to_report(self.quote_status),
             "isvEnclaveQuoteBody": self.isv_enclave_quote,
         })
         .to_string()
