@@ -16,8 +16,6 @@
 // under the License.
 
 use sgx_types::*;
-use std::net::TcpStream;
-use std::os::unix::io::IntoRawFd;
 use std::ptr;
 
 #[link(name = "sgx_quote_ex")]
@@ -44,23 +42,6 @@ extern "C" {
         p_quote: *mut u8,
         quote_size: u32,
     ) -> sgx_status_t;
-}
-
-#[no_mangle]
-pub extern "C" fn ocall_sgx_get_remote_socket(url: *const u8, len: usize) -> i32 {
-    let bytes = unsafe { std::slice::from_raw_parts(url, len) };
-    let url = url::Url::parse(std::str::from_utf8(&bytes).unwrap()).unwrap();
-    match TcpStream::connect(
-        &*url
-            .socket_addrs(|| match url.scheme() {
-                "https" => Some(443),
-                _ => None,
-            })
-            .unwrap(),
-    ) {
-        Ok(socket) => socket.into_raw_fd(),
-        Err(_) => -1,
-    }
 }
 
 #[no_mangle]
