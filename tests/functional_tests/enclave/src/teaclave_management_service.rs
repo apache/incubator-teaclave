@@ -16,8 +16,10 @@ pub fn run_tests() -> bool {
     run_tests!(
         test_register_input_file,
         test_register_output_file,
+        test_register_function,
         test_get_output_file,
-        test_get_fusion_data
+        test_get_fusion_data,
+        test_get_function,
     )
 }
 
@@ -131,4 +133,70 @@ fn test_get_fusion_data() {
     };
     let response = client.get_fusion_data(request);
     assert!(response.is_err());
+}
+
+fn test_register_function() {
+    let function_input = FunctionInput {
+        name: "input".to_string(),
+        description: "input_desc".to_string(),
+    };
+    let function_output = FunctionOutput {
+        name: "output".to_string(),
+        description: "output_desc".to_string(),
+    };
+    let request = RegisterFunctionRequest {
+        name: "mock_function".to_string(),
+        description: "mock function".to_string(),
+        payload: b"python script".to_vec(),
+        is_public: true,
+        arg_list: vec!["arg".to_string()],
+        input_list: vec![function_input],
+        output_list: vec![function_output],
+    };
+
+    let mut client = get_client("mock_user");
+    let response = client.register_function(request);
+
+    assert!(response.is_ok());
+}
+
+fn test_get_function() {
+    let function_input = FunctionInput {
+        name: "input".to_string(),
+        description: "input_desc".to_string(),
+    };
+    let function_output = FunctionOutput {
+        name: "output".to_string(),
+        description: "output_desc".to_string(),
+    };
+    let request = RegisterFunctionRequest {
+        name: "mock_function".to_string(),
+        description: "mock function".to_string(),
+        payload: b"python script".to_vec(),
+        is_public: false,
+        arg_list: vec!["arg".to_string()],
+        input_list: vec![function_input],
+        output_list: vec![function_output],
+    };
+
+    let mut client = get_client("mock_user");
+    let response = client.register_function(request);
+    let function_id = response.unwrap().function_id;
+
+    let request = GetFunctionRequest {
+        function_id: function_id.clone(),
+    };
+    let response = client.get_function(request);
+    assert!(response.is_ok());
+    info!("{:?}", response.unwrap());
+    let mut client = get_client("mock_unauthorized_user");
+    let request = GetFunctionRequest { function_id };
+    let response = client.get_function(request);
+    assert!(response.is_err());
+    let request = GetFunctionRequest {
+        function_id: "native-mock-native-func".to_string(),
+    };
+    let response = client.get_function(request);
+    assert!(response.is_ok());
+    info!("{:?}", response.unwrap());
 }

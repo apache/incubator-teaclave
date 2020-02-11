@@ -9,4 +9,6 @@ service TeaclaveManagement {
   rpc RegisterOutputFile (teaclave_frontend_service_proto.RegisterOutputFileRequest) returns (teaclave_frontend_service_proto.RegisterOutputFileResponse);
   rpc GetOutputFile (teaclave_frontend_service_proto.GetOutputFileRequest) returns (teaclave_frontend_service_proto.GetOutputFileResponse);
   rpc GetFusionData (teaclave_frontend_service_proto.GetFusionDataRequest) returns (teaclave_frontend_service_proto.GetFusionDataResponse);
+  rpc RegisterFunction (teaclave_frontend_service_proto.RegisterFunctionRequest) returns (teaclave_frontend_service_proto.RegisterFunctionResponse);
+  rpc GetFunction (teaclave_frontend_service_proto.GetFunctionRequest) returns (teaclave_frontend_service_proto.GetFunctionResponse);
 }

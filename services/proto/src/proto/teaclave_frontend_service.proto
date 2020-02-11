@@ -40,6 +40,45 @@ message GetFusionDataResponse {
   repeated string data_owner_id_list = 2;
 }
 
+message FunctionInput {
+  string name = 1;
+  string description = 2;
+}
+
+message FunctionOutput {
+  string name = 1;
+  string description = 2;
+}
+
+message RegisterFunctionRequest {
+  string name = 1;
+  string description = 2;
+  bytes payload = 3;
+  bool is_public = 4;
+  repeated string arg_list = 5;
+  repeated FunctionInput input_list = 6;
+  repeated FunctionOutput output_list = 7;
+}
+
+message RegisterFunctionResponse {
+  string function_id = 1;
+}
+
+message GetFunctionRequest {
+  string function_id = 1;
+}
+
+message GetFunctionResponse {
+  string name = 1;
+  string description = 2;
+  string owner = 3;
+  bytes payload = 4;
+  bool is_public = 5;
+  repeated string arg_list = 6;
+  repeated FunctionInput input_list = 7;
+  repeated FunctionOutput output_list = 8;
+}
+
 service TeaclaveFrontend {
   rpc RegisterInputFile (RegisterInputFileRequest) returns (RegisterInputFileResponse);
   rpc RegisterOutputFile (RegisterOutputFileRequest) returns (RegisterOutputFileResponse);
