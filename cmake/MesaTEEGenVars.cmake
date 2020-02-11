@@ -28,55 +28,62 @@ set(MT_SGXAPP_TOML_DIR ${PROJECT_BINARY_DIR}/cmake_tomls/sgx_untrusted_app)
 set(MT_EDL_FILE ${PROJECT_SOURCE_DIR}/binder/Enclave.edl)
 
 set(SGX_EDGER8R ${SGX_SDK}/bin/x64/sgx_edger8r)
-set(SGX_ENCLAVE_SIGNER  ${SGX_SDK}/bin/x64/sgx_sign)
-set(SGX_LIBRARY_PATH  ${SGX_SDK}/lib64)
+set(SGX_ENCLAVE_SIGNER ${SGX_SDK}/bin/x64/sgx_sign)
+set(SGX_LIBRARY_PATH ${SGX_SDK}/lib64)
 
-set(SGX_COMMON_CFLAGS  -m64 -O2)
-set(SGX_UNTRUSTED_CFLAGS  ${SGX_COMMON_CFLAGS} -fPIC -Wno-attributes
-       -I${SGX_SDK}/include -I${RUST_SGX_SDK}/edl)
-set(SGX_TRUSTED_CFLAGS  ${SGX_COMMON_CFLAGS} -nostdinc -fvisibility=hidden
-       -fpie -fstack-protector
-       -I${RUST_SGX_SDK}/edl -I${RUST_SGX_SDK}/common/inc
-       -I${SGX_SDK}/include -I${SGX_SDK}/include/tlibc
-    -I${SGX_SDK}/include/stlport -I${SGX_SDK}/include/epid)
+set(SGX_COMMON_CFLAGS -m64 -O2)
+set(SGX_UNTRUSTED_CFLAGS ${SGX_COMMON_CFLAGS} -fPIC -Wno-attributes
+                         -I${SGX_SDK}/include -I${RUST_SGX_SDK}/edl)
+set(SGX_TRUSTED_CFLAGS
+    ${SGX_COMMON_CFLAGS}
+    -nostdinc
+    -fvisibility=hidden
+    -fpie
+    -fstack-protector
+    -I${RUST_SGX_SDK}/edl
+    -I${RUST_SGX_SDK}/common/inc
+    -I${SGX_SDK}/include
+    -I${SGX_SDK}/include/tlibc
+    -I${SGX_SDK}/include/stlport
+    -I${SGX_SDK}/include/epid)
 join_string("${SGX_COMMON_CFLAGS}" " " STR_SGX_COMMON_CFLAGS)
 join_string("${SGX_UNTRUSTED_CFLAGS}" " " STR_SGX_UNTRUSTED_CFLAGS)
 join_string("${SGX_TRUSTED_CFLAGS}" " " STR_SGX_TRUSTED_CFLAGS)
 
-if (NOT "${SGX_MODE}" STREQUAL "HW")
-	set(Trts_Library_Name sgx_trts_sim)
-	set(Service_Library_Name sgx_tservice_sim)
+if(NOT "${SGX_MODE}" STREQUAL "HW")
+  set(Trts_Library_Name sgx_trts_sim)
+  set(Service_Library_Name sgx_tservice_sim)
 else()
-	set(Trts_Library_Name sgx_trts)
-	set(Service_Library_Name sgx_tservice)
+  set(Trts_Library_Name sgx_trts)
+  set(Service_Library_Name sgx_tservice)
 endif()
 
 set(SGX_ENCLAVE_FEATURES -Z package-features --features mesalock_sgx)
 string(TOLOWER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_LOWER)
-if (CMAKE_BUILD_TYPE_LOWER STREQUAL "debug")
-    set(TARGET debug)
-    set(CARGO_BUILD_FLAGS "")
+if(CMAKE_BUILD_TYPE_LOWER STREQUAL "debug")
+  set(TARGET debug)
+  set(CARGO_BUILD_FLAGS "")
 
-    if (COV)
-        check_exe_dependencies(lcov llvm-cov)
-        set(SGX_ENCLAVE_FEATURES -Z package-features --features "mesalock_sgx cov")
-        set(CARGO_INCREMENTAL 0)
-        set(RUSTFLAGS "${RUSTFLAGS} -D warnings -Zprofile -Ccodegen-units=1 \
+  if(COV)
+    check_exe_dependencies(lcov llvm-cov)
+    set(SGX_ENCLAVE_FEATURES -Z package-features --features "mesalock_sgx cov")
+    set(CARGO_INCREMENTAL 0)
+    set(RUSTFLAGS "${RUSTFLAGS} -D warnings -Zprofile -Ccodegen-units=1 \
 -Cllvm_args=-inline-threshold=0 -Coverflow-checks=off -Zno-landing-pads")
-    endif()
+  endif()
 else()
-    set(TARGET release)
-    set(CARGO_BUILD_FLAGS --release)
+  set(TARGET release)
+  set(CARGO_BUILD_FLAGS --release)
 endif()
 
-if (OFFLINE)
+if(OFFLINE)
   set(EXTRA_CARGO_FLAGS "--offline")
 endif()
 
-execute_process (
-    COMMAND bash -c "cat ${PROJECT_SOURCE_DIR}/third_party/rust-sgx-sdk/rust-toolchain"
-    OUTPUT_VARIABLE RUSTUP_TOOLCHAIN
-    )
+execute_process(
+  COMMAND bash -c
+          "cat ${PROJECT_SOURCE_DIR}/third_party/rust-sgx-sdk/rust-toolchain"
+  OUTPUT_VARIABLE RUSTUP_TOOLCHAIN)
 string(STRIP ${RUSTUP_TOOLCHAIN} RUSTUP_TOOLCHAIN)
 set(RUSTUP_TOOLCHAIN ${RUSTUP_TOOLCHAIN})
 
@@ -115,29 +122,26 @@ set(MESATEE_COMMON_ENVS
     CARGO_INCREMENTAL=${CARGO_INCREMENTAL}
     CMAKE_C_COMPILER=${CMAKE_C_COMPILER}
     CC=${MT_SCRIPT_DIR}/cc_wrapper.sh
-    MT_RUSTC_WRAPPER=${MT_SCRIPT_DIR}/rustc_wrapper.sh
-)
+    MT_RUSTC_WRAPPER=${MT_SCRIPT_DIR}/rustc_wrapper.sh)
 
 set(TARGET_PREP_ENVS
-${MESATEE_COMMON_ENVS}
-CMAKE_SOURCE_DIR=${CMAKE_SOURCE_DIR}
-CMAKE_BINARY_DIR=${CMAKE_BINARY_DIR}
-MESAPY_VERSION=${MESAPY_VERSION}
-SGX_EDGER8R=${SGX_EDGER8R}
-MT_EDL_FILE=${MT_EDL_FILE}
-CMAKE_AR=${CMAKE_AR}
-DCAP=${DCAP}
-)
+    ${MESATEE_COMMON_ENVS}
+    CMAKE_SOURCE_DIR=${CMAKE_SOURCE_DIR}
+    CMAKE_BINARY_DIR=${CMAKE_BINARY_DIR}
+    MESAPY_VERSION=${MESAPY_VERSION}
+    SGX_EDGER8R=${SGX_EDGER8R}
+    MT_EDL_FILE=${MT_EDL_FILE}
+    CMAKE_AR=${CMAKE_AR}
+    DCAP=${DCAP})
 
 set(TARGET_SGXLIB_ENVS
-${MESATEE_COMMON_ENVS}
-SGX_LIBRARY_PATH=${SGX_LIBRARY_PATH}
-SGX_ENCLAVE_SIGNER=${SGX_ENCLAVE_SIGNER}
-Service_Library_Name=${Service_Library_Name}
-Trts_Library_Name=${Trts_Library_Name}
-TRUSTED_TARGET_DIR=${TRUSTED_TARGET_DIR}
-TARGET=${TARGET}
-)
+    ${MESATEE_COMMON_ENVS}
+    SGX_LIBRARY_PATH=${SGX_LIBRARY_PATH}
+    SGX_ENCLAVE_SIGNER=${SGX_ENCLAVE_SIGNER}
+    Service_Library_Name=${Service_Library_Name}
+    Trts_Library_Name=${Trts_Library_Name}
+    TRUSTED_TARGET_DIR=${TRUSTED_TARGET_DIR}
+    TARGET=${TARGET})
 
 message("SGX_SDK=${SGX_SDK}")
 message("SGX_MODE=${SGX_MODE}")

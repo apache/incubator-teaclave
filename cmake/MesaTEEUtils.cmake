@@ -1,294 +1,303 @@
 macro(dbg_message)
-if(MESATEE_CMAKE_DBG)
+  if(MESATEE_CMAKE_DBG)
     message("${ARGN}")
-endif()
+  endif()
 endmacro()
 
 macro(SET_STRVAR_FROM_ENV_OR var default_val docstring)
-if (NOT "$ENV{${var}}" STREQUAL "")
-    set(${var} "$ENV{${var}}" CACHE STRING "${docstring}")
-else()
-    set(${var} "${default_val}" CACHE STRING "${docstring}")
-endif()
+  if(NOT "$ENV{${var}}" STREQUAL "")
+    set(${var}
+        "$ENV{${var}}"
+        CACHE STRING "${docstring}")
+  else()
+    set(${var}
+        "${default_val}"
+        CACHE STRING "${docstring}")
+  endif()
 endmacro()
 
 function(check_sgx_sdk)
-    if(NOT IS_DIRECTORY "${SGX_SDK}")
-        message(FATAL_ERROR "SGX SDK not found at ${SGX_SDK}, please adjust the SGX_SDK env or the CMake config.")
-    endif()
+  if(NOT IS_DIRECTORY "${SGX_SDK}")
+    message(
+      FATAL_ERROR
+        "SGX SDK not found at ${SGX_SDK}, please adjust the SGX_SDK env or the CMake config."
+    )
+  endif()
 endfunction()
 
 function(init_submodules)
-    execute_process (
-    COMMAND bash -c "if [[ ! $(git submodule foreach ls -A) ]] || [[ $(git submodule summary) ]]; then echo INFO: Need to reinitialize git submodules && git submodule update --init --recursive; fi"
-    )
+  execute_process(
+    COMMAND
+      bash -c
+      "if [[ ! $(git submodule foreach ls -A) ]] || [[ $(git submodule summary) ]]; then echo INFO: Need to reinitialize git submodules && git submodule update --init --recursive; fi"
+  )
 endfunction()
 
 macro(rm_trailing_enclave src_str dest_name)
-    string(REGEX REPLACE "_enclave$" "" ${dest_name} ${src_str})
+  string(REGEX REPLACE "_enclave$" "" ${dest_name} ${src_str})
 endmacro()
 
-# add_cargo_build_target(package_name
-# [TARGET_NAME target_name] # default to cg_${package_name}
-# TOML_DIR toml_dir
-# TARGET_DIR target_dir
-# [DEPENDS [dep]...]
-# [NOT_SET_COMMON_ENV]
-# [EXTRA_CARGO_FLAGS flg...]
-# )
+# add_cargo_build_target(package_name [TARGET_NAME target_name] # default to
+# cg_${package_name} TOML_DIR toml_dir TARGET_DIR target_dir [DEPENDS [dep]...]
+# [NOT_SET_COMMON_ENV] [EXTRA_CARGO_FLAGS flg...] )
 function(add_cargo_build_target package_name)
-    set(options NOT_SET_COMMON_ENV)
-    set(oneValueArgs TARGET_NAME TOML_DIR TARGET_DIR INSTALL_DIR EXTRA_CARGO_FLAGS)
-    set(multiValueArgs DEPENDS)
-    cmake_parse_arguments(MTEE "${options}" "${oneValueArgs}"
-        "${multiValueArgs}" ${ARGN})
+  set(options NOT_SET_COMMON_ENV)
+  set(oneValueArgs TARGET_NAME TOML_DIR TARGET_DIR INSTALL_DIR
+                   EXTRA_CARGO_FLAGS)
+  set(multiValueArgs DEPENDS)
+  cmake_parse_arguments(MTEE "${options}" "${oneValueArgs}" "${multiValueArgs}"
+                        ${ARGN})
 
-    if (DEFINED MTEE_TARGET_NAME)
-        set(_target_name ${MTEE_TARGET_NAME})
-    else()
-        set(_target_name cg_${package_name})
-    endif()
+  if(DEFINED MTEE_TARGET_NAME)
+    set(_target_name ${MTEE_TARGET_NAME})
+  else()
+    set(_target_name cg_${package_name})
+  endif()
 
-    if (DEFINED MTEE_INSTALL_DIR)
-        set(_copy_dir ${MTEE_INSTALL_DIR})
-    else()
-        set(_copy_dir ${MESATEE_INSTALL_DIR})
-    endif()
+  if(DEFINED MTEE_INSTALL_DIR)
+    set(_copy_dir ${MTEE_INSTALL_DIR})
+  else()
+    set(_copy_dir ${MESATEE_INSTALL_DIR})
+  endif()
 
-    if (MTEE_NOT_SET_COMMON_ENV)
-        set(_envs)
-    else()
-        set(_envs ${MESATEE_COMMON_ENVS})
-    endif()
+  if(MTEE_NOT_SET_COMMON_ENV)
+    set(_envs)
+  else()
+    set(_envs ${MESATEE_COMMON_ENVS})
+  endif()
 
-    if (DEFINED MTEE_DEPENDS)
-        set(_depends DEPENDS ${MTEE_DEPENDS})
-    else()
-        set(_depends)
-    endif()
+  if(DEFINED MTEE_DEPENDS)
+    set(_depends DEPENDS ${MTEE_DEPENDS})
+  else()
+    set(_depends)
+  endif()
 
-    add_custom_target(${_target_name} ALL
-        COMMAND ${CMAKE_COMMAND} -E env ${_envs} RUSTFLAGS=${RUSTFLAGS}
-            ${MT_SCRIPT_DIR}/cargo_build_ex.sh -p ${package_name}
-            --target-dir ${MTEE_TARGET_DIR} ${CARGO_BUILD_FLAGS} ${MTEE_EXTRA_CARGO_FLAGS}
-            && cp ${MTEE_TARGET_DIR}/${TARGET}/${package_name} ${_copy_dir}
-        ${_depends}
-        COMMENT "Building ${_target_name}"
-        WORKING_DIRECTORY ${MTEE_TOML_DIR}
-    )
+  add_custom_target(
+    ${_target_name} ALL
+    COMMAND
+      ${CMAKE_COMMAND} -E env ${_envs} RUSTFLAGS=${RUSTFLAGS}
+      ${MT_SCRIPT_DIR}/cargo_build_ex.sh -p ${package_name} --target-dir
+      ${MTEE_TARGET_DIR} ${CARGO_BUILD_FLAGS} ${MTEE_EXTRA_CARGO_FLAGS} && cp
+      ${MTEE_TARGET_DIR}/${TARGET}/${package_name} ${_copy_dir} ${_depends}
+    COMMENT "Building ${_target_name}"
+    WORKING_DIRECTORY ${MTEE_TOML_DIR})
 endfunction()
 
-# add_cargo_build_lib_target(package_name
-# [TARGET_NAME target_name] # default to cg_${package_name}
-# TOML_DIR toml_dir
-# TARGET_DIR target_dir
-# [DEPENDS [dep]...]
-# [NOT_SET_COMMON_ENV]
-# [EXTRA_CARGO_FLAGS flg...]
-# )
+# add_cargo_build_lib_target(package_name [TARGET_NAME target_name] # default to
+# cg_${package_name} TOML_DIR toml_dir TARGET_DIR target_dir [DEPENDS [dep]...]
+# [NOT_SET_COMMON_ENV] [EXTRA_CARGO_FLAGS flg...] )
 function(add_cargo_build_dylib_target package_name)
-    set(options NOT_SET_COMMON_ENV)
-    set(oneValueArgs TARGET_NAME TOML_DIR TARGET_DIR)
-    set(multiValueArgs DEPENDS EXTRA_CARGO_FLAGS)
-    cmake_parse_arguments(MTEE "${options}" "${oneValueArgs}"
-        "${multiValueArgs}" ${ARGN})
+  set(options NOT_SET_COMMON_ENV)
+  set(oneValueArgs TARGET_NAME TOML_DIR TARGET_DIR)
+  set(multiValueArgs DEPENDS EXTRA_CARGO_FLAGS)
+  cmake_parse_arguments(MTEE "${options}" "${oneValueArgs}" "${multiValueArgs}"
+                        ${ARGN})
 
-    if (DEFINED MTEE_TARGET_NAME)
-        set(_target_name ${MTEE_TARGET_NAME})
-    else()
-        set(_target_name cg_${package_name})
-    endif()
+  if(DEFINED MTEE_TARGET_NAME)
+    set(_target_name ${MTEE_TARGET_NAME})
+  else()
+    set(_target_name cg_${package_name})
+  endif()
 
-    if (MTEE_NOT_SET_COMMON_ENV)
-        set(_envs)
-    else()
-        set(_envs ${MESATEE_COMMON_ENVS})
-    endif()
+  if(MTEE_NOT_SET_COMMON_ENV)
+    set(_envs)
+  else()
+    set(_envs ${MESATEE_COMMON_ENVS})
+  endif()
 
-    if (DEFINED MTEE_DEPENDS)
-        set(_depends DEPENDS ${MTEE_DEPENDS})
-    else()
-        set(_depends)
-    endif()
+  if(DEFINED MTEE_DEPENDS)
+    set(_depends DEPENDS ${MTEE_DEPENDS})
+  else()
+    set(_depends)
+  endif()
 
-    add_custom_target(${_target_name} ALL
-        COMMAND ${CMAKE_COMMAND} -E env ${_envs} RUSTFLAGS=${RUSTFLAGS}
-            ${MT_SCRIPT_DIR}/cargo_build_ex.sh -p ${package_name}
-            --target-dir ${MTEE_TARGET_DIR} ${CARGO_BUILD_FLAGS} ${MTEE_EXTRA_CARGO_FLAGS}
-            && cp ${MTEE_TARGET_DIR}/${TARGET}/lib${package_name}.so ${MESATEE_LIB_INSTALL_DIR}
-        ${_depends}
-        COMMENT "Building ${_target_name} as a dynamic library"
-        WORKING_DIRECTORY ${MTEE_TOML_DIR}
-    )
+  add_custom_target(
+    ${_target_name} ALL
+    COMMAND
+      ${CMAKE_COMMAND} -E env ${_envs} RUSTFLAGS=${RUSTFLAGS}
+      ${MT_SCRIPT_DIR}/cargo_build_ex.sh -p ${package_name} --target-dir
+      ${MTEE_TARGET_DIR} ${CARGO_BUILD_FLAGS} ${MTEE_EXTRA_CARGO_FLAGS} && cp
+      ${MTEE_TARGET_DIR}/${TARGET}/lib${package_name}.so
+      ${MESATEE_LIB_INSTALL_DIR} ${_depends}
+    COMMENT "Building ${_target_name} as a dynamic library"
+    WORKING_DIRECTORY ${MTEE_TOML_DIR})
 endfunction()
 
-# add_sgx_build_target(sgx_lib_path pkg_name
-# [DEPENDS [dep]...]
-# [INSTALL_DIR dir]
-# [EXTRA_CARGO_FLAGS flg...]
-# )
+# add_sgx_build_target(sgx_lib_path pkg_name [DEPENDS [dep]...] [INSTALL_DIR
+# dir] [EXTRA_CARGO_FLAGS flg...] )
 function(add_sgx_build_target sgx_lib_path pkg_name)
-    set(options)
-    set(oneValueArgs INSTALL_DIR)
-    set(multiValueArgs DEPENDS EXTRA_CARGO_FLAGS)
-    cmake_parse_arguments(MTEE "${options}" "${oneValueArgs}"
-        "${multiValueArgs}" ${ARGN})
+  set(options)
+  set(oneValueArgs INSTALL_DIR)
+  set(multiValueArgs DEPENDS EXTRA_CARGO_FLAGS)
+  cmake_parse_arguments(MTEE "${options}" "${oneValueArgs}" "${multiValueArgs}"
+                        ${ARGN})
 
-    if (DEFINED MTEE_DEPENDS)
-        set(_depends DEPENDS ${MTEE_DEPENDS})
-    else()
-        set(_depends)
-    endif()
+  if(DEFINED MTEE_DEPENDS)
+    set(_depends DEPENDS ${MTEE_DEPENDS})
+  else()
+    set(_depends)
+  endif()
 
-    if (DEFINED MTEE_INSTALL_DIR)
-        set(_copy_dir ${MTEE_INSTALL_DIR})
-    else()
-        set(_copy_dir ${MESATEE_INSTALL_DIR})
-    endif()
+  if(DEFINED MTEE_INSTALL_DIR)
+    set(_copy_dir ${MTEE_INSTALL_DIR})
+  else()
+    set(_copy_dir ${MESATEE_INSTALL_DIR})
+  endif()
 
-    rm_trailing_enclave(${pkg_name} pkg_name_no_enclave)
+  rm_trailing_enclave(${pkg_name} pkg_name_no_enclave)
 
-    set(_target_name ${SGXLIB_PREFIX}-${pkg_name_no_enclave})
+  set(_target_name ${SGXLIB_PREFIX}-${pkg_name_no_enclave})
 
-    if(pkg_name_no_enclave STREQUAL "functional_test")
-        set(_enclave_info "/dev/null")
-    else()
-        set(_enclave_info "${MESATEE_OUT_DIR}/${pkg_name}_info.toml")
-    endif()
+  if(pkg_name_no_enclave STREQUAL "functional_test")
+    set(_enclave_info "/dev/null")
+  else()
+    set(_enclave_info "${MESATEE_OUT_DIR}/${pkg_name}_info.toml")
+  endif()
 
-    add_custom_target(${_target_name} ALL
-        COMMAND ${CMAKE_COMMAND} -E env ${MESATEE_COMMON_ENVS} RUSTFLAGS=${RUSTFLAGS}
-            ${MT_SCRIPT_DIR}/cargo_build_ex.sh -p ${pkg_name}
-            --target-dir ${TRUSTED_TARGET_DIR} ${CARGO_BUILD_FLAGS} ${SGX_ENCLAVE_FEATURES} ${MTEE_EXTRA_CARGO_FLAGS}
-        COMMAND ${CMAKE_COMMAND} -E env ${TARGET_SGXLIB_ENVS} SGX_COMMON_CFLAGS=${STR_SGX_COMMON_CFLAGS}
-            CUR_PKG_NAME=${pkg_name} CUR_PKG_PATH=${sgx_lib_path} CUR_INSTALL_DIR=${_copy_dir} ${MT_SCRIPT_DIR}/sgx_link_sign.sh
-        ${_depends}
-        COMMAND cat ${MESATEE_OUT_DIR}/${pkg_name}.meta.txt | python ${MT_SCRIPT_DIR}/gen_enclave_info_toml.py ${pkg_name_no_enclave} > ${_enclave_info}
-        COMMENT "Building ${_target_name}, enclave info to ${_enclave_info}"
-        WORKING_DIRECTORY ${MT_SGXLIB_TOML_DIR}
-    )
+  add_custom_target(
+    ${_target_name} ALL
+    COMMAND
+      ${CMAKE_COMMAND} -E env ${MESATEE_COMMON_ENVS} RUSTFLAGS=${RUSTFLAGS}
+      ${MT_SCRIPT_DIR}/cargo_build_ex.sh -p ${pkg_name} --target-dir
+      ${TRUSTED_TARGET_DIR} ${CARGO_BUILD_FLAGS} ${SGX_ENCLAVE_FEATURES}
+      ${MTEE_EXTRA_CARGO_FLAGS}
+    COMMAND
+      ${CMAKE_COMMAND} -E env ${TARGET_SGXLIB_ENVS}
+      SGX_COMMON_CFLAGS=${STR_SGX_COMMON_CFLAGS} CUR_PKG_NAME=${pkg_name}
+      CUR_PKG_PATH=${sgx_lib_path} CUR_INSTALL_DIR=${_copy_dir}
+      ${MT_SCRIPT_DIR}/sgx_link_sign.sh ${_depends}
+    COMMAND
+      cat ${MESATEE_OUT_DIR}/${pkg_name}.meta.txt | python
+      ${MT_SCRIPT_DIR}/gen_enclave_info_toml.py ${pkg_name_no_enclave} >
+      ${_enclave_info}
+    COMMENT "Building ${_target_name}, enclave info to ${_enclave_info}"
+    WORKING_DIRECTORY ${MT_SGXLIB_TOML_DIR})
 endfunction()
 
 function(add_enclave_sig_target_n_hooks)
-    # add a target to generate enclave sig files
-    add_custom_target(update_sig ALL
-        COMMAND ${MESATEE_COMMON_ENVS} ${MT_SCRIPT_DIR}/gen_enclave_sig.sh
-        COMMENT "Generating enclave signatures..."
-        DEPENDS ${SGXLIB_TARGETS}
-    )
+  # add a target to generate enclave sig files
+  add_custom_target(
+    update_sig ALL
+    COMMAND ${MESATEE_COMMON_ENVS} ${MT_SCRIPT_DIR}/gen_enclave_sig.sh
+    COMMENT "Generating enclave signatures..."
+    DEPENDS ${SGXLIB_TARGETS})
 
-    # Hook the convenience targets for SGX modules
-    # so manually `make kms/tms/...` will trigger
-    # updating enclave sig files
-    foreach(sgx_module ${SGX_MODULES})
-        add_custom_command(TARGET ${sgx_module}
-                    POST_BUILD
-                    COMMENT "Updating enclave signatures..."
-                    COMMAND ${MESATEE_COMMON_ENVS} ${MT_SCRIPT_DIR}/gen_enclave_sig.sh
-        )
-    endforeach()
+  # Hook the convenience targets for SGX modules so manually `make kms/tms/...`
+  # will trigger updating enclave sig files
+  foreach(sgx_module ${SGX_MODULES})
+    add_custom_command(
+      TARGET ${sgx_module}
+      POST_BUILD
+      COMMENT "Updating enclave signatures..."
+      COMMAND ${MESATEE_COMMON_ENVS} ${MT_SCRIPT_DIR}/gen_enclave_sig.sh)
+  endforeach()
 endfunction()
 
 function(join_string values glue out)
   string(REGEX REPLACE "([^\\]|^);" "\\1${glue}" _res "${values}")
   string(REGEX REPLACE "[\\](.)" "\\1" _res "${_res}")
-  set(${out} "${_res}" PARENT_SCOPE)
+  set(${out}
+      "${_res}"
+      PARENT_SCOPE)
 endfunction()
 
 function(generate_env_file)
-    set(envs ${MESATEE_COMMON_ENVS})
-    list(FILTER envs INCLUDE REGEX "MESATEE_PROJECT_ROOT|MESATEE_CFG_DIR|\
+  set(envs ${MESATEE_COMMON_ENVS})
+  list(FILTER envs INCLUDE REGEX "MESATEE_PROJECT_ROOT|MESATEE_CFG_DIR|\
 MESATEE_BUILD_CFG_DIR|MESATEE_OUT_DIR|MESATEE_AUDITORS_DIR")
-    # add extra env vars
-    list(APPEND envs "RUST_LOG=info" "RUST_BACKTRACE=1")
-    join_string("${envs}" "\nexport " env_file)
-    string(PREPEND env_file "export ")
-    string(APPEND env_file "\n")
-    file(WRITE ${PROJECT_BINARY_DIR}/environment ${env_file})
-    message(STATUS "====== ${PROJECT_BINARY_DIR}/environment GENERATED ======")
+  # add extra env vars
+  list(APPEND envs "RUST_LOG=info" "RUST_BACKTRACE=1")
+  join_string("${envs}" "\nexport " env_file)
+  string(PREPEND env_file "export ")
+  string(APPEND env_file "\n")
+  file(WRITE ${PROJECT_BINARY_DIR}/environment ${env_file})
+  message(STATUS "====== ${PROJECT_BINARY_DIR}/environment GENERATED ======")
 endfunction()
 
 function(gen_convenience_targets)
-    # add a target with the same name for each unix_module
-    foreach(unix_module ${UNIX_APPS})
-        add_custom_target(${unix_module}
-            DEPENDS ${UNIXAPP_PREFIX}-${unix_module}
-        )
-    endforeach()
+  # add a target with the same name for each unix_module
+  foreach(unix_module ${UNIX_APPS})
+    add_custom_target(${unix_module} DEPENDS ${UNIXAPP_PREFIX}-${unix_module})
+  endforeach()
 
-    # add a target with the same name for each sgx_module (build sgxlib+sgxapp)
-    foreach(sgx_module ${SGX_MODULES})
-        add_custom_target(${sgx_module}
-            DEPENDS ${SGXAPP_PREFIX}-${sgx_module} ${SGXLIB_PREFIX}-${sgx_module}
-        )
-    endforeach()
+  # add a target with the same name for each sgx_module (build sgxlib+sgxapp)
+  foreach(sgx_module ${SGX_MODULES})
+    add_custom_target(${sgx_module} DEPENDS ${SGXAPP_PREFIX}-${sgx_module}
+                                            ${SGXLIB_PREFIX}-${sgx_module})
+  endforeach()
 endfunction()
 
 function(new_list_with_prefix new_list_name prefix)
-    set(_new_list)
-    foreach(item ${ARGN})
-        string(PREPEND item ${prefix})
-        set(_new_list ${_new_list} ${item})
-    endforeach()
-    set(${new_list_name} ${_new_list} PARENT_SCOPE)
+  set(_new_list)
+  foreach(item ${ARGN})
+    string(PREPEND item ${prefix})
+    set(_new_list ${_new_list} ${item})
+  endforeach()
+  set(${new_list_name}
+      ${_new_list}
+      PARENT_SCOPE)
 endfunction()
 
 function(check_exe_dependencies)
-    foreach(exe ${ARGN})
-        execute_process(COMMAND bash -c "type ${exe}"
-        OUTPUT_QUIET
-        ERROR_QUIET
-        RESULT_VARIABLE _res
-        )
-        if(_res)
-            message(FATAL_ERROR "MesaTEE depends on \"${exe}\" but the command was not found. \
+  foreach(exe ${ARGN})
+    execute_process(COMMAND bash -c "type ${exe}" OUTPUT_QUIET ERROR_QUIET
+                    RESULT_VARIABLE _res)
+    if(_res)
+      message(
+        FATAL_ERROR
+          "MesaTEE depends on \"${exe}\" but the command was not found. \
 Please install the dependency and retry.")
-        endif()
-    endforeach()
+    endif()
+  endforeach()
 endfunction()
 
 function(parse_cargo_packages pkg_names)
-    set(options)
-    set(oneValueArgs CARGO_TOML_PATH PKG_PATHS CATEGORIES)
-    set(multiValueArgs)
+  set(options)
+  set(oneValueArgs CARGO_TOML_PATH PKG_PATHS CATEGORIES)
+  set(multiValueArgs)
 
-    cmake_parse_arguments(MTEE "${options}" "${oneValueArgs}"
-        "${multiValueArgs}" ${ARGN})
+  cmake_parse_arguments(MTEE "${options}" "${oneValueArgs}" "${multiValueArgs}"
+                        ${ARGN})
 
-    set(_output)
-    set(err)
+  set(_output)
+  set(err)
 
-    execute_process(
-        COMMAND python ${PROJECT_SOURCE_DIR}/cmake/scripts/parse_cargo_packages.py
+  execute_process(
+    COMMAND python ${PROJECT_SOURCE_DIR}/cmake/scripts/parse_cargo_packages.py
             ${MTEE_CARGO_TOML_PATH} ${PROJECT_SOURCE_DIR}
-        OUTPUT_VARIABLE _output
-        ERROR_VARIABLE err
-    ) 
+    OUTPUT_VARIABLE _output
+    ERROR_VARIABLE err)
 
-    if(NOT (err STREQUAL ""))
-        message(FATAL_ERROR "failed to load packages: ${err}")
-    endif()
+  if(NOT (err STREQUAL ""))
+    message(FATAL_ERROR "failed to load packages: ${err}")
+  endif()
 
-    string(REGEX REPLACE "\n" ";" _out_list ${_output})
-    list(LENGTH _out_list LLEN)
+  string(REGEX REPLACE "\n" ";" _out_list ${_output})
+  list(LENGTH _out_list LLEN)
 
-    if (DEFINED MTEE_CATEGORIES)
-        list(GET _out_list 2 _categories)
-        string(REPLACE ":" ";" _categories ${_categories})
-        set(${MTEE_CATEGORIES} ${_categories} PARENT_SCOPE)
-        dbg_message("${MTEE_CATEGORIES}=${_categories}\n")
-    endif()
+  if(DEFINED MTEE_CATEGORIES)
+    list(GET _out_list 2 _categories)
+    string(REPLACE ":" ";" _categories ${_categories})
+    set(${MTEE_CATEGORIES}
+        ${_categories}
+        PARENT_SCOPE)
+    dbg_message("${MTEE_CATEGORIES}=${_categories}\n")
+  endif()
 
-    if (DEFINED MTEE_PKG_PATHS)
-        list(GET _out_list 1 _pkg_paths)
-        string(REPLACE ":" ";" _pkg_paths ${_pkg_paths})
-        set(${MTEE_PKG_PATHS} ${_pkg_paths} PARENT_SCOPE)
-        dbg_message("${MTEE_PKG_PATHS}=${_pkg_paths}\n")
-    endif()
+  if(DEFINED MTEE_PKG_PATHS)
+    list(GET _out_list 1 _pkg_paths)
+    string(REPLACE ":" ";" _pkg_paths ${_pkg_paths})
+    set(${MTEE_PKG_PATHS}
+        ${_pkg_paths}
+        PARENT_SCOPE)
+    dbg_message("${MTEE_PKG_PATHS}=${_pkg_paths}\n")
+  endif()
 
-    # level up the local variable to its parent scope
-    list(GET _out_list 0 _pkg_names)
-    string(REPLACE ":" ";" _pkg_names ${_pkg_names})
-    set(${pkg_names} ${_pkg_names} PARENT_SCOPE)
-    dbg_message("${pkg_names}=${_pkg_names}\n")
+  # level up the local variable to its parent scope
+  list(GET _out_list 0 _pkg_names)
+  string(REPLACE ":" ";" _pkg_names ${_pkg_names})
+  set(${pkg_names}
+      ${_pkg_names}
+      PARENT_SCOPE)
+  dbg_message("${pkg_names}=${_pkg_names}\n")
 endfunction()
