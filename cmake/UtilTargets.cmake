@@ -5,8 +5,9 @@ add_custom_target(prep ALL
 add_custom_target(format
 	COMMAND rustup component add rustfmt --toolchain ${RUSTUP_TOOLCHAIN}
 	COMMAND RUSTUP_TOOLCHAIN=${RUSTUP_TOOLCHAIN} find ${MESATEE_PROJECT_ROOT}
-		-path ${MESATEE_PROJECT_ROOT}/third_party -prune -o
-		-path ${MESATEE_PROJECT_ROOT}/.git -prune -o
+        -path ${MESATEE_PROJECT_ROOT}/third_party -prune -o
+        -path ${MESATEE_PROJECT_ROOT}/.git -prune -o
+        -path ${MESATEE_BUILD_ROOT} -prune -o
         -name "*.rs" -exec rustfmt {} +
     COMMENT "Formating every .rs file"
     DEPENDS prep

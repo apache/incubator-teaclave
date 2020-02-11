@@ -30,7 +30,6 @@ use sgx_types::*;
 use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::net::TcpStream;
-use std::os::unix::io::FromRawFd;
 use std::prelude::v1::*;
 use std::sync::Arc;
 
@@ -73,8 +72,11 @@ fn new_tls_stream(url: &url::Url) -> Result<rustls::StreamOwned<rustls::ClientSe
         .root_store
         .add_server_trust_anchors(&webpki_roots::TLS_SERVER_ROOTS);
     let client = rustls::ClientSession::new(&Arc::new(config), dns_name);
-    let fd = platform::get_attestation_service_socket(&url.to_string())?;
-    let socket = unsafe { TcpStream::from_raw_fd(fd) };
+    let addrs = url.socket_addrs(|| match url.scheme() {
+        "https" => Some(443),
+        _ => None,
+    })?;
+    let socket = TcpStream::connect(&*addrs)?;
     let stream = rustls::StreamOwned::new(client, socket);
 
     Ok(stream)

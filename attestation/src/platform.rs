@@ -31,12 +31,6 @@ extern "C" {
         quote_size: u32,
     ) -> sgx_status_t;
 
-    fn ocall_sgx_get_remote_socket(
-        p_retval: *mut i32,
-        p_url: *const u8,
-        len: usize,
-    ) -> sgx_status_t;
-
     fn sgx_self_target(p_target_info: *mut sgx_target_info_t) -> sgx_status_t;
 }
 
@@ -133,16 +127,4 @@ pub(crate) fn get_sgx_quote(ak_id: &sgx_att_key_id_t, report: sgx_report_t) -> R
     ensure!(rhs_hash == lhs_hash, AttestationError::ReportError);
 
     Ok(quote)
-}
-
-pub(crate) fn get_attestation_service_socket(url: &str) -> Result<c_int> {
-    debug!("get_attestation_service_socket");
-    let mut fd: c_int = -1;
-    let res =
-        unsafe { ocall_sgx_get_remote_socket(&mut fd as _, url.as_bytes().as_ptr(), url.len()) };
-
-    ensure!(res == SGX_SUCCESS, AttestationError::OCallError(res));
-    ensure!(fd > 0, AttestationError::ConnectionError);
-
-    Ok(fd)
 }
