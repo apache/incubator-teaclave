@@ -59,7 +59,7 @@ steps:
   commands:
   - . /root/.cargo/env
   - mkdir -p build
-  - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DTEST_MODE=ON ..
+  - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DTEST_MODE=ON -DDCAP=ON ..
 - name: check
   image: teaclave/teaclave-build-ubuntu-1804-dcap:0.1.0
   commands:
@@ -71,7 +71,6 @@ steps:
   - . /root/.cargo/env
   - . /opt/sgxsdk/environment
   - sed -i 's/ias_root_ca_cert/dcap_root_ca_cert/' config/build.config.toml
-  - (cd dcap && cargo build)
   - cd build && make VERBOSE=1 -j2
 - name: test
   image: teaclave/teaclave-build-ubuntu-1804-dcap:0.1.0
@@ -93,10 +92,10 @@ steps:
   - name: qcnl
     path: /etc/sgx_default_qcnl.conf
   commands:
-  - apt-get update && apt-get install -y iputils-ping iproute2 curl
+  - apt-get update && apt-get install -y iproute2
   - echo "$(ip route | awk 'NR==1 {print $3}') pccs-server" >> /etc/hosts
   - . /root/.cargo/env
-  - (cd dcap && target/debug/teaclave_dcap_ref_as &)
+  - (cd release/dcap && ./teaclave_dcap_ref_as &)
   - cd build && make run-tests
 
 volumes:

@@ -52,7 +52,7 @@ def parse_package_name(package_toml_path):
 def pkg_path_2_category(pkg_path):
     """
     Take pkg path and return its category.
-    Return services/examples/tests/bin depends on the beginning of pkg_path.
+    Return services/examples/tests/cli/dcap depends on the beginning of pkg_path.
     (lib not used by this function)
     """
     if pkg_path.startswith('services/'):
@@ -62,7 +62,9 @@ def pkg_path_2_category(pkg_path):
     elif pkg_path.startswith('tests/'):
         return 'tests'
     elif pkg_path == 'cli':
-        return 'bin'
+        return 'cli'
+    elif pkg_path == 'dcap':
+        return 'dcap'
     else:
         sys.stderr.write('[Error]: Unknown category for package_path {}\n'.format(pkg_path))
         sys.exit(-1)

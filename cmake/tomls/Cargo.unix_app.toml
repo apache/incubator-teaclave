@@ -4,6 +4,7 @@
 # and for those to exclude from cmake build, just append the '# ignore'
 # annotation suffix
 members = [
+  "dcap"
 ]
 
 exclude = [
@@ -11,6 +12,6 @@ exclude = [
 
 [patch.crates-io]
 
-# We cannot remove these crates, because proto crates depend on them
-sgx_urts = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.0" }
+# sgx_urts = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.0" }
 sgx_types = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.0" }
+sgx_ucrypto = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.0" }
