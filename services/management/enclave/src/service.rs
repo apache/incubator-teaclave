@@ -1,10 +1,12 @@
 use crate::file::{InputFile, OutputFile};
+use crate::function::Function;
 use crate::fusion_data::FusionData;
 use anyhow::{anyhow, Result};
 use std::prelude::v1::*;
 use std::sync::{Arc, SgxMutex as Mutex};
 use teaclave_proto::teaclave_frontend_service::{
-    GetFusionDataRequest, GetFusionDataResponse, GetOutputFileRequest, GetOutputFileResponse,
+    GetFunctionRequest, GetFunctionResponse, GetFusionDataRequest, GetFusionDataResponse,
+    GetOutputFileRequest, GetOutputFileResponse, RegisterFunctionRequest, RegisterFunctionResponse,
     RegisterInputFileRequest, RegisterInputFileResponse, RegisterOutputFileRequest,
     RegisterOutputFileResponse,
 };
@@ -151,16 +153,102 @@ impl TeaclaveManagement for TeaclaveManagementService {
         };
         Ok(response)
     }
+
+    fn register_function(
+        &self,
+        request: Request<RegisterFunctionRequest>,
+    ) -> TeaclaveServiceResponseResult<RegisterFunctionResponse> {
+        let user_id = request
+            .metadata
+            .get("id")
+            .ok_or_else(|| TeaclaveManagementError::InvalidRequest)?
+            .to_string();
+
+        let request = request.message;
+        let function = Function::new_from_register_request(request, user_id);
+        let key = function.get_key_vec();
+        let value = function
+            .to_vec()
+            .map_err(|_| TeaclaveManagementError::DataError)?;
+
+        self.write_to_storage(&key, &value)
+            .map_err(|_| TeaclaveManagementError::StorageError)?;
+        let response = RegisterFunctionResponse {
+            function_id: function.function_id,
+        };
+        Ok(response)
+    }
+
+    fn get_function(
+        &self,
+        request: Request<GetFunctionRequest>,
+    ) -> TeaclaveServiceResponseResult<GetFunctionResponse> {
+        let user_id = request
+            .metadata
+            .get("id")
+            .ok_or_else(|| TeaclaveManagementError::InvalidRequest)?
+            .to_string();
+        let function_id = request.message.function_id;
+        if !Function::is_function_id(&function_id) {
+            return Err(TeaclaveManagementError::PermissionDenied.into());
+        }
+        let key: &[u8] = function_id.as_bytes();
+        let value = self
+            .read_from_storage(key)
+            .map_err(|_| TeaclaveManagementError::StorageError)?;
+        let function =
+            Function::from_slice(&value).map_err(|_| TeaclaveManagementError::DataError)?;
+        if !(function.is_public || function.owner == user_id) {
+            return Err(TeaclaveManagementError::PermissionDenied.into());
+        }
+        let response = GetFunctionResponse {
+            name: function.name,
+            description: function.description,
+            owner: function.owner,
+            payload: function.payload,
+            is_public: function.is_public,
+            arg_list: function.arg_list,
+            input_list: function.input_list,
+            output_list: function.output_list,
+        };
+        Ok(response)
+    }
 }
 
 impl TeaclaveManagementService {
     #[cfg(test_mode)]
     fn add_mock_data(&self) -> Result<()> {
+        use teaclave_proto::teaclave_frontend_service::{FunctionInput, FunctionOutput};
         let mut fusion_data =
             FusionData::new(vec!["mock_user_a".to_string(), "mock_user_b".to_string()])?;
         fusion_data.data_id = "fusion-data-mock-data".to_string();
         let key = fusion_data.get_key_vec();
         let value = fusion_data.to_vec()?;
+        self.write_to_storage(&key, &value)?;
+
+        let function_input = FunctionInput {
+            name: "input".to_string(),
+            description: "input_desc".to_string(),
+        };
+        let function_output = FunctionOutput {
+            name: "output".to_string(),
+            description: "output_desc".to_string(),
+        };
+
+        let native_function = Function {
+            function_id: "native-mock-native-func".to_string(),
+            name: "mock-native-func".to_string(),
+            description: "mock-desc".to_string(),
+            payload: b"mock-payload".to_vec(),
+            is_public: true,
+            arg_list: vec!["arg".to_string()],
+            input_list: vec![function_input],
+            output_list: vec![function_output],
+            owner: "teaclave".to_string(),
+            is_native: true,
+        };
+        let key = native_function.get_key_vec();
+        let value = native_function.to_vec()?;
         self.write_to_storage(&key, &value)?;
         Ok(())
     }
@@ -202,6 +290,7 @@ impl TeaclaveManagementService {
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
+    use teaclave_proto::teaclave_frontend_service::{FunctionInput, FunctionOutput};
     use teaclave_types::{TeaclaveFileCryptoInfo, TeaclaveFileRootKey128};
     use url::Url;
 
@@ -247,6 +336,35 @@ pub mod tests {
         assert!(FusionData::is_fusion_data_id(key_str));
         let value = fusion_data.to_vec().unwrap();
         let deserialized_data = FusionData::from_slice(&value).unwrap();
+        info!("data: {:?}", deserialized_data);
+    }
+
+    pub fn handle_function() {
+        let function_input = FunctionInput {
+            name: "input".to_string(),
+            description: "input_desc".to_string(),
+        };
+        let function_output = FunctionOutput {
+            name: "output".to_string(),
+            description: "output_desc".to_string(),
+        };
+        let register_request = RegisterFunctionRequest {
+            name: "mock_function".to_string(),
+            description: "mock function".to_string(),
+            payload: b"python script".to_vec(),
+            is_public: true,
+            arg_list: vec!["arg".to_string()],
+            input_list: vec![function_input],
+            output_list: vec![function_output],
+        };
+        let function =
+            Function::new_from_register_request(register_request, "mock_user".to_string());
+        let key = function.get_key_vec();
+        let key_str = std::str::from_utf8(&key).unwrap();
+        info!("key: {}", key_str);
+        assert!(Function::is_function_id(key_str));
+        let value = function.to_vec().unwrap();
+        let deserialized_data = Function::from_slice(&value).unwrap();
         info!("data: {:?}", deserialized_data);
     }
 }
