@@ -33,6 +33,7 @@ use std::net::TcpStream;
 use std::prelude::v1::*;
 use std::sync::Arc;
 
+#[cfg(dcap)]
 const DCAP_ROOT_CA_CERT: &str = include_str!("../../keys/dcap_root_ca_cert.pem");
 
 impl EndorsedAttestationReport {
@@ -64,6 +65,7 @@ impl EndorsedAttestationReport {
 fn new_tls_stream(url: &url::Url) -> Result<rustls::StreamOwned<rustls::ClientSession, TcpStream>> {
     let dns_name = webpki::DNSNameRef::try_from_ascii_str(url.host_str().unwrap())?;
     let mut config = rustls::ClientConfig::new();
+    #[cfg(dcap)]
     config
         .root_store
         .add_pem_file(&mut DCAP_ROOT_CA_CERT.to_string().as_bytes())

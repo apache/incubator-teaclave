@@ -19,9 +19,14 @@ option(TEST_MODE "Turn on/off test mode" OFF)
 option(SGX_SIM_MODE "Turn on/off sgx simulation mode" OFF)
 option(DCAP "Turn on/off DCAP attestation" OFF)
 
+if(DCAP)
+  set(RUSTFLAGS "${RUSTFLAGS} --cfg dcap")
+endif()
+
 if(TEST_MODE)
   set(RUSTFLAGS "${RUSTFLAGS} --cfg test_mode")
 endif()
+
 if(SGX_SIM_MODE)
   set(RUSTFLAGS "${RUSTFLAGS} --cfg sgx_sim")
   set(SGX_MODE "SW")
