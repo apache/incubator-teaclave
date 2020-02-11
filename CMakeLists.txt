@@ -16,6 +16,7 @@ option(COV "Turn on/off coverage" OFF)
 option(OFFLINE "Turn on/off cargo offline" ON)
 option(TEST_MODE "Turn on/off test mode" OFF)
 option(SGX_SIM_MODE "Turn on/off sgx simulation mode" OFF)
+option(DCAP "Turn on/off DCAP attestation" OFF)
 
 if(TEST_MODE)
     set(RUSTFLAGS "${RUSTFLAGS} --cfg test_mode")
@@ -33,10 +34,10 @@ set(UNIX_LIBS mesatee_sdk protected_fs_rs)
 # ================ VARIABLES FOR MANUAL CHANGE END ================
 
 # UNIX_APPS, SGX_APPS and SGX_LIBS are parsed from corresponding toml files
-# parse_cargo_packages(UNIX_APPS
-#     CARGO_TOML_PATH ${PROJECT_SOURCE_DIR}/cmake/tomls/Cargo.unix_app.toml
-#     CATEGORIES UNIX_APP_CATEGORIES
-# )
+parse_cargo_packages(UNIX_APPS
+    CARGO_TOML_PATH ${PROJECT_SOURCE_DIR}/cmake/tomls/Cargo.unix_app.toml
+    CATEGORIES UNIX_APP_CATEGORIES
+)
 
 parse_cargo_packages(SGX_APPS
     CARGO_TOML_PATH ${PROJECT_SOURCE_DIR}/cmake/tomls/Cargo.sgx_untrusted_app.toml
@@ -60,20 +61,23 @@ generate_env_file()
 include(UtilTargets)
 
 # unix_app
-# list(LENGTH UNIX_APPS UNIX_APP_LEN)
-# math(EXPR UNIX_APP_LAST_INDEX "${UNIX_APP_LEN} - 1")
-# foreach(_i RANGE ${UNIX_APP_LAST_INDEX})
-#     list(GET UNIX_APPS ${_i} _pkg_name)
-#     list(GET UNIX_APP_CATEGORIES ${_i} _category)
-#     add_cargo_build_target(${_pkg_name}
-#         TARGET_NAME "${UNIXAPP_PREFIX}-${_pkg_name}"
-#         TOML_DIR ${MT_UNIX_TOML_DIR}
-#         TARGET_DIR ${UNIX_TARGET_DIR}
-#         INSTALL_DIR ${MESATEE_INSTALL_DIR}/${_category}
-#         EXTRA_CARGO_FLAGS ${EXTRA_CARGO_FLAGS}
-#         DEPENDS prep
-#     )
-# endforeach()
+list(LENGTH UNIX_APPS UNIX_APP_LEN)
+math(EXPR UNIX_APP_LAST_INDEX "${UNIX_APP_LEN} - 1")
+foreach(_i RANGE ${UNIX_APP_LAST_INDEX})
+    list(GET UNIX_APPS ${_i} _pkg_name)
+    list(GET UNIX_APP_CATEGORIES ${_i} _category)
+    if(${_category} STREQUAL "dcap" AND NOT DCAP)
+        continue()
+    endif()
+    add_cargo_build_target(${_pkg_name}
+        TARGET_NAME "${UNIXAPP_PREFIX}-${_pkg_name}"
+        TOML_DIR ${MT_UNIX_TOML_DIR}
+        TARGET_DIR ${UNIX_TARGET_DIR}
+        INSTALL_DIR ${MESATEE_INSTALL_DIR}/${_category}
+        EXTRA_CARGO_FLAGS ${EXTRA_CARGO_FLAGS}
+        DEPENDS prep
+    )
+endforeach()
 
 # sgx_untrusted_app
 list(LENGTH SGX_APPS SGX_APP_LEN)
