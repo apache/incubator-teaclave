@@ -144,7 +144,7 @@ fn verify_quote(request: String) -> QuoteVerificationResponse {
             Ok(v) => v,
             Err(_) => return QuoteVerificationResponse::BadRequest,
         };
-        let mut collateral_exp_status = 0u32;
+        let mut collateral_exp_status = 1u32;
         let mut quote_verification_result = sgx_ql_qv_result_t::SGX_QL_QV_RESULT_UNSPECIFIED;
         let mut qve_report_info = sgx_ql_qe_report_info_t::default();
 
@@ -171,6 +171,11 @@ fn verify_quote(request: String) -> QuoteVerificationResponse {
             eprintln!("sgx_qv_verify_quote fialed: {:?}", ret);
             return QuoteVerificationResponse::BadRequest;
         };
+
+        if collateral_exp_status != 0 {
+            eprintln!("collateral_exp_status fialed: {:?}", collateral_exp_status);
+            return QuoteVerificationResponse::BadRequest;
+        }
 
         let sha256 = sgx_ucrypto::SgxShaHandle::new();
         sha256.init().unwrap();
