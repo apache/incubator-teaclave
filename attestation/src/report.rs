@@ -67,6 +67,19 @@ pub struct SgxEnclaveReport {
     pub report_data: [u8; 64],
 }
 
+impl std::fmt::Debug for SgxEnclaveReport {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "cpu_svn: {:?}", self.cpu_svn)?;
+        writeln!(f, "misc_select: {:?}", self.misc_select)?;
+        writeln!(f, "attributes: {:?}", self.attributes)?;
+        writeln!(f, "mr_enclave: {:?}", self.mr_enclave)?;
+        writeln!(f, "mr_signer: {:?}", self.mr_signer)?;
+        writeln!(f, "isv_prod_id: {}", self.isv_prod_id)?;
+        writeln!(f, "isv_svn: {}", self.isv_svn)?;
+        writeln!(f, "report_data: {:?}", &self.report_data.to_vec())
+    }
+}
+
 impl SgxEnclaveReport {
     pub fn parse_from<'a>(bytes: &'a [u8]) -> Result<Self> {
         let mut pos: usize = 0;
@@ -136,17 +149,20 @@ impl SgxEnclaveReport {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub enum SgxQuoteVersion {
     V1(SgxEpidQuoteSigType),
     V2(SgxEpidQuoteSigType),
     V3(SgxEcdsaQuoteAkType),
 }
 
+#[derive(Debug, PartialEq)]
 pub enum SgxEpidQuoteSigType {
     Unlinkable,
     Linkable,
 }
 
+#[derive(Debug, PartialEq)]
 pub enum SgxEcdsaQuoteAkType {
     P256_256,
     P384_384,
@@ -187,6 +203,18 @@ pub struct SgxQuote {
     pub qe_vendor_id: Uuid,
     pub user_data: [u8; 20],
     pub isv_enclave_report: SgxEnclaveReport,
+}
+
+impl std::fmt::Debug for SgxQuote {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "version: {:?}", self.version)?;
+        writeln!(f, "gid: {}", self.gid)?;
+        writeln!(f, "isv_svn_qe: {}", self.isv_svn_qe)?;
+        writeln!(f, "isv_svn_pce: {}", self.isv_svn_pce)?;
+        writeln!(f, "qe_vendor_id: {}", self.qe_vendor_id)?;
+        writeln!(f, "user_data: {:?}", &self.user_data)?;
+        writeln!(f, "isv_enclave_report: \n{:?}", self.isv_enclave_report)
+    }
 }
 
 impl SgxQuote {
@@ -265,6 +293,7 @@ impl SgxQuote {
     }
 }
 
+#[derive(Debug)]
 pub struct AttestationReport {
     pub freshness: Duration,
     pub sgx_quote_status: SgxQuoteStatus,
@@ -323,6 +352,7 @@ impl AttestationReport {
 
         // Verify attestation report
         let attn_report: Value = serde_json::from_slice(&report.report)?;
+        log::trace!("attn_report: {}", attn_report);
 
         // 1. Check timestamp is within 24H (90day is recommended by Intel)
         let quote_freshness = {
@@ -376,5 +406,108 @@ impl AttestationReport {
             sgx_quote_status,
             sgx_quote_body,
         })
+    }
+}
+
+#[cfg(all(feature = "enclave_unit_test", feature = "mesalock_sgx"))]
+pub mod tests {
+    use super::*;
+    use serde_json::json;
+    use teaclave_test_utils::*;
+
+    fn report_fixture() -> Value {
+        let report = json!({
+            "version": 3,
+            "timestamp": "2020-02-11T22:25:59.682915",
+            "platformInfoBlob": "1502006504000900000D0D02040180030000000000000000000\
+                                 A00000B000000020000000000000B2FE0AE0F7FD4D552BF7EF4\
+                                 C938D44E349F1BD0E76F041362DC52B43B7B25994978D792137\
+                                 90362F6DAE91797ACF5BD5072E45F9A60795D1FFB10140421D8\
+                                 691FFD",
+            "isvEnclaveQuoteStatus": "GROUP_OUT_OF_DATE",
+            "isvEnclaveQuoteBody": "AgABAC8LAAAKAAkAAAAAAK1zRQOIpndiP4IhlnW2AkwAAAAA\
+                                    AAAAAAAAAAAAAAAABQ4CBf+AAAAAAAAAAAAAAAAAAAAAAAAA\
+                                    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABwAAAAAAAAAHAAAA\
+                                    AAAAADMKqRCjd2eA4gAmrj2sB68OWpMfhPH4MH27hZAvWGlT\
+                                    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACD1xnn\
+                                    ferKFHD2uvYqTXdDA8iZ22kCD5xw7h38CMfOngAAAAAAAAAA\
+                                    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\
+                                    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\
+                                    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\
+                                    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\
+                                    AAAAAAAAAADYIY9k0MVmCdIDUuFLf/2bGIHAfPjO9nvC7fgz\
+                                    rQedeA3WW4dFeI6oe+RCLdV3XYD1n6lEZjITOzPPLWDxulGz",
+            "id": "53530608302195762335736519878284384788",
+            "epidPseudonym": "NRksaQej8R/SyyHpZXzQGNBXqfrzPy5KCxcmJrEjupXrq3xrm2y2+J\
+                              p0IBVtcW15MCekYs9K3UH82fPyj6F5ciJoMsgEMEIvRR+csX9uyd54\
+                              p+m+/RVyuGYhWbhUcpJigdI5Q3x04GG/A7EP10j/zypwqhYLQh0qN1\
+                              ykYt1N1P0="
+        });
+
+        report
+    }
+
+    pub fn run_tests() -> bool {
+        run_tests!(test_sgx_quote_parse_from,)
+    }
+
+    fn test_sgx_quote_parse_from() {
+        let attn_report = report_fixture();
+        let sgx_quote_body_encoded = attn_report["isvEnclaveQuoteBody"].as_str().unwrap();
+        let quote_raw = base64::decode(&sgx_quote_body_encoded.as_bytes()).unwrap();
+        let sgx_quote = SgxQuote::parse_from(quote_raw.as_slice()).unwrap();
+
+        assert_eq!(
+            sgx_quote.version,
+            SgxQuoteVersion::V2(SgxEpidQuoteSigType::Linkable)
+        );
+        assert_eq!(sgx_quote.gid, 2863);
+        assert_eq!(sgx_quote.isv_svn_qe, 10);
+        assert_eq!(sgx_quote.isv_svn_pce, 9);
+        assert_eq!(
+            sgx_quote.qe_vendor_id,
+            Uuid::parse_str("00000000-ad73-4503-88a6-77623f822196").unwrap()
+        );
+        assert_eq!(
+            sgx_quote.user_data,
+            [117, 182, 2, 76, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        );
+
+        let isv_enclave_report = sgx_quote.isv_enclave_report;
+        assert_eq!(
+            isv_enclave_report.cpu_svn,
+            [5, 14, 2, 5, 255, 128, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        );
+        assert_eq!(isv_enclave_report.misc_select, 0);
+        assert_eq!(
+            isv_enclave_report.attributes,
+            [7, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0]
+        );
+        assert_eq!(
+            isv_enclave_report.mr_enclave,
+            [
+                51, 10, 169, 16, 163, 119, 103, 128, 226, 0, 38, 174, 61, 172, 7, 175, 14, 90, 147,
+                31, 132, 241, 248, 48, 125, 187, 133, 144, 47, 88, 105, 83
+            ]
+        );
+        assert_eq!(
+            isv_enclave_report.mr_signer,
+            [
+                131, 215, 25, 231, 125, 234, 202, 20, 112, 246, 186, 246, 42, 77, 119, 67, 3, 200,
+                153, 219, 105, 2, 15, 156, 112, 238, 29, 252, 8, 199, 206, 158
+            ]
+        );
+        assert_eq!(isv_enclave_report.isv_prod_id, 0);
+        assert_eq!(isv_enclave_report.isv_svn, 0);
+        assert_eq!(
+            isv_enclave_report.report_data.to_vec(),
+            [
+                216, 33, 143, 100, 208, 197, 102, 9, 210, 3, 82, 225, 75, 127, 253, 155, 24, 129,
+                192, 124, 248, 206, 246, 123, 194, 237, 248, 51, 173, 7, 157, 120, 13, 214, 91,
+                135, 69, 120, 142, 168, 123, 228, 66, 45, 213, 119, 93, 128, 245, 159, 169, 68,
+                102, 50, 19, 59, 51, 207, 45, 96, 241, 186, 81, 179
+            ]
+            .to_vec()
+        );
     }
 }

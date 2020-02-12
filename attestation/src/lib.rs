@@ -112,3 +112,13 @@ cfg_if::cfg_if! {
         pub use attestation::RemoteAttestation;
     }
 }
+
+#[cfg(all(feature = "enclave_unit_test", feature = "mesalock_sgx"))]
+pub mod tests {
+    use super::*;
+    use teaclave_test_utils::*;
+
+    pub fn run_tests() -> bool {
+        run_tests!(platform::tests::run_tests, report::tests::run_tests)
+    }
+}
