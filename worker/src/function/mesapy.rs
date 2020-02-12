@@ -119,12 +119,50 @@ pub mod tests {
 
     fn test_mesapy() {
         let py_args = TeaclaveFunctionArguments::new(&hashmap!("--name" => "Teaclave"));
-        let py_payload = "
-import sys
+        let py_payload = r#"
 def entrypoint(argv):
-    print argv[0]
-    print argv[1]
-";
+    in_file_id = "in_f1"
+    out_file_id = "out_f1"
+
+    # open input via built-in teaclave_open
+    with teaclave_open(in_file_id, "rb") as f:
+        line = f.readline()
+        assert line == "Hello\n"
+
+    # open input via teaclave module
+    from teaclave import open
+    with open(in_file_id, "rb") as f:
+        line = f.readline()
+        assert line == "Hello\n"
+
+    # open invalid input
+    try:
+        teaclave_open("invalid_key", "rb")
+    except RuntimeError as e:
+        assert e.message == "fileio_init: teaclave_ffi_error"
+
+    # open invalid option
+    try:
+        teaclave_open(in_file_id, "r")
+    except RuntimeError as e:
+        assert e.message == "Teaclave Not Supported"
+
+    # write valid output
+    with teaclave_open(out_file_id, "wb") as f:
+        f.write("This message is from Mesapy!")
+
+    # open invalid output
+    try:
+        teaclave_open("invalid_key", "wb")
+    except RuntimeError as e:
+        assert e.message == "fileio_init: teaclave_ffi_error"
+    
+    # open invalid option    
+    try:
+        teaclave_open(out_file_id, "w")
+    except RuntimeError as e:
+        assert e.message == "Teaclave Not Supported"
+"#;
 
         let input = "test_cases/mesapy/input.txt";
         let output = "test_cases/mesapy/output.txt";

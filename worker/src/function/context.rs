@@ -5,7 +5,7 @@ use std::cell::RefCell;
 use std::slice;
 use std::thread_local;
 
-use sgx_types::{c_char, c_int, c_uchar, size_t};
+use sgx_types::{c_char, c_int, c_uchar, c_uint, size_t};
 
 use anyhow;
 use std::collections::HashMap;
@@ -13,8 +13,8 @@ use std::format;
 
 use crate::runtime::TeaclaveRuntime;
 
-const FFI_OK: c_int = 0;
-const FFI_FILE_ERROR: c_int = -1;
+const FFI_OK: c_uint = 0;
+const FFI_FILE_ERROR: c_uint = 1;
 
 pub struct Context {
     runtime: Box<dyn TeaclaveRuntime + Send + Sync>,
@@ -289,9 +289,15 @@ pub mod tests {
 
 use std::ffi::CStr;
 
+/*
+ * uint c_open_input(char* file_id, int* out_fd);
+ *
+ */
+
 #[allow(unused)]
 #[no_mangle]
-extern "C" fn c_open_input(fid: *mut c_char, out_handle: *mut c_int) -> c_int {
+extern "C" fn c_open_input(fid: *mut c_char, out_handle: *mut c_int) -> c_uint {
+    debug!("c_open_input");
     let fid = unsafe { CStr::from_ptr(fid).to_string_lossy().into_owned() };
     match rtc_open_input(&fid) {
         Ok(handle) => {
@@ -301,15 +307,20 @@ extern "C" fn c_open_input(fid: *mut c_char, out_handle: *mut c_int) -> c_int {
             FFI_OK
         }
         Err(e) => {
-            error!("c_open_file: {:?}", e);
+            info!("c_open_file: {:?}", e);
             FFI_FILE_ERROR
         }
     }
 }
 
+/*
+ * uint c_create_output(char* file_id, int* out_fd);
+ *
+ */
 #[allow(unused)]
 #[no_mangle]
-extern "C" fn c_create_output(fid: *mut c_char, out_handle: *mut c_int) -> c_int {
+extern "C" fn c_create_output(fid: *mut c_char, out_handle: *mut c_int) -> c_uint {
+    debug!("c_create_input");
     let fid = unsafe { CStr::from_ptr(fid).to_string_lossy().into_owned() };
     match rtc_create_output(&fid) {
         Ok(handle) => {
@@ -319,21 +330,27 @@ extern "C" fn c_create_output(fid: *mut c_char, out_handle: *mut c_int) -> c_int
             FFI_OK
         }
         Err(e) => {
-            error!("c_open_file: {:?}", e);
+            info!("c_open_file: {:?}", e);
             FFI_FILE_ERROR
         }
     }
 }
+
+/*
+ * uint c_read_file(int fd, void* out_buf, size_t buf_size, size_t* out_size_read);
+ *
+ */
 
 #[allow(unused)]
 #[no_mangle]
 extern "C" fn c_read_file(
     handle: c_int,
     out_buf: *mut c_uchar,
+    buf_size: size_t,
     out_buf_size_p: *mut size_t,
-) -> c_int {
-    let out_buf_size = unsafe { *out_buf_size_p };
-    let out: &mut [u8] = unsafe { slice::from_raw_parts_mut(out_buf, out_buf_size) };
+) -> c_uint {
+    debug!("c_read_file");
+    let out: &mut [u8] = unsafe { slice::from_raw_parts_mut(out_buf, buf_size) };
 
     match rtc_read_handle(handle, out) {
         Ok(size) => {
@@ -343,17 +360,25 @@ extern "C" fn c_read_file(
             FFI_OK
         }
         Err(e) => {
-            error!("c_read_file: {:?}", e);
+            info!("c_read_file: {:?}", e);
             FFI_FILE_ERROR
         }
     }
 }
 
+/*
+ * uint c_write_file(int fd, void* buf, size_t buf_size, size_t* out_size_written);
+ */
 #[allow(unused)]
 #[no_mangle]
-extern "C" fn c_write_file(handle: c_int, in_buf: *mut c_uchar, buf_size_p: *mut size_t) -> c_int {
-    let out_buf_size = unsafe { *buf_size_p };
-    let in_buf: &[u8] = unsafe { slice::from_raw_parts_mut(in_buf, out_buf_size) };
+extern "C" fn c_write_file(
+    handle: c_int,
+    in_buf: *mut c_uchar,
+    buf_size: size_t,
+    buf_size_p: *mut size_t,
+) -> c_uint {
+    debug!("c_write_file");
+    let in_buf: &[u8] = unsafe { slice::from_raw_parts_mut(in_buf, buf_size) };
 
     match rtc_write_handle(handle, in_buf) {
         Ok(size) => {
@@ -363,19 +388,23 @@ extern "C" fn c_write_file(handle: c_int, in_buf: *mut c_uchar, buf_size_p: *mut
             FFI_OK
         }
         Err(e) => {
-            error!("c_write_file: {:?}", e);
+            info!("c_write_file: {:?}", e);
             FFI_FILE_ERROR
         }
     }
 }
 
+/*
+ * uint c_close_file(int fd);
+ */
 #[allow(unused)]
 #[no_mangle]
-extern "C" fn c_close_file(handle: c_int) -> c_int {
+extern "C" fn c_close_file(handle: c_int) -> c_uint {
+    debug!("c_close_file");
     match rtc_close_handle(handle) {
         Ok(size) => FFI_OK,
         Err(e) => {
-            error!("c_close_file: {:?}", e);
+            info!("c_close_file: {:?}", e);
             FFI_FILE_ERROR
         }
     }
