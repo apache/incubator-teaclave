@@ -15,6 +15,7 @@ default = []
 mesalock_sgx = [
   "sgx_tstd",
   "teaclave_attestation/mesalock_sgx",
+  "teaclave_attestation/enclave_unit_test",
   "teaclave_binder/mesalock_sgx",
   "teaclave_rpc/mesalock_sgx",
   "teaclave_service_enclave_utils/mesalock_sgx",
