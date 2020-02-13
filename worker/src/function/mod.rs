@@ -34,8 +34,10 @@ pub trait TeaclaveFunction {
     // fn handle_event();
 }
 
+mod gbdt_prediction;
 mod gbdt_training;
 mod mesapy;
+pub use gbdt_prediction::GbdtPrediction;
 pub use gbdt_training::GbdtTraining;
 pub use mesapy::Mesapy;
 mod context;
@@ -48,6 +50,7 @@ pub mod tests {
     pub fn run_tests() -> bool {
         check_all_passed!(
             gbdt_training::tests::run_tests(),
+            gbdt_prediction::tests::run_tests(),
             mesapy::tests::run_tests(),
             context::tests::run_tests(),
         )
