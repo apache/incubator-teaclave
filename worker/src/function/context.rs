@@ -243,8 +243,8 @@ pub mod tests {
     }
 
     fn test_rtc_api() {
-        let input = PathBuf::from_str("test_cases/mesapy/input.txt").unwrap();
-        let output = PathBuf::from_str("test_cases/mesapy/output.txt.out").unwrap();
+        let input = PathBuf::from_str("fixtures/functions/mesapy/input.txt").unwrap();
+        let output = PathBuf::from_str("fixtures/functions/mesapy/output.txt.out").unwrap();
 
         let input_info = TeaclaveWorkerFileInfo {
             path: input,

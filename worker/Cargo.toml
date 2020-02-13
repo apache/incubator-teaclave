@@ -28,7 +28,7 @@ thiserror     = { version = "1.0.9" }
 gbdt          = { version = "0.1.0", features = ["input", "enable_training"] }
 itertools     = { version = "0.8.0", default-features = false }
 teaclave_types = { path = "../types" }
-teaclave_test_utils = { path = "../tests/test_utils", optional = true }
+teaclave_test_utils = { path = "../tests/utils", optional = true }
 
 sgx_cov       = { version = "1.1.0", optional = true }
 sgx_tstd      = { version = "1.1.0", features = ["net", "thread", "backtrace"], optional = true }

@@ -7,9 +7,9 @@ members = [
   "services/execution/app",
   "services/frontend/app",
   "services/management/app",
-  "tests/unit_tests/app",
-  "tests/functional_tests/app",
-  "tests/integration_tests/app",
+  "tests/unit/app",
+  "tests/functional/app",
+  "tests/integration/app",
 ]
 
 exclude = [

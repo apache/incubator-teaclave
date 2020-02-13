@@ -50,7 +50,7 @@ teaclave_execution_service_enclave = { path = "../../../services/execution/encla
 teaclave_management_service_enclave = { path = "../../../services/management/enclave" }
 teaclave_worker                 = { path = "../../../worker" }
 
-teaclave_test_utils            = { path = "../../test_utils" }
+teaclave_test_utils            = { path = "../../utils" }
 teaclave_attestation           = { path = "../../../attestation" }
 teaclave_config                = { path = "../../../config" }
 teaclave_binder                = { path = "../../../binder" }
