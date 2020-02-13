@@ -28,6 +28,6 @@ toml         = { version = "0.5.3" }
 ring         = { version = "0.16.5" }
 thiserror    = { version = "1.0.9" }
 
-teaclave_test_utils = { path = "../tests/test_utils", optional = true }
+teaclave_test_utils = { path = "../tests/utils", optional = true }
 
 sgx_tstd = { version = "1.1.0", features = ["net", "backtrace"], optional = true }

@@ -146,4 +146,5 @@ set(TARGET_SGXLIB_ENVS
 message("SGX_SDK=${SGX_SDK}")
 message("SGX_MODE=${SGX_MODE}")
 message("RUSTUP_TOOLCHAIN=${RUSTUP_TOOLCHAIN}")
+message("DCAP=${DCAP}")
 message("BUILD TYPE=${TARGET}")

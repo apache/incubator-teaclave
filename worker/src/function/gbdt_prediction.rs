@@ -116,10 +116,10 @@ pub mod tests {
     fn test_gbdt_prediction() {
         let func_args = TeaclaveFunctionArguments::default();
 
-        let plain_if_model = "test_cases/gbdt_prediction/model.txt";
-        let plain_if_data = "test_cases/gbdt_prediction/test_data.txt";
-        let plain_output = "test_cases/gbdt_prediction/result.txt.out";
-        let expected_output = "test_cases/gbdt_prediction/expected_result.txt";
+        let plain_if_model = "fixtures/functions/gbdt_prediction/model.txt";
+        let plain_if_data = "fixtures/functions/gbdt_prediction/test_data.txt";
+        let plain_output = "fixtures/functions/gbdt_prediction/result.txt.out";
+        let expected_output = "fixtures/functions/gbdt_prediction/expected_result.txt";
 
         let input_files = TeaclaveWorkerFileRegistry::new(hashmap!(
             IN_MODEL.to_string() =>

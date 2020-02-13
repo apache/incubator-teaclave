@@ -158,9 +158,9 @@ pub mod tests {
             "training_optimization_level" => "2"
         ));
 
-        let plain_input = "test_cases/gbdt_training/train.txt";
-        let plain_output = "test_cases/gbdt_training/training_model.txt.out";
-        let expected_output = "test_cases/gbdt_training/expected_model.txt";
+        let plain_input = "fixtures/functions/gbdt_training/train.txt";
+        let plain_output = "fixtures/functions/gbdt_training/training_model.txt.out";
+        let expected_output = "fixtures/functions/gbdt_training/expected_model.txt";
 
         let input_files = TeaclaveWorkerFileRegistry::new(hashmap!(
             IN_DATA.to_string() =>

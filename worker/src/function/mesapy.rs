@@ -164,8 +164,8 @@ def entrypoint(argv):
         assert e.message == "Teaclave Not Supported"
 "#;
 
-        let input = "test_cases/mesapy/input.txt";
-        let output = "test_cases/mesapy/output.txt";
+        let input = "fixtures/functions/mesapy/input.txt";
+        let output = "fixtures/functions/mesapy/output.txt";
 
         let input_info = TeaclaveWorkerFileInfo::new(input, TeaclaveFileCryptoInfo::default());
 

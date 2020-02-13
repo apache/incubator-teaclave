@@ -7,9 +7,9 @@ members = [
   "services/execution/enclave",
   "services/frontend/enclave",
   "services/management/enclave",
-  "tests/unit_tests/enclave",
-  "tests/functional_tests/enclave",
-  "tests/integration_tests/enclave",
+  "tests/unit/enclave",
+  "tests/functional/enclave",
+  "tests/integration/enclave",
 ]
 
 exclude = [

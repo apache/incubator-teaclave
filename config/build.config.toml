@@ -23,6 +23,9 @@ rpc_max_message_size = 409600
 # client => frontend ----------> management --> storage <-- scheduler --> execution
 #                                    |
 #                                    +--> access_control
+#
+#                                                  =>      api endpoint connections
+#                                                  -> internal endpoint connections
 [inbound]
 access_control = ["teaclave_management_service"]
 authentication = ["teaclave_frontend_service"]

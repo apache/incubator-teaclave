@@ -46,9 +46,9 @@ fn test_invoke_success() {
         "training_optimization_level" => "2"
     ));
 
-    let enc_input = "test_cases/gbdt_training/train.enc";
-    let plain_input = "test_cases/gbdt_training/train.txt";
-    let enc_output = "test_cases/gbdt_training/model.enc.out";
+    let enc_input = "fixtures/functions/gbdt_training/train.enc";
+    let plain_input = "fixtures/functions/gbdt_training/train.txt";
+    let enc_output = "fixtures/functions/gbdt_training/model.enc.out";
 
     let input_info = convert_plaintext_file(plain_input, enc_input).unwrap();
     let input_files = TeaclaveWorkerFileRegistry::new(hashmap!(

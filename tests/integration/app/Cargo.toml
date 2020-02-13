@@ -14,7 +14,7 @@ anyhow     = { version = "1.0.26" }
 
 teaclave_binder            = { path = "../../../binder", features = ["app"] }
 teaclave_config            = { path = "../../../config" }
-teaclave_test_utils        = { path = "../../test_utils" }
+teaclave_test_utils        = { path = "../../utils" }
 teaclave_types             = { path = "../../../types" }
 
 sgx_types = { version = "1.1.0" }
