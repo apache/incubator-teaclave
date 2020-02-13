@@ -20,7 +20,6 @@ use serde_json;
 use std::prelude::v1::*;
 use teaclave_types::TeaclaveFileCryptoInfo;
 use url::Url;
-#[cfg(any(test_mode, feature = "enclave_unit_test"))]
 use uuid::Uuid;
 
 const FUSION_DATA_PREFIX: &str = "fusion-data-";
@@ -33,7 +32,6 @@ pub(crate) struct FusionData {
     pub(crate) data_id: String,
 }
 
-#[cfg(any(test_mode, feature = "enclave_unit_test"))]
 fn gen_url_for_fusion_data(data_id: &str) -> Result<Url> {
     let url = format!("fusion://path/{}?token=fusion_token", data_id);
     info!("{}", url);
@@ -41,7 +39,6 @@ fn gen_url_for_fusion_data(data_id: &str) -> Result<Url> {
 }
 
 impl FusionData {
-    #[cfg(any(test_mode, feature = "enclave_unit_test"))]
     pub fn new(data_owner_id_list: Vec<String>) -> Result<Self> {
         let data_id = format!("{}{}", FUSION_DATA_PREFIX, Uuid::new_v4().to_string());
         let url = gen_url_for_fusion_data(&data_id)?;
@@ -59,12 +56,10 @@ impl FusionData {
         serde_json::from_slice(&bytes).map_err(|_| anyhow!("failed to Deserialize"))
     }
 
-    #[cfg(any(test_mode, feature = "enclave_unit_test"))]
     pub(crate) fn to_vec(&self) -> Result<Vec<u8>> {
         serde_json::to_vec(&self).map_err(|_| anyhow!("failed to Serialize"))
     }
 
-    #[cfg(any(test_mode, feature = "enclave_unit_test"))]
     pub(crate) fn get_key_vec(&self) -> Vec<u8> {
         self.data_id.as_bytes().to_vec()
     }

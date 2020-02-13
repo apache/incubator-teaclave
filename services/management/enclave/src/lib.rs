@@ -43,6 +43,7 @@ mod file;
 mod function;
 mod fusion_data;
 mod service;
+mod task;
 
 fn start_service(args: &StartServiceInput) -> anyhow::Result<()> {
     let listen_address = args.config.internal_endpoints.management.listen_address;
@@ -154,6 +155,7 @@ pub mod tests {
             service::tests::handle_output_file,
             service::tests::handle_fusion_data,
             service::tests::handle_function,
+            service::tests::handle_task,
         )
     }
 }

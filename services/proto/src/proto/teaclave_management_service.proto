@@ -11,4 +11,7 @@ service TeaclaveManagement {
   rpc GetFusionData (teaclave_frontend_service_proto.GetFusionDataRequest) returns (teaclave_frontend_service_proto.GetFusionDataResponse);
   rpc RegisterFunction (teaclave_frontend_service_proto.RegisterFunctionRequest) returns (teaclave_frontend_service_proto.RegisterFunctionResponse);
   rpc GetFunction (teaclave_frontend_service_proto.GetFunctionRequest) returns (teaclave_frontend_service_proto.GetFunctionResponse);
+  rpc CreateTask (teaclave_frontend_service_proto.CreateTaskRequest) returns (teaclave_frontend_service_proto.CreateTaskResponse);
+  rpc GetTask (teaclave_frontend_service_proto.GetTaskRequest) returns (teaclave_frontend_service_proto.GetTaskResponse);
+
 }
