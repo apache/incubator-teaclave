@@ -209,7 +209,7 @@ where
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct TeaclaveFunctionArguments {
     pub args: HashMap<String, String>,
 }
