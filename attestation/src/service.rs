@@ -17,10 +17,8 @@
 
 use crate::platform;
 use crate::AttestationAlgorithm;
-use crate::AttestationError;
 use crate::AttestationServiceConfig;
 use crate::EndorsedAttestationReport;
-use anyhow::Error;
 use anyhow::Result;
 use anyhow::{anyhow, bail};
 use log::{debug, trace};
@@ -32,6 +30,28 @@ use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::prelude::v1::*;
 use std::sync::Arc;
+
+#[derive(thiserror::Error, Debug)]
+pub enum AttestationServiceError {
+    #[error("Invalid attestation service address.")]
+    InvalidAddress,
+    #[error("Attestation service responds an malformed response.")]
+    InvalidResponse,
+    #[error("{0} is missing in HTTP header.")]
+    MissingHeader(String),
+    #[error("Invalid Attestation Evidence Payload. The client should not repeat the request without modifications.")]
+    BadRequest,
+    #[error("Failed to authenticate or authorize request.")]
+    Unauthorized,
+    #[error("Internal error occurred.")]
+    InternalServerError,
+    #[error("Service is currently not able to process the request (due to a temporary overloading or maintenance). This is a temporary state –the same request can be repeated after some time.")]
+    ServiceUnavailable,
+    #[error("TLS connection error.")]
+    TlsError,
+    #[error("Attestation service responds an unknown error.")]
+    Unknown,
+}
 
 #[cfg(dcap)]
 const DCAP_ROOT_CA_CERT: &str = include_str!("../../keys/dcap_root_ca_cert.pem");
@@ -63,13 +83,16 @@ impl EndorsedAttestationReport {
 }
 
 fn new_tls_stream(url: &url::Url) -> Result<rustls::StreamOwned<rustls::ClientSession, TcpStream>> {
-    let dns_name = webpki::DNSNameRef::try_from_ascii_str(url.host_str().unwrap())?;
+    let host_str = url
+        .host_str()
+        .ok_or_else(|| AttestationServiceError::InvalidAddress)?;
+    let dns_name = webpki::DNSNameRef::try_from_ascii_str(host_str)?;
     let mut config = rustls::ClientConfig::new();
     #[cfg(dcap)]
     config
         .root_store
         .add_pem_file(&mut DCAP_ROOT_CA_CERT.to_string().as_bytes())
-        .unwrap();
+        .map_err(|_| AttestationServiceError::TlsError)?;
     config
         .root_store
         .add_server_trust_anchors(&webpki_roots::TLS_SERVER_ROOTS);
@@ -94,6 +117,9 @@ fn get_report(
     let report_uri = "/sgx/dev/attestation/v3/report";
     let encoded_quote = base64::encode(quote);
     let encoded_json = json!({ "isvEnclaveQuote": encoded_quote }).to_string();
+    let host_str = url
+        .host_str()
+        .ok_or_else(|| AttestationServiceError::InvalidAddress)?;
 
     let request = format!(
         "POST {} HTTP/1.1\r\n\
@@ -104,14 +130,14 @@ fn get_report(
          Content-Type: application/json\r\n\r\n\
          {}",
         report_uri,
-        url.host_str().unwrap(),
+        host_str,
         api_key,
         encoded_json.len(),
         encoded_json
     );
     trace!("{}", request);
 
-    let mut stream = new_tls_stream(url)?;
+    let mut stream = new_tls_stream(url).map_err(|_| AttestationServiceError::TlsError)?;
     stream.write_all(request.as_bytes())?;
     let mut response = Vec::new();
     stream.read_to_end(&mut response)?;
@@ -124,11 +150,41 @@ fn get_report(
     debug!("http_response.parse");
     let header_len = match http_response
         .parse(&response)
-        .map_err(|_| Error::new(AttestationError::AttestationServiceError))?
+        .map_err(|_| AttestationServiceError::InvalidResponse)?
     {
         httparse::Status::Complete(s) => s,
-        _ => bail!(AttestationError::AttestationServiceError),
+        _ => bail!(AttestationServiceError::InvalidResponse),
     };
+
+    match http_response.code {
+        Some(200) => {
+            debug!("Operation successful.");
+        }
+        Some(400) => {
+            debug!(
+                "Invalid Attestation Evidence Payload. \
+                 The client should not repeat the request without modifications."
+            );
+            bail!(AttestationServiceError::BadRequest);
+        }
+        Some(401) => {
+            debug!("Failed to authenticate or authorize request.");
+            bail!(AttestationServiceError::Unauthorized);
+        }
+        Some(500) => {
+            debug!("Internal error occurred.");
+            bail!(AttestationServiceError::InternalServerError);
+        }
+        Some(503) => {
+            debug!("Service is currently not able to process the request (due to a temporary overloading or maintenance). \
+             This is a temporary state –the same request can be repeated after some time.");
+            bail!(AttestationServiceError::ServiceUnavailable);
+        }
+        _ => {
+            debug!("Attestation service responds an unknown error");
+            bail!(AttestationServiceError::Unknown);
+        }
+    }
 
     let header_map = parse_headers(&http_response);
 
@@ -136,12 +192,14 @@ fn get_report(
     if !header_map.contains_key("Content-Length")
         || header_map
             .get("Content-Length")
-            .unwrap()
+            .ok_or_else(|| AttestationServiceError::MissingHeader("Content-Length".to_string()))?
             .parse::<u32>()
             .unwrap_or(0)
             == 0
     {
-        bail!(AttestationError::AttestationServiceError);
+        bail!(AttestationServiceError::MissingHeader(
+            "Content-Length".to_string()
+        ));
     }
 
     debug!("get_signature");
@@ -151,7 +209,7 @@ fn get_report(
     };
     let signature = header_map
         .get(signature_header)
-        .ok_or_else(|| Error::new(AttestationError::AttestationServiceError))?;
+        .ok_or_else(|| AttestationServiceError::MissingHeader(signature_header.to_string()))?;
     let signature = base64::decode(signature)?;
 
     debug!("get_signing_cert");
@@ -160,9 +218,9 @@ fn get_report(
         AttestationAlgorithm::SgxEcdsa => "X-DCAPReport-Signing-Certificate",
     };
     let signing_cert = {
-        let cert_str = header_map
-            .get(signing_cert_header)
-            .ok_or_else(|| Error::new(AttestationError::AttestationServiceError))?;
+        let cert_str = header_map.get(signing_cert_header).ok_or_else(|| {
+            AttestationServiceError::MissingHeader(signing_cert_header.to_string())
+        })?;
         let decoded_cert = percent_encoding::percent_decode_str(cert_str).decode_utf8()?;
         let certs = rustls::internal::pemfile::certs(&mut decoded_cert.as_bytes())
             .map_err(|_| anyhow!("pemfile error"))?;
