@@ -6,6 +6,7 @@ pub enum {{ service.proto_name }}Request {
     {%- endfor %}
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Clone, serde::Serialize, serde::Deserialize, Debug)]
 #[serde(tag = "response", rename_all = "snake_case")]
 pub enum {{ service.proto_name }}Response {
