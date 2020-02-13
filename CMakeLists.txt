@@ -12,7 +12,7 @@ set_strvar_from_env_or(SGX_SDK "/opt/sgxsdk" "Path of SGX SDK")
 set_strvar_from_env_or(RUSTFLAGS "" "Rust flags")
 set_strvar_from_env_or(MESATEE_CMAKE_DBG ""
                        "set to turn on debug message for cmake")
-set(MESAPY_VERSION 2b7ea38773d337d106c613a239661a60a4fa7528)
+set(MESAPY_VERSION 668d16ff4bf3389f67f238e72e687aa4de342bde)
 option(COV "Turn on/off coverage" OFF)
 option(OFFLINE "Turn on/off cargo offline" ON)
 option(TEST_MODE "Turn on/off test mode" OFF)
