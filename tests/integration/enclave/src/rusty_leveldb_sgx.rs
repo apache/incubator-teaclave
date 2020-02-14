@@ -46,6 +46,27 @@ fn fill_db(db: &mut DB, entries: usize) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn fill_db_with_sequential_elements(db: &mut DB, entries: usize) -> Result<(), Box<dyn Error>> {
+    for i in 0..entries {
+        let (k, v) = (i.to_string(), i.to_string());
+        db.put(k.as_bytes(), v.as_bytes())?;
+        db.flush()?;
+    }
+    Ok(())
+}
+
+fn validate_sequential_elements(db: &mut DB, entries: usize) -> Result<(), Box<dyn Error>> {
+    for i in 0..entries {
+        let (k, v_expected) = (i.to_string(), i.to_string());
+        let v = db.get(k.as_bytes()).ok_or_else(|| {
+            error!("key: {}", k);
+            Box::new(io::Error::new(ErrorKind::NotFound, "Key not found"))
+        })?;
+        assert_eq!(&v_expected.as_bytes()[..], &v[..]);
+    }
+    Ok(())
+}
+
 fn test_write_a_lot() {
     let key = [
         0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x0f, 0x0e, 0x0d, 0x0c, 0x0b, 0x0a, 0x09,
@@ -62,8 +83,33 @@ fn test_write_a_lot() {
     fs::remove_dir_all("/tmp/leveldb_testdb").expect("Cannot remove directory");
 }
 
+fn test_write_and_reopen() {
+    let key = [
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x0f, 0x0e, 0x0d, 0x0c, 0x0b, 0x0a, 0x09,
+        0x08,
+    ];
+    let elements_count = 2000;
+    let db_location = "/tmp/leveldb_testdb";
+
+    {
+        let mut opt = Options::new_disk_db_with(key);
+        opt.compression_type = CompressionType::CompressionSnappy;
+        let mut db = DB::open(&db_location, opt).unwrap();
+        fill_db_with_sequential_elements(&mut db, elements_count).unwrap();
+    }
+
+    {
+        let mut opt = Options::new_disk_db_with(key);
+        opt.compression_type = CompressionType::CompressionSnappy;
+        let mut db = DB::open(&db_location, opt).unwrap();
+        validate_sequential_elements(&mut db, 2000).unwrap();
+    }
+
+    fs::remove_dir_all("/tmp/leveldb_testdb").expect("Cannot remove directory");
+}
+
 pub fn run_tests() -> bool {
     use teaclave_test_utils::*;
 
-    run_tests!(test_write_a_lot)
+    run_tests!(test_write_a_lot, test_write_and_reopen,)
 }
