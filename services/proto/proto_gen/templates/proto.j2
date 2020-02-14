@@ -74,18 +74,15 @@ impl {{ service.proto_name }}Client {
     }
 
     {%- for m in service.methods %}
-    pub fn {{ m.name }}<T: Into<{{ m.input_type }}>>(
+    pub fn {{ m.name }}<T: teaclave_rpc::IntoRequest<{{ service.proto_name }}Request>>(
         &mut self,
         request: T
     ) -> teaclave_types::TeaclaveServiceResponseResult<{{ m.output_type }}> {
         {%- if service.methods.len() > 1 %}
         use std::string::ToString;
         {%- endif %}
-        let request = {{ service.proto_name }}Request::{{ m.proto_name }}(request.into());
-        let request = teaclave_rpc::Request {
-            metadata: self.metadata.clone(),
-            message: request,
-        };
+        let mut request = request.into_request();
+        request.metadata = self.metadata.clone();
 
         match self.channel.invoke(request) {
             Ok({{ service.proto_name }}Response::{{ m.proto_name }}(response)) => Ok(response),

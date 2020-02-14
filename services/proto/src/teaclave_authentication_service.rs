@@ -2,6 +2,7 @@ use anyhow::anyhow;
 use anyhow::{Error, Result};
 use core::convert::TryInto;
 use std::prelude::v1::*;
+use teaclave_rpc::into_request;
 
 use crate::teaclave_authentication_service_proto as proto;
 use crate::teaclave_common;
@@ -14,6 +15,7 @@ pub use proto::TeaclaveAuthenticationInternalClient;
 pub use proto::TeaclaveAuthenticationInternalRequest;
 pub use proto::TeaclaveAuthenticationInternalResponse;
 
+#[into_request(TeaclaveAuthenticationApiRequest::UserRegister)]
 #[derive(Debug)]
 pub struct UserRegisterRequest {
     pub id: std::string::String,
@@ -29,9 +31,11 @@ impl UserRegisterRequest {
     }
 }
 
+#[into_request(TeaclaveAuthenticationApiResponse::UserRegister)]
 #[derive(Debug, Default)]
 pub struct UserRegisterResponse;
 
+#[into_request(TeaclaveAuthenticationApiRequest::UserLogin)]
 #[derive(Debug)]
 pub struct UserLoginRequest {
     pub id: std::string::String,
@@ -47,6 +51,7 @@ impl UserLoginRequest {
     }
 }
 
+#[into_request(TeaclaveAuthenticationApiResponse::UserLogin)]
 #[derive(Debug)]
 pub struct UserLoginResponse {
     pub token: std::string::String,
@@ -60,6 +65,7 @@ impl UserLoginResponse {
     }
 }
 
+#[into_request(TeaclaveAuthenticationInternalRequest::UserAuthenticate)]
 #[derive(Debug)]
 pub struct UserAuthenticateRequest {
     pub credential: teaclave_common::UserCredential,
@@ -71,6 +77,7 @@ impl UserAuthenticateRequest {
     }
 }
 
+#[into_request(TeaclaveAuthenticationInternalResponse::UserAuthenticate)]
 #[derive(Debug)]
 pub struct UserAuthenticateResponse {
     pub accept: bool,

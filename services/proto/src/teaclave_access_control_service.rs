@@ -1,12 +1,14 @@
 use crate::teaclave_access_control_service_proto as proto;
 use anyhow::{Error, Result};
 use std::prelude::v1::*;
+use teaclave_rpc::into_request;
 
 pub use proto::TeaclaveAccessControl;
 pub use proto::TeaclaveAccessControlClient;
 pub use proto::TeaclaveAccessControlRequest;
 pub use proto::TeaclaveAccessControlResponse;
 
+#[into_request(TeaclaveAccessControlRequest::AuthorizeData)]
 #[derive(Debug)]
 pub struct AuthorizeDataRequest {
     pub subject_user_id: String,
@@ -22,6 +24,7 @@ impl AuthorizeDataRequest {
     }
 }
 
+#[into_request(TeaclaveAccessControlResponse::AuthorizeData)]
 #[derive(Debug)]
 pub struct AuthorizeDataResponse {
     pub accept: bool,
@@ -33,6 +36,7 @@ impl AuthorizeDataResponse {
     }
 }
 
+#[into_request(TeaclaveAccessControlRequest::AuthorizeFunction)]
 #[derive(Debug)]
 pub struct AuthorizeFunctionRequest {
     pub subject_user_id: String,
@@ -48,6 +52,7 @@ impl AuthorizeFunctionRequest {
     }
 }
 
+#[into_request(TeaclaveAccessControlResponse::AuthorizeFunction)]
 #[derive(Debug)]
 pub struct AuthorizeFunctionResponse {
     pub accept: bool,
@@ -59,6 +64,7 @@ impl AuthorizeFunctionResponse {
     }
 }
 
+#[into_request(TeaclaveAccessControlRequest::AuthorizeTask)]
 #[derive(Debug)]
 pub struct AuthorizeTaskRequest {
     pub subject_user_id: String,
@@ -74,6 +80,7 @@ impl AuthorizeTaskRequest {
     }
 }
 
+#[into_request(TeaclaveAccessControlResponse::AuthorizeTask)]
 #[derive(Debug)]
 pub struct AuthorizeTaskResponse {
     pub accept: bool,
@@ -85,6 +92,7 @@ impl AuthorizeTaskResponse {
     }
 }
 
+#[into_request(TeaclaveAccessControlRequest::AuthorizeStagedTask)]
 #[derive(Debug)]
 pub struct AuthorizeStagedTaskRequest {
     pub subject_task_id: String,
@@ -93,6 +101,7 @@ pub struct AuthorizeStagedTaskRequest {
     pub object_output_data_id_list: Vec<String>,
 }
 
+#[into_request(TeaclaveAccessControlResponse::AuthorizeStagedTask)]
 #[derive(Debug)]
 pub struct AuthorizeStagedTaskResponse {
     pub accept: bool,

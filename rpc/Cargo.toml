@@ -27,6 +27,7 @@ webpki     = { version = "0.21.0" }
 
 teaclave_types       = { path = "../types" }
 teaclave_attestation = { path = "../attestation" }
+teaclave_rpc_proc_macro = { path = "./proc_macro" }
 
 sgx_trts = { version = "1.1.0" }
 sgx_tstd = { version = "1.1.0", features = ["net", "backtrace"], optional = true }
