@@ -18,9 +18,7 @@ impl<T> Request<T> {
             message,
         }
     }
-}
 
-impl<T> Request<T> {
     pub fn map<F, U>(self, f: F) -> Request<U>
     where
         F: FnOnce(T) -> U,
@@ -31,5 +29,13 @@ impl<T> Request<T> {
             metadata: self.metadata,
             message,
         }
+    }
+
+    pub fn metadata(&self) -> &HashMap<String, String> {
+        &self.metadata
+    }
+
+    pub fn metadata_mut(&mut self) -> &mut HashMap<String, String> {
+        &mut self.metadata
     }
 }
