@@ -413,9 +413,27 @@ impl AttestationReport {
 pub mod tests {
     use super::*;
     use serde_json::json;
+    use std::io::Read;
+    use std::untrusted::fs::File;
     use teaclave_test_utils::*;
 
-    fn report_fixture() -> Value {
+    fn tls_ra_cert_der() -> Vec<u8> {
+        let mut cert = vec![];
+        let mut f = File::open("fixtures/tls_ra_cert.der").unwrap();
+        f.read_to_end(&mut cert).unwrap();
+
+        cert
+    }
+
+    fn ias_root_ca_cert_der() -> Vec<u8> {
+        let mut cert = vec![];
+        let mut f = File::open("fixtures/ias_root_ca_cert.der").unwrap();
+        f.read_to_end(&mut cert).unwrap();
+
+        cert
+    }
+
+    fn attesation_report() -> Value {
         let report = json!({
             "version": 3,
             "timestamp": "2020-02-11T22:25:59.682915",
@@ -448,11 +466,11 @@ pub mod tests {
     }
 
     pub fn run_tests() -> bool {
-        run_tests!(test_sgx_quote_parse_from,)
+        run_tests!(test_sgx_quote_parse_from, test_attestation_report_from_cert,)
     }
 
     fn test_sgx_quote_parse_from() {
-        let attn_report = report_fixture();
+        let attn_report = attesation_report();
         let sgx_quote_body_encoded = attn_report["isvEnclaveQuoteBody"].as_str().unwrap();
         let quote_raw = base64::decode(&sgx_quote_body_encoded.as_bytes()).unwrap();
         let sgx_quote = SgxQuote::parse_from(quote_raw.as_slice()).unwrap();
@@ -509,5 +527,15 @@ pub mod tests {
             ]
             .to_vec()
         );
+    }
+
+    fn test_attestation_report_from_cert() {
+        let tls_ra_cert = tls_ra_cert_der();
+        let ias_root_ca_cert = ias_root_ca_cert_der();
+        let report = AttestationReport::from_cert(&tls_ra_cert, &ias_root_ca_cert);
+        assert!(report.is_ok());
+
+        let report = report.unwrap();
+        assert_eq!(report.sgx_quote_status, SgxQuoteStatus::TcbOutOfDate);
     }
 }
