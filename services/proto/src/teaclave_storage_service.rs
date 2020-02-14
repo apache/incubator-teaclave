@@ -6,7 +6,9 @@ pub use proto::TeaclaveStorage;
 pub use proto::TeaclaveStorageClient;
 pub use proto::TeaclaveStorageRequest;
 pub use proto::TeaclaveStorageResponse;
+use teaclave_rpc::into_request;
 
+#[into_request(TeaclaveStorageRequest::Get)]
 #[derive(Debug)]
 pub struct GetRequest {
     pub key: Vec<u8>,
@@ -18,6 +20,7 @@ impl GetRequest {
     }
 }
 
+#[into_request(TeaclaveStorageResponse::Get)]
 #[derive(Debug)]
 pub struct GetResponse {
     pub value: Vec<u8>,
@@ -31,6 +34,7 @@ impl GetResponse {
     }
 }
 
+#[into_request(TeaclaveStorageRequest::Put)]
 #[derive(Debug)]
 pub struct PutRequest {
     pub key: Vec<u8>,
@@ -46,9 +50,11 @@ impl PutRequest {
     }
 }
 
+#[into_request(TeaclaveStorageResponse::Put)]
 #[derive(Debug, Default)]
 pub struct PutResponse;
 
+#[into_request(TeaclaveStorageRequest::Delete)]
 #[derive(Debug)]
 pub struct DeleteRequest {
     pub key: Vec<u8>,
@@ -60,9 +66,11 @@ impl DeleteRequest {
     }
 }
 
+#[into_request(TeaclaveStorageResponse::Delete)]
 #[derive(Debug, Default)]
 pub struct DeleteResponse;
 
+#[into_request(TeaclaveStorageRequest::Enqueue)]
 #[derive(Debug)]
 pub struct EnqueueRequest {
     pub key: Vec<u8>,
@@ -78,9 +86,11 @@ impl EnqueueRequest {
     }
 }
 
+#[into_request(TeaclaveStorageResponse::Enqueue)]
 #[derive(Debug, Default)]
 pub struct EnqueueResponse;
 
+#[into_request(TeaclaveStorageRequest::Dequeue)]
 #[derive(Debug)]
 pub struct DequeueRequest {
     pub key: Vec<u8>,
@@ -92,6 +102,7 @@ impl DequeueRequest {
     }
 }
 
+#[into_request(TeaclaveStorageResponse::Dequeue)]
 #[derive(Debug)]
 pub struct DequeueResponse {
     pub value: Vec<u8>,

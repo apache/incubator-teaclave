@@ -1,4 +1,6 @@
 use crate::teaclave_frontend_service_proto as proto;
+use crate::teaclave_management_service::TeaclaveManagementRequest;
+use crate::teaclave_management_service::TeaclaveManagementResponse;
 use anyhow::anyhow;
 use anyhow::{Error, Result};
 use core::convert::TryInto;
@@ -6,6 +8,7 @@ use core::iter::FromIterator;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::prelude::v1::*;
+use teaclave_rpc::into_request;
 use teaclave_types::TeaclaveFileCryptoInfo;
 use url::Url;
 
@@ -14,6 +17,8 @@ pub use proto::TeaclaveFrontendClient;
 pub use proto::TeaclaveFrontendRequest;
 pub use proto::TeaclaveFrontendResponse;
 
+#[into_request(TeaclaveFrontendRequest::RegisterInputFile)]
+#[into_request(TeaclaveManagementRequest::RegisterInputFile)]
 #[derive(Debug)]
 pub struct RegisterInputFileRequest {
     pub url: Url,
@@ -21,37 +26,47 @@ pub struct RegisterInputFileRequest {
     pub crypto_info: TeaclaveFileCryptoInfo,
 }
 
+#[into_request(TeaclaveFrontendResponse::RegisterInputFile)]
+#[into_request(TeaclaveManagementResponse::RegisterInputFile)]
 #[derive(Debug)]
 pub struct RegisterInputFileResponse {
     pub data_id: String,
 }
 
+#[into_request(TeaclaveFrontendRequest::RegisterOutputFile)]
+#[into_request(TeaclaveManagementRequest::RegisterOutputFile)]
 #[derive(Debug)]
 pub struct RegisterOutputFileRequest {
     pub url: Url,
     pub crypto_info: TeaclaveFileCryptoInfo,
 }
 
+#[into_request(TeaclaveFrontendResponse::RegisterOutputFile)]
+#[into_request(TeaclaveManagementResponse::RegisterOutputFile)]
 #[derive(Debug)]
 pub struct RegisterOutputFileResponse {
     pub data_id: String,
 }
 
+#[into_request(TeaclaveManagementRequest::GetOutputFile)]
 #[derive(Debug)]
 pub struct GetOutputFileRequest {
     pub data_id: String,
 }
 
+#[into_request(TeaclaveManagementResponse::GetOutputFile)]
 #[derive(Debug)]
 pub struct GetOutputFileResponse {
     pub hash: String,
 }
 
+#[into_request(TeaclaveManagementRequest::GetFusionData)]
 #[derive(Debug)]
 pub struct GetFusionDataRequest {
     pub data_id: String,
 }
 
+#[into_request(TeaclaveManagementResponse::GetFusionData)]
 #[derive(Debug)]
 pub struct GetFusionDataResponse {
     pub hash: String,
@@ -70,6 +85,7 @@ pub struct FunctionOutput {
     pub description: String,
 }
 
+#[into_request(TeaclaveManagementRequest::RegisterFunction)]
 #[derive(Debug)]
 pub struct RegisterFunctionRequest {
     pub name: String,
@@ -81,16 +97,19 @@ pub struct RegisterFunctionRequest {
     pub output_list: Vec<FunctionOutput>,
 }
 
+#[into_request(TeaclaveManagementResponse::RegisterFunction)]
 #[derive(Debug)]
 pub struct RegisterFunctionResponse {
     pub function_id: String,
 }
 
+#[into_request(TeaclaveManagementRequest::GetFunction)]
 #[derive(Debug)]
 pub struct GetFunctionRequest {
     pub function_id: String,
 }
 
+#[into_request(TeaclaveManagementResponse::GetFunction)]
 #[derive(Debug)]
 pub struct GetFunctionResponse {
     pub name: String,
@@ -108,6 +127,7 @@ pub struct DataOwnerList {
     pub user_id_list: HashSet<String>,
 }
 
+#[into_request(TeaclaveManagementRequest::CreateTask)]
 #[derive(Debug)]
 pub struct CreateTaskRequest {
     pub function_id: String,
@@ -116,6 +136,7 @@ pub struct CreateTaskRequest {
     pub output_data_owner_list: HashMap<String, DataOwnerList>,
 }
 
+#[into_request(TeaclaveManagementResponse::CreateTask)]
 #[derive(Debug)]
 pub struct CreateTaskResponse {
     pub task_id: String,
@@ -137,11 +158,13 @@ pub enum TaskStatus {
     Finished,
 }
 
+#[into_request(TeaclaveManagementRequest::GetTask)]
 #[derive(Debug)]
 pub struct GetTaskRequest {
     pub task_id: String,
 }
 
+#[into_request(TeaclaveManagementResponse::GetTask)]
 #[derive(Debug)]
 pub struct GetTaskResponse {
     pub task_id: String,

@@ -39,3 +39,7 @@ impl<T> Request<T> {
         &mut self.metadata
     }
 }
+
+pub trait IntoRequest<T> {
+    fn into_request(self) -> Request<T>;
+}

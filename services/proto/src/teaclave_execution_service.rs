@@ -2,6 +2,7 @@ use std::prelude::v1::*;
 
 use anyhow::{anyhow, Error, Result};
 use core::convert::TryInto;
+use teaclave_rpc::into_request;
 use teaclave_types::{TeaclaveFunctionArguments, TeaclaveWorkerFileInfo, WorkerInvocation};
 
 use crate::teaclave_execution_service_proto as proto;
@@ -10,11 +11,13 @@ pub use proto::TeaclaveExecutionClient;
 pub use proto::TeaclaveExecutionRequest;
 pub use proto::TeaclaveExecutionResponse;
 
+#[into_request(TeaclaveExecutionRequest::InvokeFunction)]
 #[derive(Debug)]
 pub struct StagedFunctionExecuteRequest {
     pub invocation: WorkerInvocation,
 }
 
+#[into_request(TeaclaveExecutionResponse::InvokeFunction)]
 #[derive(Debug)]
 pub struct StagedFunctionExecuteResponse {
     pub summary: std::string::String,
