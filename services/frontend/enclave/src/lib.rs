@@ -86,7 +86,23 @@ fn start_service(args: &StartServiceInput) -> anyhow::Result<()> {
     let authentication_service_endpoint =
         Endpoint::new(authentication_service_address).config(config);
 
-    let service = service::TeaclaveFrontendService::new(authentication_service_endpoint)?;
+    let enclave_attr = enclave_info
+        .get_enclave_attr("teaclave_management_service")
+        .expect("management");
+    let config = SgxTrustedTlsClientConfig::new()
+        .client_cert(&attestation.cert, &attestation.private_key)
+        .attestation_report_verifier(
+            vec![enclave_attr],
+            BUILD_CONFIG.as_root_ca_cert,
+            verifier::universal_quote_verifier,
+        );
+    let management_service_address = &args.config.internal_endpoints.management.advertised_address;
+    let management_service_endpoint = Endpoint::new(management_service_address).config(config);
+
+    let service = service::TeaclaveFrontendService::new(
+        authentication_service_endpoint,
+        management_service_endpoint,
+    )?;
     match server.start(service) {
         Ok(_) => (),
         Err(e) => {

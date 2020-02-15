@@ -77,15 +77,17 @@ impl {{ service.proto_name }}Client {
     pub fn {{ m.name }}<T: teaclave_rpc::IntoRequest<{{ service.proto_name }}Request>>(
         &mut self,
         request: T
-    ) -> teaclave_types::TeaclaveServiceResponseResult<{{ m.output_type }}> {
-        {%- if service.methods.len() > 1 %}
+    ) -> teaclave_types::TeaclaveServiceResponseResult<{{ m.impl_output_type }}> {
+        use core::convert::TryInto;
         use std::string::ToString;
-        {%- endif %}
+        {# {%- if service.methods.len() > 1 %} #}
+        {# use std::string::ToString; #}
+        {# {%- endif %} #}
         let mut request = request.into_request();
         request.metadata = self.metadata.clone();
 
         match self.channel.invoke(request) {
-            Ok({{ service.proto_name }}Response::{{ m.proto_name }}(response)) => Ok(response),
+            Ok({{ service.proto_name }}Response::{{ m.proto_name }}(response)) => Ok(response.try_into().map_err(|_| teaclave_types::TeaclaveServiceResponseError::InternalError("internal".to_string()))?),
             Err(e) => Err(e),
             {%- if service.methods.len() > 1 %}
             _ => Err(teaclave_types::TeaclaveServiceResponseError::InternalError("internal".to_string())),

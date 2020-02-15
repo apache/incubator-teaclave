@@ -10,7 +10,7 @@ use std::format;
 const AES_GCM_256_KEY_LENGTH: usize = 32;
 const AES_GCM_256_IV_LENGTH: usize = 12;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct AesGcm256CryptoInfo {
     pub key: [u8; AES_GCM_256_KEY_LENGTH],
     pub iv: [u8; AES_GCM_256_IV_LENGTH],
@@ -61,7 +61,7 @@ impl Default for AesGcm256CryptoInfo {
 const AES_GCM_128_KEY_LENGTH: usize = 16;
 const AES_GCM_128_IV_LENGTH: usize = 12;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct AesGcm128CryptoInfo {
     pub key: [u8; AES_GCM_128_KEY_LENGTH],
     pub iv: [u8; AES_GCM_128_IV_LENGTH],
@@ -113,7 +113,7 @@ impl Default for AesGcm128CryptoInfo {
 
 const TEACLAVE_FILE_ROOT_KEY_128_LENGTH: usize = 16;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct TeaclaveFileRootKey128 {
     pub key: [u8; TEACLAVE_FILE_ROOT_KEY_128_LENGTH],
 }
@@ -140,7 +140,7 @@ impl Default for TeaclaveFileRootKey128 {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum TeaclaveFileCryptoInfo {
     AesGcm128(AesGcm128CryptoInfo),
     AesGcm256(AesGcm256CryptoInfo),

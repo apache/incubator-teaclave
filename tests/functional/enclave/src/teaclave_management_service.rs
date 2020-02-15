@@ -3,7 +3,7 @@ use std::prelude::v1::*;
 use teaclave_attestation::verifier;
 use teaclave_config::RuntimeConfig;
 use teaclave_config::BUILD_CONFIG;
-use teaclave_proto::teaclave_frontend_service::*;
+use teaclave_proto::teaclave_frontend_service::{DataOwnerList, FunctionInput, FunctionOutput};
 use teaclave_proto::teaclave_management_service::*;
 use teaclave_rpc::config::SgxTrustedTlsClientConfig;
 use teaclave_rpc::endpoint::Endpoint;

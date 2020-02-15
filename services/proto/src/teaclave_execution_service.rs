@@ -58,6 +58,18 @@ impl std::convert::TryFrom<proto::StagedFunctionExecuteRequest> for StagedFuncti
     }
 }
 
+impl std::convert::TryFrom<proto::StagedFunctionExecuteResponse> for StagedFunctionExecuteResponse {
+    type Error = Error;
+
+    fn try_from(proto: proto::StagedFunctionExecuteResponse) -> Result<Self> {
+        let ret = Self {
+            summary: proto.summary,
+        };
+
+        Ok(ret)
+    }
+}
+
 // For client side
 impl std::convert::From<TeaclaveWorkerFileInfo> for proto::WorkerFileInfo {
     fn from(info: TeaclaveWorkerFileInfo) -> Self {

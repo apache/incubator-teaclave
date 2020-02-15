@@ -1,13 +1,15 @@
 use anyhow::Result;
 use std::prelude::v1::*;
 use std::sync::{Arc, SgxMutex as Mutex};
-use teaclave_proto::teaclave_authentication_service::TeaclaveAuthenticationInternalClient;
-use teaclave_proto::teaclave_authentication_service::UserAuthenticateRequest;
+use teaclave_proto::teaclave_authentication_service::{
+    TeaclaveAuthenticationInternalClient, UserAuthenticateRequest,
+};
 use teaclave_proto::teaclave_common::UserCredential;
 use teaclave_proto::teaclave_frontend_service::{
     RegisterInputFileRequest, RegisterInputFileResponse, RegisterOutputFileRequest,
     RegisterOutputFileResponse, TeaclaveFrontend,
 };
+use teaclave_proto::teaclave_management_service::TeaclaveManagementClient;
 use teaclave_rpc::endpoint::Endpoint;
 use teaclave_rpc::Request;
 use teaclave_service_enclave_utils::teaclave_service;
@@ -30,14 +32,27 @@ impl From<TeaclaveFrontendError> for TeaclaveServiceResponseError {
 #[derive(Clone)]
 pub(crate) struct TeaclaveFrontendService {
     authentication_client: Arc<Mutex<TeaclaveAuthenticationInternalClient>>,
+    management_client: Arc<Mutex<TeaclaveManagementClient>>,
 }
 
 impl TeaclaveFrontendService {
-    pub(crate) fn new(authentication_service_endpoint: Endpoint) -> Result<Self> {
-        let channel = authentication_service_endpoint.connect()?;
-        let client = TeaclaveAuthenticationInternalClient::new(channel)?;
+    pub(crate) fn new(
+        authentication_service_endpoint: Endpoint,
+        management_service_endpoint: Endpoint,
+    ) -> Result<Self> {
+        let authentication_channel = authentication_service_endpoint.connect()?;
+        let authentication_client = Arc::new(Mutex::new(
+            TeaclaveAuthenticationInternalClient::new(authentication_channel)?,
+        ));
+
+        let management_channel = management_service_endpoint.connect()?;
+        let management_client = Arc::new(Mutex::new(TeaclaveManagementClient::new(
+            management_channel,
+        )?));
+
         Ok(Self {
-            authentication_client: Arc::new(Mutex::new(client)),
+            authentication_client,
+            management_client,
         })
     }
 }
@@ -51,9 +66,12 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
             Ok(true) => (),
             _ => return Err(TeaclaveFrontendError::AuthenticationError.into()),
         }
-        let response = RegisterInputFileResponse {
-            data_id: "".to_string(),
-        };
+        let response = self
+            .management_client
+            .clone()
+            .lock()
+            .unwrap()
+            .register_input_file(request.message)?;
         Ok(response)
     }
 
@@ -65,9 +83,12 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
             Ok(true) => (),
             _ => return Err(TeaclaveFrontendError::AuthenticationError.into()),
         }
-        let response = RegisterOutputFileResponse {
-            data_id: "".to_string(),
-        };
+        let response = self
+            .management_client
+            .clone()
+            .lock()
+            .unwrap()
+            .register_output_file(request.message)?;
         Ok(response)
     }
 }
