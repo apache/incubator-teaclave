@@ -19,7 +19,7 @@ pub use proto::TeaclaveFrontendResponse;
 
 #[into_request(TeaclaveFrontendRequest::RegisterInputFile)]
 #[into_request(TeaclaveManagementRequest::RegisterInputFile)]
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct RegisterInputFileRequest {
     pub url: Url,
     pub hash: String,
@@ -28,7 +28,7 @@ pub struct RegisterInputFileRequest {
 
 #[into_request(TeaclaveFrontendResponse::RegisterInputFile)]
 #[into_request(TeaclaveManagementResponse::RegisterInputFile)]
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct RegisterInputFileResponse {
     pub data_id: String,
 }

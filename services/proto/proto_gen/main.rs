@@ -47,16 +47,11 @@ struct Service {
 impl Service {
     fn from_prost(prost_service: &prost_build::Service) -> Self {
         fn convert_to_impl_type(current_package_name: &str, proto_type: &str) -> String {
-            if proto_type.starts_with("super::") {
-                format!(
-                    "crate::{}",
-                    proto_type
-                        .trim_start_matches("super::")
-                        .replacen("_proto", "", 1)
-                )
-            } else {
-                format!("crate::{}::{}", current_package_name, proto_type)
-            }
+            format!(
+                "crate::{}::{}",
+                current_package_name,
+                proto_type.rsplitn(2, "::").collect::<Vec<&str>>()[0].replacen("_proto", "", 1)
+            )
         }
         let mut methods = vec![];
         let package_name = prost_service.package.trim_end_matches("_proto");

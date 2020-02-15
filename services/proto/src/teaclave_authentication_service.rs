@@ -147,6 +147,16 @@ impl From<UserLoginRequest> for proto::UserLoginRequest {
     }
 }
 
+impl std::convert::TryFrom<proto::UserLoginResponse> for UserLoginResponse {
+    type Error = Error;
+
+    fn try_from(proto: proto::UserLoginResponse) -> Result<Self> {
+        let ret = Self { token: proto.token };
+
+        Ok(ret)
+    }
+}
+
 impl From<UserLoginResponse> for proto::UserLoginResponse {
     fn from(response: UserLoginResponse) -> Self {
         Self {
@@ -175,6 +185,18 @@ impl From<UserAuthenticateRequest> for proto::UserAuthenticateRequest {
         Self {
             credential: Some(request.credential.into()),
         }
+    }
+}
+
+impl std::convert::TryFrom<proto::UserAuthenticateResponse> for UserAuthenticateResponse {
+    type Error = Error;
+
+    fn try_from(proto: proto::UserAuthenticateResponse) -> Result<Self> {
+        let ret = Self {
+            accept: proto.accept,
+        };
+
+        Ok(ret)
     }
 }
 
