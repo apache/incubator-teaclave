@@ -133,6 +133,26 @@ message GetTaskResponse {
   TaskStatus status = 12;
 }
 
+message AssignDataRequest {
+  string task_id = 1;
+  repeated DataMap input_map = 2;
+  repeated DataMap output_map = 3;
+}
+
+message AssignDataResponse { }
+
+message ApproveTaskRequest {
+  string task_id = 1;
+}
+
+message ApproveTaskResponse { }
+
+message InvokeTaskRequest {
+  string task_id = 1;
+}
+
+message InvokeTaskResponse { }
+
 service TeaclaveFrontend {
   rpc RegisterInputFile (RegisterInputFileRequest) returns (RegisterInputFileResponse);
   rpc RegisterOutputFile (RegisterOutputFileRequest) returns (RegisterOutputFileResponse);
