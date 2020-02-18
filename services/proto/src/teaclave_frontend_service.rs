@@ -148,7 +148,7 @@ pub struct DataMap {
     pub data_id: String,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, std::cmp::PartialEq)]
 pub enum TaskStatus {
     Created,
     Ready,
@@ -180,6 +180,35 @@ pub struct GetTaskResponse {
     pub output_map: HashMap<String, String>,
     pub status: TaskStatus,
 }
+
+#[into_request(TeaclaveManagementRequest::AssignData)]
+#[derive(Debug)]
+pub struct AssignDataRequest {
+    pub task_id: String,
+    pub input_map: HashMap<String, String>,
+    pub output_map: HashMap<String, String>,
+}
+
+#[derive(Debug)]
+pub struct AssignDataResponse;
+
+#[into_request(TeaclaveManagementRequest::ApproveTask)]
+#[derive(Debug)]
+pub struct ApproveTaskRequest {
+    pub task_id: String,
+}
+
+#[derive(Debug)]
+pub struct ApproveTaskResponse;
+
+#[into_request(TeaclaveManagementRequest::InvokeTask)]
+#[derive(Debug)]
+pub struct InvokeTaskRequest {
+    pub task_id: String,
+}
+
+#[derive(Debug)]
+pub struct InvokeTaskResponse;
 
 fn arg_list_from_proto(vector: Vec<proto::Argument>) -> Result<HashMap<String, String>> {
     let mut ret = HashMap::with_capacity(vector.len());
@@ -753,5 +782,115 @@ impl From<GetTaskResponse> for proto::GetTaskResponse {
             output_map,
             status,
         }
+    }
+}
+
+impl std::convert::TryFrom<proto::AssignDataRequest> for AssignDataRequest {
+    type Error = Error;
+
+    fn try_from(proto: proto::AssignDataRequest) -> Result<Self> {
+        let input_map = data_map_from_proto(proto.input_map)?;
+        let output_map = data_map_from_proto(proto.output_map)?;
+        let ret = Self {
+            task_id: proto.task_id,
+            input_map,
+            output_map,
+        };
+
+        Ok(ret)
+    }
+}
+
+impl From<AssignDataRequest> for proto::AssignDataRequest {
+    fn from(request: AssignDataRequest) -> Self {
+        let input_map = data_map_to_proto(request.input_map);
+        let output_map = data_map_to_proto(request.output_map);
+        Self {
+            task_id: request.task_id,
+            input_map,
+            output_map,
+        }
+    }
+}
+
+impl std::convert::TryFrom<proto::AssignDataResponse> for AssignDataResponse {
+    type Error = Error;
+
+    fn try_from(_proto: proto::AssignDataResponse) -> Result<Self> {
+        Ok(AssignDataResponse)
+    }
+}
+
+impl From<AssignDataResponse> for proto::AssignDataResponse {
+    fn from(_response: AssignDataResponse) -> Self {
+        Self {}
+    }
+}
+
+impl std::convert::TryFrom<proto::ApproveTaskRequest> for ApproveTaskRequest {
+    type Error = Error;
+
+    fn try_from(proto: proto::ApproveTaskRequest) -> Result<Self> {
+        let ret = Self {
+            task_id: proto.task_id,
+        };
+
+        Ok(ret)
+    }
+}
+
+impl From<ApproveTaskRequest> for proto::ApproveTaskRequest {
+    fn from(request: ApproveTaskRequest) -> Self {
+        Self {
+            task_id: request.task_id,
+        }
+    }
+}
+
+impl std::convert::TryFrom<proto::ApproveTaskResponse> for ApproveTaskResponse {
+    type Error = Error;
+
+    fn try_from(_proto: proto::ApproveTaskResponse) -> Result<Self> {
+        Ok(ApproveTaskResponse)
+    }
+}
+
+impl From<ApproveTaskResponse> for proto::ApproveTaskResponse {
+    fn from(_response: ApproveTaskResponse) -> Self {
+        Self {}
+    }
+}
+
+impl std::convert::TryFrom<proto::InvokeTaskRequest> for InvokeTaskRequest {
+    type Error = Error;
+
+    fn try_from(proto: proto::InvokeTaskRequest) -> Result<Self> {
+        let ret = Self {
+            task_id: proto.task_id,
+        };
+
+        Ok(ret)
+    }
+}
+
+impl From<InvokeTaskRequest> for proto::InvokeTaskRequest {
+    fn from(request: InvokeTaskRequest) -> Self {
+        Self {
+            task_id: request.task_id,
+        }
+    }
+}
+
+impl std::convert::TryFrom<proto::InvokeTaskResponse> for InvokeTaskResponse {
+    type Error = Error;
+
+    fn try_from(_proto: proto::InvokeTaskResponse) -> Result<Self> {
+        Ok(InvokeTaskResponse)
+    }
+}
+
+impl From<InvokeTaskResponse> for proto::InvokeTaskResponse {
+    fn from(_response: InvokeTaskResponse) -> Self {
+        Self {}
     }
 }
