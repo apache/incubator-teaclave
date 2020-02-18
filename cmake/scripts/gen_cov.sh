@@ -5,32 +5,12 @@ for var in "${REQUIRED_ENVS[@]}"; do
     [ -z "${!var}" ] && echo "Please set ${var}" && exit -1
 done
 
-
-
 LCOV=lcov
 LCOVOPT="--gcov-tool ${MESATEE_PROJECT_ROOT}/cmake/scripts/llvm-gcov"
 GENHTML=genhtml
 
 cd ${MESATEE_PROJECT_ROOT}
-find . \( -name "*.gcda" -and \( ! -name "sgx_cov*" \
-    -and ! -name "kms*" -and ! -name "fns*" \
-    -and ! -name "tdfs*" -and ! -name "tms*" \
-    -and ! -name "private_join_and_compute*"\
-    -and ! -name "online_decrypt*"\
-    -and ! -name "image_resizing*"\
-    -and ! -name "kmeans*"\
-    -and ! -name "logistic_reg*"\
-    -and ! -name "lin_reg*"\
-    -and ! -name "svm*"\
-    -and ! -name "gen_linear_model*"\
-    -and ! -name "gaussian_mixture_model*"\
-    -and ! -name "gaussian_processes*"\
-    -and ! -name "dbscan*"\
-    -and ! -name "neural_net*"\
-    -and ! -name "naive_bayes*"\
-    -and ! -name "gbdt*"\
-    -and ! -name "mesatee_core*" -and ! -name "teaclave_config*" \) \) \
-    -exec rm {} \;
+find . \( -name "*.gcda" -and \( ! -name "teaclave*" \) \) -exec rm {} \;
 cd ${MESATEE_PROJECT_ROOT} && \
     for tag in `find ${MESATEE_PROJECT_ROOT} -name sgx_cov*.gcda | cut -d'.' -f2`; \
     do mkdir -p ${MESATEE_OUT_DIR}/cov_$tag && \

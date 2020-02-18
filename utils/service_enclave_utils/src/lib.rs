@@ -12,6 +12,7 @@ use sgx_trts::global_dtors_object;
 #[cfg(feature = "cov")]
 global_dtors_object! {
     SGX_COV_FINALIZE, sgx_cov_exit = {
+        debug!("cov_writeout");
         sgx_cov::cov_writeout();
     }
 }
@@ -36,6 +37,9 @@ impl ServiceEnclave {
 
     pub fn finalize() -> teaclave_types::TeeServiceResult<()> {
         debug!("Enclave finalizing");
+
+        #[cfg(feature = "cov")]
+        sgx_cov::cov_writeout();
 
         Ok(())
     }

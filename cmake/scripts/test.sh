@@ -66,7 +66,7 @@ run_functional_tests() {
   popd
 
   # kill all background services
-  [[ -z "$(jobs -p)" ]] || kill $(jobs -p)
+  [[ -z "$(jobs -p)" ]] || kill -s SIGTERM $(jobs -p)
 }
 
 case "$1" in
