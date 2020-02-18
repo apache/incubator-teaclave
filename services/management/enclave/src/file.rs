@@ -50,7 +50,6 @@ impl InputFile {
         }
     }
 
-    #[cfg(feature = "enclave_unit_test")]
     pub(crate) fn from_slice(bytes: &[u8]) -> Result<Self> {
         let ret: InputFile =
             serde_json::from_slice(&bytes).map_err(|_| anyhow!("failed to Deserialize"))?;
@@ -65,7 +64,6 @@ impl InputFile {
         self.data_id.as_bytes().to_vec()
     }
 
-    #[cfg(feature = "enclave_unit_test")]
     pub(crate) fn is_input_file_id(id: &str) -> bool {
         id.starts_with(INPUT_FILE_PREFIX)
     }

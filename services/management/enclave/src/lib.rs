@@ -154,6 +154,7 @@ pub mod tests {
             service::tests::handle_fusion_data,
             service::tests::handle_function,
             service::tests::handle_task,
+            service::tests::handle_staged_task,
         )
     }
 }

@@ -13,5 +13,7 @@ service TeaclaveManagement {
   rpc GetFunction (teaclave_frontend_service_proto.GetFunctionRequest) returns (teaclave_frontend_service_proto.GetFunctionResponse);
   rpc CreateTask (teaclave_frontend_service_proto.CreateTaskRequest) returns (teaclave_frontend_service_proto.CreateTaskResponse);
   rpc GetTask (teaclave_frontend_service_proto.GetTaskRequest) returns (teaclave_frontend_service_proto.GetTaskResponse);
-
+  rpc AssignData (teaclave_frontend_service_proto.AssignDataRequest) returns (teaclave_frontend_service_proto.AssignDataResponse);
+  rpc ApproveTask (teaclave_frontend_service_proto.ApproveTaskRequest) returns (teaclave_frontend_service_proto.ApproveTaskResponse);
+  rpc InvokeTask (teaclave_frontend_service_proto.InvokeTaskRequest) returns (teaclave_frontend_service_proto.InvokeTaskResponse);
 }
