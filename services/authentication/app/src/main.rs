@@ -15,38 +15,74 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#[macro_use]
-extern crate log;
-
-use anyhow::Result;
+use anyhow::{Context, Result};
+use signal_hook;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use teaclave_binder::proto::{ECallCommand, StartServiceInput, StartServiceOutput};
 use teaclave_binder::TeeBinder;
+use teaclave_config::RuntimeConfig;
 use teaclave_types::TeeServiceResult;
 
-fn main() -> Result<()> {
-    env_logger::init();
-    let tee = TeeBinder::new(env!("CARGO_PKG_NAME"))?;
-    run(&tee)?;
+const PACKAGE_NAME: &str = env!("CARGO_PKG_NAME");
 
-    Ok(())
-}
-
-fn start_enclave_service(tee: &TeeBinder) -> Result<()> {
-    info!("Start enclave service");
-    let config = teaclave_config::RuntimeConfig::from_toml("runtime.config.toml")?;
-    let input = StartServiceInput { config };
-    let cmd = ECallCommand::StartService;
-    match tee.invoke::<StartServiceInput, TeeServiceResult<StartServiceOutput>>(cmd, input) {
-        Err(e) => error!("{:?}", e),
-        Ok(Err(e)) => error!("{:?}", e),
-        _ => (),
+fn register_signals(term: Arc<AtomicBool>) -> Result<()> {
+    for signal in &[
+        signal_hook::SIGTERM,
+        signal_hook::SIGINT,
+        signal_hook::SIGHUP,
+    ] {
+        let term_ref = term.clone();
+        let thread = std::thread::current();
+        unsafe {
+            signal_hook::register(*signal, move || {
+                term_ref.store(true, Ordering::Relaxed);
+                thread.unpark();
+            })?;
+        }
     }
 
     Ok(())
 }
 
-fn run(tee: &TeeBinder) -> Result<()> {
-    start_enclave_service(tee)?;
+fn start_enclave_service(tee: Arc<TeeBinder>, config: RuntimeConfig) {
+    let input = StartServiceInput::new(config);
+    let command = ECallCommand::StartService;
+    match tee.invoke::<StartServiceInput, TeeServiceResult<StartServiceOutput>>(command, input) {
+        Err(e) => {
+            eprintln!("TEE invocation error: {:?}", e);
+        }
+        Ok(Err(e)) => {
+            eprintln!("Service exit with error: {:?}", e);
+        }
+        _ => {
+            println!("Service successfully exit");
+        }
+    }
+
+    unsafe { libc::raise(signal_hook::SIGTERM) };
+}
+
+fn main() -> Result<()> {
+    env_logger::init();
+
+    let tee = Arc::new(TeeBinder::new(PACKAGE_NAME).context("Failed to new the enclave.")?);
+    let config = teaclave_config::RuntimeConfig::from_toml("runtime.config.toml")
+        .context("Failed to load config file.")?;
+
+    let tee_ref = tee.clone();
+    std::thread::spawn(move || {
+        start_enclave_service(tee_ref, config);
+    });
+
+    let term = Arc::new(AtomicBool::new(false));
+    register_signals(term.clone()).context("Failed to register signal handler")?;
+
+    while !term.load(Ordering::Relaxed) {
+        std::thread::park();
+    }
+
+    tee.finalize();
 
     Ok(())
 }

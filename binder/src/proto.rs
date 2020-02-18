@@ -62,6 +62,12 @@ pub struct StartServiceInput {
     pub config: teaclave_config::RuntimeConfig,
 }
 
+impl StartServiceInput {
+    pub fn new(config: teaclave_config::RuntimeConfig) -> Self {
+        Self { config }
+    }
+}
+
 #[derive(Clone, Serialize, Deserialize, Debug, Default)]
 pub struct StartServiceOutput;
 

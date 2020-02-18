@@ -8,9 +8,11 @@ build = "build.rs"
 edition = "2018"
 
 [dependencies]
-log        = { version = "0.4.6" }
-env_logger = { version = "0.7.1" }
-anyhow     = { version = "1.0.26" }
+log         = { version = "0.4.6" }
+env_logger  = { version = "0.7.1" }
+anyhow      = { version = "1.0.26" }
+signal-hook = { version = "0.1.13" }
+libc        = { version = "0.2.66" }
 
 teaclave_binder            = { path = "../../../binder", features = ["app"] }
 teaclave_config            = { path = "../../../config" }
