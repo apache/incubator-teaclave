@@ -25,6 +25,7 @@ fn main() -> anyhow::Result<()> {
     env_logger::init();
     let tee = TeeBinder::new(env!("CARGO_PKG_NAME"))?;
     run(&tee)?;
+    tee.finalize();
 
     Ok(())
 }
