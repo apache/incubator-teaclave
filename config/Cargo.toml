@@ -12,6 +12,7 @@ mesalock_sgx = ["sgx_tstd"]
 
 [dependencies]
 anyhow = { version = "1.0.26" }
+log    = { version = "0.4.6" }
 serde  = { version = "1.0.92", features = ["derive"] }
 toml   = { version = "0.5.1" }
 
