@@ -440,6 +440,13 @@ impl TeaclaveManagementService {
         let value = fusion_data.to_vec()?;
         self.write_to_storage(&key, &value)?;
 
+        let mut fusion_data =
+            FusionData::new(vec!["frontend_user".to_string(), "mock_user".to_string()])?;
+        fusion_data.data_id = "fusion-data-mock-frontend-data".to_string();
+        let key = fusion_data.get_key_vec();
+        let value = fusion_data.to_vec()?;
+        self.write_to_storage(&key, &value)?;
+
         let function_input = FunctionInput {
             name: "input".to_string(),
             description: "input_desc".to_string(),
@@ -466,6 +473,26 @@ impl TeaclaveManagementService {
             arg_list: vec!["arg1".to_string(), "arg2".to_string()],
             input_list: vec![function_input, function_input2],
             output_list: vec![function_output, function_output2],
+            owner: "teaclave".to_string(),
+            is_native: true,
+        };
+        let key = native_function.get_key_vec();
+        let value = native_function.to_vec()?;
+        self.write_to_storage(&key, &value)?;
+
+        let function_output = FunctionOutput {
+            name: "output".to_string(),
+            description: "output_desc".to_string(),
+        };
+        let native_function = Function {
+            function_id: "native-mock-simple-func".to_string(),
+            name: "mock-native-func".to_string(),
+            description: "mock-desc".to_string(),
+            payload: b"mock-payload".to_vec(),
+            is_public: true,
+            arg_list: vec!["arg1".to_string()],
+            input_list: vec![],
+            output_list: vec![function_output],
             owner: "teaclave".to_string(),
             is_native: true,
         };

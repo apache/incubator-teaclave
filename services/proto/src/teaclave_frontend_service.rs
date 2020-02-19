@@ -49,6 +49,7 @@ pub struct RegisterOutputFileResponse {
 }
 
 #[into_request(TeaclaveManagementRequest::GetOutputFile)]
+#[into_request(TeaclaveFrontendRequest::GetOutputFile)]
 #[derive(Debug)]
 pub struct GetOutputFileRequest {
     pub data_id: String,
@@ -61,6 +62,7 @@ pub struct GetOutputFileResponse {
 }
 
 #[into_request(TeaclaveManagementRequest::GetFusionData)]
+#[into_request(TeaclaveFrontendRequest::GetFusionData)]
 #[derive(Debug)]
 pub struct GetFusionDataRequest {
     pub data_id: String,
@@ -86,6 +88,7 @@ pub struct FunctionOutput {
 }
 
 #[into_request(TeaclaveManagementRequest::RegisterFunction)]
+#[into_request(TeaclaveFrontendRequest::RegisterFunction)]
 #[derive(Debug)]
 pub struct RegisterFunctionRequest {
     pub name: String,
@@ -104,6 +107,7 @@ pub struct RegisterFunctionResponse {
 }
 
 #[into_request(TeaclaveManagementRequest::GetFunction)]
+#[into_request(TeaclaveFrontendRequest::GetFunction)]
 #[derive(Debug)]
 pub struct GetFunctionRequest {
     pub function_id: String,
@@ -128,6 +132,7 @@ pub struct DataOwnerList {
 }
 
 #[into_request(TeaclaveManagementRequest::CreateTask)]
+#[into_request(TeaclaveFrontendRequest::CreateTask)]
 #[derive(Debug)]
 pub struct CreateTaskRequest {
     pub function_id: String,
@@ -159,6 +164,7 @@ pub enum TaskStatus {
 }
 
 #[into_request(TeaclaveManagementRequest::GetTask)]
+#[into_request(TeaclaveFrontendRequest::GetTask)]
 #[derive(Debug)]
 pub struct GetTaskRequest {
     pub task_id: String,
@@ -182,6 +188,7 @@ pub struct GetTaskResponse {
 }
 
 #[into_request(TeaclaveManagementRequest::AssignData)]
+#[into_request(TeaclaveFrontendRequest::AssignData)]
 #[derive(Debug)]
 pub struct AssignDataRequest {
     pub task_id: String,
@@ -193,6 +200,7 @@ pub struct AssignDataRequest {
 pub struct AssignDataResponse;
 
 #[into_request(TeaclaveManagementRequest::ApproveTask)]
+#[into_request(TeaclaveFrontendRequest::ApproveTask)]
 #[derive(Debug)]
 pub struct ApproveTaskRequest {
     pub task_id: String,
@@ -202,6 +210,7 @@ pub struct ApproveTaskRequest {
 pub struct ApproveTaskResponse;
 
 #[into_request(TeaclaveManagementRequest::InvokeTask)]
+#[into_request(TeaclaveFrontendRequest::InvokeTask)]
 #[derive(Debug)]
 pub struct InvokeTaskRequest {
     pub task_id: String,
