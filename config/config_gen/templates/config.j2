@@ -14,7 +14,7 @@ pub struct Inbounds {
     pub storage: &'static [&'static str; {{ inbound.storage.len() }}],
 }
 
-pub static BUILD_CONFIG: BuildConfig = BuildConfig {
+pub const BUILD_CONFIG: BuildConfig = BuildConfig {
     as_root_ca_cert: &{{ as_root_ca_cert }},
     auditor_public_keys: &[
         {%- for k in auditor_public_keys %}

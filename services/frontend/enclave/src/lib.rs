@@ -31,7 +31,7 @@ use teaclave_binder::proto::{
     StartServiceInput, StartServiceOutput,
 };
 use teaclave_binder::{handle_ecall, register_ecall_handler};
-use teaclave_config::BUILD_CONFIG;
+use teaclave_config::{RuntimeConfig, BUILD_CONFIG};
 use teaclave_proto::teaclave_frontend_service::{
     TeaclaveFrontendRequest, TeaclaveFrontendResponse,
 };
@@ -44,9 +44,11 @@ use teaclave_types::{TeeServiceError, TeeServiceResult};
 
 mod service;
 
-fn start_service(args: &StartServiceInput) -> anyhow::Result<()> {
-    let listen_address = args.config.api_endpoints.frontend.listen_address;
-    let as_config = &args.config.attestation;
+const AS_ROOT_CA_CERT: &[u8] = BUILD_CONFIG.as_root_ca_cert;
+
+fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
+    let listen_address = config.api_endpoints.frontend.listen_address;
+    let as_config = &config.attestation;
     let attestation = RemoteAttestation::generate_and_endorse(&AttestationConfig::new(
         &as_config.algorithm,
         &as_config.url,
@@ -54,7 +56,7 @@ fn start_service(args: &StartServiceInput) -> anyhow::Result<()> {
         &as_config.spid,
     ))
     .unwrap();
-    let config = SgxTrustedTlsServerConfig::new_without_verifier(
+    let server_config = SgxTrustedTlsServerConfig::new_without_verifier(
         &attestation.cert,
         &attestation.private_key,
     )
@@ -62,42 +64,39 @@ fn start_service(args: &StartServiceInput) -> anyhow::Result<()> {
 
     let mut server = SgxTrustedTlsServer::<TeaclaveFrontendResponse, TeaclaveFrontendRequest>::new(
         listen_address,
-        &config,
+        &server_config,
     );
 
-    let enclave_info = teaclave_types::EnclaveInfo::from_bytes(
-        &args.config.audit.enclave_info_bytes.as_ref().unwrap(),
-    );
+    let enclave_info =
+        teaclave_types::EnclaveInfo::from_bytes(&config.audit.enclave_info_bytes.as_ref().unwrap());
     let enclave_attr = enclave_info
         .get_enclave_attr("teaclave_authentication_service")
         .expect("authentication");
-    let config = SgxTrustedTlsClientConfig::new()
+    let client_config = SgxTrustedTlsClientConfig::new()
         .client_cert(&attestation.cert, &attestation.private_key)
         .attestation_report_verifier(
             vec![enclave_attr],
-            BUILD_CONFIG.as_root_ca_cert,
+            AS_ROOT_CA_CERT,
             verifier::universal_quote_verifier,
         );
-    let authentication_service_address = &args
-        .config
-        .internal_endpoints
-        .authentication
-        .advertised_address;
+    let authentication_service_address =
+        &config.internal_endpoints.authentication.advertised_address;
     let authentication_service_endpoint =
-        Endpoint::new(authentication_service_address).config(config);
+        Endpoint::new(authentication_service_address).config(client_config);
 
     let enclave_attr = enclave_info
         .get_enclave_attr("teaclave_management_service")
         .expect("management");
-    let config = SgxTrustedTlsClientConfig::new()
+    let client_config = SgxTrustedTlsClientConfig::new()
         .client_cert(&attestation.cert, &attestation.private_key)
         .attestation_report_verifier(
             vec![enclave_attr],
-            BUILD_CONFIG.as_root_ca_cert,
+            AS_ROOT_CA_CERT,
             verifier::universal_quote_verifier,
         );
-    let management_service_address = &args.config.internal_endpoints.management.advertised_address;
-    let management_service_endpoint = Endpoint::new(management_service_address).config(config);
+    let management_service_address = &config.internal_endpoints.management.advertised_address;
+    let management_service_endpoint =
+        Endpoint::new(management_service_address).config(client_config);
 
     let service = service::TeaclaveFrontendService::new(
         authentication_service_endpoint,
@@ -113,8 +112,8 @@ fn start_service(args: &StartServiceInput) -> anyhow::Result<()> {
 }
 
 #[handle_ecall]
-fn handle_start_service(args: &StartServiceInput) -> TeeServiceResult<StartServiceOutput> {
-    start_service(args).map_err(|_| TeeServiceError::ServiceError)?;
+fn handle_start_service(input: &StartServiceInput) -> TeeServiceResult<StartServiceOutput> {
+    start_service(&input.config).map_err(|_| TeeServiceError::ServiceError)?;
     Ok(StartServiceOutput::default())
 }
 
