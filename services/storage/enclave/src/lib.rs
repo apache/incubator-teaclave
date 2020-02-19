@@ -22,33 +22,38 @@ extern crate sgx_tstd as std;
 #[macro_use]
 extern crate log;
 
+use std::cell::RefCell;
 use std::prelude::v1::*;
+use std::sync::mpsc::channel;
+use std::thread;
 
+use rusty_leveldb::DB;
+
+use teaclave_attestation::{verifier, AttestationConfig, RemoteAttestation};
 use teaclave_binder::proto::{
     ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
     StartServiceInput, StartServiceOutput,
 };
 use teaclave_binder::{handle_ecall, register_ecall_handler};
-use teaclave_service_enclave_utils::ServiceEnclave;
-use teaclave_types::{EnclaveInfo, TeeServiceError, TeeServiceResult};
-
-use rusty_leveldb::DB;
-use teaclave_attestation::{verifier, AttestationConfig, RemoteAttestation};
-use teaclave_config::BUILD_CONFIG;
+use teaclave_config::{RuntimeConfig, BUILD_CONFIG};
 use teaclave_proto::teaclave_storage_service::{TeaclaveStorageRequest, TeaclaveStorageResponse};
 use teaclave_rpc::config::SgxTrustedTlsServerConfig;
 use teaclave_rpc::server::SgxTrustedTlsServer;
-
-use std::cell::RefCell;
-use std::sync::mpsc::channel;
-use std::thread;
+use teaclave_service_enclave_utils::ServiceEnclave;
+use teaclave_types::{EnclaveInfo, TeeServiceError, TeeServiceResult};
 
 mod proxy;
 mod service;
 
-fn start_service(args: &StartServiceInput) -> anyhow::Result<()> {
-    let listen_address = args.config.internal_endpoints.storage.listen_address;
-    let as_config = &args.config.attestation;
+const AS_ROOT_CA_CERT: &[u8] = BUILD_CONFIG.as_root_ca_cert;
+const AUDITOR_PUBLIC_KEYS_LEN: usize = BUILD_CONFIG.auditor_public_keys.len();
+const AUDITOR_PUBLIC_KEYS: &[&[u8]; AUDITOR_PUBLIC_KEYS_LEN] = BUILD_CONFIG.auditor_public_keys;
+const INBOUND_SERVICES_LEN: usize = BUILD_CONFIG.inbound.storage.len();
+const INBOUND_SERVICES: &[&str; INBOUND_SERVICES_LEN] = BUILD_CONFIG.inbound.storage;
+
+fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
+    let listen_address = config.internal_endpoints.storage.listen_address;
+    let as_config = &config.attestation;
     let attestation = RemoteAttestation::generate_and_endorse(&AttestationConfig::new(
         &as_config.algorithm,
         &as_config.url,
@@ -57,21 +62,19 @@ fn start_service(args: &StartServiceInput) -> anyhow::Result<()> {
     ))
     .unwrap();
     let enclave_info = EnclaveInfo::verify_and_new(
-        args.config
+        config
             .audit
             .enclave_info_bytes
             .as_ref()
             .expect("enclave_info"),
-        BUILD_CONFIG.auditor_public_keys,
-        args.config
+        AUDITOR_PUBLIC_KEYS,
+        config
             .audit
             .auditor_signatures_bytes
             .as_ref()
             .expect("auditor signatures"),
     )?;
-    let accepted_enclave_attrs: Vec<teaclave_types::EnclaveAttr> = BUILD_CONFIG
-        .inbound
-        .storage
+    let accepted_enclave_attrs: Vec<teaclave_types::EnclaveAttr> = INBOUND_SERVICES
         .iter()
         .map(|service| {
             enclave_info
@@ -79,11 +82,11 @@ fn start_service(args: &StartServiceInput) -> anyhow::Result<()> {
                 .expect("enclave_info")
         })
         .collect();
-    let config = SgxTrustedTlsServerConfig::new_with_attestation_report_verifier(
+    let server_config = SgxTrustedTlsServerConfig::new_with_attestation_report_verifier(
         accepted_enclave_attrs,
         &attestation.cert,
         &attestation.private_key,
-        BUILD_CONFIG.as_root_ca_cert,
+        AS_ROOT_CA_CERT,
         verifier::universal_quote_verifier,
     )
     .unwrap();
@@ -99,7 +102,7 @@ fn start_service(args: &StartServiceInput) -> anyhow::Result<()> {
 
     let mut server = SgxTrustedTlsServer::<TeaclaveStorageResponse, TeaclaveStorageRequest>::new(
         listen_address,
-        &config,
+        &server_config,
     );
 
     let service = proxy::ProxyService::new(sender);
@@ -114,8 +117,8 @@ fn start_service(args: &StartServiceInput) -> anyhow::Result<()> {
 }
 
 #[handle_ecall]
-fn handle_start_service(args: &StartServiceInput) -> TeeServiceResult<StartServiceOutput> {
-    start_service(args).map_err(|_| TeeServiceError::ServiceError)?;
+fn handle_start_service(input: &StartServiceInput) -> TeeServiceResult<StartServiceOutput> {
+    start_service(&input.config).map_err(|_| TeeServiceError::ServiceError)?;
     Ok(StartServiceOutput::default())
 }
 

@@ -25,8 +25,6 @@ extern crate log;
 
 use std::prelude::v1::*;
 
-use teaclave_types;
-
 use teaclave_binder::proto::{
     ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
     RunTestInput, RunTestOutput,
@@ -34,6 +32,7 @@ use teaclave_binder::proto::{
 use teaclave_binder::{handle_ecall, register_ecall_handler};
 use teaclave_service_enclave_utils::ServiceEnclave;
 use teaclave_test_utils::check_all_passed;
+use teaclave_types;
 use teaclave_types::TeeServiceResult;
 
 mod teaclave_access_control_service;
@@ -44,7 +43,7 @@ mod teaclave_management_service;
 mod teaclave_storage_service;
 
 #[handle_ecall]
-fn handle_run_test(_args: &RunTestInput) -> TeeServiceResult<RunTestOutput> {
+fn handle_run_test(_: &RunTestInput) -> TeeServiceResult<RunTestOutput> {
     let ret = check_all_passed!(
         teaclave_access_control_service::run_tests(),
         teaclave_authentication_service::run_tests(),

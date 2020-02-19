@@ -25,9 +25,6 @@ extern crate log;
 
 use std::prelude::v1::*;
 
-use teaclave_types;
-use teaclave_types::TeeServiceResult;
-
 use teaclave_binder::proto::{
     ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
     RunTestInput, RunTestOutput,
@@ -35,6 +32,8 @@ use teaclave_binder::proto::{
 use teaclave_binder::{handle_ecall, register_ecall_handler};
 use teaclave_service_enclave_utils::ServiceEnclave;
 use teaclave_test_utils::check_all_passed;
+use teaclave_types;
+use teaclave_types::TeeServiceResult;
 
 mod protected_fs_rs;
 mod rusty_leveldb_sgx;
@@ -42,7 +41,7 @@ mod teaclave_rpc;
 mod teaclave_worker;
 
 #[handle_ecall]
-fn handle_run_test(_args: &RunTestInput) -> TeeServiceResult<RunTestOutput> {
+fn handle_run_test(_: &RunTestInput) -> TeeServiceResult<RunTestOutput> {
     let ret = check_all_passed!(
         rusty_leveldb_sgx::run_tests(),
         protected_fs_rs::run_tests(),
@@ -55,15 +54,13 @@ fn handle_run_test(_args: &RunTestInput) -> TeeServiceResult<RunTestOutput> {
 }
 
 #[handle_ecall]
-fn handle_init_enclave(_args: &InitEnclaveInput) -> TeeServiceResult<InitEnclaveOutput> {
+fn handle_init_enclave(_: &InitEnclaveInput) -> TeeServiceResult<InitEnclaveOutput> {
     ServiceEnclave::init(env!("CARGO_PKG_NAME"))?;
     Ok(InitEnclaveOutput::default())
 }
 
 #[handle_ecall]
-fn handle_finalize_enclave(
-    _args: &FinalizeEnclaveInput,
-) -> TeeServiceResult<FinalizeEnclaveOutput> {
+fn handle_finalize_enclave(_: &FinalizeEnclaveInput) -> TeeServiceResult<FinalizeEnclaveOutput> {
     ServiceEnclave::finalize()?;
     Ok(FinalizeEnclaveOutput::default())
 }

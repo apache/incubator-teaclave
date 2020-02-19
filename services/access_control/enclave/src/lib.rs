@@ -30,7 +30,7 @@ use teaclave_binder::proto::{
     StartServiceInput, StartServiceOutput,
 };
 use teaclave_binder::{handle_ecall, register_ecall_handler};
-use teaclave_config::BUILD_CONFIG;
+use teaclave_config::{RuntimeConfig, BUILD_CONFIG};
 use teaclave_proto::teaclave_access_control_service::{
     TeaclaveAccessControlRequest, TeaclaveAccessControlResponse,
 };
@@ -42,9 +42,15 @@ use teaclave_types::{EnclaveInfo, TeeServiceError, TeeServiceResult};
 mod acs;
 mod service;
 
-fn start_service(args: &StartServiceInput) -> anyhow::Result<()> {
-    let listen_address = args.config.internal_endpoints.access_control.listen_address;
-    let as_config = &args.config.attestation;
+const AS_ROOT_CA_CERT: &[u8] = BUILD_CONFIG.as_root_ca_cert;
+const AUDITOR_PUBLIC_KEYS_LEN: usize = BUILD_CONFIG.auditor_public_keys.len();
+const AUDITOR_PUBLIC_KEYS: &[&[u8]; AUDITOR_PUBLIC_KEYS_LEN] = BUILD_CONFIG.auditor_public_keys;
+const INBOUND_SERVICES_LEN: usize = BUILD_CONFIG.inbound.access_control.len();
+const INBOUND_SERVICES: &[&str; INBOUND_SERVICES_LEN] = BUILD_CONFIG.inbound.access_control;
+
+fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
+    let listen_address = config.internal_endpoints.access_control.listen_address;
+    let as_config = &config.attestation;
     let attestation = RemoteAttestation::generate_and_endorse(&AttestationConfig::new(
         &as_config.algorithm,
         &as_config.url,
@@ -53,21 +59,19 @@ fn start_service(args: &StartServiceInput) -> anyhow::Result<()> {
     ))
     .unwrap();
     let enclave_info = EnclaveInfo::verify_and_new(
-        args.config
+        config
             .audit
             .enclave_info_bytes
             .as_ref()
             .expect("enclave_info"),
-        BUILD_CONFIG.auditor_public_keys,
-        args.config
+        AUDITOR_PUBLIC_KEYS,
+        config
             .audit
             .auditor_signatures_bytes
             .as_ref()
             .expect("auditor signatures"),
     )?;
-    let accepted_enclave_attrs: Vec<teaclave_types::EnclaveAttr> = BUILD_CONFIG
-        .inbound
-        .access_control
+    let accepted_enclave_attrs: Vec<teaclave_types::EnclaveAttr> = INBOUND_SERVICES
         .iter()
         .map(|service| {
             enclave_info
@@ -75,11 +79,11 @@ fn start_service(args: &StartServiceInput) -> anyhow::Result<()> {
                 .expect("enclave_info")
         })
         .collect();
-    let config = SgxTrustedTlsServerConfig::new_with_attestation_report_verifier(
+    let server_config = SgxTrustedTlsServerConfig::new_with_attestation_report_verifier(
         accepted_enclave_attrs,
         &attestation.cert,
         &attestation.private_key,
-        BUILD_CONFIG.as_root_ca_cert,
+        AS_ROOT_CA_CERT,
         verifier::universal_quote_verifier,
     )
     .unwrap();
@@ -88,7 +92,7 @@ fn start_service(args: &StartServiceInput) -> anyhow::Result<()> {
     let mut server = SgxTrustedTlsServer::<
         TeaclaveAccessControlResponse,
         TeaclaveAccessControlRequest,
-    >::new(listen_address, &config);
+    >::new(listen_address, &server_config);
     let service = service::TeaclaveAccessControlService::new();
     match server.start(service) {
         Ok(_) => (),
@@ -100,8 +104,8 @@ fn start_service(args: &StartServiceInput) -> anyhow::Result<()> {
 }
 
 #[handle_ecall]
-fn handle_start_service(args: &StartServiceInput) -> TeeServiceResult<StartServiceOutput> {
-    start_service(args).map_err(|_| TeeServiceError::ServiceError)?;
+fn handle_start_service(input: &StartServiceInput) -> TeeServiceResult<StartServiceOutput> {
+    start_service(&input.config).map_err(|_| TeeServiceError::ServiceError)?;
     Ok(StartServiceOutput::default())
 }
 
