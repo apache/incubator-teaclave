@@ -156,4 +156,14 @@ message InvokeTaskResponse { }
 service TeaclaveFrontend {
   rpc RegisterInputFile (RegisterInputFileRequest) returns (RegisterInputFileResponse);
   rpc RegisterOutputFile (RegisterOutputFileRequest) returns (RegisterOutputFileResponse);
+  rpc GetOutputFile (GetOutputFileRequest) returns (GetOutputFileResponse);
+  rpc GetFusionData (GetFusionDataRequest) returns (GetFusionDataResponse);
+  rpc RegisterFunction (RegisterFunctionRequest) returns (RegisterFunctionResponse);
+  rpc GetFunction (GetFunctionRequest) returns (GetFunctionResponse);
+  rpc CreateTask (CreateTaskRequest) returns (CreateTaskResponse);
+  rpc GetTask (GetTaskRequest) returns (GetTaskResponse);
+  rpc AssignData (AssignDataRequest) returns (AssignDataResponse);
+  rpc ApproveTask (ApproveTaskRequest) returns (ApproveTaskResponse);
+  rpc InvokeTask (InvokeTaskRequest) returns (InvokeTaskResponse);
+
 }
