@@ -69,7 +69,7 @@ pub struct AttestationServiceConfig {
 
 impl RuntimeConfig {
     pub fn from_toml<T: AsRef<Path>>(path: T) -> Result<Self> {
-        let contents = fs::read_to_string(path)
+        let contents = fs::read_to_string(path.as_ref())
             .context("Something went wrong when reading the runtime config file")?;
         let mut config: RuntimeConfig =
             toml::from_str(&contents).context("Cannot parse the runtime config file")?;
@@ -112,6 +112,11 @@ impl RuntimeConfig {
 
         validate_config(&config)?;
 
+        log::debug!(
+            "Loaded config from {}: {:?}",
+            path.as_ref().display(),
+            config
+        );
         Ok(config)
     }
 }
