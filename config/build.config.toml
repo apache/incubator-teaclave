@@ -20,7 +20,7 @@ rpc_max_message_size = 409600
 #
 # client => authentication <-+
 #                            |
-# client => frontend ----------> management --> storage <-- scheduler --> execution
+# client => frontend ----------> management --> storage <-- scheduler <-- execution
 #                                    |
 #                                    +--> access_control
 #
