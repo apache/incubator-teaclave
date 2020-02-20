@@ -1,10 +1,11 @@
-use anyhow::Result;
 use log::debug;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::io;
 use std::mem::transmute;
+use std::prelude::v1::*;
 use std::vec::Vec;
+use teaclave_types::TeaclaveServiceResponseError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -15,6 +16,22 @@ pub enum ProtocolError {
     SerdeError(#[from] serde_json::error::Error),
     #[error(transparent)]
     Other(#[from] anyhow::Error),
+}
+
+impl From<ProtocolError> for TeaclaveServiceResponseError {
+    fn from(error: ProtocolError) -> Self {
+        match error {
+            ProtocolError::IoError(e) => {
+                TeaclaveServiceResponseError::ConnectionError(format!("{}", e))
+            }
+            ProtocolError::SerdeError(_) => {
+                TeaclaveServiceResponseError::InternalError("serde".to_string())
+            }
+            ProtocolError::Other(_) => {
+                TeaclaveServiceResponseError::InternalError("internal".to_string())
+            }
+        }
+    }
 }
 
 pub(crate) struct JsonProtocol<'a, T>
@@ -61,7 +78,7 @@ where
         Ok(r)
     }
 
-    pub fn write_message<U>(&mut self, message: U) -> Result<()>
+    pub fn write_message<U>(&mut self, message: U) -> std::result::Result<(), ProtocolError>
     where
         U: Serialize + std::fmt::Debug,
     {

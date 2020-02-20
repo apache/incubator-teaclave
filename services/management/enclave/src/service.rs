@@ -512,11 +512,20 @@ impl TeaclaveManagementService {
     }
 
     pub(crate) fn new(storage_service_endpoint: Endpoint) -> Result<Self> {
-        let channel = storage_service_endpoint.connect()?;
-        let client = TeaclaveStorageClient::new(channel)?;
-        let service = Self {
-            storage_client: Arc::new(Mutex::new(client)),
+        let mut i = 0;
+        let channel = loop {
+            match storage_service_endpoint.connect() {
+                Ok(channel) => break channel,
+                Err(_) => {
+                    anyhow::ensure!(i < 3, "failed to connect to storage service");
+                    log::debug!("Failed to connect to storage service, retry {}", i);
+                    i += 1;
+                }
+            }
+            std::thread::sleep(std::time::Duration::from_secs(1));
         };
+        let storage_client = Arc::new(Mutex::new(TeaclaveStorageClient::new(channel)?));
+        let service = Self { storage_client };
         #[cfg(test_mode)]
         service.add_mock_data()?;
         Ok(service)

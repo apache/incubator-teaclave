@@ -112,7 +112,7 @@ impl RuntimeConfig {
 
         validate_config(&config)?;
 
-        log::debug!(
+        log::trace!(
             "Loaded config from {}: {:?}",
             path.as_ref().display(),
             config
