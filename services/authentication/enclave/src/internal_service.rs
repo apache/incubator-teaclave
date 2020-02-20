@@ -31,15 +31,14 @@ impl TeaclaveAuthenticationInternal for TeaclaveAuthenticationInternalService {
     ) -> TeaclaveServiceResponseResult<UserAuthenticateResponse> {
         let request = request.message;
         if request.credential.id.is_empty() || request.credential.token.is_empty() {
-            return Ok(UserAuthenticateResponse { accept: false });
+            return Ok(UserAuthenticateResponse::new(false));
         }
         let user: UserInfo = match self.db_client.get_user(&request.credential.id) {
             Ok(value) => value,
-            Err(_) => return Ok(UserAuthenticateResponse { accept: false }),
+            Err(_) => return Ok(UserAuthenticateResponse::new(false)),
         };
-        Ok(UserAuthenticateResponse {
-            accept: user.validate_token(&self.jwt_secret, &request.credential.token),
-        })
+        let accept = user.validate_token(&self.jwt_secret, &request.credential.token);
+        Ok(UserAuthenticateResponse::new(accept))
     }
 }
 
@@ -187,11 +186,8 @@ pub mod tests {
         token: &str,
         service: &TeaclaveAuthenticationInternalService,
     ) -> UserAuthenticateResponse {
-        let credential = UserCredential {
-            id: id.to_string(),
-            token: token.to_string(),
-        };
-        let request = UserAuthenticateRequest { credential };
+        let credential = UserCredential::new(id, token);
+        let request = UserAuthenticateRequest::new(credential);
         let request = Request::new(request);
         service.user_authenticate(request).unwrap()
     }
