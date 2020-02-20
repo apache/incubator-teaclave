@@ -17,7 +17,6 @@
 
 use serde::{Deserialize, Serialize};
 use std::convert::From;
-use std::os::raw::c_int;
 use std::prelude::v1::*;
 
 pub enum ECallCommand {
@@ -25,7 +24,6 @@ pub enum ECallCommand {
     InitEnclave,
     FinalizeEnclave,
     RunTest,
-    ServeConnection,
     Unimplemented,
 }
 
@@ -37,7 +35,6 @@ impl From<u32> for ECallCommand {
             0x0000_1001 => ECallCommand::InitEnclave,
             0x0000_1002 => ECallCommand::FinalizeEnclave,
             0x0000_1003 => ECallCommand::RunTest,
-            0x0000_1004 => ECallCommand::ServeConnection,
             _ => ECallCommand::Unimplemented,
         }
     }
@@ -51,7 +48,6 @@ impl Into<u32> for ECallCommand {
             ECallCommand::InitEnclave => 0x0000_1001,
             ECallCommand::FinalizeEnclave => 0x0000_1002,
             ECallCommand::RunTest => 0x0000_1003,
-            ECallCommand::ServeConnection => 0x0000_1004,
             ECallCommand::Unimplemented => 0xffff_ffff,
         }
     }
@@ -68,40 +64,23 @@ impl StartServiceInput {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct StartServiceOutput;
 
-#[derive(Clone, Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct InitEnclaveInput;
 
-#[derive(Clone, Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct InitEnclaveOutput;
 
-#[derive(Clone, Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct FinalizeEnclaveInput;
 
-#[derive(Clone, Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct FinalizeEnclaveOutput;
 
-#[derive(Clone, Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct RunTestInput;
 
-#[derive(Clone, Serialize, Deserialize, Debug, Default)]
-pub struct RunTestOutput {
-    pub failed_count: usize,
-}
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct ServeConnectionInput {
-    pub socket_fd: c_int,
-    pub port: u16,
-}
-
-#[derive(Clone, Serialize, Deserialize, Debug, Default)]
-pub struct ServeConnectionOutput;
-
-impl ServeConnectionInput {
-    pub fn new(socket_fd: c_int, port: u16) -> ServeConnectionInput {
-        ServeConnectionInput { socket_fd, port }
-    }
-}
+#[derive(Serialize, Deserialize, Debug)]
+pub struct RunTestOutput;
