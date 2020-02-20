@@ -42,7 +42,7 @@ pub(crate) struct TeaclaveFrontendService {
     management_client: Arc<Mutex<TeaclaveManagementClient>>,
 }
 
-macro_rules! forward_to_management {
+macro_rules! authentication_and_forward_to_management {
     ($service: ident, $request: ident, $func: ident) => {{
         match $service.authenticate(&$request) {
             Ok(true) => (),
@@ -113,77 +113,77 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
         &self,
         request: Request<RegisterInputFileRequest>,
     ) -> TeaclaveServiceResponseResult<RegisterInputFileResponse> {
-        forward_to_management!(self, request, register_input_file)
+        authentication_and_forward_to_management!(self, request, register_input_file)
     }
 
     fn register_output_file(
         &self,
         request: Request<RegisterOutputFileRequest>,
     ) -> TeaclaveServiceResponseResult<RegisterOutputFileResponse> {
-        forward_to_management!(self, request, register_output_file)
+        authentication_and_forward_to_management!(self, request, register_output_file)
     }
 
     fn get_output_file(
         &self,
         request: Request<GetOutputFileRequest>,
     ) -> TeaclaveServiceResponseResult<GetOutputFileResponse> {
-        forward_to_management!(self, request, get_output_file)
+        authentication_and_forward_to_management!(self, request, get_output_file)
     }
 
     fn get_fusion_data(
         &self,
         request: Request<GetFusionDataRequest>,
     ) -> TeaclaveServiceResponseResult<GetFusionDataResponse> {
-        forward_to_management!(self, request, get_fusion_data)
+        authentication_and_forward_to_management!(self, request, get_fusion_data)
     }
 
     fn register_function(
         &self,
         request: Request<RegisterFunctionRequest>,
     ) -> TeaclaveServiceResponseResult<RegisterFunctionResponse> {
-        forward_to_management!(self, request, register_function)
+        authentication_and_forward_to_management!(self, request, register_function)
     }
 
     fn get_function(
         &self,
         request: Request<GetFunctionRequest>,
     ) -> TeaclaveServiceResponseResult<GetFunctionResponse> {
-        forward_to_management!(self, request, get_function)
+        authentication_and_forward_to_management!(self, request, get_function)
     }
 
     fn create_task(
         &self,
         request: Request<CreateTaskRequest>,
     ) -> TeaclaveServiceResponseResult<CreateTaskResponse> {
-        forward_to_management!(self, request, create_task)
+        authentication_and_forward_to_management!(self, request, create_task)
     }
 
     fn get_task(
         &self,
         request: Request<GetTaskRequest>,
     ) -> TeaclaveServiceResponseResult<GetTaskResponse> {
-        forward_to_management!(self, request, get_task)
+        authentication_and_forward_to_management!(self, request, get_task)
     }
 
     fn assign_data(
         &self,
         request: Request<AssignDataRequest>,
     ) -> TeaclaveServiceResponseResult<AssignDataResponse> {
-        forward_to_management!(self, request, assign_data)
+        authentication_and_forward_to_management!(self, request, assign_data)
     }
 
     fn approve_task(
         &self,
         request: Request<ApproveTaskRequest>,
     ) -> TeaclaveServiceResponseResult<ApproveTaskResponse> {
-        forward_to_management!(self, request, approve_task)
+        authentication_and_forward_to_management!(self, request, approve_task)
     }
 
     fn invoke_task(
         &self,
         request: Request<InvokeTaskRequest>,
     ) -> TeaclaveServiceResponseResult<InvokeTaskResponse> {
-        forward_to_management!(self, request, invoke_task)
+        authentication_and_forward_to_management!(self, request, invoke_task)
     }
 }
 
