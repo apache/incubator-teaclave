@@ -41,7 +41,6 @@ use teaclave_rpc::server::SgxTrustedTlsServer;
 use teaclave_service_enclave_utils::ServiceEnclave;
 use teaclave_types::{EnclaveInfo, TeeServiceError, TeeServiceResult};
 
-mod file;
 mod function;
 mod fusion_data;
 mod service;

@@ -1,4 +1,3 @@
-use crate::file::{InputFile, OutputFile};
 use crate::function::Function;
 use crate::fusion_data::FusionData;
 use crate::task::{InputData, OutputData, StagedTask, Task};
@@ -21,6 +20,7 @@ use teaclave_proto::teaclave_storage_service::{
 use teaclave_rpc::endpoint::Endpoint;
 use teaclave_rpc::Request;
 use teaclave_service_enclave_utils::teaclave_service;
+use teaclave_types::{Storable, TeaclaveInputFile, TeaclaveOutputFile};
 use teaclave_types::{TeaclaveServiceResponseError, TeaclaveServiceResponseResult};
 use thiserror::Error;
 
@@ -67,16 +67,12 @@ impl TeaclaveManagement for TeaclaveManagementService {
             .to_string();
 
         let request = request.message;
-        let input_file = InputFile::new(request.url, request.hash, request.crypto_info, user_id);
-        let key = input_file.get_key_vec();
-        let value = input_file
-            .to_vec()
-            .map_err(|_| TeaclaveManagementError::DataError)?;
-
-        self.write_to_storage(&key, &value)
+        let input_file =
+            TeaclaveInputFile::new(request.url, request.hash, request.crypto_info, user_id);
+        self.write_to_db(&input_file)
             .map_err(|_| TeaclaveManagementError::StorageError)?;
         let response = RegisterInputFileResponse {
-            data_id: input_file.data_id,
+            data_id: input_file.external_id(),
         };
         Ok(response)
     }
@@ -93,16 +89,11 @@ impl TeaclaveManagement for TeaclaveManagementService {
             .to_string();
 
         let request = request.message;
-        let output_file = OutputFile::new(request.url, request.crypto_info, user_id);
-        let key = output_file.get_key_vec();
-        let value = output_file
-            .to_vec()
-            .map_err(|_| TeaclaveManagementError::DataError)?;
-
-        self.write_to_storage(&key, &value)
+        let output_file = TeaclaveOutputFile::new(request.url, request.crypto_info, user_id);
+        self.write_to_db(&output_file)
             .map_err(|_| TeaclaveManagementError::StorageError)?;
         let response = RegisterOutputFileResponse {
-            data_id: output_file.data_id,
+            data_id: output_file.external_id(),
         };
         Ok(response)
     }
@@ -117,7 +108,15 @@ impl TeaclaveManagement for TeaclaveManagementService {
             .get("id")
             .ok_or_else(|| TeaclaveManagementError::InvalidRequest)?
             .to_string();
-        let output_file = self.get_output_file_from_storage(&request.message.data_id)?;
+
+        if !TeaclaveOutputFile::match_prefix(&request.message.data_id) {
+            return Err(TeaclaveManagementError::PermissionDenied.into());
+        }
+
+        let output_file: TeaclaveOutputFile = self
+            .read_from_db(&request.message.data_id.as_bytes())
+            .map_err(|_| TeaclaveManagementError::PermissionDenied)?;
+
         if output_file.owner != user_id {
             return Err(TeaclaveManagementError::PermissionDenied.into());
         }
@@ -303,8 +302,10 @@ impl TeaclaveManagement for TeaclaveManagementService {
             _ => return Err(TeaclaveManagementError::PermissionDenied.into()),
         }
         for (data_name, data_id) in request.input_map.iter() {
-            if InputFile::is_input_file_id(data_id) {
-                let input_file = self.get_input_file_from_storage(data_id)?;
+            if TeaclaveInputFile::match_prefix(data_id) {
+                let input_file: TeaclaveInputFile = self
+                    .read_from_db(data_id.as_bytes())
+                    .map_err(|_| TeaclaveManagementError::PermissionDenied)?;
                 task.assign_input_file(data_name, &input_file, &user_id)
                     .map_err(|_| TeaclaveManagementError::PermissionDenied)?;
             } else if FusionData::is_fusion_data_id(data_id) {
@@ -316,8 +317,10 @@ impl TeaclaveManagement for TeaclaveManagementService {
             }
         }
         for (data_name, data_id) in request.output_map.iter() {
-            if OutputFile::is_output_file_id(data_id) {
-                let output_file = self.get_output_file_from_storage(data_id)?;
+            if TeaclaveOutputFile::match_prefix(data_id) {
+                let output_file: TeaclaveOutputFile = self
+                    .read_from_db(data_id.as_bytes())
+                    .map_err(|_| TeaclaveManagementError::PermissionDenied)?;
                 task.assign_output_file(data_name, &output_file, &user_id)
                     .map_err(|_| TeaclaveManagementError::PermissionDenied)?;
             } else {
@@ -382,8 +385,10 @@ impl TeaclaveManagement for TeaclaveManagementService {
         let mut input_map = HashMap::new();
         let mut output_map = HashMap::new();
         for (data_name, data_id) in task.input_map.iter() {
-            let input_data = if InputFile::is_input_file_id(data_id) {
-                let input_file = self.get_input_file_from_storage(data_id)?;
+            let input_data = if TeaclaveInputFile::match_prefix(data_id) {
+                let input_file: TeaclaveInputFile = self
+                    .read_from_db(data_id.as_bytes())
+                    .map_err(|_| TeaclaveManagementError::PermissionDenied)?;
                 InputData::from_input_file(input_file)
                     .map_err(|_| TeaclaveManagementError::PermissionDenied)?
             } else if FusionData::is_fusion_data_id(data_id) {
@@ -397,8 +402,10 @@ impl TeaclaveManagement for TeaclaveManagementService {
         }
 
         for (data_name, data_id) in task.output_map.iter() {
-            let output_data = if OutputFile::is_output_file_id(data_id) {
-                let output_file = self.get_output_file_from_storage(data_id)?;
+            let output_data = if TeaclaveOutputFile::match_prefix(data_id) {
+                let output_file: TeaclaveOutputFile = self
+                    .read_from_db(data_id.as_bytes())
+                    .map_err(|_| TeaclaveManagementError::PermissionDenied)?;
                 OutputData::from_output_file(output_file)
                     .map_err(|_| TeaclaveManagementError::PermissionDenied)?
             } else if FusionData::is_fusion_data_id(data_id) {
@@ -503,11 +510,9 @@ impl TeaclaveManagementService {
         let url = Url::parse("s3://bucket_id/path?token=mock_token").unwrap();
         let user_id = "mock_user1".to_string();
         let crypto_info = TeaclaveFileCryptoInfo::default();
-        let mut output_file = OutputFile::new(url, crypto_info, user_id);
+        let mut output_file = TeaclaveOutputFile::new(url, crypto_info, user_id);
         output_file.hash = Some("deadbeef".to_string());
-        let key = b"output-file-mock-with-hash";
-        let value = output_file.to_vec()?;
-        self.write_to_storage(key, &value)?;
+        self.write_to_db(&output_file)?;
         Ok(())
     }
 
@@ -540,6 +545,30 @@ impl TeaclaveManagementService {
             .map_err(|_| anyhow!("Cannot lock storage client"))?
             .put(put_request)?;
         Ok(())
+    }
+
+    fn write_to_db(&self, item: &impl Storable) -> Result<()> {
+        let k = item.key();
+        let v = item.to_vec()?;
+        let put_request = PutRequest::new(k.as_slice(), v.as_slice());
+        let _put_response = self
+            .storage_client
+            .clone()
+            .lock()
+            .map_err(|_| anyhow!("Cannot lock storage client"))?
+            .put(put_request)?;
+        Ok(())
+    }
+
+    fn read_from_db<T: Storable>(&self, key: &[u8]) -> Result<T> {
+        let get_request = GetRequest::new(key);
+        let get_response = self
+            .storage_client
+            .clone()
+            .lock()
+            .map_err(|_| anyhow!("Cannot lock storage client"))?
+            .get(get_request)?;
+        T::from_slice(get_response.value.as_slice())
     }
 
     fn read_from_storage(&self, key: &[u8]) -> Result<Vec<u8>> {
@@ -595,21 +624,6 @@ impl TeaclaveManagementService {
         Task::from_slice(&task_bytes).map_err(|_| TeaclaveManagementError::DataError.into())
     }
 
-    // avoid accessing other kinds of data: 1) check file_id 2) deserialization
-    fn get_input_file_from_storage(
-        &self,
-        input_file_id: &str,
-    ) -> TeaclaveServiceResponseResult<InputFile> {
-        if !InputFile::is_input_file_id(input_file_id) {
-            return Err(TeaclaveManagementError::PermissionDenied.into());
-        }
-        let file_key = input_file_id.as_bytes();
-        let file_bytes = self
-            .read_from_storage(file_key)
-            .map_err(|_| TeaclaveManagementError::StorageError)?;
-        InputFile::from_slice(&file_bytes).map_err(|_| TeaclaveManagementError::DataError.into())
-    }
-
     // avoid accessing other kinds of data: 1) check fusion_data_id 2) deserialization
     fn get_fusion_data_from_storage(
         &self,
@@ -623,20 +637,6 @@ impl TeaclaveManagementService {
             .read_from_storage(key)
             .map_err(|_| TeaclaveManagementError::StorageError)?;
         FusionData::from_slice(&value).map_err(|_| TeaclaveManagementError::DataError.into())
-    }
-
-    fn get_output_file_from_storage(
-        &self,
-        output_file_id: &str,
-    ) -> TeaclaveServiceResponseResult<OutputFile> {
-        if !OutputFile::is_output_file_id(&output_file_id) {
-            return Err(TeaclaveManagementError::PermissionDenied.into());
-        }
-        let key: &[u8] = output_file_id.as_bytes();
-        let value = self
-            .read_from_storage(key)
-            .map_err(|_| TeaclaveManagementError::StorageError)?;
-        OutputFile::from_slice(&value).map_err(|_| TeaclaveManagementError::DataError.into())
     }
 
     fn insert_or_update_task_to_storage(&self, task: &Task) -> TeaclaveServiceResponseResult<()> {
@@ -680,13 +680,10 @@ pub mod tests {
         let crypto_info = TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(
             TeaclaveFileRootKey128::new(&[0; 16]).unwrap(),
         );
-        let input_file = InputFile::new(url, hash, crypto_info, user_id);
-        let key = input_file.get_key_vec();
-        let key_str = std::str::from_utf8(&key).unwrap();
-        info!("key: {}", key_str);
-        assert!(InputFile::is_input_file_id(key_str));
+        let input_file = TeaclaveInputFile::new(url, hash, crypto_info, user_id);
+        assert!(TeaclaveInputFile::match_prefix(&input_file.key_string()));
         let value = input_file.to_vec().unwrap();
-        let deserialized_file = InputFile::from_slice(&value).unwrap();
+        let deserialized_file = TeaclaveInputFile::from_slice(&value).unwrap();
         info!("file: {:?}", deserialized_file);
     }
 
@@ -696,13 +693,10 @@ pub mod tests {
         let crypto_info = TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(
             TeaclaveFileRootKey128::new(&[0; 16]).unwrap(),
         );
-        let output_file = OutputFile::new(url, crypto_info, user_id);
-        let key = output_file.get_key_vec();
-        let key_str = std::str::from_utf8(&key).unwrap();
-        info!("key: {}", key_str);
-        assert!(OutputFile::is_output_file_id(key_str));
+        let output_file = TeaclaveOutputFile::new(url, crypto_info, user_id);
+        assert!(TeaclaveOutputFile::match_prefix(&output_file.key_string()));
         let value = output_file.to_vec().unwrap();
-        let deserialized_file = OutputFile::from_slice(&value).unwrap();
+        let deserialized_file = TeaclaveOutputFile::from_slice(&value).unwrap();
         info!("file: {:?}", deserialized_file);
     }
 
