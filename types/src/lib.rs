@@ -179,6 +179,8 @@ impl EnclaveInfo {
 pub enum TeaclaveServiceResponseError {
     #[error("Request error: {0}")]
     RequestError(String),
+    #[error("Connection error: {0}")]
+    ConnectionError(String),
     #[error("Internal error: {0}")]
     InternalError(String),
 }

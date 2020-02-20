@@ -53,16 +53,11 @@ where
         V: for<'de> Deserialize<'de> + std::fmt::Debug,
     {
         let mut protocol = protocol::JsonProtocol::new(&mut self.stream);
-        protocol.write_message(request).map_err(|_| {
-            teaclave_types::TeaclaveServiceResponseError::InternalError(
-                "protocol error".to_string(),
-            )
-        })?;
+        protocol.write_message(request)?;
         protocol.read_message::<protocol::JsonProtocolResult<
                 V,
                 teaclave_types::TeaclaveServiceResponseError,
-            >>()
-            .map_err(|_| teaclave_types::TeaclaveServiceResponseError::InternalError("protocol error".to_string()))?
+            >>()?
             .into()
     }
 }
