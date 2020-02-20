@@ -28,7 +28,7 @@ use crate::proto::{
 };
 use teaclave_types::TeeServiceResult;
 
-static ENCLAVE_FILE_SUFFIX: &str = "_enclave.signed.so";
+const ENCLAVE_FILE_SUFFIX: &str = "_enclave.signed.so";
 
 #[derive(thiserror::Error, Debug)]
 pub enum TeeBinderError {
@@ -55,10 +55,9 @@ impl TeeBinder {
 
         let tee = TeeBinder { enclave };
 
-        let input = InitEnclaveInput::default();
         let _ = tee.invoke::<InitEnclaveInput, TeeServiceResult<InitEnclaveOutput>>(
             ECallCommand::InitEnclave,
-            input,
+            InitEnclaveInput,
         )?;
 
         Ok(tee)
@@ -80,10 +79,9 @@ impl TeeBinder {
     }
 
     pub fn finalize(&self) {
-        let input = FinalizeEnclaveInput::default();
         match self.invoke::<FinalizeEnclaveInput, TeeServiceResult<FinalizeEnclaveOutput>>(
             ECallCommand::FinalizeEnclave,
-            input,
+            FinalizeEnclaveInput,
         ) {
             Ok(_) => {}
             Err(e) => info!("{:?}", e),

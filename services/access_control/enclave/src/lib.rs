@@ -106,19 +106,19 @@ fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
 #[handle_ecall]
 fn handle_start_service(input: &StartServiceInput) -> TeeServiceResult<StartServiceOutput> {
     start_service(&input.config).map_err(|_| TeeServiceError::ServiceError)?;
-    Ok(StartServiceOutput::default())
+    Ok(StartServiceOutput)
 }
 
 #[handle_ecall]
 fn handle_init_enclave(_: &InitEnclaveInput) -> TeeServiceResult<InitEnclaveOutput> {
     ServiceEnclave::init(env!("CARGO_PKG_NAME"))?;
-    Ok(InitEnclaveOutput::default())
+    Ok(InitEnclaveOutput)
 }
 
 #[handle_ecall]
 fn handle_finalize_enclave(_: &FinalizeEnclaveInput) -> TeeServiceResult<FinalizeEnclaveOutput> {
     ServiceEnclave::finalize()?;
-    Ok(FinalizeEnclaveOutput::default())
+    Ok(FinalizeEnclaveOutput)
 }
 
 register_ecall_handler!(

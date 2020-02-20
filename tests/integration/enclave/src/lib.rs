@@ -50,19 +50,19 @@ fn handle_run_test(_: &RunTestInput) -> TeeServiceResult<RunTestOutput> {
     );
     assert_eq!(ret, true);
 
-    Ok(RunTestOutput::default())
+    Ok(RunTestOutput)
 }
 
 #[handle_ecall]
 fn handle_init_enclave(_: &InitEnclaveInput) -> TeeServiceResult<InitEnclaveOutput> {
     ServiceEnclave::init(env!("CARGO_PKG_NAME"))?;
-    Ok(InitEnclaveOutput::default())
+    Ok(InitEnclaveOutput)
 }
 
 #[handle_ecall]
 fn handle_finalize_enclave(_: &FinalizeEnclaveInput) -> TeeServiceResult<FinalizeEnclaveOutput> {
     ServiceEnclave::finalize()?;
-    Ok(FinalizeEnclaveOutput::default())
+    Ok(FinalizeEnclaveOutput)
 }
 
 register_ecall_handler!(
