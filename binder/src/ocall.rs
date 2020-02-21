@@ -25,16 +25,19 @@ extern "C" {
         att_key_idlist_size: u32,
         p_att_key_id: *mut sgx_att_key_id_t,
     ) -> sgx_status_t;
+
     fn sgx_init_quote_ex(
         p_att_key_id: *const sgx_att_key_id_t,
         p_qe_target_info: *mut sgx_target_info_t,
         p_pub_key_id_size: *mut usize,
         p_pub_key_id: *mut u8,
     ) -> sgx_status_t;
+
     fn sgx_get_quote_size_ex(
         p_att_key_id: *const sgx_att_key_id_t,
         p_quote_size: *mut u32,
     ) -> sgx_status_t;
+
     fn sgx_get_quote_ex(
         p_isv_enclave_report: *const sgx_report_t,
         p_att_key_id: *const sgx_att_key_id_t,

@@ -1,6 +1,8 @@
 use anyhow::Result;
 use std::prelude::v1::*;
 use std::sync::{Arc, SgxMutex as Mutex};
+use thiserror::Error;
+
 use teaclave_proto::teaclave_authentication_service::{
     TeaclaveAuthenticationInternalClient, UserAuthenticateRequest,
 };
@@ -19,7 +21,6 @@ use teaclave_rpc::endpoint::Endpoint;
 use teaclave_rpc::Request;
 use teaclave_service_enclave_utils::teaclave_service;
 use teaclave_types::{TeaclaveServiceResponseError, TeaclaveServiceResponseResult};
-use thiserror::Error;
 
 #[derive(Error, Debug)]
 enum TeaclaveFrontendError {

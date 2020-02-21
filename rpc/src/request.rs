@@ -43,3 +43,9 @@ impl<T> Request<T> {
 pub trait IntoRequest<T> {
     fn into_request(self) -> Request<T>;
 }
+
+impl<T> IntoRequest<T> for T {
+    fn into_request(self) -> Request<Self> {
+        Request::new(self)
+    }
+}
