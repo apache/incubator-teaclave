@@ -1,5 +1,5 @@
 [package]
-name = "proto_gen"
+name = "teaclave_proto_gen"
 version = "0.1.0"
 authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
 description = "Generating Rust protocols from protobuf."

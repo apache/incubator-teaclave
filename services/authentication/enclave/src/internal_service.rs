@@ -52,6 +52,7 @@ pub mod tests {
     use std::untrusted::time::SystemTimeEx;
     use std::vec;
     use teaclave_proto::teaclave_common::UserCredential;
+    use teaclave_rpc::IntoRequest;
 
     fn get_mock_service() -> TeaclaveAuthenticationInternalService {
         let database = Database::open().unwrap();
@@ -187,8 +188,7 @@ pub mod tests {
         service: &TeaclaveAuthenticationInternalService,
     ) -> UserAuthenticateResponse {
         let credential = UserCredential::new(id, token);
-        let request = UserAuthenticateRequest::new(credential);
-        let request = Request::new(request);
+        let request = UserAuthenticateRequest::new(credential).into_request();
         service.user_authenticate(request).unwrap()
     }
 

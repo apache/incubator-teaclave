@@ -231,6 +231,7 @@ mod test_mode {
 pub mod tests {
     use super::*;
     use std::sync::mpsc::channel;
+    use teaclave_rpc::IntoRequest;
 
     fn get_mock_service() -> TeaclaveStorageService {
         let (_sender, receiver) = channel();
@@ -248,57 +249,45 @@ pub mod tests {
 
     pub fn test_get_key() {
         let service = get_mock_service();
-        let request = GetRequest::new("test_get_key");
-        let request = Request::new(request);
+        let request = GetRequest::new("test_get_key").into_request();
         assert!(service.get(request).is_ok());
     }
 
     pub fn test_put_key() {
         let service = get_mock_service();
-        let request = PutRequest::new("test_put_key", "test_put_value");
-        let request = Request::new(request);
+        let request = PutRequest::new("test_put_key", "test_put_value").into_request();
         assert!(service.put(request).is_ok());
-        let request = GetRequest::new("test_put_key");
-        let request = Request::new(request);
+        let request = GetRequest::new("test_put_key").into_request();
         assert!(service.get(request).is_ok());
     }
 
     pub fn test_delete_key() {
         let service = get_mock_service();
-        let request = DeleteRequest::new("test_delete_key");
-        let request = Request::new(request);
+        let request = DeleteRequest::new("test_delete_key").into_request();
         assert!(service.delete(request).is_ok());
-        let request = GetRequest::new("test_delete_key");
-        let request = Request::new(request);
+        let request = GetRequest::new("test_delete_key").into_request();
         assert!(service.get(request).is_err());
     }
 
     pub fn test_enqueue() {
         let service = get_mock_service();
-        let request = EnqueueRequest::new("test_enqueue_key", "1");
-        let request = Request::new(request);
+        let request = EnqueueRequest::new("test_enqueue_key", "1").into_request();
         assert!(service.enqueue(request).is_ok());
-        let request = EnqueueRequest::new("test_enqueue_key", "2");
-        let request = Request::new(request);
+        let request = EnqueueRequest::new("test_enqueue_key", "2").into_request();
         assert!(service.enqueue(request).is_ok());
     }
 
     pub fn test_dequeue() {
         let service = get_mock_service();
-        let request = DequeueRequest::new("test_dequeue_key");
-        let request = Request::new(request);
+        let request = DequeueRequest::new("test_dequeue_key").into_request();
         assert!(service.dequeue(request).is_err());
-        let request = EnqueueRequest::new("test_dequeue_key", "1");
-        let request = Request::new(request);
+        let request = EnqueueRequest::new("test_dequeue_key", "1").into_request();
         assert!(service.enqueue(request).is_ok());
-        let request = EnqueueRequest::new("test_dequeue_key", "2");
-        let request = Request::new(request);
+        let request = EnqueueRequest::new("test_dequeue_key", "2").into_request();
         assert!(service.enqueue(request).is_ok());
-        let request = DequeueRequest::new("test_dequeue_key");
-        let request = Request::new(request);
+        let request = DequeueRequest::new("test_dequeue_key").into_request();
         assert_eq!(service.dequeue(request).unwrap().value, b"1");
-        let request = DequeueRequest::new("test_dequeue_key");
-        let request = Request::new(request);
+        let request = DequeueRequest::new("test_dequeue_key").into_request();
         assert_eq!(service.dequeue(request).unwrap().value, b"2");
     }
 }

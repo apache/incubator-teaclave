@@ -28,9 +28,10 @@ const SALT_LEN: usize = 16;
 const PASSWORD_DIGEST_LEN: usize = digest::SHA512_OUTPUT_LEN;
 const PBKDF2_ITERATIONS: u32 = 100_000;
 static PBKDF2_ALG: pbkdf2::Algorithm = pbkdf2::PBKDF2_HMAC_SHA512;
-pub const ISSUER_NAME: &str = "Teaclave";
-pub static JWT_ALG: jwt::Algorithm = jwt::Algorithm::HS512;
-pub const JWT_SECRET_LEN: usize = 512;
+
+pub(crate) const ISSUER_NAME: &str = "Teaclave";
+pub(crate) static JWT_ALG: jwt::Algorithm = jwt::Algorithm::HS512;
+pub(crate) const JWT_SECRET_LEN: usize = 512;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub(crate) struct UserInfo {
@@ -40,7 +41,7 @@ pub(crate) struct UserInfo {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Claims {
+pub(crate) struct Claims {
     // user id
     pub sub: String,
     // issuer

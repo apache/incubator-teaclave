@@ -107,6 +107,7 @@ pub mod tests {
     use crate::user_info::*;
     use rand::RngCore;
     use std::vec;
+    use teaclave_rpc::IntoRequest;
 
     fn get_mock_service() -> TeaclaveAuthenticationApiService {
         let database = Database::open().unwrap();
@@ -120,19 +121,16 @@ pub mod tests {
     }
 
     pub fn test_user_register() {
-        let request = UserRegisterRequest::new("test_register_id", "test_password");
-        let request = Request::new(request);
+        let request = UserRegisterRequest::new("test_register_id", "test_password").into_request();
         let service = get_mock_service();
         assert!(service.user_register(request).is_ok());
     }
 
     pub fn test_user_login() {
         let service = get_mock_service();
-        let request = UserRegisterRequest::new("test_login_id", "test_password");
-        let request = Request::new(request);
+        let request = UserRegisterRequest::new("test_login_id", "test_password").into_request();
         assert!(service.user_register(request).is_ok());
-        let request = UserLoginRequest::new("test_login_id", "test_password");
-        let request = Request::new(request);
+        let request = UserLoginRequest::new("test_login_id", "test_password").into_request();
         let response = service.user_login(request);
         assert!(response.is_ok());
         let token = response.unwrap().token;
@@ -140,8 +138,7 @@ pub mod tests {
         assert!(user.validate_token(&service.jwt_secret, &token));
 
         info!("saved user_info: {:?}", user);
-        let request = UserLoginRequest::new("test_login_id", "test_password1");
-        let request = Request::new(request);
+        let request = UserLoginRequest::new("test_login_id", "test_password1").into_request();
         assert!(service.user_login(request).is_err());
     }
 }

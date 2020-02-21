@@ -15,7 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// ATTN: Must bring `use ipc::IpcReceiver` into scope when use!!
 #[cfg(feature = "mesalock_sgx")]
 #[macro_export]
 macro_rules! register_ecall_handler {

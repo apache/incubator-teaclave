@@ -1,5 +1,5 @@
 [package]
-name = "config_gen"
+name = "teaclave_config_gen"
 version = "0.1.0"
 authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
 description = "Generating build config."
