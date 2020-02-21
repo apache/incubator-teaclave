@@ -62,19 +62,20 @@ fn start_internal_endpoint(
     attestation: Arc<RemoteAttestation>,
     accepted_enclave_attrs: Vec<teaclave_types::EnclaveAttr>,
 ) {
-    let config = SgxTrustedTlsServerConfig::new_with_attestation_report_verifier(
-        accepted_enclave_attrs,
-        &attestation.cert,
-        &attestation.private_key,
-        AS_ROOT_CA_CERT,
-        verifier::universal_quote_verifier,
-    )
-    .unwrap();
+    let server_config = SgxTrustedTlsServerConfig::new()
+        .server_cert(&attestation.cert, &attestation.private_key)
+        .unwrap()
+        .attestation_report_verifier(
+            accepted_enclave_attrs,
+            AS_ROOT_CA_CERT,
+            verifier::universal_quote_verifier,
+        )
+        .unwrap();
 
     let mut server = SgxTrustedTlsServer::<
         TeaclaveAuthenticationInternalResponse,
         TeaclaveAuthenticationInternalRequest,
-    >::new(addr, &config);
+    >::new(addr, &server_config);
 
     let service =
         internal_service::TeaclaveAuthenticationInternalService::new(db_client, jwt_secret);
@@ -93,11 +94,9 @@ fn start_api_endpoint(
     jwt_secret: Vec<u8>,
     attestation: Arc<RemoteAttestation>,
 ) {
-    let config = SgxTrustedTlsServerConfig::new_without_verifier(
-        &attestation.cert,
-        &attestation.private_key,
-    )
-    .unwrap();
+    let config = SgxTrustedTlsServerConfig::new()
+        .server_cert(&attestation.cert, &attestation.private_key)
+        .unwrap();
 
     let mut server = SgxTrustedTlsServer::<
         TeaclaveAuthenticationApiResponse,
@@ -139,15 +138,14 @@ fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
     let api_listen_address = config.api_endpoints.authentication.listen_address;
     let internal_listen_address = config.internal_endpoints.authentication.listen_address;
     let as_config = &config.attestation;
-    let attestation = Arc::new(
-        RemoteAttestation::generate_and_endorse(&AttestationConfig::new(
-            &as_config.algorithm,
-            &as_config.url,
-            &as_config.key,
-            &as_config.spid,
-        ))
-        .unwrap(),
+    let attestation_config = AttestationConfig::new(
+        &as_config.algorithm,
+        &as_config.url,
+        &as_config.key,
+        &as_config.spid,
     );
+    let attestation =
+        Arc::new(RemoteAttestation::generate_and_endorse(attestation_config).unwrap());
     let database = user_db::Database::open()?;
     let mut api_jwt_secret = vec![0; user_info::JWT_SECRET_LEN];
     let mut rng = rand::thread_rng();

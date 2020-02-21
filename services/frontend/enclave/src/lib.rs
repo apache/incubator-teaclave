@@ -49,18 +49,16 @@ const AS_ROOT_CA_CERT: &[u8] = BUILD_CONFIG.as_root_ca_cert;
 fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
     let listen_address = config.api_endpoints.frontend.listen_address;
     let as_config = &config.attestation;
-    let attestation = RemoteAttestation::generate_and_endorse(&AttestationConfig::new(
+    let attestation_config = AttestationConfig::new(
         &as_config.algorithm,
         &as_config.url,
         &as_config.key,
         &as_config.spid,
-    ))
-    .unwrap();
-    let server_config = SgxTrustedTlsServerConfig::new_without_verifier(
-        &attestation.cert,
-        &attestation.private_key,
-    )
-    .unwrap();
+    );
+    let attestation = RemoteAttestation::generate_and_endorse(attestation_config).unwrap();
+    let server_config = SgxTrustedTlsServerConfig::new()
+        .server_cert(&attestation.cert, &attestation.private_key)
+        .unwrap();
 
     let mut server = SgxTrustedTlsServer::<TeaclaveFrontendResponse, TeaclaveFrontendRequest>::new(
         listen_address,

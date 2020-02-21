@@ -34,7 +34,7 @@ serde_json = { version = "1.0.39" }
 thiserror = { version = "1.0.9" }
 ring      = { version = "0.16.5" }
 rand      = { version = "0.7.0" }
-uuid      = { version = "0.7.4", features = ["v4"] }
+uuid      = { version = "0.8.1", features = ["v4"] }
 url       = { version = "2.1.1", features = ["serde"]}
 
 teaclave_attestation           = { path = "../../../attestation" }

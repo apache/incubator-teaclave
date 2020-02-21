@@ -13,12 +13,13 @@ pub struct RemoteAttestation {
     pub validity: time::Duration,
     pub cert: Vec<u8>,
     pub private_key: Vec<u8>,
+    pub config: AttestationConfig,
 }
 
 impl RemoteAttestation {
-    pub fn generate_and_endorse(att_config: &AttestationConfig) -> Result<Self> {
+    pub fn generate_and_endorse(config: AttestationConfig) -> Result<Self> {
         let key_pair = key::Secp256k1KeyPair::new()?;
-        let report = match att_config {
+        let report = match &config {
             AttestationConfig::NoAttestation => EndorsedAttestationReport::default(),
             AttestationConfig::WithAttestation(config) => {
                 EndorsedAttestationReport::new(&config, key_pair.pub_k)?
@@ -40,6 +41,7 @@ impl RemoteAttestation {
             validity,
             cert: cert_der,
             private_key: prv_key_der,
+            config,
         })
     }
 }

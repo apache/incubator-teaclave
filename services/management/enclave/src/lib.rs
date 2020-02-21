@@ -55,13 +55,13 @@ const INBOUND_SERVICES: &[&str; INBOUND_SERVICES_LEN] = BUILD_CONFIG.inbound.man
 fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
     let listen_address = config.internal_endpoints.management.listen_address;
     let as_config = &config.attestation;
-    let attestation = RemoteAttestation::generate_and_endorse(&AttestationConfig::new(
+    let attesation_config = AttestationConfig::new(
         &as_config.algorithm,
         &as_config.url,
         &as_config.key,
         &as_config.spid,
-    ))
-    .unwrap();
+    );
+    let attestation = RemoteAttestation::generate_and_endorse(attesation_config).unwrap();
     let enclave_info = EnclaveInfo::verify_and_new(
         config
             .audit
@@ -83,14 +83,15 @@ fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
                 .expect("enclave_info")
         })
         .collect();
-    let server_config = SgxTrustedTlsServerConfig::new_with_attestation_report_verifier(
-        accepted_enclave_attrs,
-        &attestation.cert,
-        &attestation.private_key,
-        AS_ROOT_CA_CERT,
-        verifier::universal_quote_verifier,
-    )
-    .unwrap();
+    let server_config = SgxTrustedTlsServerConfig::new()
+        .server_cert(&attestation.cert, &attestation.private_key)
+        .unwrap()
+        .attestation_report_verifier(
+            accepted_enclave_attrs,
+            AS_ROOT_CA_CERT,
+            verifier::universal_quote_verifier,
+        )
+        .unwrap();
     let mut server =
         SgxTrustedTlsServer::<TeaclaveManagementResponse, TeaclaveManagementRequest>::new(
             listen_address,

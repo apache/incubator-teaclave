@@ -10,37 +10,46 @@ pub struct SgxTrustedTlsServerConfig {
     pub config: rustls::ServerConfig,
 }
 
-impl SgxTrustedTlsServerConfig {
-    pub fn new_without_verifier(cert: &[u8], key_der: &[u8]) -> Result<Self> {
-        let cert_chain = vec![rustls::Certificate(cert.to_vec())];
-        let key_der = rustls::PrivateKey(key_der.to_vec());
+impl Default for SgxTrustedTlsServerConfig {
+    fn default() -> Self {
         let client_cert_verifier = rustls::NoClientAuth::new();
-        let mut config = rustls::ServerConfig::new(client_cert_verifier);
-        config.set_single_cert(cert_chain, key_der)?;
+        let config = rustls::ServerConfig::new(client_cert_verifier);
 
-        Ok(Self { config })
+        Self { config }
+    }
+}
+
+impl SgxTrustedTlsServerConfig {
+    pub fn new() -> Self {
+        Self::default()
     }
 
-    pub fn new_with_attestation_report_verifier(
+    pub fn server_cert(mut self, cert: &[u8], key_der: &[u8]) -> Result<Self> {
+        let cert_chain = vec![rustls::Certificate(cert.to_vec())];
+        let key_der = rustls::PrivateKey(key_der.to_vec());
+        self.config.set_single_cert(cert_chain, key_der)?;
+
+        Ok(Self {
+            config: self.config,
+        })
+    }
+
+    pub fn attestation_report_verifier(
+        mut self,
         accepted_enclave_attrs: Vec<EnclaveAttr>,
-        cert: &[u8],
-        key_der: &[u8],
         root_ca: &[u8],
         verifier: fn(&AttestationReport) -> bool,
     ) -> Result<Self> {
-        let cert_chain = vec![rustls::Certificate(cert.to_vec())];
-        let key_der = rustls::PrivateKey(key_der.to_vec());
-
         let verifier = Arc::new(AttestationReportVerifier::new(
             accepted_enclave_attrs,
             root_ca,
             verifier,
         ));
 
-        let mut config = rustls::ServerConfig::new(verifier);
-        config.set_single_cert(cert_chain, key_der)?;
-
-        Ok(Self { config })
+        self.config.set_client_certificate_verifier(verifier);
+        Ok(Self {
+            config: self.config,
+        })
     }
 }
 
