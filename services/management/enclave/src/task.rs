@@ -14,7 +14,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-use crate::file::{InputFile, OutputFile};
 use crate::function::Function;
 use crate::fusion_data::FusionData;
 use anyhow::{anyhow, ensure, Result};
@@ -25,6 +24,7 @@ use std::collections::HashSet;
 use std::prelude::v1::*;
 use teaclave_proto::teaclave_frontend_service::{DataOwnerList, TaskStatus};
 use teaclave_types::TeaclaveFileCryptoInfo;
+use teaclave_types::{Storable, TeaclaveInputFile, TeaclaveOutputFile};
 use url::Url;
 use uuid::Uuid;
 
@@ -152,7 +152,7 @@ impl Task {
     pub(crate) fn assign_input_file(
         &mut self,
         data_name: &str,
-        file: &InputFile,
+        file: &TeaclaveInputFile,
         user_id: &str,
     ) -> Result<()> {
         if file.owner != user_id {
@@ -171,7 +171,7 @@ impl Task {
             None => return Err(anyhow!("no such this input name")),
         };
         self.input_map
-            .insert(data_name.to_owned(), file.data_id.to_owned());
+            .insert(data_name.to_owned(), file.external_id());
         Ok(())
     }
 
@@ -184,7 +184,7 @@ impl Task {
     pub(crate) fn assign_output_file(
         &mut self,
         data_name: &str,
-        file: &OutputFile,
+        file: &TeaclaveOutputFile,
         user_id: &str,
     ) -> Result<()> {
         if file.hash.is_some() {
@@ -206,7 +206,7 @@ impl Task {
             None => return Err(anyhow!("no such this input name")),
         };
         self.output_map
-            .insert(data_name.to_owned(), file.data_id.to_owned());
+            .insert(data_name.to_owned(), file.external_id());
         Ok(())
     }
 
@@ -325,7 +325,7 @@ impl StagedTask {
 }
 
 impl InputData {
-    pub(crate) fn from_input_file(input: InputFile) -> Result<InputData> {
+    pub(crate) fn from_input_file(input: TeaclaveInputFile) -> Result<InputData> {
         Ok(InputData {
             url: input.url,
             hash: input.hash,
@@ -344,7 +344,7 @@ impl InputData {
 }
 
 impl OutputData {
-    pub(crate) fn from_output_file(output: OutputFile) -> Result<OutputData> {
+    pub(crate) fn from_output_file(output: TeaclaveOutputFile) -> Result<OutputData> {
         if output.hash.is_some() {
             return Err(anyhow!("invalid output file"));
         }
