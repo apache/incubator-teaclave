@@ -59,6 +59,7 @@ fn get_client(user_id: &str) -> TeaclaveManagementClient {
 
     TeaclaveManagementClient::new_with_metadata(channel, metadata).unwrap()
 }
+
 fn test_register_input_file() {
     let request = RegisterInputFileRequest {
         url: Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap(),
@@ -345,9 +346,11 @@ fn test_assign_data() {
     let response = client1.assign_data(request);
     assert!(response.is_err());
 
+    let existing_outfile_id_user1 = "output-file-00000000-0000-0000-0000-000000000001".to_string();
+
     // output_file.hash.is_some()
     let request = GetOutputFileRequest {
-        data_id: "output-file-mock-with-hash".to_string(),
+        data_id: existing_outfile_id_user1.clone(),
     };
     let response = client1.get_output_file(request);
     assert!(response.is_ok());
@@ -357,10 +360,9 @@ fn test_assign_data() {
         input_map: HashMap::new(),
         output_map: HashMap::new(),
     };
-    request.output_map.insert(
-        "output".to_string(),
-        "output-file-mock-with-hash".to_string(),
-    );
+    request
+        .output_map
+        .insert("output".to_string(), existing_outfile_id_user1);
     let response = client1.assign_data(request);
     assert!(response.is_err());
 
@@ -664,7 +666,7 @@ fn test_invoke_task() {
     request
         .output_map
         .insert("output".to_string(), output_file_id_user1);
-    let _response = client1.assign_data(request);
+    client1.assign_data(request).unwrap();
     let mut request = AssignDataRequest {
         task_id: task_id.clone(),
         input_map: HashMap::new(),
@@ -673,7 +675,7 @@ fn test_invoke_task() {
     request
         .input_map
         .insert("input2".to_string(), "fusion-data-mock-data".to_string());
-    let _response = client2.assign_data(request);
+    client2.assign_data(request).unwrap();
 
     // task status != Approved
     let request = InvokeTaskRequest {
@@ -686,24 +688,24 @@ fn test_invoke_task() {
     let request = ApproveTaskRequest {
         task_id: task_id.clone(),
     };
-    let _response = client.approve_task(request);
+    client.approve_task(request).unwrap();
     let request = ApproveTaskRequest {
         task_id: task_id.clone(),
     };
-    let _response = client1.approve_task(request);
+    client1.approve_task(request).unwrap();
     let request = ApproveTaskRequest {
         task_id: task_id.clone(),
     };
-    let _response = client2.approve_task(request);
+    client2.approve_task(request).unwrap();
     let request = ApproveTaskRequest {
         task_id: task_id.clone(),
     };
-    let _response = client3.approve_task(request);
+    client3.approve_task(request).unwrap();
     let request = GetTaskRequest {
         task_id: task_id.clone(),
     };
-    let response = client2.get_task(request);
-    assert_eq!(response.unwrap().status, TaskStatus::Approved);
+    let response = client2.get_task(request).unwrap();
+    assert_eq!(response.status, TaskStatus::Approved);
 
     // user_id != task.creator
     let request = InvokeTaskRequest {
@@ -716,10 +718,9 @@ fn test_invoke_task() {
     let request = InvokeTaskRequest {
         task_id: task_id.clone(),
     };
-    let response = client.invoke_task(request);
-    assert!(response.is_ok());
+    client.invoke_task(request).unwrap();
 
     let request = GetTaskRequest { task_id };
-    let response = client2.get_task(request);
-    assert_eq!(response.unwrap().status, TaskStatus::Running);
+    let response = client2.get_task(request).unwrap();
+    assert_eq!(response.status, TaskStatus::Running);
 }

@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -eE
 
 if [ -z "${MESATEE_PROJECT_ROOT}" ] \
 || [ -z "${SGX_SDK}" ] || [ -z "${SGX_MODE}" ]; then
@@ -45,6 +45,11 @@ run_integration_tests() {
 }
 
 run_functional_tests() {
+  cleanup() {
+        [[ -z "$(jobs -p)" ]] || kill -s SIGTERM $(jobs -p)
+  }
+  trap cleanup ERR
+
   pushd ${MESATEE_TEST_INSTALL_DIR}
 
   echo_title "functional tests"

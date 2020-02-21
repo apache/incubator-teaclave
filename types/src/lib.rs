@@ -19,6 +19,8 @@ mod crypto;
 pub use crypto::*;
 mod worker;
 pub use worker::*;
+mod file;
+pub use file::*;
 
 /// Status for Ecall
 #[repr(C)]
