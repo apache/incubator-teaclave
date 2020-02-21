@@ -171,7 +171,7 @@ impl Task {
             None => return Err(anyhow!("no such this input name")),
         };
         self.input_map
-            .insert(data_name.to_owned(), file.uuid.to_string());
+            .insert(data_name.to_owned(), file.external_id());
         Ok(())
     }
 

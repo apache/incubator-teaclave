@@ -24,6 +24,11 @@ use teaclave_types::{Storable, TeaclaveInputFile, TeaclaveOutputFile};
 use teaclave_types::{TeaclaveServiceResponseError, TeaclaveServiceResponseResult};
 use thiserror::Error;
 
+#[cfg(test_mode)]
+use core::str::FromStr;
+#[cfg(test_mode)]
+use uuid::Uuid;
+
 #[derive(Error, Debug)]
 enum TeaclaveManagementError {
     #[error("invalid request")]
@@ -512,6 +517,7 @@ impl TeaclaveManagementService {
         let crypto_info = TeaclaveFileCryptoInfo::default();
         let mut output_file = TeaclaveOutputFile::new(url, crypto_info, user_id);
         output_file.hash = Some("deadbeef".to_string());
+        output_file.uuid = Uuid::from_str("00000000-0000-0000-0000-000000000001")?;
         self.write_to_db(&output_file)?;
         Ok(())
     }
