@@ -63,7 +63,7 @@ quick-error       = { git = "https://github.com/mesalock-linux/quick-error-sgx" 
 rand              = { git = "https://github.com/mesalock-linux/rand-sgx", tag = "v0.6.5_sgx1.1.0" }
 regex             = { git = "https://github.com/mesalock-linux/regex-sgx" }
 ring              = { git = "https://github.com/mesalock-linux/ring-sgx", tag = "v0.16.5" }
-rustls            = { git = "https://github.com/mesalock-linux/rustls", branch = "mesalock_sgx" }
+rustls            = { git = "https://github.com/mesalock-linux/rustls", branch = "mesalock_sgx-client-cert-verifier-patch" }
 # rusty-machine     = { git = "https://github.com/mesalock-linux/rusty-machine-sgx" }
 sct               = { git = "https://github.com/mesalock-linux/sct.rs", branch = "mesalock_sgx" }
 serde             = { git = "https://github.com/mesalock-linux/serde-sgx" }

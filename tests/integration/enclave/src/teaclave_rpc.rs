@@ -103,9 +103,9 @@ fn start_echo_service() {
             &pemfile::pkcs8_private_keys(&mut io::BufReader::new(fs::File::open(END_KEY).unwrap()))
                 .unwrap()[0];
         let addr = "127.0.0.1:12345".parse().unwrap();
-        let config =
-            SgxTrustedTlsServerConfig::new_without_verifier(&cert[0].as_ref(), &private_key.0)
-                .unwrap();
+        let config = SgxTrustedTlsServerConfig::new()
+            .server_cert(&cert[0].as_ref(), &private_key.0)
+            .unwrap();
         let mut server = SgxTrustedTlsServer::<EchoResponse, EchoRequest>::new(addr, &config);
         server.start(EchoService).unwrap();
     });
