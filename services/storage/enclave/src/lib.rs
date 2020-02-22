@@ -60,7 +60,10 @@ fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
         &as_config.key,
         &as_config.spid,
     );
-    let attestation = RemoteAttestation::generate_and_endorse(attestation_config).unwrap();
+    let attested_tls_config = RemoteAttestation::new()
+        .config(attestation_config)
+        .generate_and_endorse()
+        .unwrap();
     let enclave_info = EnclaveInfo::verify_and_new(
         config
             .audit
@@ -82,8 +85,7 @@ fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
                 .expect("enclave_info")
         })
         .collect();
-    let server_config = SgxTrustedTlsServerConfig::new()
-        .server_cert(&attestation.cert, &attestation.private_key)
+    let server_config = SgxTrustedTlsServerConfig::from_attested_tls_config(&attested_tls_config)
         .unwrap()
         .attestation_report_verifier(
             accepted_enclave_attrs,

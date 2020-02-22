@@ -55,13 +55,16 @@ const INBOUND_SERVICES: &[&str; INBOUND_SERVICES_LEN] = BUILD_CONFIG.inbound.man
 fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
     let listen_address = config.internal_endpoints.management.listen_address;
     let as_config = &config.attestation;
-    let attesation_config = AttestationConfig::new(
+    let attestation_config = AttestationConfig::new(
         &as_config.algorithm,
         &as_config.url,
         &as_config.key,
         &as_config.spid,
     );
-    let attestation = RemoteAttestation::generate_and_endorse(attesation_config).unwrap();
+    let attested_tls_config = RemoteAttestation::new()
+        .config(attestation_config)
+        .generate_and_endorse()
+        .unwrap();
     let enclave_info = EnclaveInfo::verify_and_new(
         config
             .audit
@@ -83,8 +86,7 @@ fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
                 .expect("enclave_info")
         })
         .collect();
-    let server_config = SgxTrustedTlsServerConfig::new()
-        .server_cert(&attestation.cert, &attestation.private_key)
+    let server_config = SgxTrustedTlsServerConfig::from_attested_tls_config(&attested_tls_config)
         .unwrap()
         .attestation_report_verifier(
             accepted_enclave_attrs,

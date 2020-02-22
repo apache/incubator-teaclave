@@ -28,7 +28,7 @@ use std::prelude::v1::*;
 use std::sync::Arc;
 use std::thread;
 
-use teaclave_attestation::{verifier, AttestationConfig, RemoteAttestation};
+use teaclave_attestation::{verifier, AttestationConfig, AttestedTlsConfig, RemoteAttestation};
 use teaclave_binder::proto::{
     ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
     StartServiceInput, StartServiceOutput,
@@ -59,11 +59,10 @@ fn start_internal_endpoint(
     addr: std::net::SocketAddr,
     db_client: user_db::DbClient,
     jwt_secret: Vec<u8>,
-    attestation: Arc<RemoteAttestation>,
+    attested_tls_config: Arc<AttestedTlsConfig>,
     accepted_enclave_attrs: Vec<teaclave_types::EnclaveAttr>,
 ) {
-    let server_config = SgxTrustedTlsServerConfig::new()
-        .server_cert(&attestation.cert, &attestation.private_key)
+    let server_config = SgxTrustedTlsServerConfig::from_attested_tls_config(&attested_tls_config)
         .unwrap()
         .attestation_report_verifier(
             accepted_enclave_attrs,
@@ -92,16 +91,15 @@ fn start_api_endpoint(
     addr: std::net::SocketAddr,
     db_client: user_db::DbClient,
     jwt_secret: Vec<u8>,
-    attestation: Arc<RemoteAttestation>,
+    attested_tls_config: Arc<AttestedTlsConfig>,
 ) {
-    let config = SgxTrustedTlsServerConfig::new()
-        .server_cert(&attestation.cert, &attestation.private_key)
-        .unwrap();
+    let server_config =
+        SgxTrustedTlsServerConfig::from_attested_tls_config(&attested_tls_config).unwrap();
 
     let mut server = SgxTrustedTlsServer::<
         TeaclaveAuthenticationApiResponse,
         TeaclaveAuthenticationApiRequest,
-    >::new(addr, &config);
+    >::new(addr, &server_config);
 
     let service = api_service::TeaclaveAuthenticationApiService::new(db_client, jwt_secret);
 
@@ -144,18 +142,27 @@ fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
         &as_config.key,
         &as_config.spid,
     );
-    let attestation =
-        Arc::new(RemoteAttestation::generate_and_endorse(attestation_config).unwrap());
+    let attested_tls_config = Arc::new(
+        RemoteAttestation::new()
+            .config(attestation_config)
+            .generate_and_endorse()
+            .unwrap(),
+    );
     let database = user_db::Database::open()?;
     let mut api_jwt_secret = vec![0; user_info::JWT_SECRET_LEN];
     let mut rng = rand::thread_rng();
     rng.fill_bytes(&mut api_jwt_secret);
     let internal_jwt_secret = api_jwt_secret.to_owned();
 
-    let attestation_ref = attestation.clone();
+    let attested_tls_config_ref = attested_tls_config.clone();
     let client = database.get_client();
     let api_endpoint_thread_handler = thread::spawn(move || {
-        start_api_endpoint(api_listen_address, client, api_jwt_secret, attestation_ref);
+        start_api_endpoint(
+            api_listen_address,
+            client,
+            api_jwt_secret,
+            attested_tls_config_ref,
+        );
     });
 
     let client = database.get_client();
@@ -164,7 +171,7 @@ fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
             internal_listen_address,
             client,
             internal_jwt_secret,
-            attestation,
+            attested_tls_config,
             accepted_enclave_attrs,
         );
     });

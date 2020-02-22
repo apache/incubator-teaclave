@@ -98,6 +98,13 @@ pub(crate) struct EndorsedAttestationReport {
     pub signing_cert: Vec<u8>,
 }
 
+pub struct AttestedTlsConfig {
+    pub cert: Vec<u8>,
+    pub private_key: Vec<u8>,
+    pub time: std::time::SystemTime,
+    pub validity: std::time::Duration,
+}
+
 #[macro_use]
 mod cert;
 pub mod report;

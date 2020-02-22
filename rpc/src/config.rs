@@ -4,6 +4,7 @@ use std::prelude::v1::*;
 use std::sync::Arc;
 use teaclave_attestation::report::AttestationReport;
 use teaclave_attestation::verifier::AttestationReportVerifier;
+use teaclave_attestation::AttestedTlsConfig;
 use teaclave_types::EnclaveAttr;
 
 pub struct SgxTrustedTlsServerConfig {
@@ -32,6 +33,10 @@ impl SgxTrustedTlsServerConfig {
         Ok(Self {
             config: self.config,
         })
+    }
+
+    pub fn from_attested_tls_config(attested_tls_config: &AttestedTlsConfig) -> Result<Self> {
+        Self::new().server_cert(&attested_tls_config.cert, &attested_tls_config.private_key)
     }
 
     pub fn attestation_report_verifier(
@@ -125,5 +130,9 @@ impl SgxTrustedTlsClientConfig {
         Self {
             config: self.config,
         }
+    }
+
+    pub fn from_attested_tls_config(attested_tls_config: &AttestedTlsConfig) -> Self {
+        Self::new().client_cert(&attested_tls_config.cert, &attested_tls_config.private_key)
     }
 }
