@@ -51,10 +51,12 @@ fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
         &as_config.key,
         &as_config.spid,
     );
-    let attestation = RemoteAttestation::generate_and_endorse(attestation_config).unwrap();
-    let server_config = SgxTrustedTlsServerConfig::new()
-        .server_cert(&attestation.cert, &attestation.private_key)
+    let attested_tls_config = RemoteAttestation::new()
+        .config(attestation_config)
+        .generate_and_endorse()
         .unwrap();
+    let server_config =
+        SgxTrustedTlsServerConfig::from_attested_tls_config(&attested_tls_config).unwrap();
 
     let mut server =
         SgxTrustedTlsServer::<TeaclaveExecutionResponse, TeaclaveExecutionRequest>::new(

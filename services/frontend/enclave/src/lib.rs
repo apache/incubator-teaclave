@@ -55,10 +55,12 @@ fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
         &as_config.key,
         &as_config.spid,
     );
-    let attestation = RemoteAttestation::generate_and_endorse(attestation_config).unwrap();
-    let server_config = SgxTrustedTlsServerConfig::new()
-        .server_cert(&attestation.cert, &attestation.private_key)
+    let attested_tls_config = RemoteAttestation::new()
+        .config(attestation_config)
+        .generate_and_endorse()
         .unwrap();
+    let server_config =
+        SgxTrustedTlsServerConfig::from_attested_tls_config(&attested_tls_config).unwrap();
 
     let mut server = SgxTrustedTlsServer::<TeaclaveFrontendResponse, TeaclaveFrontendRequest>::new(
         listen_address,
@@ -70,8 +72,7 @@ fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
     let enclave_attr = enclave_info
         .get_enclave_attr("teaclave_authentication_service")
         .expect("authentication");
-    let client_config = SgxTrustedTlsClientConfig::new()
-        .client_cert(&attestation.cert, &attestation.private_key)
+    let client_config = SgxTrustedTlsClientConfig::from_attested_tls_config(&attested_tls_config)
         .attestation_report_verifier(
             vec![enclave_attr],
             AS_ROOT_CA_CERT,
@@ -85,8 +86,7 @@ fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
     let enclave_attr = enclave_info
         .get_enclave_attr("teaclave_management_service")
         .expect("management");
-    let client_config = SgxTrustedTlsClientConfig::new()
-        .client_cert(&attestation.cert, &attestation.private_key)
+    let client_config = SgxTrustedTlsClientConfig::from_attested_tls_config(&attested_tls_config)
         .attestation_report_verifier(
             vec![enclave_attr],
             AS_ROOT_CA_CERT,
