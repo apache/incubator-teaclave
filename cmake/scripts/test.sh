@@ -1,9 +1,9 @@
 #!/bin/bash
 set -eE
 
-if [ -z "${MESATEE_PROJECT_ROOT}" ] \
+if [ -z "${TEACLAVE_PROJECT_ROOT}" ] \
 || [ -z "${SGX_SDK}" ] || [ -z "${SGX_MODE}" ]; then
-    echo "Please set MESATEE_PROJECT_ROOT, SGX_SDK and SGX_MODE";
+    echo "Please set TEACLAVE_PROJECT_ROOT, SGX_SDK and SGX_MODE";
     exit -1
 fi
 
@@ -23,7 +23,7 @@ echo_title() {
 }
 
 run_unit_tests() {
-  pushd ${MESATEE_TEST_INSTALL_DIR}
+  pushd ${TEACLAVE_TEST_INSTALL_DIR}
 
   echo_title "encalve unit tests"
   ./teaclave_unit_tests
@@ -32,14 +32,14 @@ run_unit_tests() {
 }
 
 run_integration_tests() {
-  pushd ${MESATEE_TEST_INSTALL_DIR}
+  pushd ${TEACLAVE_TEST_INSTALL_DIR}
 
   echo_title "integration tests"
   ./teaclave_integration_tests
 
   echo_title "protected_fs_rs tests (untrusted)"
-  cargo test --manifest-path ${MESATEE_PROJECT_ROOT}/common/protected_fs_rs/Cargo.toml \
-        --target-dir ${MESATEE_TARGET_DIR}/untrusted
+  cargo test --manifest-path ${TEACLAVE_PROJECT_ROOT}/common/protected_fs_rs/Cargo.toml \
+        --target-dir ${TEACLAVE_TARGET_DIR}/untrusted
 
   popd
 }
@@ -50,10 +50,10 @@ run_functional_tests() {
   }
   trap cleanup ERR
 
-  pushd ${MESATEE_TEST_INSTALL_DIR}
+  pushd ${TEACLAVE_TEST_INSTALL_DIR}
 
   echo_title "functional tests"
-  pushd ${MESATEE_SERVICE_INSTALL_DIR}
+  pushd ${TEACLAVE_SERVICE_INSTALL_DIR}
   ./teaclave_authentication_service &
   ./teaclave_storage_service &
   sleep 3    # wait for authentication and storage service

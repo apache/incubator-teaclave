@@ -1,5 +1,5 @@
 macro(dbg_message)
-  if(MESATEE_CMAKE_DBG)
+  if(TEACLAVE_CMAKE_DBG)
     message("${ARGN}")
   endif()
 endmacro()
@@ -57,13 +57,13 @@ function(add_cargo_build_target package_name)
   if(DEFINED MTEE_INSTALL_DIR)
     set(_copy_dir ${MTEE_INSTALL_DIR})
   else()
-    set(_copy_dir ${MESATEE_INSTALL_DIR})
+    set(_copy_dir ${TEACLAVE_INSTALL_DIR})
   endif()
 
   if(MTEE_NOT_SET_COMMON_ENV)
     set(_envs)
   else()
-    set(_envs ${MESATEE_COMMON_ENVS})
+    set(_envs ${TEACLAVE_COMMON_ENVS})
   endif()
 
   if(DEFINED MTEE_DEPENDS)
@@ -102,7 +102,7 @@ function(add_cargo_build_dylib_target package_name)
   if(MTEE_NOT_SET_COMMON_ENV)
     set(_envs)
   else()
-    set(_envs ${MESATEE_COMMON_ENVS})
+    set(_envs ${TEACLAVE_COMMON_ENVS})
   endif()
 
   if(DEFINED MTEE_DEPENDS)
@@ -118,7 +118,7 @@ function(add_cargo_build_dylib_target package_name)
       ${MT_SCRIPT_DIR}/cargo_build_ex.sh -p ${package_name} --target-dir
       ${MTEE_TARGET_DIR} ${CARGO_BUILD_FLAGS} ${MTEE_EXTRA_CARGO_FLAGS} && cp
       ${MTEE_TARGET_DIR}/${TARGET}/lib${package_name}.so
-      ${MESATEE_LIB_INSTALL_DIR} ${_depends}
+      ${TEACLAVE_LIB_INSTALL_DIR} ${_depends}
     COMMENT "Building ${_target_name} as a dynamic library"
     WORKING_DIRECTORY ${MTEE_TOML_DIR})
 endfunction()
@@ -141,23 +141,23 @@ function(add_sgx_build_target sgx_lib_path pkg_name)
   if(DEFINED MTEE_INSTALL_DIR)
     set(_copy_dir ${MTEE_INSTALL_DIR})
   else()
-    set(_copy_dir ${MESATEE_INSTALL_DIR})
+    set(_copy_dir ${TEACLAVE_INSTALL_DIR})
   endif()
 
   rm_trailing_enclave(${pkg_name} pkg_name_no_enclave)
 
   set(_target_name ${SGXLIB_PREFIX}-${pkg_name_no_enclave})
 
-  if(pkg_name_no_enclave STREQUAL "functional_test")
+  if(pkg_name_no_enclave MATCHES "_tests$" AND CMAKE_BUILD_TYPE_LOWER STREQUAL "release")
     set(_enclave_info "/dev/null")
   else()
-    set(_enclave_info "${MESATEE_OUT_DIR}/${pkg_name}_info.toml")
+    set(_enclave_info "${TEACLAVE_OUT_DIR}/${pkg_name}_info.toml")
   endif()
 
   add_custom_target(
     ${_target_name} ALL
     COMMAND
-      ${CMAKE_COMMAND} -E env ${MESATEE_COMMON_ENVS} RUSTFLAGS=${RUSTFLAGS}
+      ${CMAKE_COMMAND} -E env ${TEACLAVE_COMMON_ENVS} RUSTFLAGS=${RUSTFLAGS}
       ${MT_SCRIPT_DIR}/cargo_build_ex.sh -p ${pkg_name} --target-dir
       ${TRUSTED_TARGET_DIR} ${CARGO_BUILD_FLAGS} ${SGX_ENCLAVE_FEATURES}
       ${MTEE_EXTRA_CARGO_FLAGS}
@@ -167,7 +167,7 @@ function(add_sgx_build_target sgx_lib_path pkg_name)
       CUR_PKG_PATH=${sgx_lib_path} CUR_INSTALL_DIR=${_copy_dir}
       ${MT_SCRIPT_DIR}/sgx_link_sign.sh ${_depends}
     COMMAND
-      cat ${MESATEE_OUT_DIR}/${pkg_name}.meta.txt | python
+      cat ${TEACLAVE_OUT_DIR}/${pkg_name}.meta.txt | python
       ${MT_SCRIPT_DIR}/gen_enclave_info_toml.py ${pkg_name_no_enclave} >
       ${_enclave_info}
     COMMENT "Building ${_target_name}, enclave info to ${_enclave_info}"
@@ -178,7 +178,7 @@ function(add_enclave_sig_target_n_hooks)
   # add a target to generate enclave sig files
   add_custom_target(
     update_sig ALL
-    COMMAND ${MESATEE_COMMON_ENVS} ${MT_SCRIPT_DIR}/gen_enclave_sig.sh
+    COMMAND ${TEACLAVE_COMMON_ENVS} ${MT_SCRIPT_DIR}/gen_enclave_sig.sh
     COMMENT "Generating enclave signatures..."
     DEPENDS ${SGXLIB_TARGETS})
 
@@ -189,7 +189,7 @@ function(add_enclave_sig_target_n_hooks)
       TARGET ${sgx_module}
       POST_BUILD
       COMMENT "Updating enclave signatures..."
-      COMMAND ${MESATEE_COMMON_ENVS} ${MT_SCRIPT_DIR}/gen_enclave_sig.sh)
+      COMMAND ${TEACLAVE_COMMON_ENVS} ${MT_SCRIPT_DIR}/gen_enclave_sig.sh)
   endforeach()
 endfunction()
 
@@ -202,9 +202,9 @@ function(join_string values glue out)
 endfunction()
 
 function(generate_env_file)
-  set(envs ${MESATEE_COMMON_ENVS})
-  list(FILTER envs INCLUDE REGEX "MESATEE_PROJECT_ROOT|MESATEE_CFG_DIR|\
-MESATEE_BUILD_CFG_DIR|MESATEE_OUT_DIR|MESATEE_AUDITORS_DIR")
+  set(envs ${TEACLAVE_COMMON_ENVS})
+  list(FILTER envs INCLUDE REGEX "TEACLAVE_PROJECT_ROOT|TEACLAVE_CFG_DIR|\
+TEACLAVE_BUILD_CFG_DIR|TEACLAVE_OUT_DIR|TEACLAVE_AUDITORS_DIR")
   # add extra env vars
   list(APPEND envs "RUST_LOG=info" "RUST_BACKTRACE=1")
   join_string("${envs}" "\nexport " env_file)
@@ -245,7 +245,7 @@ function(check_exe_dependencies)
     if(_res)
       message(
         FATAL_ERROR
-          "MesaTEE depends on \"${exe}\" but the command was not found. \
+          "Teaclave depends on \"${exe}\" but the command was not found. \
 Please install the dependency and retry.")
     endif()
   endforeach()

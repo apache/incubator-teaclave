@@ -1,5 +1,5 @@
 '''
-[usage] python parse_cargo_package.py <cargo_toml_path> <mesatee_root>
+[usage] python parse_cargo_package.py <cargo_toml_path> <teaclave_root>
 This script parses Cargo.toml to print three lists for CMake
 "<pkg_name_list>\n<pkg_path_list>\n<pkg_category_list>"
 The items in each list are separated by ":"
@@ -8,7 +8,7 @@ In Cargo.toml, lines ending with "# ignore" will be omitted
 e.g.
 members = [
   "examples/neural_net",
-  "mesatee_sdk", # ignore
+  "teaclave_sdk", # ignore
 ]
 '''
 import os
@@ -73,12 +73,12 @@ def pkg_path_2_category(pkg_path):
 def main():
     """parses Cargo.toml to generate a list of package to be built"""
     if len(sys.argv) < 3:
-        err = "[usage] python {} cargo_toml_path mesatee_root".format(
+        err = "[usage] python {} cargo_toml_path teaclave_root".format(
             sys.argv[0])
         raise ValueError(err)
 
     toml_path = sys.argv[1]
-    mesatee_root = sys.argv[2]
+    teaclave_root = sys.argv[2]
 
     pkg_names = []
     pkg_paths = []
@@ -86,7 +86,7 @@ def main():
 
     members = parse_members_for_workspace(toml_path)
     for pkg_path in members:
-        pkg_toml_path = os.path.join(mesatee_root, pkg_path, "Cargo.toml")
+        pkg_toml_path = os.path.join(teaclave_root, pkg_path, "Cargo.toml")
         pkg_name = parse_package_name(pkg_toml_path)
 
         pkg_names.append(pkg_name)

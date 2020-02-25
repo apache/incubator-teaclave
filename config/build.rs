@@ -16,8 +16,8 @@ fn main() {
     println!("cargo:rerun-if-changed=config_gen/templates/config.j2");
     println!("cargo:rerun-if-changed=build.config.toml");
     println!("cargo:rerun-if-changed=build.rs");
-    let target_dir = Path::new(&env::var("MESATEE_SYMLINKS").expect("MESATEE_SYMLINKS"))
-        .join("mesatee_build/target/config_gen");
+    let target_dir = Path::new(&env::var("TEACLAVE_SYMLINKS").expect("TEACLAVE_SYMLINKS"))
+        .join("teaclave_build/target/config_gen");
     let c = Command::new("cargo")
         .args(&[
             "run",
