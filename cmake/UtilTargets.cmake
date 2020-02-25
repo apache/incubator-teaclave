@@ -9,9 +9,9 @@ add_custom_target(
   format
   COMMAND rustup component add rustfmt --toolchain ${RUSTUP_TOOLCHAIN}
   COMMAND
-    RUSTUP_TOOLCHAIN=${RUSTUP_TOOLCHAIN} find ${MESATEE_PROJECT_ROOT} -path
-    ${MESATEE_PROJECT_ROOT}/third_party -prune -o -path
-    ${MESATEE_PROJECT_ROOT}/.git -prune -o -path ${MESATEE_BUILD_ROOT} -prune -o
+    RUSTUP_TOOLCHAIN=${RUSTUP_TOOLCHAIN} find ${TEACLAVE_PROJECT_ROOT} -path
+    ${TEACLAVE_PROJECT_ROOT}/third_party -prune -o -path
+    ${TEACLAVE_PROJECT_ROOT}/.git -prune -o -path ${TEACLAVE_BUILD_ROOT} -prune -o
     -name "*.rs" -exec rustfmt {} +
   COMMENT "Formating every .rs file"
   DEPENDS prep)
@@ -20,23 +20,23 @@ add_custom_target(
   check
   COMMAND rustup component add rustfmt --toolchain ${RUSTUP_TOOLCHAIN}
   COMMAND
-    RUSTUP_TOOLCHAIN=${RUSTUP_TOOLCHAIN} find ${MESATEE_PROJECT_ROOT} -path
-    ${MESATEE_PROJECT_ROOT}/third_party -prune -o -path
-    ${MESATEE_PROJECT_ROOT}/.git -prune -o -path ${MESATEE_BUILD_ROOT} -prune -o
+    RUSTUP_TOOLCHAIN=${RUSTUP_TOOLCHAIN} find ${TEACLAVE_PROJECT_ROOT} -path
+    ${TEACLAVE_PROJECT_ROOT}/third_party -prune -o -path
+    ${TEACLAVE_PROJECT_ROOT}/.git -prune -o -path ${TEACLAVE_BUILD_ROOT} -prune -o
     -name "*.rs" -exec rustfmt --check {} +
   COMMENT "Checking the format of every .rs file"
   DEPENDS prep)
 
 if(TEST_MODE)
-  add_custom_target(run-tests COMMAND ${MESATEE_COMMON_ENVS}
+  add_custom_target(run-tests COMMAND ${TEACLAVE_COMMON_ENVS}
                                       ${MT_SCRIPT_DIR}/test.sh)
-  add_custom_target(run-unit-tests COMMAND ${MESATEE_COMMON_ENVS}
+  add_custom_target(run-unit-tests COMMAND ${TEACLAVE_COMMON_ENVS}
                                            ${MT_SCRIPT_DIR}/test.sh unit)
   add_custom_target(
-    run-integration-tests COMMAND ${MESATEE_COMMON_ENVS}
+    run-integration-tests COMMAND ${TEACLAVE_COMMON_ENVS}
                                   ${MT_SCRIPT_DIR}/test.sh integration)
   add_custom_target(
-    run-functional-tests COMMAND ${MESATEE_COMMON_ENVS}
+    run-functional-tests COMMAND ${TEACLAVE_COMMON_ENVS}
                                  ${MT_SCRIPT_DIR}/test.sh functional)
 else()
   add_custom_target(
@@ -47,12 +47,12 @@ else()
   )
 endif()
 
-add_custom_target(cov COMMAND ${MESATEE_COMMON_ENVS}
+add_custom_target(cov COMMAND ${TEACLAVE_COMMON_ENVS}
                               ${MT_SCRIPT_DIR}/gen_cov.sh)
 
 add_custom_target(
   cov-clean
-  COMMAND rm -rf ${MESATEE_OUT_DIR}/*.info ${MESATEE_OUT_DIR}/cov_* cov.info
+  COMMAND rm -rf ${TEACLAVE_OUT_DIR}/*.info ${TEACLAVE_OUT_DIR}/cov_* cov.info
           cov_report
   COMMAND find . -name *.gcda -exec rm {} "\;"
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
@@ -60,18 +60,18 @@ add_custom_target(
 # add folders for "clean" target
 set_property(
   DIRECTORY
-  PROPERTY ADDITIONAL_MAKE_CLEAN_FILES "${MESATEE_INSTALL_DIR}"
-           "${MESATEE_OUT_DIR}" "${MESATEE_TARGET_DIR}"
+  PROPERTY ADDITIONAL_MAKE_CLEAN_FILES "${TEACLAVE_INSTALL_DIR}"
+           "${TEACLAVE_OUT_DIR}" "${TEACLAVE_TARGET_DIR}"
            "${PROJECT_BINARY_DIR}/cmake_tomls")
 
 # doc target
 add_custom_target(
   doc
   COMMAND
-    cd ${PROJECT_BINARY_DIR}/cmake_tomls/unix_app && ${MESATEE_COMMON_ENVS}
+    cd ${PROJECT_BINARY_DIR}/cmake_tomls/unix_app && ${TEACLAVE_COMMON_ENVS}
     cargo doc --all ${CARGO_BUILD_FLAGS} ${MTEE_EXTRA_CARGO_FLAGS} && cp -RT
     ${PROJECT_BINARY_DIR}/cmake_tomls/unix_app/target/doc
-    ${MESATEE_DOC_INSTALL_DIR}
+    ${TEACLAVE_DOC_INSTALL_DIR}
   DEPENDS prep)
 
 # clippy target

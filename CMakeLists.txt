@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
-project(MesaTEE C)
+project(Teaclave C)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-include(MesaTEEUtils)
+include(TeaclaveUtils)
 include(ExternalProject)
 check_exe_dependencies(git openssl python rustup lsof pypy)
 init_submodules()
@@ -10,7 +10,7 @@ init_submodules()
 # ====== VARIABLES FOR CMAKE -D{VAR}=VAL CONFIGURATION BEGIN ======
 set_strvar_from_env_or(SGX_SDK "/opt/sgxsdk" "Path of SGX SDK")
 set_strvar_from_env_or(RUSTFLAGS "" "Rust flags")
-set_strvar_from_env_or(MESATEE_CMAKE_DBG ""
+set_strvar_from_env_or(TEACLAVE_CMAKE_DBG ""
                        "set to turn on debug message for cmake")
 set(MESAPY_VERSION 668d16ff4bf3389f67f238e72e687aa4de342bde)
 option(COV "Turn on/off coverage" OFF)
@@ -36,7 +36,7 @@ endif()
 # ======= VARIABLES FOR CMAKE -D{VAR}=VAL CONFIGURATION END =======
 
 # =============== VARIABLES FOR MANUAL CHANGE BEGIN ===============
-set(UNIX_LIBS mesatee_sdk protected_fs_rs)
+set(UNIX_LIBS teaclave_sdk protected_fs_rs)
 # ================ VARIABLES FOR MANUAL CHANGE END ================
 
 # UNIX_APPS, SGX_APPS and SGX_LIBS are parsed from corresponding toml files
@@ -59,7 +59,7 @@ parse_cargo_packages(
   PKG_PATHS
   SGX_LIB_PATHS)
 
-include(MesaTEEGenVars)
+include(TeaclaveGenVars)
 
 # ========== CONFIG-TIME CHECKS AND INITIALIZATIONS BEGIN =========
 check_sgx_sdk()
@@ -87,7 +87,7 @@ foreach(_i RANGE ${UNIX_APP_LAST_INDEX})
     TARGET_DIR
     ${UNIX_TARGET_DIR}
     INSTALL_DIR
-    ${MESATEE_INSTALL_DIR}/${_category}
+    ${TEACLAVE_INSTALL_DIR}/${_category}
     EXTRA_CARGO_FLAGS
     ${EXTRA_CARGO_FLAGS}
     DEPENDS
@@ -109,7 +109,7 @@ foreach(_i RANGE ${SGX_APP_LAST_INDEX})
     TARGET_DIR
     ${UNTRUSTED_TARGET_DIR}
     INSTALL_DIR
-    ${MESATEE_INSTALL_DIR}/${_category}
+    ${TEACLAVE_INSTALL_DIR}/${_category}
     EXTRA_CARGO_FLAGS
     ${EXTRA_CARGO_FLAGS}
     DEPENDS
@@ -118,17 +118,17 @@ endforeach()
 
 # mesapy components
 add_custom_command(
-  OUTPUT ${MESATEE_OUT_DIR}/acs_py_enclave.c
+  OUTPUT ${TEACLAVE_OUT_DIR}/acs_py_enclave.c
   COMMAND
     env ARGS PYTHONPATH=${PROJECT_SOURCE_DIR}/third_party/mesapy/sgx
-    PYPY_FFI_OUTDIR=${MESATEE_OUT_DIR} pypy
+    PYPY_FFI_OUTDIR=${TEACLAVE_OUT_DIR} pypy
     ${PROJECT_SOURCE_DIR}/services/access_control/python/ffi.py
   DEPENDS prep ${PROJECT_SOURCE_DIR}/services/access_control/python/ffi.py
           ${PROJECT_SOURCE_DIR}/services/access_control/python/acs_engine.py
   COMMENT "Generating mesapy ffi stubs")
-add_library(pycomponent STATIC ${MESATEE_OUT_DIR}/acs_py_enclave.c)
+add_library(pycomponent STATIC ${TEACLAVE_OUT_DIR}/acs_py_enclave.c)
 set_target_properties(pycomponent PROPERTIES ARCHIVE_OUTPUT_DIRECTORY
-                                             ${MESATEE_OUT_DIR})
+                                             ${TEACLAVE_OUT_DIR})
 target_compile_definitions(pycomponent PUBLIC SGX)
 if(NOT EXISTS "/usr/lib/pypy/include")
   message(
@@ -153,22 +153,22 @@ foreach(_i RANGE ${SGX_LIB_LAST_INDEX})
     prep
     pycomponent
     INSTALL_DIR
-    ${MESATEE_INSTALL_DIR}/${_category})
+    ${TEACLAVE_INSTALL_DIR}/${_category})
 endforeach()
 
-# MesaTEE C SDK add_cargo_build_dylib_target(mesatee_sdk_c TARGET_NAME
-# "${UNIXLIB_PREFIX}-mesatee_sdk_c" TOML_DIR ${MT_UNIX_TOML_DIR} TARGET_DIR
+# Teaclave C SDK add_cargo_build_dylib_target(teaclave_sdk_c TARGET_NAME
+# "${UNIXLIB_PREFIX}-teaclave_sdk_c" TOML_DIR ${MT_UNIX_TOML_DIR} TARGET_DIR
 # ${UNIX_TARGET_DIR} DEPENDS prep )
 
-# example/quickstart_c link_directories(${MESATEE_LIB_INSTALL_DIR})
+# example/quickstart_c link_directories(${TEACLAVE_LIB_INSTALL_DIR})
 # add_executable(quickstart_c
-# ${MESATEE_PROJECT_ROOT}/examples/quickstart_c/main.c)
-# add_dependencies(quickstart_c prep ${UNIXLIB_PREFIX}-mesatee_sdk_c)
+# ${TEACLAVE_PROJECT_ROOT}/examples/quickstart_c/main.c)
+# add_dependencies(quickstart_c prep ${UNIXLIB_PREFIX}-teaclave_sdk_c)
 # target_include_directories(quickstart_c PUBLIC
-# ${MESATEE_PROJECT_ROOT}/mesatee_sdk/c_sdk/include/)
-# target_link_libraries(quickstart_c mesatee_sdk_c) add_custom_command(TARGET
+# ${TEACLAVE_PROJECT_ROOT}/teaclave_sdk/c_sdk/include/)
+# target_link_libraries(quickstart_c teaclave_sdk_c) add_custom_command(TARGET
 # quickstart_c POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy
 # ${CMAKE_CURRENT_BINARY_DIR}/quickstart_c
-# ${MESATEE_EXAMPLE_INSTALL_DIR}/quickstart_c )
+# ${TEACLAVE_EXAMPLE_INSTALL_DIR}/quickstart_c )
 
 add_enclave_sig_target_n_hooks()

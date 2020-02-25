@@ -40,8 +40,8 @@ fn main() {
         println!("cargo:rerun-if-changed={}", pf);
     }
 
-    let target_dir = Path::new(&env::var("MESATEE_SYMLINKS").expect("MESATEE_SYMLINKS"))
-        .join("mesatee_build/target/proto_gen");
+    let target_dir = Path::new(&env::var("TEACLAVE_SYMLINKS").expect("TEACLAVE_SYMLINKS"))
+        .join("teaclave_build/target/proto_gen");
     let c = Command::new("cargo")
         .args(&[
             "run",
