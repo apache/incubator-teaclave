@@ -11,8 +11,8 @@ add_custom_target(
   COMMAND
     RUSTUP_TOOLCHAIN=${RUSTUP_TOOLCHAIN} find ${TEACLAVE_PROJECT_ROOT} -path
     ${TEACLAVE_PROJECT_ROOT}/third_party -prune -o -path
-    ${TEACLAVE_PROJECT_ROOT}/.git -prune -o -path ${TEACLAVE_BUILD_ROOT} -prune -o
-    -name "*.rs" -exec rustfmt {} +
+    ${TEACLAVE_PROJECT_ROOT}/.git -prune -o -path ${TEACLAVE_BUILD_ROOT} -prune
+    -o -name "*.rs" -exec rustfmt {} +
   COMMENT "Formating every .rs file"
   DEPENDS prep)
 
@@ -22,8 +22,8 @@ add_custom_target(
   COMMAND
     RUSTUP_TOOLCHAIN=${RUSTUP_TOOLCHAIN} find ${TEACLAVE_PROJECT_ROOT} -path
     ${TEACLAVE_PROJECT_ROOT}/third_party -prune -o -path
-    ${TEACLAVE_PROJECT_ROOT}/.git -prune -o -path ${TEACLAVE_BUILD_ROOT} -prune -o
-    -name "*.rs" -exec rustfmt --check {} +
+    ${TEACLAVE_PROJECT_ROOT}/.git -prune -o -path ${TEACLAVE_BUILD_ROOT} -prune
+    -o -name "*.rs" -exec rustfmt --check {} +
   COMMENT "Checking the format of every .rs file"
   DEPENDS prep)
 
