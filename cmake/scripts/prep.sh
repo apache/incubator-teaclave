@@ -6,7 +6,7 @@ REQUIRED_ENVS=("CMAKE_SOURCE_DIR" "CMAKE_BINARY_DIR"
 "CMAKE_AR" "SGX_UNTRUSTED_CFLAGS" "SGX_TRUSTED_CFLAGS" "MT_SCRIPT_DIR"
 "MESATEE_SERVICE_INSTALL_DIR" "MESATEE_EXAMPLE_INSTALL_DIR" "MESATEE_BIN_INSTALL_DIR"
 "MESATEE_CLI_INSTALL_DIR" "MESATEE_DCAP_INSTALL_DIR" "MESATEE_LIB_INSTALL_DIR" "MESATEE_TEST_INSTALL_DIR"
-"MESATEE_AUDITORS_DIR" "MESATEE_EXAMPLE_AUDITORS_DIR" "DCAP"
+"MESATEE_AUDITORS_DIR" "MESATEE_EXAMPLE_AUDITORS_DIR" "DCAP" "MESATEE_SYMLINKS"
 )
 
 for var in "${REQUIRED_ENVS[@]}"; do
@@ -32,10 +32,10 @@ cp -r ${CMAKE_SOURCE_DIR}/tests/fixtures/ ${MESATEE_TEST_INSTALL_DIR}
 ln -f -s ${MESATEE_TEST_INSTALL_DIR}/fixtures ${MESATEE_SERVICE_INSTALL_DIR}/fixtures
 cp -r ${CMAKE_SOURCE_DIR}/tests/scripts/ ${MESATEE_TEST_INSTALL_DIR}
 # create the following symlinks to make remapped paths accessible and avoid repeated building
-mkdir -p /tmp/mesatee_symlinks
-ln -snf ${HOME}/.cargo /tmp/mesatee_symlinks/cargo_home
-ln -snf ${CMAKE_SOURCE_DIR} /tmp/mesatee_symlinks/mesatee_src
-ln -snf ${CMAKE_BINARY_DIR} /tmp/mesatee_symlinks/mesatee_build
+mkdir -p ${MESATEE_SYMLINKS}
+ln -snf ${HOME}/.cargo ${MESATEE_SYMLINKS}/cargo_home
+ln -snf ${CMAKE_SOURCE_DIR} ${MESATEE_SYMLINKS}/mesatee_src
+ln -snf ${CMAKE_BINARY_DIR} ${MESATEE_SYMLINKS}/mesatee_build
 # cleanup sgx_unwind/libunwind
 (cd ${CMAKE_SOURCE_DIR}/third_party/crates-sgx/ && git clean -fdx vendor/sgx_unwind/libunwind/)
 if git submodule status | egrep -q '^[-]|^[+]'; then echo 'INFO: Need to reinitialize git submodules' && git submodule update --init --recursive; fi

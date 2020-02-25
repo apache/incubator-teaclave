@@ -16,11 +16,13 @@ fn main() {
     println!("cargo:rerun-if-changed=config_gen/templates/config.j2");
     println!("cargo:rerun-if-changed=build.config.toml");
     println!("cargo:rerun-if-changed=build.rs");
+    let target_dir = Path::new(&env::var("MESATEE_SYMLINKS").expect("MESATEE_SYMLINKS"))
+        .join("mesatee_build/target/config_gen");
     let c = Command::new("cargo")
         .args(&[
             "run",
             "--target-dir",
-            "/tmp/config_gen/target",
+            &target_dir.to_string_lossy(),
             "--manifest-path",
             "config_gen/Cargo.toml",
             "--",
