@@ -16,6 +16,7 @@
 // under the License.
 
 use std::env;
+use std::path::Path;
 use std::process::Command;
 use std::str;
 
@@ -39,11 +40,13 @@ fn main() {
         println!("cargo:rerun-if-changed={}", pf);
     }
 
+    let target_dir = Path::new(&env::var("MESATEE_SYMLINKS").expect("MESATEE_SYMLINKS"))
+        .join("mesatee_build/target/proto_gen");
     let c = Command::new("cargo")
         .args(&[
             "run",
             "--target-dir",
-            "/tmp/proto_gen/target",
+            &target_dir.to_string_lossy(),
             "--manifest-path",
             "./proto_gen/Cargo.toml",
             "--",
