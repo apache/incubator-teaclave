@@ -4,7 +4,7 @@
 	ignore = dirty
 [submodule "third_party/rust-sgx-sdk"]
 	path = third_party/rust-sgx-sdk
-	url = https://github.com/baidu/rust-sgx-sdk.git
+	url = https://github.com/apache/incubator-teaclave-sgx-sdk
 [submodule "third_party/mesapy"]
 	path = third_party/mesapy
 	url = https://github.com/mesalock-linux/mesapy.git
