@@ -85,13 +85,6 @@ if(OFFLINE)
   set(EXTRA_CARGO_FLAGS "--offline")
 endif()
 
-execute_process(
-  COMMAND bash -c
-          "cat ${PROJECT_SOURCE_DIR}/third_party/rust-sgx-sdk/rust-toolchain"
-  OUTPUT_VARIABLE RUSTUP_TOOLCHAIN)
-string(STRIP ${RUSTUP_TOOLCHAIN} RUSTUP_TOOLCHAIN)
-set(RUSTUP_TOOLCHAIN ${RUSTUP_TOOLCHAIN})
-
 set(UNIXAPP_PREFIX "unixapp")
 set(UNIXLIB_PREFIX "unixlib")
 set(SGXAPP_PREFIX "sgxapp")

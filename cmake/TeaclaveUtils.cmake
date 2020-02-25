@@ -26,11 +26,32 @@ function(check_sgx_sdk)
 endfunction()
 
 function(init_submodules)
-  execute_process(
-    COMMAND
-      bash -c
-      "if [[ ! $(git submodule foreach ls -A) ]] || [[ $(git submodule summary) ]]; then echo INFO: Need to reinitialize git submodules && git submodule update --init --recursive; fi"
-  )
+  if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+    # Update submodules as needed
+    if(GIT_SUBMODULE)
+      message(STATUS "Submodule update")
+      execute_process(
+        COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        RESULT_VARIABLE GIT_SUBMOD_RESULT)
+      if(NOT GIT_SUBMOD_RESULT EQUAL "0")
+        message(
+          FATAL_ERROR
+            "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules"
+        )
+      endif()
+    endif()
+  endif()
+
+  if(NOT EXISTS "${PROJECT_SOURCE_DIR}/third_party/crates-io"
+     OR NOT EXISTS "${PROJECT_SOURCE_DIR}/third_party/crates-sgx"
+     OR NOT EXISTS "${PROJECT_SOURCE_DIR}/third_party/mesapy"
+     OR NOT EXISTS "${PROJECT_SOURCE_DIR}/third_party/rust-sgx-sdk")
+    message(
+      FATAL_ERROR
+        "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again."
+    )
+  endif()
 endfunction()
 
 macro(rm_trailing_enclave src_str dest_name)
@@ -148,7 +169,8 @@ function(add_sgx_build_target sgx_lib_path pkg_name)
 
   set(_target_name ${SGXLIB_PREFIX}-${pkg_name_no_enclave})
 
-  if(pkg_name_no_enclave MATCHES "_tests$" AND CMAKE_BUILD_TYPE_LOWER STREQUAL "release")
+  if(pkg_name_no_enclave MATCHES "_tests$" AND CMAKE_BUILD_TYPE_LOWER STREQUAL
+                                               "release")
     set(_enclave_info "/dev/null")
   else()
     set(_enclave_info "${TEACLAVE_OUT_DIR}/${pkg_name}_info.toml")
