@@ -25,7 +25,7 @@ extern crate log;
 
 use rand::RngCore;
 use std::prelude::v1::*;
-use std::sync::Arc;
+use std::sync::{Arc, SgxRwLock as RwLock};
 use std::thread;
 
 use teaclave_attestation::{verifier, AttestationConfig, AttestedTlsConfig, RemoteAttestation};
@@ -59,10 +59,10 @@ fn start_internal_endpoint(
     addr: std::net::SocketAddr,
     db_client: user_db::DbClient,
     jwt_secret: Vec<u8>,
-    attested_tls_config: Arc<AttestedTlsConfig>,
+    attested_tls_config: Arc<RwLock<AttestedTlsConfig>>,
     accepted_enclave_attrs: Vec<teaclave_types::EnclaveAttr>,
 ) {
-    let server_config = SgxTrustedTlsServerConfig::from_attested_tls_config(&attested_tls_config)
+    let server_config = SgxTrustedTlsServerConfig::from_attested_tls_config(attested_tls_config)
         .unwrap()
         .attestation_report_verifier(
             accepted_enclave_attrs,
@@ -74,7 +74,7 @@ fn start_internal_endpoint(
     let mut server = SgxTrustedTlsServer::<
         TeaclaveAuthenticationInternalResponse,
         TeaclaveAuthenticationInternalRequest,
-    >::new(addr, &server_config);
+    >::new(addr, server_config);
 
     let service =
         internal_service::TeaclaveAuthenticationInternalService::new(db_client, jwt_secret);
@@ -91,15 +91,15 @@ fn start_api_endpoint(
     addr: std::net::SocketAddr,
     db_client: user_db::DbClient,
     jwt_secret: Vec<u8>,
-    attested_tls_config: Arc<AttestedTlsConfig>,
+    attested_tls_config: Arc<RwLock<AttestedTlsConfig>>,
 ) {
     let server_config =
-        SgxTrustedTlsServerConfig::from_attested_tls_config(&attested_tls_config).unwrap();
+        SgxTrustedTlsServerConfig::from_attested_tls_config(attested_tls_config).unwrap();
 
     let mut server = SgxTrustedTlsServer::<
         TeaclaveAuthenticationApiResponse,
         TeaclaveAuthenticationApiRequest,
-    >::new(addr, &server_config);
+    >::new(addr, server_config);
 
     let service = api_service::TeaclaveAuthenticationApiService::new(db_client, jwt_secret);
 
@@ -142,12 +142,12 @@ fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
         &as_config.key,
         &as_config.spid,
     );
-    let attested_tls_config = Arc::new(
-        RemoteAttestation::new()
-            .config(attestation_config)
-            .generate_and_endorse()
-            .unwrap(),
-    );
+    let attested_tls_config = RemoteAttestation::new()
+        .config(attestation_config)
+        .generate_and_endorse()
+        .unwrap()
+        .attested_tls_config()
+        .unwrap();
     let database = user_db::Database::open()?;
     let mut api_jwt_secret = vec![0; user_info::JWT_SECRET_LEN];
     let mut rng = rand::thread_rng();

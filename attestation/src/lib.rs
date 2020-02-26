@@ -37,16 +37,19 @@ pub enum AttestationError {
     ConnectionError,
 }
 
+#[derive(Clone)]
 pub enum AttestationConfig {
     NoAttestation,
     WithAttestation(AttestationServiceConfig),
 }
 
+#[derive(Clone)]
 pub(crate) enum AttestationAlgorithm {
     SgxEpid,
     SgxEcdsa,
 }
 
+#[derive(Clone)]
 pub struct AttestationServiceConfig {
     algo: AttestationAlgorithm,
     as_url: url::Url,
@@ -98,6 +101,7 @@ pub(crate) struct EndorsedAttestationReport {
     pub signing_cert: Vec<u8>,
 }
 
+#[derive(Debug)]
 pub struct AttestedTlsConfig {
     pub cert: Vec<u8>,
     pub private_key: Vec<u8>,

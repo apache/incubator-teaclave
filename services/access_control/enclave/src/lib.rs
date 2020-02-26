@@ -60,6 +60,8 @@ fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
     let attested_tls_config = RemoteAttestation::new()
         .config(attestation_config)
         .generate_and_endorse()
+        .unwrap()
+        .attested_tls_config()
         .unwrap();
     let enclave_info = EnclaveInfo::verify_and_new(
         config
@@ -82,7 +84,7 @@ fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
                 .expect("enclave_info")
         })
         .collect();
-    let server_config = SgxTrustedTlsServerConfig::from_attested_tls_config(&attested_tls_config)
+    let server_config = SgxTrustedTlsServerConfig::from_attested_tls_config(attested_tls_config)
         .unwrap()
         .attestation_report_verifier(
             accepted_enclave_attrs,
@@ -95,7 +97,7 @@ fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
     let mut server = SgxTrustedTlsServer::<
         TeaclaveAccessControlResponse,
         TeaclaveAccessControlRequest,
-    >::new(listen_address, &server_config);
+    >::new(listen_address, server_config);
     let service = service::TeaclaveAccessControlService::new();
     match server.start(service) {
         Ok(_) => (),

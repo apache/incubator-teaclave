@@ -3,6 +3,7 @@ pub struct BuildConfig {
     pub as_root_ca_cert: &'static [u8],
     pub auditor_public_keys: &'static [&'static [u8]; {{ auditor_public_keys.len() }}],
     pub rpc_max_message_size: u64,
+    pub attestation_validity_secs: u64,
     pub inbound: Inbounds,
 }
 
@@ -22,6 +23,7 @@ pub const BUILD_CONFIG: BuildConfig = BuildConfig {
         {%- endfor %}
     ],
     rpc_max_message_size: {{ rpc_max_message_size }},
+    attestation_validity_secs: {{ attestation_validity_secs }},
     inbound: Inbounds {
         access_control: &[
             {%- for s in inbound.access_control %}

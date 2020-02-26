@@ -58,13 +58,15 @@ fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
     let attested_tls_config = RemoteAttestation::new()
         .config(attestation_config)
         .generate_and_endorse()
+        .unwrap()
+        .attested_tls_config()
         .unwrap();
     let server_config =
-        SgxTrustedTlsServerConfig::from_attested_tls_config(&attested_tls_config).unwrap();
+        SgxTrustedTlsServerConfig::from_attested_tls_config(attested_tls_config.clone()).unwrap();
 
     let mut server = SgxTrustedTlsServer::<TeaclaveFrontendResponse, TeaclaveFrontendRequest>::new(
         listen_address,
-        &server_config,
+        server_config,
     );
 
     let enclave_info =
@@ -72,12 +74,14 @@ fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
     let enclave_attr = enclave_info
         .get_enclave_attr("teaclave_authentication_service")
         .expect("authentication");
-    let client_config = SgxTrustedTlsClientConfig::from_attested_tls_config(&attested_tls_config)
-        .attestation_report_verifier(
-            vec![enclave_attr],
-            AS_ROOT_CA_CERT,
-            verifier::universal_quote_verifier,
-        );
+    let client_config =
+        SgxTrustedTlsClientConfig::from_attested_tls_config(attested_tls_config.clone())
+            .unwrap()
+            .attestation_report_verifier(
+                vec![enclave_attr],
+                AS_ROOT_CA_CERT,
+                verifier::universal_quote_verifier,
+            );
     let authentication_service_address =
         &config.internal_endpoints.authentication.advertised_address;
     let authentication_service_endpoint =
@@ -86,7 +90,8 @@ fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
     let enclave_attr = enclave_info
         .get_enclave_attr("teaclave_management_service")
         .expect("management");
-    let client_config = SgxTrustedTlsClientConfig::from_attested_tls_config(&attested_tls_config)
+    let client_config = SgxTrustedTlsClientConfig::from_attested_tls_config(attested_tls_config)
+        .unwrap()
         .attestation_report_verifier(
             vec![enclave_attr],
             AS_ROOT_CA_CERT,

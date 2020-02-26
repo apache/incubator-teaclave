@@ -106,7 +106,7 @@ fn start_echo_service() {
         let config = SgxTrustedTlsServerConfig::new()
             .server_cert(&cert[0].as_ref(), &private_key.0)
             .unwrap();
-        let mut server = SgxTrustedTlsServer::<EchoResponse, EchoRequest>::new(addr, &config);
+        let mut server = SgxTrustedTlsServer::<EchoResponse, EchoRequest>::new(addr, config);
         server.start(EchoService).unwrap();
     });
     thread::sleep(Duration::from_secs(3));

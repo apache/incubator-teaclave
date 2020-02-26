@@ -15,6 +15,9 @@ auditor_public_keys = [
 # RPC max message size
 rpc_max_message_size = 409600
 
+# Validity in seconds for a remote attestation report and endorsed attested TLS config
+attestation_validity_secs = 3600
+
 # Specify accepted inbound services to enforce incoming connections via mutual
 # attestation. Below figure illustrates current topology of Teaclave services.
 #
