@@ -54,14 +54,16 @@ fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
     let attested_tls_config = RemoteAttestation::new()
         .config(attestation_config)
         .generate_and_endorse()
+        .unwrap()
+        .attested_tls_config()
         .unwrap();
     let server_config =
-        SgxTrustedTlsServerConfig::from_attested_tls_config(&attested_tls_config).unwrap();
+        SgxTrustedTlsServerConfig::from_attested_tls_config(attested_tls_config).unwrap();
 
     let mut server =
         SgxTrustedTlsServer::<TeaclaveExecutionResponse, TeaclaveExecutionRequest>::new(
             listen_address,
-            &server_config,
+            server_config,
         );
     match server.start(service::TeaclaveExecutionService::new()) {
         Ok(_) => (),

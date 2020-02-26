@@ -13,7 +13,8 @@ use structopt::StructOpt;
 struct BuildConfigToml {
     as_root_ca_cert: ConfigSource,
     auditor_public_keys: Vec<ConfigSource>,
-    rpc_max_message_size: u32,
+    rpc_max_message_size: u64,
+    attestation_validity_secs: u64,
     inbound: Inbound,
 }
 
@@ -52,7 +53,8 @@ fn display_config_source(config: &ConfigSource) -> String {
 struct ConfigTemplate {
     as_root_ca_cert: String,
     auditor_public_keys: Vec<String>,
-    rpc_max_message_size: u32,
+    rpc_max_message_size: u64,
+    attestation_validity_secs: u64,
     inbound: Inbound,
 }
 
@@ -71,6 +73,7 @@ fn generate_build_config(toml: &Path, out: &Path) {
         as_root_ca_cert,
         auditor_public_keys,
         rpc_max_message_size: config.rpc_max_message_size,
+        attestation_validity_secs: config.attestation_validity_secs,
         inbound: config.inbound,
     };
     let mut f = File::create(out).expect(&format!("Failed to create file: {}", out.display()));
