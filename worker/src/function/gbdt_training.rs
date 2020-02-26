@@ -133,10 +133,11 @@ pub mod tests {
     use std::untrusted::fs;
 
     use teaclave_types::hashmap;
-    use teaclave_types::TeaclaveFileCryptoInfo;
+    use teaclave_types::TeaclaveFileRootKey128;
     use teaclave_types::TeaclaveFunctionArguments;
-    use teaclave_types::TeaclaveWorkerFileInfo;
     use teaclave_types::TeaclaveWorkerFileRegistry;
+    use teaclave_types::TeaclaveWorkerInputFileInfo;
+    use teaclave_types::TeaclaveWorkerOutputFileInfo;
 
     use crate::function::TeaclaveFunction;
     use crate::runtime::RawIoRuntime;
@@ -164,12 +165,12 @@ pub mod tests {
 
         let input_files = TeaclaveWorkerFileRegistry::new(hashmap!(
             IN_DATA.to_string() =>
-            TeaclaveWorkerFileInfo::new(plain_input, TeaclaveFileCryptoInfo::default())
+            TeaclaveWorkerInputFileInfo::new(plain_input, TeaclaveFileRootKey128::default())
         ));
 
         let output_files = TeaclaveWorkerFileRegistry::new(hashmap!(
             OUT_MODEL.to_string() =>
-            TeaclaveWorkerFileInfo::new(plain_output, TeaclaveFileCryptoInfo::default())
+            TeaclaveWorkerOutputFileInfo::new(plain_output, TeaclaveFileRootKey128::default())
         ));
 
         let runtime = Box::new(RawIoRuntime::new(input_files, output_files));

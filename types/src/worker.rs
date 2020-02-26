@@ -1,6 +1,7 @@
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::format;
-use std::io::{self, Read};
+use std::io::{self, Read, Write};
 use std::prelude::v1::*;
 
 #[cfg(feature = "mesalock_sgx")]
@@ -12,6 +13,7 @@ use std::fs::File;
 use anyhow;
 
 use crate::TeaclaveFileCryptoInfo;
+use crate::TeaclaveFileRootKey128;
 use protected_fs::ProtectedFile;
 use serde::{Deserialize, Serialize};
 
@@ -52,43 +54,98 @@ impl std::fmt::Display for TeaclaveExecutorSelector {
     }
 }
 
-pub struct ReadBuffer {
-    bytes: Vec<u8>,
-    remaining: usize,
-}
-
-impl ReadBuffer {
-    pub fn from_vec(bytes: Vec<u8>) -> Self {
-        let remaining = bytes.len();
-        ReadBuffer { bytes, remaining }
-    }
-}
-
-impl io::Read for ReadBuffer {
-    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        let amt = std::cmp::min(buf.len(), self.remaining);
-        let cur = self.bytes.len() - self.remaining;
-        buf[..amt].copy_from_slice(&self.bytes[cur..cur + amt]);
-        self.remaining -= amt;
-        Ok(amt)
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct TeaclaveWorkerFileInfo {
+#[derive(Debug)]
+pub struct InputData {
     pub path: std::path::PathBuf,
+    pub hash: String,
+    pub crypto_info: TeaclaveFileCryptoInfo,
+}
+#[derive(Debug)]
+pub struct OutputData {
+    pub path: std::path::PathBuf,
+    pub hash: String,
     pub crypto_info: TeaclaveFileCryptoInfo,
 }
 
-impl TeaclaveWorkerFileInfo {
+#[derive(Clone, Debug)]
+pub struct TeaclaveWorkerInputFileInfo {
+    pub path: std::path::PathBuf,
+    pub crypto_info: TeaclaveFileRootKey128,
+}
+
+#[derive(Clone, Debug)]
+pub struct TeaclaveWorkerOutputFileInfo {
+    pub path: std::path::PathBuf,
+    pub crypto_info: TeaclaveFileRootKey128,
+}
+
+impl std::convert::From<TeaclaveWorkerOutputFileInfo> for TeaclaveWorkerInputFileInfo {
+    fn from(info: TeaclaveWorkerOutputFileInfo) -> Self {
+        TeaclaveWorkerInputFileInfo {
+            path: info.path,
+            crypto_info: info.crypto_info,
+        }
+    }
+}
+
+impl TeaclaveWorkerInputFileInfo {
     pub fn new(
         path: impl std::convert::Into<std::path::PathBuf>,
-        crypto_info: TeaclaveFileCryptoInfo,
+        crypto_info: TeaclaveFileRootKey128,
     ) -> Self {
-        TeaclaveWorkerFileInfo {
+        TeaclaveWorkerInputFileInfo {
             path: path.into(),
             crypto_info,
         }
+    }
+
+    pub fn get_readable_io(&self) -> anyhow::Result<Box<dyn io::Read>> {
+        let f = ProtectedFile::open_ex(&self.path, &self.crypto_info.key)?;
+        Ok(Box::new(f))
+    }
+
+    #[cfg(test_mode)]
+    pub fn create_with_plaintext_file(
+        path: impl AsRef<std::path::Path>,
+    ) -> anyhow::Result<TeaclaveWorkerInputFileInfo> {
+        let bytes = read_all_bytes(path.as_ref())?;
+        let dst = path.as_ref().with_extension("enc");
+        Self::create_with_bytes(dst, &bytes)
+    }
+
+    pub fn create_with_bytes(
+        path: impl AsRef<std::path::Path>,
+        bytes: &[u8],
+    ) -> anyhow::Result<TeaclaveWorkerInputFileInfo> {
+        let crypto = TeaclaveFileRootKey128::default();
+        let mut f = ProtectedFile::create_ex(&path, &crypto.key)?;
+        f.write_all(bytes)?;
+        Ok(Self::new(path.as_ref(), crypto))
+    }
+}
+
+impl TeaclaveWorkerOutputFileInfo {
+    pub fn new(
+        path: impl std::convert::Into<std::path::PathBuf>,
+        crypto_info: TeaclaveFileRootKey128,
+    ) -> Self {
+        TeaclaveWorkerOutputFileInfo {
+            path: path.into(),
+            crypto_info,
+        }
+    }
+
+    pub fn get_writable_io(&self) -> anyhow::Result<Box<dyn io::Write>> {
+        let f = ProtectedFile::create_ex(&self.path, &self.crypto_info.key)?;
+        Ok(Box::new(f))
+    }
+
+    #[cfg(test_mode)]
+    pub fn get_plaintext(&self) -> anyhow::Result<Vec<u8>> {
+        let mut content = Vec::new();
+        let mut f = ProtectedFile::open_ex(&self.path, &self.crypto_info.key)?;
+        f.read_to_end(&mut content)?;
+        Ok(content)
     }
 }
 
@@ -99,93 +156,50 @@ pub fn read_all_bytes(path: impl AsRef<std::path::Path>) -> anyhow::Result<Vec<u
     Ok(content)
 }
 
-fn teaclave_file_with_bytes(path: &str, bytes: &[u8]) -> anyhow::Result<TeaclaveWorkerFileInfo> {
-    let crypto_info = TeaclaveFileCryptoInfo::default();
-    let file_info = TeaclaveWorkerFileInfo::new(path, crypto_info);
-    let mut f = file_info.get_writable_io()?;
-    f.write_all(bytes)?;
-    Ok(file_info)
-}
-
-pub fn convert_plaintext_file(src: &str, dst: &str) -> anyhow::Result<TeaclaveWorkerFileInfo> {
-    let bytes = read_all_bytes(src)?;
-    teaclave_file_with_bytes(dst, &bytes)
-}
-
-pub fn convert_encrypted_file(
-    src: TeaclaveWorkerFileInfo,
+pub fn convert_encrypted_input_file(
+    src: InputData,
     dst: &str,
-) -> anyhow::Result<TeaclaveWorkerFileInfo> {
-    let plain_text = match &src.crypto_info {
+) -> anyhow::Result<TeaclaveWorkerInputFileInfo> {
+    let path = src.path;
+    let plain_text = match src.crypto_info {
         TeaclaveFileCryptoInfo::AesGcm128(crypto) => {
-            let mut bytes = read_all_bytes(src.path)?;
+            let mut bytes = read_all_bytes(path)?;
             crypto.decrypt(&mut bytes)?;
             bytes
         }
         TeaclaveFileCryptoInfo::AesGcm256(crypto) => {
-            let mut bytes = read_all_bytes(src.path)?;
+            let mut bytes = read_all_bytes(path)?;
             crypto.decrypt(&mut bytes)?;
             bytes
         }
-        TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(_) => return Ok(src),
+        TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(crypto) => {
+            return Ok(TeaclaveWorkerInputFileInfo::new(path, crypto))
+        }
     };
-    teaclave_file_with_bytes(dst, &plain_text)
-}
-
-impl TeaclaveWorkerFileInfo {
-    pub fn get_readable_io(&self) -> anyhow::Result<Box<dyn io::Read>> {
-        let readable: Box<dyn io::Read> = match &self.crypto_info {
-            TeaclaveFileCryptoInfo::AesGcm128(crypto) => {
-                let mut bytes = read_all_bytes(&self.path)?;
-                crypto.decrypt(&mut bytes)?;
-                Box::new(ReadBuffer::from_vec(bytes))
-            }
-            TeaclaveFileCryptoInfo::AesGcm256(crypto) => {
-                let mut bytes = read_all_bytes(&self.path)?;
-                crypto.decrypt(&mut bytes)?;
-                Box::new(ReadBuffer::from_vec(bytes))
-            }
-            TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(crypto) => {
-                let f = ProtectedFile::open_ex(&self.path, &crypto.key)?;
-                Box::new(f)
-            }
-        };
-        Ok(readable)
-    }
-
-    pub fn get_writable_io(&self) -> anyhow::Result<Box<dyn io::Write>> {
-        let writable: Box<dyn io::Write> = match &self.crypto_info {
-            TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(crypto) => {
-                let f = ProtectedFile::create_ex(&self.path, &crypto.key)?;
-                Box::new(f)
-            }
-            _ => anyhow::bail!("Output file encryption type not supported"),
-        };
-        Ok(writable)
-    }
+    TeaclaveWorkerInputFileInfo::create_with_bytes(dst, &plain_text)
 }
 
 #[derive(Debug)]
-pub struct TeaclaveWorkerFileRegistry {
-    pub entries: HashMap<String, TeaclaveWorkerFileInfo>,
+pub struct TeaclaveWorkerFileRegistry<T> {
+    pub entries: HashMap<String, T>,
 }
 
-impl TeaclaveWorkerFileRegistry {
-    pub fn new(entries: HashMap<String, TeaclaveWorkerFileInfo>) -> Self {
+impl<T> TeaclaveWorkerFileRegistry<T> {
+    pub fn new(entries: HashMap<String, T>) -> Self {
         TeaclaveWorkerFileRegistry { entries }
     }
 }
 
-impl<T> std::convert::TryFrom<HashMap<String, T>> for TeaclaveWorkerFileRegistry
+impl<U, V> std::convert::TryFrom<HashMap<String, U>> for TeaclaveWorkerFileRegistry<V>
 where
-    T: std::convert::TryInto<TeaclaveWorkerFileInfo, Error = anyhow::Error>,
+    U: std::convert::TryInto<V, Error = anyhow::Error>,
 {
     type Error = anyhow::Error;
-    fn try_from(entries: HashMap<String, T>) -> anyhow::Result<Self> {
-        let mut out_info: HashMap<String, TeaclaveWorkerFileInfo> = HashMap::new();
+    fn try_from(entries: HashMap<String, U>) -> anyhow::Result<Self> {
+        let mut out_info: HashMap<String, V> = HashMap::new();
         entries
             .into_iter()
-            .try_for_each(|(fid, finfo): (String, T)| -> anyhow::Result<()> {
+            .try_for_each(|(fid, finfo): (String, U)| -> anyhow::Result<()> {
                 out_info.insert(fid, finfo.try_into()?);
                 Ok(())
             })?;
@@ -193,16 +207,16 @@ where
     }
 }
 
-impl<T, S> std::convert::From<TeaclaveWorkerFileRegistry> for HashMap<String, T, S>
+impl<U, V, S> std::convert::From<TeaclaveWorkerFileRegistry<U>> for HashMap<String, V, S>
 where
-    T: std::convert::From<TeaclaveWorkerFileInfo>,
+    V: std::convert::From<U>,
     S: std::hash::BuildHasher + Default,
 {
-    fn from(reg: TeaclaveWorkerFileRegistry) -> Self {
-        let mut out_info: HashMap<String, T, S> = HashMap::default();
+    fn from(reg: TeaclaveWorkerFileRegistry<U>) -> Self {
+        let mut out_info: HashMap<String, V, S> = HashMap::default();
         reg.entries
             .into_iter()
-            .for_each(|(fid, finfo): (String, TeaclaveWorkerFileInfo)| {
+            .for_each(|(fid, finfo): (String, U)| {
                 out_info.insert(fid, finfo.into());
             });
         out_info
@@ -249,14 +263,20 @@ impl TeaclaveFunctionArguments {
 }
 
 #[derive(Debug)]
+pub struct WorkerCapability {
+    pub runtimes: HashSet<String>,
+    pub functions: HashSet<String>,
+}
+
+#[derive(Debug)]
 pub struct WorkerInvocation {
     pub runtime_name: String,
     pub executor_type: TeaclaveExecutorSelector, // "native" | "python"
     pub function_name: String,                   // "gbdt_training" | "mesapy" |
     pub function_payload: String,
     pub function_args: TeaclaveFunctionArguments,
-    pub input_files: TeaclaveWorkerFileRegistry,
-    pub output_files: TeaclaveWorkerFileRegistry,
+    pub input_files: TeaclaveWorkerFileRegistry<TeaclaveWorkerInputFileInfo>,
+    pub output_files: TeaclaveWorkerFileRegistry<TeaclaveWorkerOutputFileInfo>,
 }
 
 #[cfg(feature = "enclave_unit_test")]
