@@ -5,12 +5,12 @@ use teaclave_proto::teaclave_execution_service::*;
 use teaclave_rpc::endpoint::Endpoint;
 
 use teaclave_config::RuntimeConfig;
-use teaclave_types::convert_plaintext_file;
 use teaclave_types::hashmap;
-use teaclave_types::TeaclaveFileCryptoInfo;
+use teaclave_types::TeaclaveFileRootKey128;
 use teaclave_types::TeaclaveFunctionArguments;
-use teaclave_types::TeaclaveWorkerFileInfo;
 use teaclave_types::TeaclaveWorkerFileRegistry;
+use teaclave_types::TeaclaveWorkerInputFileInfo;
+use teaclave_types::TeaclaveWorkerOutputFileInfo;
 use teaclave_types::WorkerInvocation;
 
 pub fn run_tests() -> bool {
@@ -46,15 +46,15 @@ fn test_invoke_success() {
         "training_optimization_level" => "2"
     ));
 
-    let enc_input = "fixtures/functions/gbdt_training/train.enc";
     let plain_input = "fixtures/functions/gbdt_training/train.txt";
     let enc_output = "fixtures/functions/gbdt_training/model.enc.out";
 
-    let input_info = convert_plaintext_file(plain_input, enc_input).unwrap();
+    let input_info = TeaclaveWorkerInputFileInfo::create_with_plaintext_file(plain_input).unwrap();
     let input_files = TeaclaveWorkerFileRegistry::new(hashmap!(
         "training_data".to_string() => input_info));
 
-    let output_info = TeaclaveWorkerFileInfo::new(enc_output, TeaclaveFileCryptoInfo::default());
+    let output_info =
+        TeaclaveWorkerOutputFileInfo::new(enc_output, TeaclaveFileRootKey128::default());
     let output_files = TeaclaveWorkerFileRegistry::new(hashmap!(
         "trained_model".to_string() => output_info));
 

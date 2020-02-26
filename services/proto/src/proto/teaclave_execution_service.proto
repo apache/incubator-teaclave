@@ -3,7 +3,12 @@ package teaclave_execution_service_proto;
 
 import "teaclave_common.proto";
 
-message WorkerFileInfo {
+message WorkerInputFileInfo {
+  string path = 1;
+  teaclave_common_proto.FileCryptoInfo crypto_info = 2;
+}
+
+message WorkerOutputFileInfo {
   string path = 1;
   teaclave_common_proto.FileCryptoInfo crypto_info = 2;
 }
@@ -14,8 +19,8 @@ message StagedFunctionExecuteRequest {
   string function_name = 3;
   string function_payload = 4;
   map<string, string> function_args = 11;
-  map<string, WorkerFileInfo> input_files = 21;
-  map<string, WorkerFileInfo> output_files = 22;
+  map<string, WorkerInputFileInfo> input_files = 21;
+  map<string, WorkerOutputFileInfo> output_files = 22;
 }
 
 message StagedFunctionExecuteResponse {

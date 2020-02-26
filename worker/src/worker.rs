@@ -26,7 +26,7 @@ use serde_json;
 
 use teaclave_types::{
     TeaclaveExecutorSelector, TeaclaveFunctionArguments, TeaclaveWorkerFileRegistry,
-    WorkerInvocation,
+    TeaclaveWorkerInputFileInfo, TeaclaveWorkerOutputFileInfo, WorkerCapability, WorkerInvocation,
 };
 
 use crate::function::{self, TeaclaveFunction};
@@ -53,11 +53,18 @@ impl Worker {
         function.execute(runtime, unified_args)
     }
 
+    pub fn get_capability(&self) -> WorkerCapability {
+        WorkerCapability {
+            runtimes: self.runtimes.keys().cloned().collect(),
+            functions: self.functions.keys().cloned().collect(),
+        }
+    }
+
     fn get_runtime(
         &self,
         name: &str,
-        input_files: TeaclaveWorkerFileRegistry,
-        output_files: TeaclaveWorkerFileRegistry,
+        input_files: TeaclaveWorkerFileRegistry<TeaclaveWorkerInputFileInfo>,
+        output_files: TeaclaveWorkerFileRegistry<TeaclaveWorkerOutputFileInfo>,
     ) -> anyhow::Result<Box<dyn TeaclaveRuntime + Send + Sync>> {
         let build_runtime = self
             .runtimes
@@ -150,8 +157,8 @@ fn prepare_arguments(
 type FunctionBuilder = Box<dyn Fn() -> Box<dyn TeaclaveFunction + Send + Sync> + Send + Sync>;
 type RuntimeBuilder = Box<
     dyn Fn(
-            TeaclaveWorkerFileRegistry,
-            TeaclaveWorkerFileRegistry,
+            TeaclaveWorkerFileRegistry<TeaclaveWorkerInputFileInfo>,
+            TeaclaveWorkerFileRegistry<TeaclaveWorkerOutputFileInfo>,
         ) -> Box<dyn TeaclaveRuntime + Send + Sync>
         + Send
         + Sync,

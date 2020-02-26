@@ -23,16 +23,18 @@ use std::io;
 
 use super::TeaclaveRuntime;
 use teaclave_types::TeaclaveWorkerFileRegistry;
+use teaclave_types::TeaclaveWorkerInputFileInfo;
+use teaclave_types::TeaclaveWorkerOutputFileInfo;
 
 pub struct DefaultRuntime {
-    input_files: TeaclaveWorkerFileRegistry,
-    output_files: TeaclaveWorkerFileRegistry,
+    input_files: TeaclaveWorkerFileRegistry<TeaclaveWorkerInputFileInfo>,
+    output_files: TeaclaveWorkerFileRegistry<TeaclaveWorkerOutputFileInfo>,
 }
 
 impl DefaultRuntime {
     pub fn new(
-        input_files: TeaclaveWorkerFileRegistry,
-        output_files: TeaclaveWorkerFileRegistry,
+        input_files: TeaclaveWorkerFileRegistry<TeaclaveWorkerInputFileInfo>,
+        output_files: TeaclaveWorkerFileRegistry<TeaclaveWorkerOutputFileInfo>,
     ) -> DefaultRuntime {
         DefaultRuntime {
             input_files,

@@ -25,16 +25,18 @@ use anyhow;
 
 use super::TeaclaveRuntime;
 use teaclave_types::TeaclaveWorkerFileRegistry;
+use teaclave_types::TeaclaveWorkerInputFileInfo;
+use teaclave_types::TeaclaveWorkerOutputFileInfo;
 
 pub struct RawIoRuntime {
-    input_files: TeaclaveWorkerFileRegistry,
-    output_files: TeaclaveWorkerFileRegistry,
+    input_files: TeaclaveWorkerFileRegistry<TeaclaveWorkerInputFileInfo>,
+    output_files: TeaclaveWorkerFileRegistry<TeaclaveWorkerOutputFileInfo>,
 }
 
 impl RawIoRuntime {
     pub fn new(
-        input_files: TeaclaveWorkerFileRegistry,
-        output_files: TeaclaveWorkerFileRegistry,
+        input_files: TeaclaveWorkerFileRegistry<TeaclaveWorkerInputFileInfo>,
+        output_files: TeaclaveWorkerFileRegistry<TeaclaveWorkerOutputFileInfo>,
     ) -> RawIoRuntime {
         RawIoRuntime {
             input_files,

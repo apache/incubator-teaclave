@@ -406,7 +406,7 @@ steps:
   commands:
   - . /root/.cargo/env
   - mkdir -p build
-  - cd build && cmake -DRUSTFLAGS="-D warnings" ..
+  - cd build && cmake -DRUSTFLAGS="-D warnings" -DTEST_MODE=ON ..
 - name: check
   image: teaclave/teaclave-build-ubuntu-1804:0.1.0
   commands:
