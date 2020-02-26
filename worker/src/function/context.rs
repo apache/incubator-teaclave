@@ -224,10 +224,10 @@ pub mod tests {
     use std::str::FromStr;
     use teaclave_test_utils::*;
     use teaclave_types::hashmap;
-    use teaclave_types::AesGcm256CryptoInfo;
-    use teaclave_types::TeaclaveFileCryptoInfo;
-    use teaclave_types::TeaclaveWorkerFileInfo;
+    use teaclave_types::TeaclaveFileRootKey128;
     use teaclave_types::TeaclaveWorkerFileRegistry;
+    use teaclave_types::TeaclaveWorkerInputFileInfo;
+    use teaclave_types::TeaclaveWorkerOutputFileInfo;
 
     pub fn run_tests() -> bool {
         run_tests!(test_file_handle_encoding, test_rtc_api,)
@@ -246,15 +246,10 @@ pub mod tests {
         let input = PathBuf::from_str("fixtures/functions/mesapy/input.txt").unwrap();
         let output = PathBuf::from_str("fixtures/functions/mesapy/output.txt.out").unwrap();
 
-        let input_info = TeaclaveWorkerFileInfo {
-            path: input,
-            crypto_info: TeaclaveFileCryptoInfo::AesGcm256(AesGcm256CryptoInfo::default()),
-        };
+        let input_info = TeaclaveWorkerInputFileInfo::new(input, TeaclaveFileRootKey128::default());
 
-        let output_info = TeaclaveWorkerFileInfo {
-            path: output,
-            crypto_info: TeaclaveFileCryptoInfo::AesGcm256(AesGcm256CryptoInfo::default()),
-        };
+        let output_info =
+            TeaclaveWorkerOutputFileInfo::new(output, TeaclaveFileRootKey128::default());
 
         let in_fid = "in_f1";
         let out_fid = "out_f1";

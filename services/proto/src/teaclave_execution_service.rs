@@ -3,7 +3,10 @@ use std::prelude::v1::*;
 use anyhow::{anyhow, Error, Result};
 use core::convert::TryInto;
 use teaclave_rpc::into_request;
-use teaclave_types::{TeaclaveFunctionArguments, TeaclaveWorkerFileInfo, WorkerInvocation};
+use teaclave_types::{
+    TeaclaveFunctionArguments, TeaclaveWorkerInputFileInfo, TeaclaveWorkerOutputFileInfo,
+    WorkerInvocation,
+};
 
 use crate::teaclave_execution_service_proto as proto;
 pub use proto::TeaclaveExecution;
@@ -23,15 +26,27 @@ pub struct StagedFunctionExecuteResponse {
     pub summary: std::string::String,
 }
 
-impl std::convert::TryFrom<proto::WorkerFileInfo> for TeaclaveWorkerFileInfo {
+impl std::convert::TryFrom<proto::WorkerInputFileInfo> for TeaclaveWorkerInputFileInfo {
     type Error = Error;
-    fn try_from(proto: proto::WorkerFileInfo) -> Result<Self> {
+    fn try_from(proto: proto::WorkerInputFileInfo) -> Result<Self> {
         let path = std::path::Path::new(&proto.path).to_path_buf();
         let crypto_info = proto
             .crypto_info
             .ok_or_else(|| anyhow!("Missing field: crypto_info"))?
             .try_into()?;
-        Ok(TeaclaveWorkerFileInfo { path, crypto_info })
+        Ok(TeaclaveWorkerInputFileInfo { path, crypto_info })
+    }
+}
+
+impl std::convert::TryFrom<proto::WorkerOutputFileInfo> for TeaclaveWorkerOutputFileInfo {
+    type Error = Error;
+    fn try_from(proto: proto::WorkerOutputFileInfo) -> Result<Self> {
+        let path = std::path::Path::new(&proto.path).to_path_buf();
+        let crypto_info = proto
+            .crypto_info
+            .ok_or_else(|| anyhow!("Missing field: crypto_info"))?
+            .try_into()?;
+        Ok(TeaclaveWorkerOutputFileInfo { path, crypto_info })
     }
 }
 
@@ -71,9 +86,18 @@ impl std::convert::TryFrom<proto::StagedFunctionExecuteResponse> for StagedFunct
 }
 
 // For client side
-impl std::convert::From<TeaclaveWorkerFileInfo> for proto::WorkerFileInfo {
-    fn from(info: TeaclaveWorkerFileInfo) -> Self {
-        proto::WorkerFileInfo {
+impl std::convert::From<TeaclaveWorkerInputFileInfo> for proto::WorkerInputFileInfo {
+    fn from(info: TeaclaveWorkerInputFileInfo) -> Self {
+        proto::WorkerInputFileInfo {
+            path: info.path.to_string_lossy().to_string(),
+            crypto_info: Some(info.crypto_info.into()),
+        }
+    }
+}
+
+impl std::convert::From<TeaclaveWorkerOutputFileInfo> for proto::WorkerOutputFileInfo {
+    fn from(info: TeaclaveWorkerOutputFileInfo) -> Self {
+        proto::WorkerOutputFileInfo {
             path: info.path.to_string_lossy().to_string(),
             crypto_info: Some(info.crypto_info.into()),
         }

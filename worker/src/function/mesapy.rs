@@ -108,10 +108,11 @@ pub mod tests {
     use crate::function::TeaclaveFunction;
     use crate::runtime::RawIoRuntime;
     use teaclave_types::hashmap;
-    use teaclave_types::TeaclaveFileCryptoInfo;
+    use teaclave_types::TeaclaveFileRootKey128;
     use teaclave_types::TeaclaveFunctionArguments;
-    use teaclave_types::TeaclaveWorkerFileInfo;
     use teaclave_types::TeaclaveWorkerFileRegistry;
+    use teaclave_types::TeaclaveWorkerInputFileInfo;
+    use teaclave_types::TeaclaveWorkerOutputFileInfo;
 
     pub fn run_tests() -> bool {
         run_tests!(test_mesapy,)
@@ -167,9 +168,10 @@ def entrypoint(argv):
         let input = "fixtures/functions/mesapy/input.txt";
         let output = "fixtures/functions/mesapy/output.txt";
 
-        let input_info = TeaclaveWorkerFileInfo::new(input, TeaclaveFileCryptoInfo::default());
+        let input_info = TeaclaveWorkerInputFileInfo::new(input, TeaclaveFileRootKey128::default());
 
-        let output_info = TeaclaveWorkerFileInfo::new(output, TeaclaveFileCryptoInfo::default());
+        let output_info =
+            TeaclaveWorkerOutputFileInfo::new(output, TeaclaveFileRootKey128::default());
 
         let input_files = TeaclaveWorkerFileRegistry {
             entries: hashmap!("in_f1".to_string() => input_info),
