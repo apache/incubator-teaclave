@@ -17,15 +17,15 @@ const CERT_ISSUER: &str = "Teaclave";
 const CERT_SUBJECT: &str = "CN=Teaclave";
 
 pub struct RemoteAttestation {
-    pub config: AttestationConfig,
-    pub attested_tls_config: Option<Arc<RwLock<AttestedTlsConfig>>>,
+    attestation_config: Arc<AttestationConfig>,
+    attested_tls_config: Option<Arc<RwLock<AttestedTlsConfig>>>,
 }
 
 impl Default for RemoteAttestation {
     fn default() -> Self {
-        let config = AttestationConfig::NoAttestation;
+        let attestation_config = AttestationConfig::no_attestation();
         Self {
-            config,
+            attestation_config,
             attested_tls_config: None,
         }
     }
@@ -36,23 +36,25 @@ impl RemoteAttestation {
         Self::default()
     }
 
-    pub fn config(mut self, config: AttestationConfig) -> Self {
-        self.config = config;
+    pub fn config(mut self, attestation_config: Arc<AttestationConfig>) -> Self {
+        self.attestation_config = attestation_config;
         Self {
-            config: self.config,
+            attestation_config: self.attestation_config,
             attested_tls_config: self.attested_tls_config,
         }
     }
 
     pub fn generate_and_endorse(self) -> Result<Self> {
-        let attested_tls_config = Arc::new(RwLock::new(AttestedTlsConfig::new(&self.config)?));
-        let config = self.config.clone();
+        let attested_tls_config = Arc::new(RwLock::new(AttestedTlsConfig::new(
+            &self.attestation_config,
+        )?));
+        let attestation_config_ref = self.attestation_config.clone();
         let attested_tls_config_ref = attested_tls_config.clone();
         thread::spawn(move || {
-            AttestationFreshnessKeeper::new(config, attested_tls_config_ref).start()
+            AttestationFreshnessKeeper::new(attestation_config_ref, attested_tls_config_ref).start()
         });
         Ok(Self {
-            config: self.config,
+            attestation_config: self.attestation_config,
             attested_tls_config: Some(attested_tls_config),
         })
     }
@@ -63,9 +65,9 @@ impl RemoteAttestation {
 }
 
 impl AttestedTlsConfig {
-    fn new(config: &AttestationConfig) -> Result<AttestedTlsConfig> {
+    fn new(attestation_config: &AttestationConfig) -> Result<AttestedTlsConfig> {
         let key_pair = key::Secp256k1KeyPair::new()?;
-        let report = match config {
+        let report = match attestation_config {
             AttestationConfig::NoAttestation => EndorsedAttestationReport::default(),
             AttestationConfig::WithAttestation(config) => {
                 EndorsedAttestationReport::new(&config, key_pair.pub_k)?
@@ -94,17 +96,17 @@ impl AttestedTlsConfig {
 }
 
 struct AttestationFreshnessKeeper {
-    config: AttestationConfig,
+    attestation_config: Arc<AttestationConfig>,
     attested_tls_config: Arc<RwLock<AttestedTlsConfig>>,
 }
 
 impl AttestationFreshnessKeeper {
     pub(crate) fn new(
-        config: AttestationConfig,
+        attestation_config: Arc<AttestationConfig>,
         attested_tls_config: Arc<RwLock<AttestedTlsConfig>>,
     ) -> Self {
         Self {
-            config,
+            attestation_config,
             attested_tls_config,
         }
     }
@@ -122,7 +124,7 @@ impl AttestationFreshnessKeeper {
 
     fn refresh(&self) -> Result<()> {
         debug!("begin refresh");
-        let updated_attested_tls_config = AttestedTlsConfig::new(&self.config)?;
+        let updated_attested_tls_config = AttestedTlsConfig::new(&self.attestation_config)?;
         let lock = self.attested_tls_config.clone();
         let mut config = lock
             .write()

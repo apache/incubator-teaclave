@@ -22,6 +22,7 @@ extern crate sgx_tstd as std;
 
 use serde::{Deserialize, Serialize};
 use std::prelude::v1::*;
+use std::sync::Arc;
 
 #[derive(thiserror::Error, Debug)]
 pub enum AttestationError {
@@ -60,9 +61,13 @@ pub struct AttestationServiceConfig {
 pub struct DcapConfig {}
 
 impl AttestationConfig {
-    pub fn new(algorithm: &str, url: &str, api_key: &str, spid_str: &str) -> Self {
+    pub fn no_attestation() -> Arc<Self> {
+        Arc::new(Self::NoAttestation)
+    }
+
+    pub fn new(algorithm: &str, url: &str, api_key: &str, spid_str: &str) -> Arc<Self> {
         if cfg!(sgx_sim) {
-            return Self::NoAttestation;
+            return Self::no_attestation();
         }
 
         use core::convert::TryFrom;
@@ -84,7 +89,7 @@ impl AttestationConfig {
             spid,
         };
 
-        Self::WithAttestation(att_service_cfg)
+        Arc::new(Self::WithAttestation(att_service_cfg))
     }
 }
 
