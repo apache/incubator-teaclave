@@ -50,6 +50,16 @@ pub(crate) enum AttestationAlgorithm {
     SgxEcdsa,
 }
 
+impl AttestationAlgorithm {
+    pub(crate) fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "sgx_epid" => Some(AttestationAlgorithm::SgxEpid),
+            "sgx_ecdsa" => Some(AttestationAlgorithm::SgxEcdsa),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct AttestationServiceConfig {
     algo: AttestationAlgorithm,
@@ -76,11 +86,8 @@ impl AttestationConfig {
         let hex = hex::decode(spid_str).expect("Illegal SPID provided");
         spid.id = <[u8; 16]>::try_from(hex.as_slice()).expect("Illegal SPID provided");
 
-        let algo = match algorithm {
-            "sgx_epid" => AttestationAlgorithm::SgxEpid,
-            "sgx_ecdsa" => AttestationAlgorithm::SgxEcdsa,
-            _ => panic!("Unsupported remote attestation algorithm"),
-        };
+        let algo = AttestationAlgorithm::from_str(algorithm)
+            .unwrap_or_else(|| panic!("Unsupported remote attestation algorithm"));
 
         let att_service_cfg = AttestationServiceConfig {
             algo,
