@@ -9,10 +9,18 @@ pub type RegisterInputFileRequest = crate::teaclave_frontend_service::RegisterIn
 pub type RegisterInputFileResponse = crate::teaclave_frontend_service::RegisterInputFileResponse;
 pub type RegisterOutputFileRequest = crate::teaclave_frontend_service::RegisterOutputFileRequest;
 pub type RegisterOutputFileResponse = crate::teaclave_frontend_service::RegisterOutputFileResponse;
+pub type RegisterFusionOutputRequest =
+    crate::teaclave_frontend_service::RegisterFusionOutputRequest;
+pub type RegisterFusionOutputResponse =
+    crate::teaclave_frontend_service::RegisterFusionOutputResponse;
+pub type RegisterInputFromOutputRequest =
+    crate::teaclave_frontend_service::RegisterInputFromOutputRequest;
+pub type RegisterInputFromOutputResponse =
+    crate::teaclave_frontend_service::RegisterInputFromOutputResponse;
+pub type GetInputFileRequest = crate::teaclave_frontend_service::GetInputFileRequest;
+pub type GetInputFileResponse = crate::teaclave_frontend_service::GetInputFileResponse;
 pub type GetOutputFileRequest = crate::teaclave_frontend_service::GetOutputFileRequest;
 pub type GetOutputFileResponse = crate::teaclave_frontend_service::GetOutputFileResponse;
-pub type GetFusionDataRequest = crate::teaclave_frontend_service::GetFusionDataRequest;
-pub type GetFusionDataResponse = crate::teaclave_frontend_service::GetFusionDataResponse;
 pub type RegisterFunctionRequest = crate::teaclave_frontend_service::RegisterFunctionRequest;
 pub type RegisterFunctionResponse = crate::teaclave_frontend_service::RegisterFunctionResponse;
 pub type GetFunctionRequest = crate::teaclave_frontend_service::GetFunctionRequest;

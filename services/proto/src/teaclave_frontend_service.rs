@@ -1,3 +1,4 @@
+use crate::teaclave_common::{i32_from_task_status, i32_to_task_status};
 use crate::teaclave_frontend_service_proto as proto;
 use crate::teaclave_management_service::TeaclaveManagementRequest;
 use crate::teaclave_management_service::TeaclaveManagementResponse;
@@ -5,11 +6,12 @@ use anyhow::anyhow;
 use anyhow::{Error, Result};
 use core::convert::TryInto;
 use core::iter::FromIterator;
-use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::prelude::v1::*;
 use teaclave_rpc::into_request;
-use teaclave_types::TeaclaveFileCryptoInfo;
+use teaclave_types::{
+    DataOwnerList, FunctionInput, FunctionOutput, TaskStatus, TeaclaveFileCryptoInfo,
+};
 use url::Url;
 
 pub use proto::TeaclaveFrontend;
@@ -48,43 +50,62 @@ pub struct RegisterOutputFileResponse {
     pub data_id: String,
 }
 
-#[into_request(TeaclaveManagementRequest::GetOutputFile)]
+#[into_request(TeaclaveFrontendRequest::RegisterFusionOutput)]
+#[into_request(TeaclaveManagementRequest::RegisterFusionOutput)]
+#[derive(Debug)]
+pub struct RegisterFusionOutputRequest {
+    pub owner_list: HashSet<String>,
+}
+
+#[into_request(TeaclaveFrontendResponse::RegisterFusionOutput)]
+#[into_request(TeaclaveManagementResponse::RegisterFusionOutput)]
+#[derive(Debug)]
+pub struct RegisterFusionOutputResponse {
+    pub data_id: String,
+}
+
+#[into_request(TeaclaveFrontendRequest::RegisterInputFromOutput)]
+#[into_request(TeaclaveManagementRequest::RegisterInputFromOutput)]
+#[derive(Debug)]
+pub struct RegisterInputFromOutputRequest {
+    pub data_id: String,
+}
+
+#[into_request(TeaclaveFrontendResponse::RegisterInputFromOutput)]
+#[into_request(TeaclaveManagementResponse::RegisterInputFromOutput)]
+#[derive(Debug)]
+pub struct RegisterInputFromOutputResponse {
+    pub data_id: String,
+}
+
+#[into_request(TeaclaveFrontendRequest::GetInputFile)]
+#[into_request(TeaclaveManagementRequest::GetInputFile)]
+#[derive(Debug)]
+pub struct GetInputFileRequest {
+    pub data_id: String,
+}
+
+#[into_request(TeaclaveFrontendResponse::GetInputFile)]
+#[into_request(TeaclaveManagementResponse::GetInputFile)]
+#[derive(Debug)]
+pub struct GetInputFileResponse {
+    pub owner: HashSet<String>,
+    pub hash: String,
+}
+
 #[into_request(TeaclaveFrontendRequest::GetOutputFile)]
+#[into_request(TeaclaveManagementRequest::GetOutputFile)]
 #[derive(Debug)]
 pub struct GetOutputFileRequest {
     pub data_id: String,
 }
 
+#[into_request(TeaclaveFrontendResponse::GetOutputFile)]
 #[into_request(TeaclaveManagementResponse::GetOutputFile)]
 #[derive(Debug)]
 pub struct GetOutputFileResponse {
+    pub owner: HashSet<String>,
     pub hash: String,
-}
-
-#[into_request(TeaclaveManagementRequest::GetFusionData)]
-#[into_request(TeaclaveFrontendRequest::GetFusionData)]
-#[derive(Debug)]
-pub struct GetFusionDataRequest {
-    pub data_id: String,
-}
-
-#[into_request(TeaclaveManagementResponse::GetFusionData)]
-#[derive(Debug)]
-pub struct GetFusionDataResponse {
-    pub hash: String,
-    pub data_owner_id_list: Vec<String>,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct FunctionInput {
-    pub name: String,
-    pub description: String,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct FunctionOutput {
-    pub name: String,
-    pub description: String,
 }
 
 #[into_request(TeaclaveManagementRequest::RegisterFunction)]
@@ -126,11 +147,6 @@ pub struct GetFunctionResponse {
     pub output_list: Vec<FunctionOutput>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct DataOwnerList {
-    pub user_id_list: HashSet<String>,
-}
-
 #[into_request(TeaclaveManagementRequest::CreateTask)]
 #[into_request(TeaclaveFrontendRequest::CreateTask)]
 #[derive(Debug)]
@@ -145,22 +161,6 @@ pub struct CreateTaskRequest {
 #[derive(Debug)]
 pub struct CreateTaskResponse {
     pub task_id: String,
-}
-
-#[derive(Debug)]
-pub struct DataMap {
-    pub data_name: String,
-    pub data_id: String,
-}
-
-#[derive(Debug, Deserialize, Serialize, std::cmp::PartialEq)]
-pub enum TaskStatus {
-    Created,
-    Ready,
-    Approved,
-    Running,
-    Failed,
-    Finished,
 }
 
 #[into_request(TeaclaveManagementRequest::GetTask)]
@@ -219,67 +219,6 @@ pub struct InvokeTaskRequest {
 #[derive(Debug)]
 pub struct InvokeTaskResponse;
 
-fn arg_list_from_proto(vector: Vec<proto::Argument>) -> Result<HashMap<String, String>> {
-    let mut ret = HashMap::with_capacity(vector.len());
-    for item in vector.into_iter() {
-        ret.insert(item.arg_name, item.arg_value);
-    }
-    Ok(ret)
-}
-
-fn arg_list_to_proto(map: HashMap<String, String>) -> Vec<proto::Argument> {
-    let mut ret = Vec::with_capacity(map.len());
-    for (arg_name, arg_value) in map.into_iter() {
-        let argument = proto::Argument {
-            arg_name,
-            arg_value,
-        };
-        ret.push(argument);
-    }
-    ret
-}
-
-fn data_map_to_proto(map: HashMap<String, String>) -> Vec<proto::DataMap> {
-    let mut ret = Vec::with_capacity(map.len());
-    for (data_name, data_id) in map.into_iter() {
-        let data_map = proto::DataMap { data_name, data_id };
-        ret.push(data_map);
-    }
-    ret
-}
-
-fn data_map_from_proto(vector: Vec<proto::DataMap>) -> Result<HashMap<String, String>> {
-    let mut ret = HashMap::with_capacity(vector.len());
-    for item in vector.into_iter() {
-        ret.insert(item.data_name, item.data_id);
-    }
-    Ok(ret)
-}
-
-fn data_owner_list_from_proto(
-    vector: Vec<proto::DataOwnerList>,
-) -> Result<HashMap<String, DataOwnerList>> {
-    let mut ret = HashMap::with_capacity(vector.len());
-    for item in vector.into_iter() {
-        let data_owner_list = DataOwnerList {
-            user_id_list: HashSet::from_iter(item.user_id_list.into_iter()),
-        };
-        ret.insert(item.data_name, data_owner_list);
-    }
-    Ok(ret)
-}
-
-fn data_owner_list_to_proto(map: HashMap<String, DataOwnerList>) -> Vec<proto::DataOwnerList> {
-    let mut ret = Vec::with_capacity(map.len());
-    for (data_name, data_owner_list) in map.into_iter() {
-        let data_owner_list = proto::DataOwnerList {
-            data_name,
-            user_id_list: data_owner_list.user_id_list.into_iter().collect(),
-        };
-        ret.push(data_owner_list);
-    }
-    ret
-}
 impl std::convert::TryFrom<proto::RegisterInputFileRequest> for RegisterInputFileRequest {
     type Error = Error;
 
@@ -368,6 +307,126 @@ impl From<RegisterOutputFileResponse> for proto::RegisterOutputFileResponse {
     }
 }
 
+impl std::convert::TryFrom<proto::RegisterFusionOutputRequest> for RegisterFusionOutputRequest {
+    type Error = Error;
+
+    fn try_from(proto: proto::RegisterFusionOutputRequest) -> Result<Self> {
+        let ret = Self {
+            owner_list: proto.owner_list.into_iter().collect(),
+        };
+
+        Ok(ret)
+    }
+}
+
+impl From<RegisterFusionOutputRequest> for proto::RegisterFusionOutputRequest {
+    fn from(request: RegisterFusionOutputRequest) -> Self {
+        Self {
+            owner_list: request.owner_list.into_iter().collect(),
+        }
+    }
+}
+
+impl std::convert::TryFrom<proto::RegisterFusionOutputResponse> for RegisterFusionOutputResponse {
+    type Error = Error;
+
+    fn try_from(proto: proto::RegisterFusionOutputResponse) -> Result<Self> {
+        Ok(Self {
+            data_id: proto.data_id,
+        })
+    }
+}
+
+impl From<RegisterFusionOutputResponse> for proto::RegisterFusionOutputResponse {
+    fn from(request: RegisterFusionOutputResponse) -> Self {
+        Self {
+            data_id: request.data_id,
+        }
+    }
+}
+
+impl std::convert::TryFrom<proto::RegisterInputFromOutputRequest>
+    for RegisterInputFromOutputRequest
+{
+    type Error = Error;
+
+    fn try_from(proto: proto::RegisterInputFromOutputRequest) -> Result<Self> {
+        let ret = Self {
+            data_id: proto.data_id,
+        };
+
+        Ok(ret)
+    }
+}
+
+impl From<RegisterInputFromOutputRequest> for proto::RegisterInputFromOutputRequest {
+    fn from(request: RegisterInputFromOutputRequest) -> Self {
+        Self {
+            data_id: request.data_id,
+        }
+    }
+}
+
+impl std::convert::TryFrom<proto::RegisterInputFromOutputResponse>
+    for RegisterInputFromOutputResponse
+{
+    type Error = Error;
+
+    fn try_from(proto: proto::RegisterInputFromOutputResponse) -> Result<Self> {
+        Ok(Self {
+            data_id: proto.data_id,
+        })
+    }
+}
+
+impl From<RegisterInputFromOutputResponse> for proto::RegisterInputFromOutputResponse {
+    fn from(request: RegisterInputFromOutputResponse) -> Self {
+        Self {
+            data_id: request.data_id,
+        }
+    }
+}
+
+impl std::convert::TryFrom<proto::GetInputFileRequest> for GetInputFileRequest {
+    type Error = Error;
+
+    fn try_from(proto: proto::GetInputFileRequest) -> Result<Self> {
+        let ret = Self {
+            data_id: proto.data_id,
+        };
+
+        Ok(ret)
+    }
+}
+
+impl From<GetInputFileRequest> for proto::GetInputFileRequest {
+    fn from(request: GetInputFileRequest) -> Self {
+        Self {
+            data_id: request.data_id,
+        }
+    }
+}
+
+impl std::convert::TryFrom<proto::GetInputFileResponse> for GetInputFileResponse {
+    type Error = Error;
+
+    fn try_from(proto: proto::GetInputFileResponse) -> Result<Self> {
+        Ok(Self {
+            owner: proto.owner.into_iter().collect(),
+            hash: proto.hash,
+        })
+    }
+}
+
+impl From<GetInputFileResponse> for proto::GetInputFileResponse {
+    fn from(request: GetInputFileResponse) -> Self {
+        Self {
+            owner: request.owner.into_iter().collect(),
+            hash: request.hash,
+        }
+    }
+}
+
 impl std::convert::TryFrom<proto::GetOutputFileRequest> for GetOutputFileRequest {
     type Error = Error;
 
@@ -392,54 +451,18 @@ impl std::convert::TryFrom<proto::GetOutputFileResponse> for GetOutputFileRespon
     type Error = Error;
 
     fn try_from(proto: proto::GetOutputFileResponse) -> Result<Self> {
-        Ok(Self { hash: proto.hash })
-    }
-}
-
-impl From<GetOutputFileResponse> for proto::GetOutputFileResponse {
-    fn from(response: GetOutputFileResponse) -> Self {
-        Self {
-            hash: response.hash,
-        }
-    }
-}
-
-impl std::convert::TryFrom<proto::GetFusionDataRequest> for GetFusionDataRequest {
-    type Error = Error;
-
-    fn try_from(proto: proto::GetFusionDataRequest) -> Result<Self> {
-        let ret = Self {
-            data_id: proto.data_id,
-        };
-
-        Ok(ret)
-    }
-}
-
-impl From<GetFusionDataRequest> for proto::GetFusionDataRequest {
-    fn from(request: GetFusionDataRequest) -> Self {
-        Self {
-            data_id: request.data_id,
-        }
-    }
-}
-
-impl std::convert::TryFrom<proto::GetFusionDataResponse> for GetFusionDataResponse {
-    type Error = Error;
-
-    fn try_from(proto: proto::GetFusionDataResponse) -> Result<Self> {
         Ok(Self {
+            owner: proto.owner.into_iter().collect(),
             hash: proto.hash,
-            data_owner_id_list: proto.data_owner_id_list,
         })
     }
 }
 
-impl From<GetFusionDataResponse> for proto::GetFusionDataResponse {
-    fn from(response: GetFusionDataResponse) -> Self {
+impl From<GetOutputFileResponse> for proto::GetOutputFileResponse {
+    fn from(request: GetOutputFileResponse) -> Self {
         Self {
-            hash: response.hash,
-            data_owner_id_list: response.data_owner_id_list,
+            owner: request.owner.into_iter().collect(),
+            hash: request.hash,
         }
     }
 }
@@ -637,6 +660,53 @@ impl From<GetFunctionResponse> for proto::GetFunctionResponse {
     }
 }
 
+pub fn data_owner_list_from_proto(
+    vector: Vec<proto::DataOwnerList>,
+) -> Result<HashMap<String, DataOwnerList>> {
+    let mut ret = HashMap::with_capacity(vector.len());
+    for item in vector.into_iter() {
+        let data_owner_list = DataOwnerList {
+            user_id_list: HashSet::from_iter(item.user_id_list.into_iter()),
+        };
+        ret.insert(item.data_name, data_owner_list);
+    }
+    Ok(ret)
+}
+
+pub fn data_owner_list_to_proto<S: std::hash::BuildHasher>(
+    map: HashMap<String, DataOwnerList, S>,
+) -> Vec<proto::DataOwnerList> {
+    let mut ret = Vec::with_capacity(map.len());
+    for (data_name, data_owner_list) in map.into_iter() {
+        let data_owner_list = proto::DataOwnerList {
+            data_name,
+            user_id_list: data_owner_list.user_id_list.into_iter().collect(),
+        };
+        ret.push(data_owner_list);
+    }
+    ret
+}
+
+fn arg_list_from_proto(vector: Vec<proto::Argument>) -> Result<HashMap<String, String>> {
+    let mut ret = HashMap::with_capacity(vector.len());
+    for item in vector.into_iter() {
+        ret.insert(item.arg_name, item.arg_value);
+    }
+    Ok(ret)
+}
+
+fn arg_list_to_proto(map: HashMap<String, String>) -> Vec<proto::Argument> {
+    let mut ret = Vec::with_capacity(map.len());
+    for (arg_name, arg_value) in map.into_iter() {
+        let argument = proto::Argument {
+            arg_name,
+            arg_value,
+        };
+        ret.push(argument);
+    }
+    ret
+}
+
 impl std::convert::TryFrom<proto::CreateTaskRequest> for CreateTaskRequest {
     type Error = Error;
 
@@ -689,34 +759,21 @@ impl From<CreateTaskResponse> for proto::CreateTaskResponse {
     }
 }
 
-impl std::convert::TryFrom<i32> for TaskStatus {
-    type Error = Error;
-
-    fn try_from(status: i32) -> Result<Self> {
-        let ret = match proto::TaskStatus::from_i32(status) {
-            Some(proto::TaskStatus::Created) => TaskStatus::Created,
-            Some(proto::TaskStatus::Ready) => TaskStatus::Ready,
-            Some(proto::TaskStatus::Approved) => TaskStatus::Approved,
-            Some(proto::TaskStatus::Running) => TaskStatus::Running,
-            Some(proto::TaskStatus::Failed) => TaskStatus::Failed,
-            Some(proto::TaskStatus::Finished) => TaskStatus::Finished,
-            None => return Err(anyhow!("invalid task status")),
-        };
-        Ok(ret)
+fn data_map_to_proto(map: HashMap<String, String>) -> Vec<proto::DataMap> {
+    let mut ret = Vec::with_capacity(map.len());
+    for (data_name, data_id) in map.into_iter() {
+        let data_map = proto::DataMap { data_name, data_id };
+        ret.push(data_map);
     }
+    ret
 }
 
-impl From<TaskStatus> for i32 {
-    fn from(status: TaskStatus) -> i32 {
-        match status {
-            TaskStatus::Created => proto::TaskStatus::Created as i32,
-            TaskStatus::Ready => proto::TaskStatus::Ready as i32,
-            TaskStatus::Approved => proto::TaskStatus::Approved as i32,
-            TaskStatus::Running => proto::TaskStatus::Running as i32,
-            TaskStatus::Failed => proto::TaskStatus::Failed as i32,
-            TaskStatus::Finished => proto::TaskStatus::Finished as i32,
-        }
+fn data_map_from_proto(vector: Vec<proto::DataMap>) -> Result<HashMap<String, String>> {
+    let mut ret = HashMap::with_capacity(vector.len());
+    for item in vector.into_iter() {
+        ret.insert(item.data_name, item.data_id);
     }
+    Ok(ret)
 }
 
 impl std::convert::TryFrom<proto::GetTaskRequest> for GetTaskRequest {
@@ -748,7 +805,7 @@ impl std::convert::TryFrom<proto::GetTaskResponse> for GetTaskResponse {
         let output_data_owner_list = data_owner_list_from_proto(proto.output_data_owner_list)?;
         let input_map = data_map_from_proto(proto.input_map)?;
         let output_map = data_map_from_proto(proto.output_map)?;
-        let status = TaskStatus::try_from(proto.status)?;
+        let status = i32_to_task_status(proto.status)?;
 
         let ret = Self {
             task_id: proto.task_id,
@@ -776,7 +833,7 @@ impl From<GetTaskResponse> for proto::GetTaskResponse {
         let output_data_owner_list = data_owner_list_to_proto(response.output_data_owner_list);
         let input_map = data_map_to_proto(response.input_map);
         let output_map = data_map_to_proto(response.output_map);
-        let status = i32::from(response.status);
+        let status = i32_from_task_status(response.status);
         Self {
             task_id: response.task_id,
             creator: response.creator,

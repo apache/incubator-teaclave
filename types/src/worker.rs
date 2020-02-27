@@ -55,13 +55,13 @@ impl std::fmt::Display for TeaclaveExecutorSelector {
 }
 
 #[derive(Debug)]
-pub struct InputData {
+pub struct WorkerInputData {
     pub path: std::path::PathBuf,
     pub hash: String,
     pub crypto_info: TeaclaveFileCryptoInfo,
 }
 #[derive(Debug)]
-pub struct OutputData {
+pub struct WorkerOutputData {
     pub path: std::path::PathBuf,
     pub hash: String,
     pub crypto_info: TeaclaveFileCryptoInfo,
@@ -157,7 +157,7 @@ pub fn read_all_bytes(path: impl AsRef<std::path::Path>) -> anyhow::Result<Vec<u
 }
 
 pub fn convert_encrypted_input_file(
-    src: InputData,
+    src: WorkerInputData,
     dst: &str,
 ) -> anyhow::Result<TeaclaveWorkerInputFileInfo> {
     let path = src.path;

@@ -2,9 +2,8 @@
 use std::prelude::v1::*;
 
 use crate::teaclave_common_proto as proto;
-use anyhow::{Error, Result};
-use teaclave_types::TeaclaveFileCryptoInfo;
-use teaclave_types::TeaclaveFileRootKey128;
+use anyhow::{anyhow, Error, Result};
+use teaclave_types::{TaskStatus, TeaclaveFileCryptoInfo, TeaclaveFileRootKey128};
 
 #[derive(Debug)]
 pub struct UserCredential {
@@ -82,5 +81,29 @@ impl std::convert::From<TeaclaveFileRootKey128> for proto::FileCryptoInfo {
             key,
             iv,
         }
+    }
+}
+
+pub fn i32_to_task_status(status: i32) -> Result<TaskStatus> {
+    let ret = match proto::TaskStatus::from_i32(status) {
+        Some(proto::TaskStatus::Created) => TaskStatus::Created,
+        Some(proto::TaskStatus::Ready) => TaskStatus::Ready,
+        Some(proto::TaskStatus::Approved) => TaskStatus::Approved,
+        Some(proto::TaskStatus::Running) => TaskStatus::Running,
+        Some(proto::TaskStatus::Failed) => TaskStatus::Failed,
+        Some(proto::TaskStatus::Finished) => TaskStatus::Finished,
+        None => return Err(anyhow!("invalid task status")),
+    };
+    Ok(ret)
+}
+
+pub fn i32_from_task_status(status: TaskStatus) -> i32 {
+    match status {
+        TaskStatus::Created => proto::TaskStatus::Created as i32,
+        TaskStatus::Ready => proto::TaskStatus::Ready as i32,
+        TaskStatus::Approved => proto::TaskStatus::Approved as i32,
+        TaskStatus::Running => proto::TaskStatus::Running as i32,
+        TaskStatus::Failed => proto::TaskStatus::Failed as i32,
+        TaskStatus::Finished => proto::TaskStatus::Finished as i32,
     }
 }
