@@ -12,10 +12,10 @@ use teaclave_types::EnclaveAttr;
 
 #[derive(Clone)]
 pub struct SgxTrustedTlsServerConfig {
-    pub server_config: rustls::ServerConfig,
-    pub attested_tls_config: Option<Arc<RwLock<AttestedTlsConfig>>>,
-    pub time: std::time::SystemTime,
-    pub validity: std::time::Duration,
+    server_config: rustls::ServerConfig,
+    attested_tls_config: Option<Arc<RwLock<AttestedTlsConfig>>>,
+    time: std::time::SystemTime,
+    validity: std::time::Duration,
 }
 
 impl Default for SgxTrustedTlsServerConfig {
