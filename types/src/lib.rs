@@ -21,6 +21,14 @@ mod worker;
 pub use worker::*;
 mod file;
 pub use file::*;
+mod function;
+pub use function::*;
+mod staged_task;
+pub use staged_task::*;
+mod storage;
+pub use storage::Storable;
+mod task;
+pub use task::*;
 
 /// Status for Ecall
 #[repr(C)]

@@ -41,8 +41,7 @@ use teaclave_rpc::server::SgxTrustedTlsServer;
 use teaclave_service_enclave_utils::ServiceEnclave;
 use teaclave_types::{EnclaveInfo, TeeServiceError, TeeServiceResult};
 
-mod function;
-mod fusion_data;
+//mod fusion_data;
 mod service;
 mod task;
 
@@ -161,7 +160,6 @@ pub mod tests {
         run_tests!(
             service::tests::handle_input_file,
             service::tests::handle_output_file,
-            service::tests::handle_fusion_data,
             service::tests::handle_function,
             service::tests::handle_task,
             service::tests::handle_staged_task,

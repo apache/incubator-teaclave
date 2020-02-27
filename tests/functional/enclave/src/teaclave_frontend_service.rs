@@ -17,8 +17,10 @@ pub fn run_tests() -> bool {
     run_tests!(
         test_register_input_file,
         test_register_output_file,
+        test_register_fusion_output,
+        test_register_input_from_output,
         test_get_output_file,
-        test_get_fusion_data,
+        test_get_input_file,
         test_register_function,
         test_get_function,
         test_create_task,
@@ -123,6 +125,51 @@ fn test_register_output_file() {
     assert!(response.is_err());
 }
 
+fn test_register_fusion_output() {
+    let mut client = get_client();
+    let request = RegisterFusionOutputRequest {
+        owner_list: vec!["frontend_user", "mock_user"]
+            .into_iter()
+            .map(|s| s.to_string())
+            .collect(),
+    };
+    let response = client.register_fusion_output(request);
+    assert!(response.is_ok());
+    assert!(!response.unwrap().data_id.is_empty());
+
+    let request = RegisterFusionOutputRequest {
+        owner_list: vec!["frontend_user", "mock_user"]
+            .into_iter()
+            .map(|s| s.to_string())
+            .collect(),
+    };
+    client
+        .metadata_mut()
+        .insert("token".to_string(), "wrong token".to_string());
+    let response = client.register_fusion_output(request);
+    assert!(response.is_err());
+}
+
+fn test_register_input_from_output() {
+    let mut client = get_client();
+    let data_id = "output-file-00000000-0000-0000-0000-000000000001";
+    let request = RegisterInputFromOutputRequest {
+        data_id: data_id.to_string(),
+    };
+    let response = client.register_input_from_output(request);
+    assert!(response.is_ok());
+    assert!(!response.unwrap().data_id.is_empty());
+
+    let request = RegisterInputFromOutputRequest {
+        data_id: data_id.to_string(),
+    };
+    client
+        .metadata_mut()
+        .insert("token".to_string(), "wrong token".to_string());
+    let response = client.register_input_from_output(request);
+    assert!(response.is_err());
+}
+
 fn test_get_output_file() {
     let request = RegisterOutputFileRequest {
         url: Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap(),
@@ -148,23 +195,29 @@ fn test_get_output_file() {
     assert!(response.is_err());
 }
 
-fn test_get_fusion_data() {
+fn test_get_input_file() {
+    let request = RegisterInputFileRequest {
+        url: Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap(),
+        hash: "deadbeef".to_string(),
+        crypto_info: TeaclaveFileCryptoInfo::default(),
+    };
+
     let mut client = get_client();
+    let response = client.register_input_file(request);
+    let data_id = response.unwrap().data_id;
 
-    let request = GetFusionDataRequest {
-        data_id: "fusion-data-mock-frontend-data".to_string(),
+    let request = GetInputFileRequest {
+        data_id: data_id.clone(),
     };
-    let response = client.get_fusion_data(request);
+    let response = client.get_input_file(request);
     assert!(response.is_ok());
-    assert!(response.unwrap().hash.is_empty());
+    assert!(!response.unwrap().hash.is_empty());
 
-    let request = GetFusionDataRequest {
-        data_id: "fusion-data-mock-frontend-data".to_string(),
-    };
+    let request = GetInputFileRequest { data_id };
     client
         .metadata_mut()
         .insert("token".to_string(), "wrong token".to_string());
-    let response = client.get_fusion_data(request);
+    let response = client.get_input_file(request);
     assert!(response.is_err());
 }
 
@@ -204,14 +257,14 @@ fn test_get_function() {
     let mut client = get_client();
 
     let request = GetFunctionRequest {
-        function_id: "native-mock-simple-func".to_string(),
+        function_id: "function-00000000-0000-0000-0000-000000000001".to_string(),
     };
     let response = client.get_function(request);
     assert!(response.is_ok());
     assert!(!response.unwrap().name.is_empty());
 
     let request = GetFunctionRequest {
-        function_id: "native-mock-simple-func".to_string(),
+        function_id: "function-00000000-0000-0000-0000-000000000001".to_string(),
     };
     client
         .metadata_mut()
@@ -228,10 +281,11 @@ fn test_create_task() {
             .into_iter()
             .collect(),
     };
+    let function_id = "function-00000000-0000-0000-0000-000000000002";
     let mut output_data_owner_list = HashMap::new();
     output_data_owner_list.insert("output".to_string(), data_owner_id_list);
     let request = CreateTaskRequest {
-        function_id: "native-mock-simple-func".to_string(),
+        function_id: function_id.to_string(),
         arg_list: vec![("arg1".to_string(), "data1".to_string())]
             .into_iter()
             .collect(),
@@ -243,7 +297,7 @@ fn test_create_task() {
     assert!(!response.unwrap().task_id.is_empty());
 
     let request = CreateTaskRequest {
-        function_id: "native-mock-simple-func".to_string(),
+        function_id: function_id.to_string(),
         arg_list: vec![("arg1".to_string(), "data1".to_string())]
             .into_iter()
             .collect(),
@@ -268,7 +322,7 @@ fn test_get_task() {
     let mut output_data_owner_list = HashMap::new();
     output_data_owner_list.insert("output".to_string(), data_owner_id_list);
     let request = CreateTaskRequest {
-        function_id: "native-mock-simple-func".to_string(),
+        function_id: "function-00000000-0000-0000-0000-000000000002".to_string(),
         arg_list: vec![("arg1".to_string(), "data1".to_string())]
             .into_iter()
             .collect(),
@@ -302,7 +356,7 @@ fn test_assign_data() {
     let mut output_data_owner_list = HashMap::new();
     output_data_owner_list.insert("output".to_string(), data_owner_id_list);
     let request = CreateTaskRequest {
-        function_id: "native-mock-simple-func".to_string(),
+        function_id: "function-00000000-0000-0000-0000-000000000002".to_string(),
         arg_list: vec![("arg1".to_string(), "data1".to_string())]
             .into_iter()
             .collect(),
@@ -356,7 +410,7 @@ fn test_approve_task() {
     let mut output_data_owner_list = HashMap::new();
     output_data_owner_list.insert("output".to_string(), data_owner_id_list);
     let request = CreateTaskRequest {
-        function_id: "native-mock-simple-func".to_string(),
+        function_id: "function-00000000-0000-0000-0000-000000000002".to_string(),
         arg_list: vec![("arg1".to_string(), "data1".to_string())]
             .into_iter()
             .collect(),
@@ -409,7 +463,7 @@ fn test_invoke_task() {
     let mut output_data_owner_list = HashMap::new();
     output_data_owner_list.insert("output".to_string(), data_owner_id_list);
     let request = CreateTaskRequest {
-        function_id: "native-mock-simple-func".to_string(),
+        function_id: "function-00000000-0000-0000-0000-000000000002".to_string(),
         arg_list: vec![("arg1".to_string(), "data1".to_string())]
             .into_iter()
             .collect(),

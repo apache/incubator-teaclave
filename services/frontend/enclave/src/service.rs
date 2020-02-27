@@ -10,11 +10,12 @@ use teaclave_proto::teaclave_common::UserCredential;
 use teaclave_proto::teaclave_frontend_service::{
     ApproveTaskRequest, ApproveTaskResponse, AssignDataRequest, AssignDataResponse,
     CreateTaskRequest, CreateTaskResponse, GetFunctionRequest, GetFunctionResponse,
-    GetFusionDataRequest, GetFusionDataResponse, GetOutputFileRequest, GetOutputFileResponse,
+    GetInputFileRequest, GetInputFileResponse, GetOutputFileRequest, GetOutputFileResponse,
     GetTaskRequest, GetTaskResponse, InvokeTaskRequest, InvokeTaskResponse,
-    RegisterFunctionRequest, RegisterFunctionResponse, RegisterInputFileRequest,
-    RegisterInputFileResponse, RegisterOutputFileRequest, RegisterOutputFileResponse,
-    TeaclaveFrontend,
+    RegisterFunctionRequest, RegisterFunctionResponse, RegisterFusionOutputRequest,
+    RegisterFusionOutputResponse, RegisterInputFileRequest, RegisterInputFileResponse,
+    RegisterInputFromOutputRequest, RegisterInputFromOutputResponse, RegisterOutputFileRequest,
+    RegisterOutputFileResponse, TeaclaveFrontend,
 };
 use teaclave_proto::teaclave_management_service::TeaclaveManagementClient;
 use teaclave_rpc::endpoint::Endpoint;
@@ -124,6 +125,19 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
         authentication_and_forward_to_management!(self, request, register_output_file)
     }
 
+    fn register_fusion_output(
+        &self,
+        request: Request<RegisterFusionOutputRequest>,
+    ) -> TeaclaveServiceResponseResult<RegisterFusionOutputResponse> {
+        authentication_and_forward_to_management!(self, request, register_fusion_output)
+    }
+
+    fn register_input_from_output(
+        &self,
+        request: Request<RegisterInputFromOutputRequest>,
+    ) -> TeaclaveServiceResponseResult<RegisterInputFromOutputResponse> {
+        authentication_and_forward_to_management!(self, request, register_input_from_output)
+    }
     fn get_output_file(
         &self,
         request: Request<GetOutputFileRequest>,
@@ -131,11 +145,11 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
         authentication_and_forward_to_management!(self, request, get_output_file)
     }
 
-    fn get_fusion_data(
+    fn get_input_file(
         &self,
-        request: Request<GetFusionDataRequest>,
-    ) -> TeaclaveServiceResponseResult<GetFusionDataResponse> {
-        authentication_and_forward_to_management!(self, request, get_fusion_data)
+        request: Request<GetInputFileRequest>,
+    ) -> TeaclaveServiceResponseResult<GetInputFileResponse> {
+        authentication_and_forward_to_management!(self, request, get_input_file)
     }
 
     fn register_function(

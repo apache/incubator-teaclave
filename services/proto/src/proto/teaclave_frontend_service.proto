@@ -23,21 +23,38 @@ message RegisterOutputFileResponse {
   string data_id = 1;
 }
 
+message RegisterFusionOutputRequest {
+  repeated string owner_list = 1;
+}
+
+message RegisterFusionOutputResponse {
+  string data_id = 1;
+}
+
+message RegisterInputFromOutputRequest {
+  string data_id = 1;
+}
+
+message RegisterInputFromOutputResponse {
+  string data_id = 1;
+}
+
 message GetOutputFileRequest {
   string data_id = 1;
 }
 
 message GetOutputFileResponse {
-  string hash = 1;
+  repeated string owner = 1;
+  string hash = 2;
 }
 
-message GetFusionDataRequest {
+message GetInputFileRequest {
   string data_id = 1;
 }
 
-message GetFusionDataResponse {
-  string hash = 1;
-  repeated string data_owner_id_list = 2;
+message GetInputFileResponse {
+  repeated string owner = 1;
+  string hash = 2;
 }
 
 message FunctionInput {
@@ -48,6 +65,11 @@ message FunctionInput {
 message FunctionOutput {
   string name = 1;
   string description = 2;
+}
+
+message DataOwnerList {
+  string data_name = 1;
+  repeated string user_id_list = 2;
 }
 
 message RegisterFunctionRequest {
@@ -79,11 +101,6 @@ message GetFunctionResponse {
   repeated FunctionOutput output_list = 8;
 }
 
-message DataOwnerList {
-  string data_name = 1;
-  repeated string user_id_list = 2;
-}
-
 message DataMap {
   string data_name = 1;
   string data_id = 2;
@@ -109,15 +126,6 @@ message GetTaskRequest {
   string task_id = 1;
 }
 
-enum TaskStatus {
-  Created = 0;
-  Ready = 1;
-  Approved = 2;
-  Running = 3;
-  Failed = 4;
-  Finished = 5;
-}
-
 message GetTaskResponse {
   string task_id = 1;
   string creator = 2;
@@ -130,7 +138,7 @@ message GetTaskResponse {
   repeated string approved_user_list = 9;
   repeated DataMap input_map = 10;
   repeated DataMap output_map = 11;
-  TaskStatus status = 12;
+  teaclave_common_proto.TaskStatus status = 12;
 }
 
 message AssignDataRequest {
@@ -156,8 +164,10 @@ message InvokeTaskResponse { }
 service TeaclaveFrontend {
   rpc RegisterInputFile (RegisterInputFileRequest) returns (RegisterInputFileResponse);
   rpc RegisterOutputFile (RegisterOutputFileRequest) returns (RegisterOutputFileResponse);
+  rpc RegisterFusionOutput (RegisterFusionOutputRequest) returns (RegisterFusionOutputResponse);
+  rpc RegisterInputFromOutput (RegisterInputFromOutputRequest) returns (RegisterInputFromOutputResponse);
   rpc GetOutputFile (GetOutputFileRequest) returns (GetOutputFileResponse);
-  rpc GetFusionData (GetFusionDataRequest) returns (GetFusionDataResponse);
+  rpc GetInputFile (GetInputFileRequest) returns (GetInputFileResponse);
   rpc RegisterFunction (RegisterFunctionRequest) returns (RegisterFunctionResponse);
   rpc GetFunction (GetFunctionRequest) returns (GetFunctionResponse);
   rpc CreateTask (CreateTaskRequest) returns (CreateTaskResponse);
