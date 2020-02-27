@@ -14,10 +14,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+use crate::storage::Storable;
 use crate::TeaclaveFileCryptoInfo;
-use anyhow;
+use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
-use serde_json;
+use std::collections::HashSet;
 use std::prelude::v1::*;
 use url::Url;
 use uuid::Uuid;
@@ -34,7 +35,16 @@ pub struct TeaclaveInputFile {
     pub url: Url,
     pub hash: String,
     pub crypto_info: TeaclaveFileCryptoInfo,
-    pub owner: String,
+    pub owner: HashSet<String>,
+    pub uuid: Uuid,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct TeaclaveOutputFile {
+    pub url: Url,
+    pub hash: Option<String>,
+    pub crypto_info: TeaclaveFileCryptoInfo,
+    pub owner: HashSet<String>,
     pub uuid: Uuid,
 }
 
@@ -43,7 +53,7 @@ impl TeaclaveInputFile {
         url: Url,
         hash: String,
         crypto_info: TeaclaveFileCryptoInfo,
-        owner: String,
+        owner: HashSet<String>,
     ) -> TeaclaveInputFile {
         TeaclaveInputFile {
             url,
@@ -53,37 +63,18 @@ impl TeaclaveInputFile {
             uuid: create_uuid(),
         }
     }
-}
 
-pub trait Storable: Serialize + for<'de> Deserialize<'de> {
-    fn key_prefix() -> &'static str;
-
-    fn uuid(&self) -> Uuid;
-
-    fn key_string(&self) -> String {
-        format!("{}-{}", Self::key_prefix(), self.uuid().to_string())
-    }
-
-    fn key(&self) -> Vec<u8> {
-        self.key_string().into_bytes()
-    }
-
-    fn match_prefix(key: &str) -> bool {
-        key.starts_with(Self::key_prefix())
-    }
-
-    fn to_vec(&self) -> anyhow::Result<Vec<u8>> {
-        let bytes = serde_json::to_vec(self)?;
-        Ok(bytes)
-    }
-
-    fn from_slice(bytes: &[u8]) -> anyhow::Result<Self> {
-        let obj = serde_json::from_slice(bytes)?;
-        Ok(obj)
-    }
-
-    fn external_id(&self) -> String {
-        self.key_string()
+    pub fn from_output(output: TeaclaveOutputFile) -> Result<TeaclaveInputFile> {
+        let input = TeaclaveInputFile {
+            url: output.url,
+            hash: output
+                .hash
+                .ok_or_else(|| anyhow!("output is not finished"))?,
+            crypto_info: output.crypto_info,
+            owner: output.owner,
+            uuid: output.uuid,
+        };
+        Ok(input)
     }
 }
 
@@ -97,27 +88,12 @@ impl Storable for TeaclaveInputFile {
     }
 }
 
-impl Storable for TeaclaveOutputFile {
-    fn key_prefix() -> &'static str {
-        OUTPUT_FILE_PREFIX
-    }
-
-    fn uuid(&self) -> Uuid {
-        self.uuid
-    }
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct TeaclaveOutputFile {
-    pub url: Url,
-    pub hash: Option<String>,
-    pub crypto_info: TeaclaveFileCryptoInfo,
-    pub owner: String,
-    pub uuid: Uuid,
-}
-
 impl TeaclaveOutputFile {
-    pub fn new(url: Url, crypto_info: TeaclaveFileCryptoInfo, owner: String) -> TeaclaveOutputFile {
+    pub fn new(
+        url: Url,
+        crypto_info: TeaclaveFileCryptoInfo,
+        owner: HashSet<String>,
+    ) -> TeaclaveOutputFile {
         TeaclaveOutputFile {
             url,
             hash: None,
@@ -125,5 +101,30 @@ impl TeaclaveOutputFile {
             owner,
             uuid: create_uuid(),
         }
+    }
+
+    pub fn new_fusion_data(owner: HashSet<String>) -> Result<TeaclaveOutputFile> {
+        let uuid = create_uuid();
+        let url = format!("fusion://path/{}?token=fusion_token", uuid.to_string());
+        let url = Url::parse(&url).map_err(|_| anyhow!("invalid url"))?;
+        let crypto_info = TeaclaveFileCryptoInfo::default();
+
+        Ok(TeaclaveOutputFile {
+            url,
+            hash: None,
+            crypto_info,
+            owner,
+            uuid,
+        })
+    }
+}
+
+impl Storable for TeaclaveOutputFile {
+    fn key_prefix() -> &'static str {
+        OUTPUT_FILE_PREFIX
+    }
+
+    fn uuid(&self) -> Uuid {
+        self.uuid
     }
 }

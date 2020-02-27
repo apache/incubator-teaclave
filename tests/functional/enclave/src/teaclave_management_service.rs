@@ -3,9 +3,9 @@ use std::prelude::v1::*;
 use teaclave_attestation::verifier;
 use teaclave_config::RuntimeConfig;
 use teaclave_config::BUILD_CONFIG;
-use teaclave_proto::teaclave_frontend_service::{
-    DataOwnerList, FunctionInput, FunctionOutput, TaskStatus,
-};
+//use teaclave_proto::teaclave_frontend_service::{
+//    DataOwnerList, FunctionInput, FunctionOutput, TaskStatus,
+//};
 use teaclave_proto::teaclave_management_service::*;
 use teaclave_rpc::config::SgxTrustedTlsClientConfig;
 use teaclave_rpc::endpoint::Endpoint;
@@ -18,11 +18,13 @@ pub fn run_tests() -> bool {
     run_tests!(
         test_register_input_file,
         test_register_output_file,
-        test_register_function,
-        test_create_task,
+        test_register_fusion_output,
+        test_register_input_from_output,
+        test_get_input_file,
         test_get_output_file,
-        test_get_fusion_data,
+        test_register_function,
         test_get_function,
+        test_create_task,
         test_get_task,
         test_assign_data,
         test_approve_task,
@@ -91,13 +93,67 @@ fn test_register_output_file() {
     assert!(response.is_ok());
 }
 
+fn test_register_fusion_output() {
+    let request = RegisterFusionOutputRequest {
+        owner_list: vec!["mock_user", "mock_user_b"]
+            .into_iter()
+            .map(|s| s.to_string())
+            .collect(),
+    };
+
+    let mut client = get_client("mock_user");
+    let response = client.register_fusion_output(request);
+
+    assert!(response.is_ok());
+
+    let request = RegisterFusionOutputRequest {
+        owner_list: vec!["mock_user_c", "mock_user_b"]
+            .into_iter()
+            .map(|s| s.to_string())
+            .collect(),
+    };
+
+    let mut client = get_client("mock_user");
+    let response = client.register_fusion_output(request);
+    assert!(response.is_err());
+}
+
+fn test_register_input_from_output() {
+    // not a owner
+    let mut client = get_client("mock_user_c");
+    let data_id = "output-file-00000000-0000-0000-0000-000000000001";
+    let request = RegisterInputFromOutputRequest {
+        data_id: data_id.to_string(),
+    };
+    let response = client.register_input_from_output(request);
+    assert!(response.is_err());
+
+    // output not ready
+    let mut client = get_client("mock_user1");
+    let request = RegisterOutputFileRequest {
+        url: Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap(),
+        crypto_info: TeaclaveFileCryptoInfo::default(),
+    };
+    let response = client.register_output_file(request);
+    assert!(response.is_ok());
+    let request = RegisterInputFromOutputRequest {
+        data_id: response.unwrap().data_id,
+    };
+    let response = client.register_input_from_output(request);
+    assert!(response.is_err());
+
+    let request = RegisterInputFromOutputRequest {
+        data_id: data_id.to_string(),
+    };
+    let response = client.register_input_from_output(request);
+    assert!(response.is_ok());
+    info!("{:?}", response);
+}
+
 fn test_get_output_file() {
     let request = RegisterOutputFileRequest {
         url: Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap(),
-        crypto_info: TeaclaveFileCryptoInfo::AesGcm128(AesGcm128CryptoInfo {
-            key: [0x90u8; 16],
-            iv: [0x89u8; 12],
-        }),
+        crypto_info: TeaclaveFileCryptoInfo::default(),
     };
 
     let mut client = get_client("mock_user");
@@ -114,32 +170,24 @@ fn test_get_output_file() {
     assert!(response.is_err());
 }
 
-fn test_get_fusion_data() {
-    let mut client = get_client("mock_user2");
-    let request = GetFusionDataRequest {
-        data_id: "fusion-data-mock-data".to_string(),
+fn test_get_input_file() {
+    let request = RegisterInputFileRequest {
+        url: Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap(),
+        hash: "deadbeef".to_string(),
+        crypto_info: TeaclaveFileCryptoInfo::default(),
     };
-    let response = client.get_fusion_data(request);
-    assert!(response.is_ok());
 
-    let mut client = get_client("mock_user3");
-    let request = GetFusionDataRequest {
-        data_id: "fusion-data-mock-data".to_string(),
+    let mut client = get_client("mock_user");
+    let response = client.register_input_file(request).unwrap();
+    let data_id = response.data_id;
+    let request = GetInputFileRequest {
+        data_id: data_id.clone(),
     };
-    let response = client.get_fusion_data(request);
+    let response = client.get_input_file(request);
     assert!(response.is_ok());
-    let response = response.unwrap();
-    assert!(!response.hash.is_empty());
-    assert_eq!(
-        response.data_owner_id_list,
-        ["mock_user2".to_string(), "mock_user3".to_string()]
-    );
-
-    let mut client = get_client("mock_user_c");
-    let request = GetFusionDataRequest {
-        data_id: "fusion-data-mock-data".to_string(),
-    };
-    let response = client.get_fusion_data(request);
+    let mut client = get_client("mock_another_user");
+    let request = GetInputFileRequest { data_id };
+    let response = client.get_input_file(request);
     assert!(response.is_err());
 }
 
@@ -202,7 +250,7 @@ fn test_get_function() {
     let response = client.get_function(request);
     assert!(response.is_err());
     let request = GetFunctionRequest {
-        function_id: "native-mock-native-func".to_string(),
+        function_id: "function-00000000-0000-0000-0000-000000000001".to_string(),
     };
     let response = client.get_function(request);
     assert!(response.is_ok());
@@ -229,7 +277,7 @@ fn get_correct_create_task() -> CreateTaskRequest {
     output_data_owner_list.insert("output2".to_string(), data_owner_id_list2);
 
     CreateTaskRequest {
-        function_id: "native-mock-native-func".to_string(),
+        function_id: "function-00000000-0000-0000-0000-000000000001".to_string(),
         arg_list,
         input_data_owner_list,
         output_data_owner_list,
@@ -284,7 +332,6 @@ fn test_get_task() {
         assert!(response.participants.contains(&name.to_string()));
     }
     assert!(response.participants.len() == 4);
-    assert!(response.output_map.len() == 1);
 }
 
 fn test_assign_data() {
@@ -307,7 +354,7 @@ fn test_assign_data() {
     let response = unknown_client.assign_data(request);
     assert!(response.is_err());
 
-    // user_id != input_file.owner
+    // !input_file.owner.contains(user_id)
     let request = RegisterInputFileRequest {
         url: Url::parse("input://path").unwrap(),
         hash: "deadbeefdeadbeef".to_string(),
@@ -327,7 +374,7 @@ fn test_assign_data() {
     let response = client1.assign_data(request);
     assert!(response.is_err());
 
-    // user_id != output_file.owner
+    // !output_file.owner.contains(user_id)
     let request = RegisterOutputFileRequest {
         url: Url::parse("output://path").unwrap(),
         crypto_info: TeaclaveFileCryptoInfo::default(),
@@ -372,9 +419,10 @@ fn test_assign_data() {
         input_map: HashMap::new(),
         output_map: HashMap::new(),
     };
-    request
-        .input_map
-        .insert("input".to_string(), "fusion-data-mock-data".to_string());
+    request.input_map.insert(
+        "input".to_string(),
+        "input-file-00000000-0000-0000-0000-000000000002".to_string(),
+    );
     let response = client1.assign_data(request);
     assert!(response.is_err());
 
@@ -402,7 +450,7 @@ fn test_assign_data() {
     let response = client2.assign_data(request);
     assert!(response.is_err());
 
-    //input file: DataOwnerList has one user
+    //input file: DataOwnerList != user_id
     let mut request = AssignDataRequest {
         task_id: task_id.clone(),
         input_map: HashMap::new(),
@@ -426,7 +474,7 @@ fn test_assign_data() {
     let response = client2.assign_data(request);
     assert!(response.is_err());
 
-    // output file DataOwnerList has one user
+    // output file DataOwnerList != user_id_list
     let mut request = AssignDataRequest {
         task_id: task_id.clone(),
         input_map: HashMap::new(),
@@ -438,7 +486,7 @@ fn test_assign_data() {
     let response = client2.assign_data(request);
     assert!(response.is_err());
 
-    // output file: DataOwnerList != user_id
+    // output file: DataOwnerList != user_id_list
     let mut request = AssignDataRequest {
         task_id: task_id.clone(),
         input_map: HashMap::new(),
@@ -447,30 +495,6 @@ fn test_assign_data() {
     request
         .output_map
         .insert("output1".to_string(), output_file_id_user2);
-    let response = client2.assign_data(request);
-    assert!(response.is_err());
-
-    // fusion_data in output_map
-    let mut request = AssignDataRequest {
-        task_id: task_id.clone(),
-        input_map: HashMap::new(),
-        output_map: HashMap::new(),
-    };
-    request
-        .output_map
-        .insert("output2".to_string(), "fusion-data-mock-data".to_string());
-    let response = client2.assign_data(request);
-    assert!(response.is_err());
-
-    // fusion_data: DataOwnerList == fusion_data.owner_id_list
-    let mut request = AssignDataRequest {
-        task_id: task_id.clone(),
-        input_map: HashMap::new(),
-        output_map: HashMap::new(),
-    };
-    request
-        .output_map
-        .insert("output2".to_string(), "fusion-data-mock-data2".to_string());
     let response = client2.assign_data(request);
     assert!(response.is_err());
 
@@ -509,9 +533,29 @@ fn test_assign_data() {
         input_map: HashMap::new(),
         output_map: HashMap::new(),
     };
+    request.input_map.insert(
+        "input2".to_string(),
+        "input-file-00000000-0000-0000-0000-000000000002".to_string(),
+    );
+    let response = client3.assign_data(request);
+    assert!(response.is_ok());
+
+    let request = RegisterFusionOutputRequest {
+        owner_list: vec!["mock_user2", "mock_user3"]
+            .into_iter()
+            .map(|s| s.to_string())
+            .collect(),
+    };
+    let response = client3.register_fusion_output(request);
+    let fusion_output = response.unwrap().data_id;
+    let mut request = AssignDataRequest {
+        task_id: task_id.clone(),
+        input_map: HashMap::new(),
+        output_map: HashMap::new(),
+    };
     request
-        .input_map
-        .insert("input2".to_string(), "fusion-data-mock-data".to_string());
+        .output_map
+        .insert("output2".to_string(), fusion_output);
     let response = client3.assign_data(request);
     assert!(response.is_ok());
 
@@ -519,7 +563,6 @@ fn test_assign_data() {
         task_id: task_id.clone(),
     };
     let response = client3.get_task(request);
-    info!("{:?}", response);
     assert_eq!(response.unwrap().status, TaskStatus::Ready);
 
     // task.status != Created
@@ -585,10 +628,30 @@ fn test_approve_task() {
         input_map: HashMap::new(),
         output_map: HashMap::new(),
     };
-    request
-        .input_map
-        .insert("input2".to_string(), "fusion-data-mock-data".to_string());
+    request.input_map.insert(
+        "input2".to_string(),
+        "input-file-00000000-0000-0000-0000-000000000002".to_string(),
+    );
     let response = client2.assign_data(request);
+    assert!(response.is_ok());
+
+    let request = RegisterFusionOutputRequest {
+        owner_list: vec!["mock_user2", "mock_user3"]
+            .into_iter()
+            .map(|s| s.to_string())
+            .collect(),
+    };
+    let response = client3.register_fusion_output(request);
+    let fusion_output = response.unwrap().data_id;
+    let mut request = AssignDataRequest {
+        task_id: task_id.clone(),
+        input_map: HashMap::new(),
+        output_map: HashMap::new(),
+    };
+    request
+        .output_map
+        .insert("output2".to_string(), fusion_output);
+    let response = client3.assign_data(request);
     assert!(response.is_ok());
 
     let request = GetTaskRequest {
@@ -672,10 +735,31 @@ fn test_invoke_task() {
         input_map: HashMap::new(),
         output_map: HashMap::new(),
     };
+    request.input_map.insert(
+        "input2".to_string(),
+        "input-file-00000000-0000-0000-0000-000000000002".to_string(),
+    );
+    let response = client2.assign_data(request);
+    assert!(response.is_ok());
+
+    let request = RegisterFusionOutputRequest {
+        owner_list: vec!["mock_user2", "mock_user3"]
+            .into_iter()
+            .map(|s| s.to_string())
+            .collect(),
+    };
+    let response = client3.register_fusion_output(request);
+    let fusion_output = response.unwrap().data_id;
+    let mut request = AssignDataRequest {
+        task_id: task_id.clone(),
+        input_map: HashMap::new(),
+        output_map: HashMap::new(),
+    };
     request
-        .input_map
-        .insert("input2".to_string(), "fusion-data-mock-data".to_string());
-    client2.assign_data(request).unwrap();
+        .output_map
+        .insert("output2".to_string(), fusion_output);
+    let response = client3.assign_data(request);
+    assert!(response.is_ok());
 
     // task status != Approved
     let request = InvokeTaskRequest {

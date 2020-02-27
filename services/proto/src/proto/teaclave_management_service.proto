@@ -7,8 +7,10 @@ import "teaclave_frontend_service.proto";
 service TeaclaveManagement {
   rpc RegisterInputFile (teaclave_frontend_service_proto.RegisterInputFileRequest) returns (teaclave_frontend_service_proto.RegisterInputFileResponse);
   rpc RegisterOutputFile (teaclave_frontend_service_proto.RegisterOutputFileRequest) returns (teaclave_frontend_service_proto.RegisterOutputFileResponse);
+  rpc RegisterFusionOutput (teaclave_frontend_service_proto.RegisterFusionOutputRequest) returns (teaclave_frontend_service_proto.RegisterFusionOutputResponse);
+  rpc RegisterInputFromOutput (teaclave_frontend_service_proto.RegisterInputFromOutputRequest) returns (teaclave_frontend_service_proto.RegisterInputFromOutputResponse);
   rpc GetOutputFile (teaclave_frontend_service_proto.GetOutputFileRequest) returns (teaclave_frontend_service_proto.GetOutputFileResponse);
-  rpc GetFusionData (teaclave_frontend_service_proto.GetFusionDataRequest) returns (teaclave_frontend_service_proto.GetFusionDataResponse);
+  rpc GetInputFile (teaclave_frontend_service_proto.GetInputFileRequest) returns (teaclave_frontend_service_proto.GetInputFileResponse);
   rpc RegisterFunction (teaclave_frontend_service_proto.RegisterFunctionRequest) returns (teaclave_frontend_service_proto.RegisterFunctionResponse);
   rpc GetFunction (teaclave_frontend_service_proto.GetFunctionRequest) returns (teaclave_frontend_service_proto.GetFunctionResponse);
   rpc CreateTask (teaclave_frontend_service_proto.CreateTaskRequest) returns (teaclave_frontend_service_proto.CreateTaskResponse);

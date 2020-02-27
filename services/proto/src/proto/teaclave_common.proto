@@ -11,3 +11,12 @@ message FileCryptoInfo {
   bytes key = 2;
   bytes iv = 3;
 }
+
+enum TaskStatus {
+  Created = 0;
+  Ready = 1;
+  Approved = 2;
+  Running = 3;
+  Failed = 4;
+  Finished = 5;
+}
