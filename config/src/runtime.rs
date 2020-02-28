@@ -36,6 +36,7 @@ pub struct InternalEndpointsConfig {
     pub management: InternalEndpoint,
     pub storage: InternalEndpoint,
     pub execution: InternalEndpoint,
+    pub scheduler: InternalEndpoint,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

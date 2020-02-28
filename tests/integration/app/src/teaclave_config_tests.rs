@@ -18,7 +18,7 @@ fn test_runtime_config() {
     let storage_config = config.internal_endpoints.storage;
     assert_eq!(
         storage_config.listen_address,
-        "0.0.0.0:7778".parse().unwrap()
+        "0.0.0.0:17778".parse().unwrap()
     );
     assert_eq!(
         storage_config.inbound_services,

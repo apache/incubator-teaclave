@@ -32,5 +32,6 @@ attestation_validity_secs = 3600
 [inbound]
 access_control = ["teaclave_management_service"]
 authentication = ["teaclave_frontend_service"]
-storage        = ["teaclave_management_service"]
+storage        = ["teaclave_management_service", "teaclave_scheduler_service"]
 management     = ["teaclave_frontend_service"]
+scheduler      = ["teaclave_execution_service"]

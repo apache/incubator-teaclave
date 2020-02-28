@@ -29,6 +29,7 @@ fn main() {
         "src/proto/teaclave_execution_service.proto",
         "src/proto/teaclave_frontend_service.proto",
         "src/proto/teaclave_management_service.proto",
+        "src/proto/teaclave_scheduler_service.proto",
     ];
 
     let out_dir = env::var("OUT_DIR").expect("$OUT_DIR not set. Please build with cargo");

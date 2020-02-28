@@ -13,6 +13,7 @@ pub struct Inbounds {
     pub authentication: &'static [&'static str; {{ inbound.authentication.len() }}],
     pub management: &'static [&'static str; {{ inbound.management.len() }}],
     pub storage: &'static [&'static str; {{ inbound.storage.len() }}],
+    pub scheduler: &'static [&'static str; {{ inbound.scheduler.len() }}],
 }
 
 pub const BUILD_CONFIG: BuildConfig = BuildConfig {
@@ -42,6 +43,11 @@ pub const BUILD_CONFIG: BuildConfig = BuildConfig {
         ],
         storage: &[
             {%- for s in inbound.storage %}
+            "{{ s }}",
+            {%- endfor %}
+        ],
+        scheduler: &[
+            {%- for s in inbound.scheduler %}
             "{{ s }}",
             {%- endfor %}
         ],
