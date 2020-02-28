@@ -14,6 +14,7 @@ management     = { listen_address = "0.0.0.0:17777", advertised_address = "local
 storage        = { listen_address = "0.0.0.0:17778", advertised_address = "localhost:17778" }
 access_control = { listen_address = "0.0.0.0:17779", advertised_address = "localhost:17779" }
 execution      = { listen_address = "0.0.0.0:17770", advertised_address = "localhost:17770" }
+scheduler      = { listen_address = "0.0.0.0:17780", advertised_address = "localhost:17780" }
 
 [audit]
 enclave_info = { path = "enclave_info.toml" }

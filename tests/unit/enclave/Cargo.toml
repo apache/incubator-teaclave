@@ -32,6 +32,8 @@ mesalock_sgx = [
   "teaclave_storage_service_enclave/enclave_unit_test",
   "teaclave_execution_service_enclave/mesalock_sgx",
   "teaclave_execution_service_enclave/enclave_unit_test",
+  "teaclave_scheduler_service_enclave/mesalock_sgx",
+  "teaclave_scheduler_service_enclave/enclave_unit_test",
   "teaclave_worker/mesalock_sgx",
   "teaclave_worker/enclave_unit_test",
 ]
@@ -48,6 +50,8 @@ teaclave_authentication_service_enclave = { path = "../../../services/authentica
 teaclave_storage_service_enclave = { path = "../../../services/storage/enclave" }
 teaclave_execution_service_enclave = { path = "../../../services/execution/enclave" }
 teaclave_management_service_enclave = { path = "../../../services/management/enclave" }
+teaclave_scheduler_service_enclave = { path = "../../../services/scheduler/enclave" }
+
 teaclave_worker                 = { path = "../../../worker" }
 
 teaclave_test_utils            = { path = "../../utils" }

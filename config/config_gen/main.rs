@@ -24,6 +24,7 @@ struct Inbound {
     authentication: Vec<String>,
     management: Vec<String>,
     storage: Vec<String>,
+    scheduler: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
