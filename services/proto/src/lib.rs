@@ -25,6 +25,7 @@ pub mod teaclave_common;
 pub mod teaclave_execution_service;
 pub mod teaclave_frontend_service;
 pub mod teaclave_management_service;
+pub mod teaclave_scheduler_service;
 pub mod teaclave_storage_service;
 
 macro_rules! include_proto {
@@ -59,4 +60,8 @@ pub mod teaclave_management_service_proto {
 
 pub mod teaclave_access_control_service_proto {
     include_proto!("teaclave_access_control_service_proto");
+}
+
+pub mod teaclave_scheduler_service_proto {
+    include_proto!("teaclave_scheduler_service_proto");
 }
