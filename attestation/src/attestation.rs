@@ -38,10 +38,7 @@ impl RemoteAttestation {
 
     pub fn config(mut self, attestation_config: Arc<AttestationConfig>) -> Self {
         self.attestation_config = attestation_config;
-        Self {
-            attestation_config: self.attestation_config,
-            attested_tls_config: self.attested_tls_config,
-        }
+        Self { ..self }
     }
 
     pub fn generate_and_endorse(self) -> Result<Self> {
