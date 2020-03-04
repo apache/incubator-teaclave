@@ -1,34 +1,28 @@
 syntax = "proto3";
 package teaclave_scheduler_service_proto;
 
-import "teaclave_common.proto";
-import "teaclave_execution_service.proto";
-
-
-message QueryTaskRequest {
-    string worker_id = 1;
+message SubscribeRequest {}
+message SubscribeResponse {
+  bool success = 1;
 }
 
-message QueryTaskResponse {
-    teaclave_execution_service_proto.StagedFunctionExecuteRequest function_execute_request = 1; 
-    string staged_task_id = 2;
-}
+message PullTaskRequest {}
+message PullTaskResponse {}
 
-message OutputHash {
-    string output_arg_name = 1;
-    string hash = 2;
+message UpdateTaskRequest {
+  string staged_task_id = 2;
 }
+message UpdateTaskResponse {}
 
-message UploadTaskResultRequest {
-    bool success = 1;
-    string staged_task_id = 2;
-    string worker_id = 3;
-    repeated OutputHash output_results = 4;
-}
-
-message UploadTaskResultResponse { }
+message PublishTaskRequest {}
+message PublishTaskResponse {}
 
 service TeaclaveScheduler {
-  rpc QueryTask(QueryTaskRequest) returns (QueryTaskResponse);
-  rpc UploadTaskResult(UploadTaskResultRequest) returns (UploadTaskResultResponse);
+  // Publisher
+  rpc PublishTask(PublishTaskRequest) returns (PublishTaskResponse);
+
+  // Subscriber
+  rpc Subscribe(SubscribeRequest) returns (SubscribeResponse);
+  rpc PullTask(PullTaskRequest) returns (PullTaskResponse);
+  rpc UpdateTask(UpdateTaskRequest) returns (UpdateTaskResponse);
 }

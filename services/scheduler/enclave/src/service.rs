@@ -15,15 +15,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
+#![allow(unused_imports)]
+#![allow(unused_variables)]
+
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 use std::sync::{Arc, SgxMutex as Mutex};
 
-use teaclave_proto::teaclave_scheduler_service::{
-    QueryTaskRequest, QueryTaskResponse, TeaclaveScheduler, UploadTaskResultRequest,
-    UploadTaskResultResponse,
-};
-use teaclave_proto::teaclave_storage_service::{DequeueRequest, TeaclaveStorageClient};
+use teaclave_proto::teaclave_scheduler_service::*;
+use teaclave_proto::teaclave_storage_service::*;
 use teaclave_rpc::endpoint::Endpoint;
 use teaclave_rpc::Request;
 use teaclave_service_enclave_utils::teaclave_service;
@@ -34,22 +34,6 @@ use teaclave_types::{
 use anyhow::Result;
 use thiserror::Error;
 
-#[derive(Error, Debug)]
-pub enum TeaclaveSchedulerError {
-    #[error("scheduler service error")]
-    SchedulerServiceErr,
-    #[error("data error")]
-    DataError,
-    #[error("storage error")]
-    StorageError,
-}
-
-impl From<TeaclaveSchedulerError> for TeaclaveServiceResponseError {
-    fn from(error: TeaclaveSchedulerError) -> Self {
-        TeaclaveServiceResponseError::RequestError(error.to_string())
-    }
-}
-
 #[teaclave_service(teaclave_scheduler_service, TeaclaveScheduler, TeaclaveSchedulerError)]
 #[derive(Clone)]
 pub(crate) struct TeaclaveSchedulerService {
@@ -58,50 +42,54 @@ pub(crate) struct TeaclaveSchedulerService {
 
 impl TeaclaveSchedulerService {
     pub(crate) fn new(storage_service_endpoint: Endpoint) -> Result<Self> {
-        let channel = storage_service_endpoint.connect()?;
-        let client = TeaclaveStorageClient::new(channel)?;
-        let service = Self {
-            storage_client: Arc::new(Mutex::new(client)),
+        let mut i = 0;
+        let channel = loop {
+            match storage_service_endpoint.connect() {
+                Ok(channel) => break channel,
+                Err(_) => {
+                    anyhow::ensure!(i < 3, "failed to connect to storage service");
+                    log::debug!("Failed to connect to storage service, retry {}", i);
+                    i += 1;
+                }
+            }
+            std::thread::sleep(std::time::Duration::from_secs(1));
         };
-        Ok(service)
-    }
+        let storage_client = Arc::new(Mutex::new(TeaclaveStorageClient::new(channel)?));
+        let service = Self { storage_client };
 
-    fn dequeue_from_db<T: Storable>(&self, key: &[u8]) -> TeaclaveServiceResponseResult<T> {
-        let dequeue_request = DequeueRequest::new(key);
-        let dequeue_response = self
-            .storage_client
-            .clone()
-            .lock()
-            .map_err(|_| TeaclaveSchedulerError::StorageError)?
-            .dequeue(dequeue_request)?;
-        T::from_slice(dequeue_response.value.as_slice())
-            .map_err(|_| TeaclaveSchedulerError::DataError.into())
+        Ok(service)
     }
 }
 
 impl TeaclaveScheduler for TeaclaveSchedulerService {
-    fn query_task(
+    // Publisher
+    fn publish_task(
         &self,
-        request: Request<QueryTaskRequest>,
-    ) -> TeaclaveServiceResponseResult<QueryTaskResponse> {
-        let request = request.message;
-        let _worker_id = request.worker_id;
-        let key = StagedTask::get_queue_key().as_bytes();
-        let task: TeaclaveServiceResponseResult<StagedTask> = self.dequeue_from_db(key);
-        let response = match task {
-            Ok(_task) => unimplemented!(),
-            Err(_) => QueryTaskResponse {
-                function_execute_request: None,
-                staged_task_id: "".to_owned(),
-            },
-        };
-        Ok(response)
+        request: Request<PublishTaskRequest>,
+    ) -> TeaclaveServiceResponseResult<PublishTaskResponse> {
+        unimplemented!()
     }
-    fn upload_task_result(
+
+    // Subscriber
+    fn subscribe(
         &self,
-        _request: Request<UploadTaskResultRequest>,
-    ) -> TeaclaveServiceResponseResult<UploadTaskResultResponse> {
-        unimplemented!();
+        request: Request<SubscribeRequest>,
+    ) -> TeaclaveServiceResponseResult<SubscribeResponse> {
+        unimplemented!()
+    }
+
+    fn pull_task(
+        &self,
+        request: Request<PullTaskRequest>,
+    ) -> TeaclaveServiceResponseResult<PullTaskResponse> {
+        unimplemented!()
+    }
+
+    fn update_task(
+        &self,
+        request: Request<UpdateTaskRequest>,
+    ) -> TeaclaveServiceResponseResult<UpdateTaskResponse> {
+        unimplemented!()
     }
 }
 
