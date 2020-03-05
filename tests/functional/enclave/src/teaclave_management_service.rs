@@ -3,9 +3,6 @@ use std::prelude::v1::*;
 use teaclave_attestation::verifier;
 use teaclave_config::RuntimeConfig;
 use teaclave_config::BUILD_CONFIG;
-//use teaclave_proto::teaclave_frontend_service::{
-//    DataOwnerList, FunctionInput, FunctionOutput, TaskStatus,
-//};
 use teaclave_proto::teaclave_management_service::*;
 use teaclave_rpc::config::SgxTrustedTlsClientConfig;
 use teaclave_rpc::endpoint::Endpoint;
@@ -192,14 +189,8 @@ fn test_get_input_file() {
 }
 
 fn test_register_function() {
-    let function_input = FunctionInput {
-        name: "input".to_string(),
-        description: "input_desc".to_string(),
-    };
-    let function_output = FunctionOutput {
-        name: "output".to_string(),
-        description: "output_desc".to_string(),
-    };
+    let function_input = FunctionInput::new("input", "input_desc");
+    let function_output = FunctionOutput::new("output", "output_desc");
     let request = RegisterFunctionRequest {
         name: "mock_function".to_string(),
         description: "mock function".to_string(),
@@ -217,14 +208,8 @@ fn test_register_function() {
 }
 
 fn test_get_function() {
-    let function_input = FunctionInput {
-        name: "input".to_string(),
-        description: "input_desc".to_string(),
-    };
-    let function_output = FunctionOutput {
-        name: "output".to_string(),
-        description: "output_desc".to_string(),
-    };
+    let function_input = FunctionInput::new("input", "input_desc");
+    let function_output = FunctionOutput::new("output", "output_desc");
     let request = RegisterFunctionRequest {
         name: "mock_function".to_string(),
         description: "mock function".to_string(),

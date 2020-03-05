@@ -26,10 +26,28 @@ pub struct FunctionInput {
     pub description: String,
 }
 
+impl FunctionInput {
+    pub fn new(name: impl Into<String>, description: impl Into<String>) -> Self {
+        Self {
+            name: name.into(),
+            description: description.into(),
+        }
+    }
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct FunctionOutput {
     pub name: String,
     pub description: String,
+}
+
+impl FunctionOutput {
+    pub fn new(name: impl Into<String>, description: impl Into<String>) -> Self {
+        Self {
+            name: name.into(),
+            description: description.into(),
+        }
+    }
 }
 
 const FUNCION_PREFIX: &str = "function";
