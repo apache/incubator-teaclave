@@ -24,13 +24,13 @@ use teaclave_proto::teaclave_storage_service::{
 use teaclave_rpc::endpoint::Endpoint;
 use teaclave_rpc::Request;
 use teaclave_service_enclave_utils::teaclave_service;
-use teaclave_types::{Function, FunctionInput, FunctionOutput};
+use teaclave_types::Function;
+#[cfg(test_mode)]
+use teaclave_types::{FunctionInput, FunctionOutput};
 use teaclave_types::{InputData, OutputData, StagedTask, Task, TaskStatus};
 use teaclave_types::{Storable, TeaclaveInputFile, TeaclaveOutputFile};
 use teaclave_types::{TeaclaveServiceResponseError, TeaclaveServiceResponseResult};
 use thiserror::Error;
-
-#[cfg(test_mode)]
 use uuid::Uuid;
 
 #[derive(Error, Debug)]
