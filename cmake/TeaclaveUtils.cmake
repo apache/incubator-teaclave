@@ -104,7 +104,7 @@ function(add_cargo_build_target package_name)
     WORKING_DIRECTORY ${MTEE_TOML_DIR})
 endfunction()
 
-# add_cargo_build_lib_target(package_name [TARGET_NAME target_name] # default to
+# add_cargo_build_dylib_target(package_name [TARGET_NAME target_name] # default to
 # cg_${package_name} TOML_DIR toml_dir TARGET_DIR target_dir [DEPENDS [dep]...]
 # [NOT_SET_COMMON_ENV] [EXTRA_CARGO_FLAGS flg...] )
 function(add_cargo_build_dylib_target package_name)
@@ -168,6 +168,10 @@ function(add_sgx_build_target sgx_lib_path pkg_name)
   rm_trailing_enclave(${pkg_name} pkg_name_no_enclave)
 
   set(_target_name ${SGXLIB_PREFIX}-${pkg_name_no_enclave})
+
+  if(pkg_name_no_enclave MATCHES "_tests$")
+    set(RUSTFLAGS "${RUSTFLAGS} --cfg test_mode")
+  endif()
 
   if(pkg_name_no_enclave MATCHES "_tests$" AND CMAKE_BUILD_TYPE_LOWER STREQUAL
                                                "release")
