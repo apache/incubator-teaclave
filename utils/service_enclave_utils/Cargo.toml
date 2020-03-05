@@ -20,6 +20,8 @@ log        = { version = "0.4.6" }
 
 teaclave_service_enclave_utils_proc_macro = { path = "./proc_macro" }
 teaclave_types       = { path = "../../types" }
+teaclave_attestation = { path = "../../attestation" }
+teaclave_rpc         = { path = "../../rpc" }
 
 sgx_cov  = { version = "1.1.0", optional = true }
 sgx_trts = { version = "1.1.0", optional = true }

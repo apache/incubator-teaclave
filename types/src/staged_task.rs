@@ -21,7 +21,7 @@ pub struct OutputData {
     pub crypto_info: TeaclaveFileCryptoInfo,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, Serialize)]
 pub struct StagedTask {
     pub task_id: Uuid,
     pub function_id: String,
@@ -61,20 +61,40 @@ impl OutputData {
 }
 
 impl StagedTask {
-    pub fn new(
-        task_id: Uuid,
-        function: Function,
-        arg_list: HashMap<String, String>,
-        input_map: HashMap<String, InputData>,
-        output_map: HashMap<String, OutputData>,
-    ) -> Self {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn task_id(self, task_id: Uuid) -> Self {
+        Self { task_id, ..self }
+    }
+
+    pub fn function(self, function: &Function) -> Self {
         Self {
-            task_id: task_id.to_owned(),
             function_id: function.external_id(),
-            function_payload: function.payload,
-            arg_list,
-            input_map,
-            output_map,
+            function_payload: function.payload.clone(),
+            ..self
+        }
+    }
+
+    pub fn args(self, args: HashMap<String, String>) -> Self {
+        Self {
+            arg_list: args,
+            ..self
+        }
+    }
+
+    pub fn input(self, input: HashMap<String, InputData>) -> Self {
+        Self {
+            input_map: input,
+            ..self
+        }
+    }
+
+    pub fn output(self, output: HashMap<String, OutputData>) -> Self {
+        Self {
+            output_map: output,
+            ..self
         }
     }
 

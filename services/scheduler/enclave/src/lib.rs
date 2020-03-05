@@ -26,6 +26,7 @@ use std::prelude::v1::*;
 #[macro_use]
 extern crate log;
 
+mod publisher;
 mod service;
 
 use teaclave_attestation::{verifier, AttestationConfig, RemoteAttestation};
@@ -38,9 +39,9 @@ use teaclave_config::{RuntimeConfig, BUILD_CONFIG};
 use teaclave_proto::teaclave_scheduler_service::{
     TeaclaveSchedulerRequest, TeaclaveSchedulerResponse,
 };
-use teaclave_rpc::config::{SgxTrustedTlsClientConfig, SgxTrustedTlsServerConfig};
-use teaclave_rpc::endpoint::Endpoint;
+use teaclave_rpc::config::SgxTrustedTlsServerConfig;
 use teaclave_rpc::server::SgxTrustedTlsServer;
+use teaclave_service_enclave_utils::create_trusted_storage_endpoint;
 use teaclave_service_enclave_utils::ServiceEnclave;
 use teaclave_types::{EnclaveInfo, TeeServiceError, TeeServiceResult};
 
@@ -101,20 +102,13 @@ fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
             server_config,
         );
 
-    let storage_service_enclave_attrs = enclave_info
-        .get_enclave_attr("teaclave_storage_service")
-        .expect("enclave_info");
-    let storage_service_client_config = SgxTrustedTlsClientConfig::new()
-        .attestation_report_verifier(
-            vec![storage_service_enclave_attrs],
-            AS_ROOT_CA_CERT,
-            verifier::universal_quote_verifier,
-        );
-
     let storage_service_address = &config.internal_endpoints.storage.advertised_address;
-
-    let storage_service_endpoint =
-        Endpoint::new(storage_service_address).config(storage_service_client_config);
+    let storage_service_endpoint = create_trusted_storage_endpoint(
+        &storage_service_address,
+        &enclave_info,
+        AS_ROOT_CA_CERT,
+        verifier::universal_quote_verifier,
+    );
 
     let service = service::TeaclaveSchedulerService::new(storage_service_endpoint)?;
     match server.start(service) {

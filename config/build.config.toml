@@ -23,7 +23,7 @@ attestation_validity_secs = 3600
 #
 # client => authentication <-+       +----> storage <----+
 #                            |       |                   |
-# client => frontend ----------> management -------> scheduler <-- execution
+# client => frontend ----------> management            scheduler <-- execution
 #                                    |
 #                                    +--> access_control
 #
