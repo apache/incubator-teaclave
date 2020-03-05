@@ -136,6 +136,11 @@ impl<'a> DBQueue<'a> {
             Ok(result)
         }
     }
+
+    #[allow(unused)]
+    pub fn len(&mut self) -> u32 {
+        self.get_tail() - self.get_head()
+    }
 }
 
 impl TeaclaveStorageService {

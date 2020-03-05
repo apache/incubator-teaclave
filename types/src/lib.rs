@@ -195,6 +195,12 @@ pub enum TeaclaveServiceResponseError {
     InternalError(String),
 }
 
+impl From<anyhow::Error> for TeaclaveServiceResponseError {
+    fn from(error: anyhow::Error) -> Self {
+        TeaclaveServiceResponseError::RequestError(error.to_string())
+    }
+}
+
 pub type TeaclaveServiceResponseResult<T> = std::result::Result<T, TeaclaveServiceResponseError>;
 
 #[cfg(feature = "enclave_unit_test")]

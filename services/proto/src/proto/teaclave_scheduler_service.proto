@@ -1,6 +1,8 @@
 syntax = "proto3";
 package teaclave_scheduler_service_proto;
 
+import "teaclave_common.proto";
+
 message SubscribeRequest {}
 message SubscribeResponse {
   bool success = 1;
@@ -14,7 +16,9 @@ message UpdateTaskRequest {
 }
 message UpdateTaskResponse {}
 
-message PublishTaskRequest {}
+message PublishTaskRequest {
+  bytes staged_task = 1;
+}
 message PublishTaskResponse {}
 
 service TeaclaveScheduler {

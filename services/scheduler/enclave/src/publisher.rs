@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+#![allow(dead_code)]
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 
@@ -22,6 +23,8 @@ use std::collections::VecDeque;
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 use std::sync::{Arc, SgxMutex as Mutex};
+use std::thread;
+use std::time::Duration;
 
 use teaclave_proto::teaclave_scheduler_service::*;
 use teaclave_proto::teaclave_storage_service::*;
@@ -36,15 +39,17 @@ use anyhow::anyhow;
 use anyhow::Result;
 use thiserror::Error;
 
-#[teaclave_service(teaclave_scheduler_service, TeaclaveScheduler, TeaclaveSchedulerError)]
 #[derive(Clone)]
-pub(crate) struct TeaclaveSchedulerService {
+pub(crate) struct PublisherService {
     storage_client: Arc<Mutex<TeaclaveStorageClient>>,
-    task_queue: Arc<Mutex<VecDeque<StagedTask>>>,
+    scheduler_client: Arc<Mutex<TeaclaveSchedulerClient>>,
 }
 
-impl TeaclaveSchedulerService {
-    pub(crate) fn new(storage_service_endpoint: Endpoint) -> Result<Self> {
+impl PublisherService {
+    pub(crate) fn new(
+        storage_service_endpoint: Endpoint,
+        scheduler_service_endpoint: Endpoint,
+    ) -> Result<Self> {
         let mut i = 0;
         let channel = loop {
             match storage_service_endpoint.connect() {
@@ -58,51 +63,33 @@ impl TeaclaveSchedulerService {
             std::thread::sleep(std::time::Duration::from_secs(1));
         };
         let storage_client = Arc::new(Mutex::new(TeaclaveStorageClient::new(channel)?));
-        let task_queue = Arc::new(Mutex::new(VecDeque::new()));
+
+        let mut i = 0;
+        let channel = loop {
+            match scheduler_service_endpoint.connect() {
+                Ok(channel) => break channel,
+                Err(_) => {
+                    anyhow::ensure!(i < 3, "failed to connect to storage service");
+                    log::debug!("Failed to connect to storage service, retry {}", i);
+                    i += 1;
+                }
+            }
+            std::thread::sleep(std::time::Duration::from_secs(1));
+        };
+        let scheduler_client = Arc::new(Mutex::new(TeaclaveSchedulerClient::new(channel)?));
+
         let service = Self {
             storage_client,
-            task_queue,
+            scheduler_client,
         };
 
         Ok(service)
     }
-}
 
-impl TeaclaveScheduler for TeaclaveSchedulerService {
-    // Publisher
-    fn publish_task(
-        &self,
-        request: Request<PublishTaskRequest>,
-    ) -> TeaclaveServiceResponseResult<PublishTaskResponse> {
-        let mut task_queue = self
-            .task_queue
-            .lock()
-            .map_err(|_| anyhow!("Cannot lock task queue"))?;
-        let staged_task = request.message.staged_task;
-        task_queue.push_back(staged_task);
-        Ok(PublishTaskResponse {})
-    }
-
-    // Subscriber
-    fn subscribe(
-        &self,
-        request: Request<SubscribeRequest>,
-    ) -> TeaclaveServiceResponseResult<SubscribeResponse> {
-        unimplemented!()
-    }
-
-    fn pull_task(
-        &self,
-        request: Request<PullTaskRequest>,
-    ) -> TeaclaveServiceResponseResult<PullTaskResponse> {
-        unimplemented!()
-    }
-
-    fn update_task(
-        &self,
-        request: Request<UpdateTaskRequest>,
-    ) -> TeaclaveServiceResponseResult<UpdateTaskResponse> {
-        unimplemented!()
+    pub(crate) fn start(&mut self) {
+        loop {
+            thread::sleep(Duration::from_secs(10));
+        }
     }
 }
 

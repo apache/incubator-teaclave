@@ -9,9 +9,11 @@ use crate::teaclave_scheduler_service_proto as proto;
 use anyhow::{Error, Result};
 use core::convert::TryInto;
 pub use proto::TeaclaveScheduler;
+pub use proto::TeaclaveSchedulerClient;
 pub use proto::TeaclaveSchedulerRequest;
 pub use proto::TeaclaveSchedulerResponse;
 use teaclave_rpc::into_request;
+use teaclave_types::StagedTask;
 
 #[into_request(TeaclaveSchedulerRequest::Subscribe)]
 pub struct SubscribeRequest {}
@@ -36,7 +38,9 @@ pub struct UpdateTaskRequest {
 pub struct UpdateTaskResponse {}
 
 #[into_request(TeaclaveSchedulerRequest::PublishTask)]
-pub struct PublishTaskRequest {}
+pub struct PublishTaskRequest {
+    pub staged_task: StagedTask,
+}
 
 #[into_request(TeaclaveSchedulerResponse::PublishTask)]
 pub struct PublishTaskResponse {}
@@ -133,17 +137,21 @@ impl std::convert::From<UpdateTaskResponse> for proto::UpdateTaskResponse {
     }
 }
 
+use teaclave_types::Storable;
 impl std::convert::TryFrom<proto::PublishTaskRequest> for PublishTaskRequest {
     type Error = Error;
     fn try_from(proto: proto::PublishTaskRequest) -> Result<Self> {
-        let ret = Self {};
+        let staged_task = StagedTask::from_slice(&proto.staged_task)?;
+        let ret = Self { staged_task };
         Ok(ret)
     }
 }
 
 impl std::convert::From<PublishTaskRequest> for proto::PublishTaskRequest {
     fn from(req: PublishTaskRequest) -> Self {
-        proto::PublishTaskRequest {}
+        proto::PublishTaskRequest {
+            staged_task: req.staged_task.to_vec().unwrap(),
+        }
     }
 }
 

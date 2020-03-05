@@ -20,11 +20,13 @@ use log::{debug, error};
 use std::vec::Vec;
 use teaclave_types::EnclaveAttr;
 
+pub type AttestationReportVerificationFn = fn(&AttestationReport) -> bool;
+
 #[derive(Clone)]
 pub struct AttestationReportVerifier {
     pub accepted_enclave_attrs: Vec<EnclaveAttr>,
     pub root_ca: Vec<u8>,
-    pub verifier: fn(&AttestationReport) -> bool,
+    pub verifier: AttestationReportVerificationFn,
 }
 
 pub fn universal_quote_verifier(report: &AttestationReport) -> bool {
@@ -36,7 +38,7 @@ impl AttestationReportVerifier {
     pub fn new(
         accepted_enclave_attrs: Vec<EnclaveAttr>,
         root_ca: &[u8],
-        verifier: fn(&AttestationReport) -> bool,
+        verifier: AttestationReportVerificationFn,
     ) -> Self {
         Self {
             accepted_enclave_attrs,

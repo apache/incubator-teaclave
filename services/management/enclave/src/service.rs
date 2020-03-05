@@ -524,13 +524,12 @@ impl TeaclaveManagement for TeaclaveManagementService {
             output_map.insert(data_name.to_string(), output_data);
         }
 
-        let staged_task = StagedTask::new(
-            task.task_id.to_owned(),
-            function,
-            arg_list,
-            input_map,
-            output_map,
-        );
+        let staged_task = StagedTask::new()
+            .task_id(task.task_id)
+            .function(&function)
+            .args(arg_list)
+            .input(input_map)
+            .output(output_map);
         self.enqueue_to_db(StagedTask::get_queue_key().as_bytes(), &staged_task)?;
         task.status = TaskStatus::Running;
         self.write_to_db(&task)
@@ -800,8 +799,12 @@ pub mod tests {
         let mut output_map = HashMap::new();
         output_map.insert("output".to_string(), output_data);
 
-        let staged_task =
-            StagedTask::new(Uuid::new_v4(), function, arg_list, input_map, output_map);
+        let staged_task = StagedTask::new()
+            .task_id(Uuid::new_v4())
+            .function(&function)
+            .args(arg_list)
+            .input(input_map)
+            .output(output_map);
 
         let value = staged_task.to_vec().unwrap();
         let deserialized_data = StagedTask::from_slice(&value).unwrap();
