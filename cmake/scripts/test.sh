@@ -31,7 +31,13 @@ run_unit_tests() {
   popd
 }
 
+cleanup() {
+  # kill all background services
+  [[ -z "$(jobs -p)" ]] || kill -s SIGTERM $(jobs -p)
+}
+
 run_integration_tests() {
+  trap cleanup ERR
   pushd ${TEACLAVE_TEST_INSTALL_DIR}
 
   echo_title "integration tests"
@@ -41,13 +47,18 @@ run_integration_tests() {
   cargo test --manifest-path ${TEACLAVE_PROJECT_ROOT}/common/protected_fs_rs/Cargo.toml \
         --target-dir ${TEACLAVE_TARGET_DIR}/untrusted
 
+  echo_title "file_agent tests (untrusted)"
+  cd ${TEACLAVE_TEST_INSTALL_DIR}/
+  python ${TEACLAVE_PROJECT_ROOT}/tests/scripts/simple_http_server.py 6789 &
+  cargo test --manifest-path ${TEACLAVE_PROJECT_ROOT}/file_agent/Cargo.toml \
+        --target-dir ${TEACLAVE_TARGET_DIR}/untrusted
+
   popd
+  
+  cleanup 
 }
 
 run_functional_tests() {
-  cleanup() {
-        [[ -z "$(jobs -p)" ]] || kill -s SIGTERM $(jobs -p)
-  }
   trap cleanup ERR
 
   pushd ${TEACLAVE_TEST_INSTALL_DIR}
@@ -72,7 +83,7 @@ run_functional_tests() {
   popd
 
   # kill all background services
-  [[ -z "$(jobs -p)" ]] || kill -s SIGTERM $(jobs -p)
+  cleanup
 }
 
 case "$1" in
