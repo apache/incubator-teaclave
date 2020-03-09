@@ -63,7 +63,7 @@ impl RemoteAttestation {
 
 impl AttestedTlsConfig {
     fn new(attestation_config: &AttestationConfig) -> Result<AttestedTlsConfig> {
-        let key_pair = key::Secp256k1KeyPair::new()?;
+        let key_pair = key::NistP256KeyPair::new()?;
         let report = match attestation_config {
             AttestationConfig::NoAttestation => EndorsedAttestationReport::default(),
             AttestationConfig::WithAttestation(config) => {

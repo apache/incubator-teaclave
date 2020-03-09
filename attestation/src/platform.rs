@@ -149,14 +149,14 @@ pub mod tests {
 
     fn test_create_sgx_isv_enclave_report() {
         let (_ak_id, qe_target_info) = init_sgx_quote().unwrap();
-        let key_pair = key::Secp256k1KeyPair::new().unwrap();
+        let key_pair = key::NistP256KeyPair::new().unwrap();
         let sgx_report_result = create_sgx_isv_enclave_report(key_pair.pub_k, qe_target_info);
         assert!(sgx_report_result.is_ok());
     }
 
     fn test_get_sgx_quote() {
         let (ak_id, qe_target_info) = init_sgx_quote().unwrap();
-        let key_pair = key::Secp256k1KeyPair::new().unwrap();
+        let key_pair = key::NistP256KeyPair::new().unwrap();
         let sgx_report = create_sgx_isv_enclave_report(key_pair.pub_k, qe_target_info).unwrap();
         let quote_result = get_sgx_quote(&ak_id, sgx_report);
         assert!(quote_result.is_ok());
