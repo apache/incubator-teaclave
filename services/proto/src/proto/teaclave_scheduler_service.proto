@@ -9,7 +9,9 @@ message SubscribeResponse {
 }
 
 message PullTaskRequest {}
-message PullTaskResponse {}
+message PullTaskResponse {
+  bytes staged_task = 1;
+}
 
 message UpdateTaskRequest {
   string staged_task_id = 2;

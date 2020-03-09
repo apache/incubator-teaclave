@@ -27,7 +27,16 @@ pub struct SubscribeResponse {
 pub struct PullTaskRequest {}
 
 #[into_request(TeaclaveSchedulerResponse::PullTask)]
-pub struct PullTaskResponse {}
+#[derive(Debug)]
+pub struct PullTaskResponse {
+    pub staged_task: StagedTask,
+}
+
+impl PullTaskResponse {
+    pub fn new(staged_task: StagedTask) -> Self {
+        Self { staged_task }
+    }
+}
 
 #[into_request(TeaclaveSchedulerRequest::UpdateTask)]
 pub struct UpdateTaskRequest {
@@ -94,14 +103,17 @@ impl std::convert::From<PullTaskRequest> for proto::PullTaskRequest {
 impl std::convert::TryFrom<proto::PullTaskResponse> for PullTaskResponse {
     type Error = Error;
     fn try_from(proto: proto::PullTaskResponse) -> Result<Self> {
-        let ret = Self {};
+        let staged_task = StagedTask::from_slice(&proto.staged_task)?;
+        let ret = Self { staged_task };
         Ok(ret)
     }
 }
 
 impl std::convert::From<PullTaskResponse> for proto::PullTaskResponse {
     fn from(req: PullTaskResponse) -> Self {
-        proto::PullTaskResponse {}
+        proto::PullTaskResponse {
+            staged_task: req.staged_task.to_vec().unwrap(),
+        }
     }
 }
 
