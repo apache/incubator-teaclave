@@ -36,6 +36,22 @@ use anyhow::anyhow;
 use anyhow::Result;
 use thiserror::Error;
 
+#[derive(Error, Debug)]
+pub enum TeaclaveSchedulerError {
+    #[error("scheduler service error")]
+    SchedulerServiceErr,
+    #[error("data error")]
+    DataError,
+    #[error("storage error")]
+    StorageError,
+}
+
+impl From<TeaclaveSchedulerError> for TeaclaveServiceResponseError {
+    fn from(error: TeaclaveSchedulerError) -> Self {
+        TeaclaveServiceResponseError::RequestError(error.to_string())
+    }
+}
+
 #[teaclave_service(teaclave_scheduler_service, TeaclaveScheduler, TeaclaveSchedulerError)]
 #[derive(Clone)]
 pub(crate) struct TeaclaveSchedulerService {
@@ -66,6 +82,18 @@ impl TeaclaveSchedulerService {
 
         Ok(service)
     }
+
+    fn pull_staged_task<T: Storable>(&self, key: &[u8]) -> TeaclaveServiceResponseResult<T> {
+        let dequeue_request = DequeueRequest::new(key);
+        let dequeue_response = self
+            .storage_client
+            .clone()
+            .lock()
+            .map_err(|_| TeaclaveSchedulerError::StorageError)?
+            .dequeue(dequeue_request)?;
+        T::from_slice(dequeue_response.value.as_slice())
+            .map_err(|_| TeaclaveSchedulerError::DataError.into())
+    }
 }
 
 impl TeaclaveScheduler for TeaclaveSchedulerService {
@@ -74,6 +102,7 @@ impl TeaclaveScheduler for TeaclaveSchedulerService {
         &self,
         request: Request<PublishTaskRequest>,
     ) -> TeaclaveServiceResponseResult<PublishTaskResponse> {
+        // XXX: Publisher is not implemented
         let mut task_queue = self
             .task_queue
             .lock()
@@ -95,7 +124,10 @@ impl TeaclaveScheduler for TeaclaveSchedulerService {
         &self,
         request: Request<PullTaskRequest>,
     ) -> TeaclaveServiceResponseResult<PullTaskResponse> {
-        unimplemented!()
+        let key = StagedTask::get_queue_key().as_bytes();
+        let staged_task = self.pull_staged_task(key)?;
+        let response = PullTaskResponse::new(staged_task);
+        Ok(response)
     }
 
     fn update_task(
