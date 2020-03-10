@@ -28,11 +28,29 @@ pub struct RegisterInputFileRequest {
     pub crypto_info: TeaclaveFileCryptoInfo,
 }
 
+impl RegisterInputFileRequest {
+    pub fn new(url: Url, hash: impl Into<String>, crypto_info: TeaclaveFileCryptoInfo) -> Self {
+        Self {
+            url,
+            hash: hash.into(),
+            crypto_info,
+        }
+    }
+}
+
 #[into_request(TeaclaveFrontendResponse::RegisterInputFile)]
 #[into_request(TeaclaveManagementResponse::RegisterInputFile)]
 #[derive(Debug, PartialEq)]
 pub struct RegisterInputFileResponse {
     pub data_id: String,
+}
+
+impl RegisterInputFileResponse {
+    pub fn new(data_id: impl Into<String>) -> Self {
+        Self {
+            data_id: data_id.into(),
+        }
+    }
 }
 
 #[into_request(TeaclaveFrontendRequest::RegisterOutputFile)]
@@ -43,11 +61,25 @@ pub struct RegisterOutputFileRequest {
     pub crypto_info: TeaclaveFileCryptoInfo,
 }
 
+impl RegisterOutputFileRequest {
+    pub fn new(url: Url, crypto_info: TeaclaveFileCryptoInfo) -> Self {
+        Self { url, crypto_info }
+    }
+}
+
 #[into_request(TeaclaveFrontendResponse::RegisterOutputFile)]
 #[into_request(TeaclaveManagementResponse::RegisterOutputFile)]
 #[derive(Debug)]
 pub struct RegisterOutputFileResponse {
     pub data_id: String,
+}
+
+impl RegisterOutputFileResponse {
+    pub fn new(data_id: impl Into<String>) -> Self {
+        Self {
+            data_id: data_id.into(),
+        }
+    }
 }
 
 #[into_request(TeaclaveFrontendRequest::RegisterFusionOutput)]
@@ -57,11 +89,25 @@ pub struct RegisterFusionOutputRequest {
     pub owner_list: HashSet<String>,
 }
 
+impl RegisterFusionOutputRequest {
+    pub fn new(owner_list: HashSet<String>) -> Self {
+        Self { owner_list }
+    }
+}
+
 #[into_request(TeaclaveFrontendResponse::RegisterFusionOutput)]
 #[into_request(TeaclaveManagementResponse::RegisterFusionOutput)]
 #[derive(Debug)]
 pub struct RegisterFusionOutputResponse {
     pub data_id: String,
+}
+
+impl RegisterFusionOutputResponse {
+    pub fn new(data_id: impl Into<String>) -> Self {
+        Self {
+            data_id: data_id.into(),
+        }
+    }
 }
 
 #[into_request(TeaclaveFrontendRequest::RegisterInputFromOutput)]
@@ -71,6 +117,14 @@ pub struct RegisterInputFromOutputRequest {
     pub data_id: String,
 }
 
+impl RegisterInputFromOutputRequest {
+    pub fn new(data_id: impl Into<String>) -> Self {
+        Self {
+            data_id: data_id.into(),
+        }
+    }
+}
+
 #[into_request(TeaclaveFrontendResponse::RegisterInputFromOutput)]
 #[into_request(TeaclaveManagementResponse::RegisterInputFromOutput)]
 #[derive(Debug)]
@@ -78,11 +132,27 @@ pub struct RegisterInputFromOutputResponse {
     pub data_id: String,
 }
 
+impl RegisterInputFromOutputResponse {
+    pub fn new(data_id: impl Into<String>) -> Self {
+        Self {
+            data_id: data_id.into(),
+        }
+    }
+}
+
 #[into_request(TeaclaveFrontendRequest::GetInputFile)]
 #[into_request(TeaclaveManagementRequest::GetInputFile)]
 #[derive(Debug)]
 pub struct GetInputFileRequest {
     pub data_id: String,
+}
+
+impl GetInputFileRequest {
+    pub fn new(data_id: impl Into<String>) -> Self {
+        Self {
+            data_id: data_id.into(),
+        }
+    }
 }
 
 #[into_request(TeaclaveFrontendResponse::GetInputFile)]
@@ -93,11 +163,28 @@ pub struct GetInputFileResponse {
     pub hash: String,
 }
 
+impl GetInputFileResponse {
+    pub fn new(owner: HashSet<String>, hash: impl Into<String>) -> Self {
+        Self {
+            owner,
+            hash: hash.into(),
+        }
+    }
+}
+
 #[into_request(TeaclaveFrontendRequest::GetOutputFile)]
 #[into_request(TeaclaveManagementRequest::GetOutputFile)]
 #[derive(Debug)]
 pub struct GetOutputFileRequest {
     pub data_id: String,
+}
+
+impl GetOutputFileRequest {
+    pub fn new(data_id: impl Into<String>) -> Self {
+        Self {
+            data_id: data_id.into(),
+        }
+    }
 }
 
 #[into_request(TeaclaveFrontendResponse::GetOutputFile)]
@@ -106,6 +193,15 @@ pub struct GetOutputFileRequest {
 pub struct GetOutputFileResponse {
     pub owner: HashSet<String>,
     pub hash: String,
+}
+
+impl GetOutputFileResponse {
+    pub fn new(owner: HashSet<String>, hash: impl Into<String>) -> Self {
+        Self {
+            owner,
+            hash: hash.into(),
+        }
+    }
 }
 
 #[into_request(TeaclaveManagementRequest::RegisterFunction)]
@@ -127,11 +223,27 @@ pub struct RegisterFunctionResponse {
     pub function_id: String,
 }
 
+impl RegisterFunctionResponse {
+    pub fn new(function_id: impl Into<String>) -> Self {
+        Self {
+            function_id: function_id.into(),
+        }
+    }
+}
+
 #[into_request(TeaclaveManagementRequest::GetFunction)]
 #[into_request(TeaclaveFrontendRequest::GetFunction)]
 #[derive(Debug)]
 pub struct GetFunctionRequest {
     pub function_id: String,
+}
+
+impl GetFunctionRequest {
+    pub fn new(function_id: impl Into<String>) -> Self {
+        Self {
+            function_id: function_id.into(),
+        }
+    }
 }
 
 #[into_request(TeaclaveManagementResponse::GetFunction)]
@@ -163,11 +275,27 @@ pub struct CreateTaskResponse {
     pub task_id: String,
 }
 
+impl CreateTaskResponse {
+    pub fn new(task_id: impl Into<String>) -> Self {
+        Self {
+            task_id: task_id.into(),
+        }
+    }
+}
+
 #[into_request(TeaclaveManagementRequest::GetTask)]
 #[into_request(TeaclaveFrontendRequest::GetTask)]
 #[derive(Debug)]
 pub struct GetTaskRequest {
     pub task_id: String,
+}
+
+impl GetTaskRequest {
+    pub fn new(task_id: impl Into<String>) -> Self {
+        Self {
+            task_id: task_id.into(),
+        }
+    }
 }
 
 #[into_request(TeaclaveManagementResponse::GetTask)]
@@ -196,6 +324,20 @@ pub struct AssignDataRequest {
     pub output_map: HashMap<String, String>,
 }
 
+impl AssignDataRequest {
+    pub fn new(
+        task_id: impl Into<String>,
+        input_map: HashMap<String, String>,
+        output_map: HashMap<String, String>,
+    ) -> Self {
+        Self {
+            task_id: task_id.into(),
+            input_map,
+            output_map,
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct AssignDataResponse;
 
@@ -206,6 +348,14 @@ pub struct ApproveTaskRequest {
     pub task_id: String,
 }
 
+impl ApproveTaskRequest {
+    pub fn new(task_id: impl Into<String>) -> Self {
+        Self {
+            task_id: task_id.into(),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct ApproveTaskResponse;
 
@@ -214,6 +364,14 @@ pub struct ApproveTaskResponse;
 #[derive(Debug)]
 pub struct InvokeTaskRequest {
     pub task_id: String,
+}
+
+impl InvokeTaskRequest {
+    pub fn new(task_id: impl Into<String>) -> Self {
+        Self {
+            task_id: task_id.into(),
+        }
+    }
 }
 
 #[derive(Debug)]
