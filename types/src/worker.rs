@@ -54,19 +54,6 @@ impl std::fmt::Display for TeaclaveExecutorSelector {
     }
 }
 
-#[derive(Debug)]
-pub struct WorkerInputData {
-    pub path: std::path::PathBuf,
-    pub hash: String,
-    pub crypto_info: TeaclaveFileCryptoInfo,
-}
-#[derive(Debug)]
-pub struct WorkerOutputData {
-    pub path: std::path::PathBuf,
-    pub hash: String,
-    pub crypto_info: TeaclaveFileCryptoInfo,
-}
-
 #[derive(Clone, Debug)]
 pub struct TeaclaveWorkerInputFileInfo {
     pub path: std::path::PathBuf,
@@ -157,11 +144,11 @@ pub fn read_all_bytes(path: impl AsRef<std::path::Path>) -> anyhow::Result<Vec<u
 }
 
 pub fn convert_encrypted_input_file(
-    src: WorkerInputData,
-    dst: &str,
+    path: impl AsRef<std::path::Path>,
+    crypto_info: TeaclaveFileCryptoInfo,
+    dst: impl AsRef<std::path::Path>,
 ) -> anyhow::Result<TeaclaveWorkerInputFileInfo> {
-    let path = src.path;
-    let plain_text = match src.crypto_info {
+    let plain_text = match crypto_info {
         TeaclaveFileCryptoInfo::AesGcm128(crypto) => {
             let mut bytes = read_all_bytes(path)?;
             crypto.decrypt(&mut bytes)?;
@@ -173,10 +160,11 @@ pub fn convert_encrypted_input_file(
             bytes
         }
         TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(crypto) => {
-            return Ok(TeaclaveWorkerInputFileInfo::new(path, crypto))
+            let path = path.as_ref().to_owned();
+            return Ok(TeaclaveWorkerInputFileInfo::new(path, crypto));
         }
     };
-    TeaclaveWorkerInputFileInfo::create_with_bytes(dst, &plain_text)
+    TeaclaveWorkerInputFileInfo::create_with_bytes(dst.as_ref(), &plain_text)
 }
 
 #[derive(Debug)]
