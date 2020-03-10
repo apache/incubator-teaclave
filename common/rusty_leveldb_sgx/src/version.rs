@@ -1,12 +1,12 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use cmp::{Cmp, InternalKeyCmp};
-use error::Result;
-use key_types::{parse_internal_key, InternalKey, LookupKey, UserKey, ValueType};
-use table_cache::TableCache;
-use table_reader::TableIterator;
-use types::{FileMetaData, FileNum, LdbIterator, Shared, MAX_SEQUENCE_NUMBER, NUM_LEVELS};
+use crate::cmp::{Cmp, InternalKeyCmp};
+use crate::error::Result;
+use crate::key_types::{parse_internal_key, InternalKey, LookupKey, UserKey, ValueType};
+use crate::table_cache::TableCache;
+use crate::table_reader::TableIterator;
+use crate::types::{FileMetaData, FileNum, LdbIterator, Shared, MAX_SEQUENCE_NUMBER, NUM_LEVELS};
 
 use std::cmp::Ordering;
 use std::default::Default;
@@ -576,13 +576,13 @@ fn some_file_overlaps_range<'a, 'b>(
 #[cfg(test)]
 pub mod testutil {
     use super::*;
-    use cmp::DefaultCmp;
-    use env::Env;
-    use key_types::ValueType;
-    use options::{self, Options};
-    use table_builder::TableBuilder;
-    use table_cache::table_file_name;
-    use types::{share, FileMetaData, FileNum};
+    use crate::cmp::DefaultCmp;
+    use crate::env::Env;
+    use crate::key_types::ValueType;
+    use crate::options::{self, Options};
+    use crate::table_builder::TableBuilder;
+    use crate::table_cache::table_file_name;
+    use crate::types::{share, FileMetaData, FileNum};
 
     use std::path::Path;
 
@@ -725,9 +725,9 @@ mod tests {
     use super::testutil::*;
     use super::*;
 
-    use cmp::DefaultCmp;
-    use error::Result;
-    use merging_iter::MergingIter;
+    use crate::cmp::DefaultCmp;
+    use crate::error::Result;
+    use crate::merging_iter::MergingIter;
     use options;
     use test_util::{test_iterator_properties, LdbIteratorIter};
 

@@ -1,19 +1,19 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use cmp::{Cmp, InternalKeyCmp};
-use env::Env;
-use error::{err, Result, Status, StatusCode};
-use key_types::{parse_internal_key, InternalKey, UserKey};
-use log::{LogReader, LogWriter};
-use merging_iter::MergingIter;
-use options::Options;
-use table_cache::TableCache;
-use types::{
+use crate::cmp::{Cmp, InternalKeyCmp};
+use crate::env::Env;
+use crate::error::{err, Result, Status, StatusCode};
+use crate::key_types::{parse_internal_key, InternalKey, UserKey};
+use crate::log::{LogReader, LogWriter};
+use crate::merging_iter::MergingIter;
+use crate::options::Options;
+use crate::table_cache::TableCache;
+use crate::types::{
     parse_file_name, share, FileMetaData, FileNum, FileType, LdbIterator, Shared, NUM_LEVELS,
 };
-use version::{new_version_iter, total_size, FileMetaHandle, Version};
-use version_edit::VersionEdit;
+use crate::version::{new_version_iter, total_size, FileMetaHandle, Version};
+use crate::version_edit::VersionEdit;
 
 use std::cmp::Ordering;
 use std::collections::HashSet;
@@ -980,11 +980,11 @@ fn get_range<'a, C: Cmp, I: Iterator<Item = &'a FileMetaHandle>>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use cmp::DefaultCmp;
-    use key_types::LookupKey;
+    use crate::cmp::DefaultCmp;
+    use crate::key_types::LookupKey;
+    use crate::types::FileMetaData;
+    use crate::version::testutil::make_version;
     use test_util::LdbIteratorIter;
-    use types::FileMetaData;
-    use version::testutil::make_version;
 
     fn example_files() -> Vec<FileMetaHandle> {
         let mut f1 = FileMetaData::default();

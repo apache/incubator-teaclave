@@ -2,9 +2,9 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use env::{path_to_str, path_to_string, Env, FileLock, Logger, RandomAccess};
-use env_common::micros;
-use error::{err, Result, StatusCode};
+use crate::env::{path_to_str, path_to_string, Env, FileLock, Logger, RandomAccess};
+use crate::env_common::micros;
+use crate::error::{err, Result, StatusCode};
 
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
@@ -357,7 +357,7 @@ impl Env for MemEnv {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use env;
+    use crate::env;
 
     fn new_memfile(v: Vec<u8>) -> MemFile {
         MemFile(Arc::new(Mutex::new(v)))

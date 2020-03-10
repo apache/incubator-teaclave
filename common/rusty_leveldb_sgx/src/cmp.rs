@@ -1,8 +1,8 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use key_types::{self, LookupKey};
-use types;
+use crate::key_types::{self, LookupKey};
+use crate::types;
 
 use std::cmp::Ordering;
 use std::rc::Rc;
@@ -182,7 +182,7 @@ impl Cmp for MemtableKeyCmp {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use key_types::LookupKey;
+    use crate::key_types::LookupKey;
     use types;
 
     #[test]

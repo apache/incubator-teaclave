@@ -1,8 +1,8 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use cmp::{Cmp, DefaultCmp};
-use types::{current_key_val, LdbIterator};
+use crate::cmp::{Cmp, DefaultCmp};
+use crate::types::{current_key_val, LdbIterator};
 
 use std::cmp::Ordering;
 

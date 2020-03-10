@@ -5,7 +5,7 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use error::{err, Result, StatusCode};
+use crate::error::{err, Result, StatusCode};
 
 use std::io::{Read, Write};
 

@@ -1,8 +1,8 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use cmp::Cmp;
-use types::SequenceNumber;
+use crate::cmp::Cmp;
+use crate::types::SequenceNumber;
 
 use std::cmp::Ordering;
 use std::io::Write;

@@ -1,12 +1,12 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use cmp::Cmp;
-use key_types::{parse_internal_key, truncate_to_userkey, LookupKey, ValueType};
-use merging_iter::MergingIter;
-use snapshot::Snapshot;
-use types::{Direction, LdbIterator, Shared};
-use version_set::VersionSet;
+use crate::cmp::Cmp;
+use crate::key_types::{parse_internal_key, truncate_to_userkey, LookupKey, ValueType};
+use crate::merging_iter::MergingIter;
+use crate::snapshot::Snapshot;
+use crate::types::{Direction, LdbIterator, Shared};
+use crate::version_set::VersionSet;
 
 use std::cmp::Ordering;
 use std::mem;
@@ -290,10 +290,10 @@ fn random_period() -> isize {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::types::{current_key_val, Direction};
     use db_impl::testutil::*;
     use db_impl::DB;
     use test_util::LdbIteratorIter;
-    use types::{current_key_val, Direction};
 
     use std::collections::HashMap;
     use std::collections::HashSet;

@@ -22,7 +22,7 @@ use std::prelude::v1::*;
 
 pub const CERT_VALID_DAYS: i64 = 90i64;
 
-/// NistP256KeyPair stores a pair of ECDSA (private, public) key based on the NIST P-256 curve 
+/// NistP256KeyPair stores a pair of ECDSA (private, public) key based on the NIST P-256 curve
 /// (a.k.a secp256r1).
 pub struct NistP256KeyPair {
     prv_k: sgx_ec256_private_t,
@@ -75,7 +75,7 @@ impl NistP256KeyPair {
     /// create_cert_with_extension makes a self-signed x509-v3 cert with SGX attestation report as
     /// extensions.
     /// @reference [Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile][1]
-    /// 
+    ///
     /// [1]: https://tools.ietf.org/pdf/rfc5280.pdf
     pub fn create_cert_with_extension(
         &self,
