@@ -3,6 +3,14 @@
 Apache Teaclave (incubating) is an open source ***universal secure computing***
 platform.
 
+---
+
+***Teaclave is under actively refactoring and polishing, please check out [the
+`develop` branch](https://github.com/apache/incubator-teaclave/tree/develop) for
+the latest and greatest implementation.***
+
+---
+
 ***Security***:
 Teaclave adopts multiple security technologies to enable secure computing, in
 particular, Teaclave uses Intel SGX to serve the most security-sensitive tasks
