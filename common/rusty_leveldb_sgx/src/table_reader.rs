@@ -1,19 +1,19 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use block::{Block, BlockIter};
-use blockhandle::BlockHandle;
-use cache;
-use cmp::InternalKeyCmp;
-use env::RandomAccess;
-use error::Result;
-use filter;
-use filter_block::FilterBlockReader;
-use key_types::InternalKey;
-use options::Options;
-use table_block;
-use table_builder::{self, Footer};
-use types::{current_key_val, LdbIterator};
+use crate::block::{Block, BlockIter};
+use crate::blockhandle::BlockHandle;
+use crate::cache;
+use crate::cmp::InternalKeyCmp;
+use crate::env::RandomAccess;
+use crate::error::Result;
+use crate::filter;
+use crate::filter_block::FilterBlockReader;
+use crate::key_types::InternalKey;
+use crate::options::Options;
+use crate::table_block;
+use crate::table_builder::{self, Footer};
+use crate::types::{current_key_val, LdbIterator};
 
 use std::cmp::Ordering;
 use std::rc::Rc;
@@ -355,12 +355,12 @@ impl LdbIterator for TableIterator {
 
 #[cfg(test)]
 mod tests {
-    use filter::BloomPolicy;
-    use key_types::LookupKey;
-    use options::{self, CompressionType};
-    use table_builder::TableBuilder;
+    use crate::filter::BloomPolicy;
+    use crate::key_types::LookupKey;
+    use crate::options::{self, CompressionType};
+    use crate::table_builder::TableBuilder;
+    use crate::types::{current_key_val, LdbIterator};
     use test_util::{test_iterator_properties, LdbIteratorIter};
-    use types::{current_key_val, LdbIterator};
 
     use super::*;
 
@@ -685,7 +685,7 @@ mod tests {
     // general, but here we want to see that the other infrastructure works too.
     #[test]
     fn test_table_internal_keys() {
-        use key_types::LookupKey;
+        use crate::key_types::LookupKey;
 
         let (src, size) = build_internal_table();
 

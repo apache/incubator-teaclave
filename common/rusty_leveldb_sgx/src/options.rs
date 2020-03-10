@@ -1,16 +1,16 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use block::Block;
-use cache::Cache;
-use cmp::{Cmp, DefaultCmp};
-use disk_env;
+use crate::block::Block;
+use crate::cache::Cache;
+use crate::cmp::{Cmp, DefaultCmp};
+use crate::disk_env;
 
-use env::Env;
-use filter;
-use infolog::{self, Logger};
-use mem_env::MemEnv;
-use types::{share, Shared};
+use crate::env::Env;
+use crate::filter;
+use crate::infolog::{self, Logger};
+use crate::mem_env::MemEnv;
+use crate::types::{share, Shared};
 
 use std::rc::Rc;
 

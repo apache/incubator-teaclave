@@ -3,8 +3,8 @@ use std::prelude::v1::*;
 
 use std::cmp::Ordering;
 
-use block::BlockContents;
-use options::Options;
+use crate::block::BlockContents;
+use crate::options::Options;
 
 use integer_encoding::{FixedIntWriter, VarIntWriter};
 

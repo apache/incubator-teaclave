@@ -1,10 +1,10 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use cmp::{Cmp, MemtableKeyCmp};
+use crate::cmp::{Cmp, MemtableKeyCmp};
+use crate::types::LdbIterator;
 use rand::rngs::StdRng;
 use rand::{RngCore, SeedableRng};
-use types::LdbIterator;
 
 use std::cell::RefCell;
 use std::cmp::Ordering;
@@ -361,10 +361,10 @@ impl LdbIterator for SkipMapIter {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use cmp::MemtableKeyCmp;
+    use crate::cmp::MemtableKeyCmp;
+    use crate::types::current_key_val;
     use options;
     use test_util::{test_iterator_properties, LdbIteratorIter};
-    use types::current_key_val;
 
     pub fn make_skipmap() -> SkipMap {
         let mut skm = SkipMap::new(options::for_test().cmp);

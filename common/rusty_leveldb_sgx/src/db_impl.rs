@@ -8,31 +8,31 @@ use std::prelude::v1::*;
 #[cfg(feature = "mesalock_sgx")]
 use std::untrusted::path::PathEx;
 
-use db_iter::DBIterator;
+use crate::db_iter::DBIterator;
 
-use cmp::{Cmp, InternalKeyCmp};
-use env::{Env, FileLock};
-use error::{err, Result, StatusCode};
-use filter::{BoxedFilterPolicy, InternalFilterPolicy};
-use infolog::Logger;
-use key_types::{parse_internal_key, InternalKey, LookupKey, ValueType};
-use log::{LogReader, LogWriter};
-use memtable::MemTable;
-use merging_iter::MergingIter;
-use options::Options;
-use snapshot::{Snapshot, SnapshotList};
-use table_builder::TableBuilder;
-use table_cache::{table_file_name, TableCache};
-use types::{
+use crate::cmp::{Cmp, InternalKeyCmp};
+use crate::env::{Env, FileLock};
+use crate::error::{err, Result, StatusCode};
+use crate::filter::{BoxedFilterPolicy, InternalFilterPolicy};
+use crate::infolog::Logger;
+use crate::key_types::{parse_internal_key, InternalKey, LookupKey, ValueType};
+use crate::log::{LogReader, LogWriter};
+use crate::memtable::MemTable;
+use crate::merging_iter::MergingIter;
+use crate::options::Options;
+use crate::snapshot::{Snapshot, SnapshotList};
+use crate::table_builder::TableBuilder;
+use crate::table_cache::{table_file_name, TableCache};
+use crate::types::{
     parse_file_name, share, FileMetaData, FileNum, FileType, LdbIterator, SequenceNumber, Shared,
     MAX_SEQUENCE_NUMBER, NUM_LEVELS,
 };
-use version::Version;
-use version_edit::VersionEdit;
-use version_set::{
+use crate::version::Version;
+use crate::version_edit::VersionEdit;
+use crate::version_set::{
     manifest_file_name, read_current_file, set_current_file, Compaction, VersionSet,
 };
-use write_batch::WriteBatch;
+use crate::write_batch::WriteBatch;
 
 use std::cmp::Ordering;
 use std::io::{self, BufWriter, Write};
@@ -1076,7 +1076,7 @@ fn open_info_log<E: Env + ?Sized, P: AsRef<Path>>(env: &E, db: P) -> Logger {
 pub mod testutil {
     use super::*;
 
-    use version::testutil::make_version;
+    use crate::version::testutil::make_version;
 
     /// build_db creates a database filled with the tables created by make_version().
     pub fn build_db() -> (DB, Options) {
@@ -1135,12 +1135,12 @@ mod tests {
     use super::testutil::{build_db, set_file_to_compact};
     use super::*;
 
-    use error::Status;
-    use key_types::LookupKey;
-    use mem_env::MemEnv;
+    use crate::error::Status;
+    use crate::key_types::LookupKey;
+    use crate::mem_env::MemEnv;
+    use crate::version::testutil::make_version;
     use options;
     use test_util::LdbIteratorIter;
-    use version::testutil::make_version;
 
     #[test]
     fn test_db_impl_open_info_log() {
