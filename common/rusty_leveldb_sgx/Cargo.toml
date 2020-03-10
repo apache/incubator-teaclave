@@ -9,6 +9,7 @@ readme = "README.md"
 keywords = ["LevelDB", "key-value", "database", "SSTable", "Google"]
 license = "MIT"
 publish = true
+edition = "2018"
 
 [features]
 default = []

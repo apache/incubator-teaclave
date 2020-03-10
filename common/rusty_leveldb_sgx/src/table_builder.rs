@@ -1,16 +1,16 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use block::BlockContents;
-use block_builder::BlockBuilder;
-use blockhandle::BlockHandle;
-use cmp::InternalKeyCmp;
-use error::Result;
-use filter::{InternalFilterPolicy, NoFilterPolicy};
-use filter_block::FilterBlockBuilder;
-use key_types::InternalKey;
-use log::mask_crc;
-use options::{CompressionType, Options};
+use crate::block::BlockContents;
+use crate::block_builder::BlockBuilder;
+use crate::blockhandle::BlockHandle;
+use crate::cmp::InternalKeyCmp;
+use crate::error::Result;
+use crate::filter::{InternalFilterPolicy, NoFilterPolicy};
+use crate::filter_block::FilterBlockBuilder;
+use crate::key_types::InternalKey;
+use crate::log::mask_crc;
+use crate::options::{CompressionType, Options};
 
 use std::cmp::Ordering;
 use std::io::Write;
@@ -276,7 +276,7 @@ impl<Dst: Write> TableBuilder<Dst> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use blockhandle::BlockHandle;
+    use crate::blockhandle::BlockHandle;
     use options;
 
     #[test]

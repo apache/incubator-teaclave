@@ -237,7 +237,7 @@ fn offset_data_iterate<F: FnMut(&[u8])>(data: &[u8], offsets: &[usize], mut f: F
 #[cfg(test)]
 mod tests {
     use super::*;
-    use key_types::LookupKey;
+    use crate::key_types::LookupKey;
 
     const _BITS_PER_KEY: u32 = 12;
 
