@@ -60,14 +60,10 @@ fn get_client(user_id: &str) -> TeaclaveManagementClient {
 }
 
 fn test_register_input_file() {
-    let request = RegisterInputFileRequest {
-        url: Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap(),
-        hash: "deadbeefdeadbeef".to_string(),
-        crypto_info: TeaclaveFileCryptoInfo::AesGcm128(AesGcm128CryptoInfo {
-            key: [0x90u8; 16],
-            iv: [0x89u8; 12],
-        }),
-    };
+    let url = Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap();
+    let crypto_info =
+        TeaclaveFileCryptoInfo::new("aes_gcm_128", &[0x90u8; 16], &[0x89u8; 12]).unwrap();
+    let request = RegisterInputFileRequest::new(url, "deadbeefdeadbeef", crypto_info);
 
     let mut client = get_client("mock_user");
     let response = client.register_input_file(request);
@@ -76,13 +72,10 @@ fn test_register_input_file() {
 }
 
 fn test_register_output_file() {
-    let request = RegisterOutputFileRequest {
-        url: Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap(),
-        crypto_info: TeaclaveFileCryptoInfo::AesGcm128(AesGcm128CryptoInfo {
-            key: [0x90u8; 16],
-            iv: [0x89u8; 12],
-        }),
-    };
+    let crypto_info =
+        TeaclaveFileCryptoInfo::new("aes_gcm_128", &[0x90u8; 16], &[0x89u8; 12]).unwrap();
+    let url = Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap();
+    let request = RegisterOutputFileRequest::new(url, crypto_info);
 
     let mut client = get_client("mock_user");
     let response = client.register_output_file(request);
@@ -119,71 +112,57 @@ fn test_register_input_from_output() {
     // not a owner
     let mut client = get_client("mock_user_c");
     let data_id = "output-file-00000000-0000-0000-0000-000000000001";
-    let request = RegisterInputFromOutputRequest {
-        data_id: data_id.to_string(),
-    };
+    let request = RegisterInputFromOutputRequest::new(data_id);
     let response = client.register_input_from_output(request);
     assert!(response.is_err());
 
     // output not ready
+    let url = Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap();
+    let crypto_info = TeaclaveFileCryptoInfo::default();
     let mut client = get_client("mock_user1");
-    let request = RegisterOutputFileRequest {
-        url: Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap(),
-        crypto_info: TeaclaveFileCryptoInfo::default(),
-    };
+    let request = RegisterOutputFileRequest::new(url, crypto_info);
     let response = client.register_output_file(request);
     assert!(response.is_ok());
-    let request = RegisterInputFromOutputRequest {
-        data_id: response.unwrap().data_id,
-    };
+    let request = RegisterInputFromOutputRequest::new(response.unwrap().data_id);
     let response = client.register_input_from_output(request);
     assert!(response.is_err());
 
-    let request = RegisterInputFromOutputRequest {
-        data_id: data_id.to_string(),
-    };
+    let request = RegisterInputFromOutputRequest::new(data_id);
     let response = client.register_input_from_output(request);
     assert!(response.is_ok());
     info!("{:?}", response);
 }
 
 fn test_get_output_file() {
-    let request = RegisterOutputFileRequest {
-        url: Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap(),
-        crypto_info: TeaclaveFileCryptoInfo::default(),
-    };
+    let url = Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap();
+    let crypto_info = TeaclaveFileCryptoInfo::default();
+    let request = RegisterOutputFileRequest::new(url, crypto_info);
 
     let mut client = get_client("mock_user");
     let response = client.register_output_file(request).unwrap();
     let data_id = response.data_id;
-    let request = GetOutputFileRequest {
-        data_id: data_id.clone(),
-    };
+    let request = GetOutputFileRequest::new(&data_id);
     let response = client.get_output_file(request);
     assert!(response.is_ok());
     let mut client = get_client("mock_another_user");
-    let request = GetOutputFileRequest { data_id };
+    let request = GetOutputFileRequest::new(&data_id);
     let response = client.get_output_file(request);
     assert!(response.is_err());
 }
 
 fn test_get_input_file() {
-    let request = RegisterInputFileRequest {
-        url: Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap(),
-        hash: "deadbeef".to_string(),
-        crypto_info: TeaclaveFileCryptoInfo::default(),
-    };
+    let url = Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap();
+    let crypto_info = TeaclaveFileCryptoInfo::default();
+    let request = RegisterInputFileRequest::new(url, "deadbeef", crypto_info);
 
     let mut client = get_client("mock_user");
     let response = client.register_input_file(request).unwrap();
     let data_id = response.data_id;
-    let request = GetInputFileRequest {
-        data_id: data_id.clone(),
-    };
+    let request = GetInputFileRequest::new(&data_id);
     let response = client.get_input_file(request);
     assert!(response.is_ok());
     let mut client = get_client("mock_another_user");
-    let request = GetInputFileRequest { data_id };
+    let request = GetInputFileRequest::new(&data_id);
     let response = client.get_input_file(request);
     assert!(response.is_err());
 }
@@ -231,12 +210,10 @@ fn test_get_function() {
     assert!(response.is_ok());
     info!("{:?}", response.unwrap());
     let mut client = get_client("mock_unauthorized_user");
-    let request = GetFunctionRequest { function_id };
+    let request = GetFunctionRequest::new(function_id);
     let response = client.get_function(request);
     assert!(response.is_err());
-    let request = GetFunctionRequest {
-        function_id: "function-00000000-0000-0000-0000-000000000001".to_string(),
-    };
+    let request = GetFunctionRequest::new("function-00000000-0000-0000-0000-000000000001");
     let response = client.get_function(request);
     assert!(response.is_ok());
     info!("{:?}", response.unwrap());
@@ -639,42 +616,30 @@ fn test_approve_task() {
     let response = client3.assign_data(request);
     assert!(response.is_ok());
 
-    let request = GetTaskRequest {
-        task_id: task_id.clone(),
-    };
+    let request = GetTaskRequest::new(&task_id);
     let response = client2.get_task(request);
     assert_eq!(response.unwrap().status, TaskStatus::Ready);
 
     // user_id not in task.participants
     let mut unknown_client = get_client("non-participant");
-    let request = ApproveTaskRequest {
-        task_id: task_id.clone(),
-    };
+    let request = ApproveTaskRequest::new(&task_id);
     let response = unknown_client.approve_task(request);
     assert!(response.is_err());
 
     //all participants approve the task
-    let request = ApproveTaskRequest {
-        task_id: task_id.clone(),
-    };
+    let request = ApproveTaskRequest::new(&task_id);
     let response = client.approve_task(request);
     assert!(response.is_ok());
-    let request = ApproveTaskRequest {
-        task_id: task_id.clone(),
-    };
+    let request = ApproveTaskRequest::new(&task_id);
     let response = client1.approve_task(request);
     assert!(response.is_ok());
-    let request = ApproveTaskRequest {
-        task_id: task_id.clone(),
-    };
+    let request = ApproveTaskRequest::new(&task_id);
     let response = client2.approve_task(request);
     assert!(response.is_ok());
-    let request = ApproveTaskRequest {
-        task_id: task_id.clone(),
-    };
+    let request = ApproveTaskRequest::new(&task_id);
     let response = client3.approve_task(request);
     assert!(response.is_ok());
-    let request = GetTaskRequest { task_id };
+    let request = GetTaskRequest::new(&task_id);
     let response = client2.get_task(request);
     assert_eq!(response.unwrap().status, TaskStatus::Approved);
 }
@@ -747,49 +712,33 @@ fn test_invoke_task() {
     assert!(response.is_ok());
 
     // task status != Approved
-    let request = InvokeTaskRequest {
-        task_id: task_id.clone(),
-    };
+    let request = InvokeTaskRequest::new(&task_id);
     let response = client.invoke_task(request);
     assert!(response.is_err());
 
     //all participants approve the task
-    let request = ApproveTaskRequest {
-        task_id: task_id.clone(),
-    };
+    let request = ApproveTaskRequest::new(&task_id);
     client.approve_task(request).unwrap();
-    let request = ApproveTaskRequest {
-        task_id: task_id.clone(),
-    };
+    let request = ApproveTaskRequest::new(&task_id);
     client1.approve_task(request).unwrap();
-    let request = ApproveTaskRequest {
-        task_id: task_id.clone(),
-    };
+    let request = ApproveTaskRequest::new(&task_id);
     client2.approve_task(request).unwrap();
-    let request = ApproveTaskRequest {
-        task_id: task_id.clone(),
-    };
+    let request = ApproveTaskRequest::new(&task_id);
     client3.approve_task(request).unwrap();
-    let request = GetTaskRequest {
-        task_id: task_id.clone(),
-    };
+    let request = GetTaskRequest::new(&task_id);
     let response = client2.get_task(request).unwrap();
     assert_eq!(response.status, TaskStatus::Approved);
 
     // user_id != task.creator
-    let request = InvokeTaskRequest {
-        task_id: task_id.clone(),
-    };
+    let request = InvokeTaskRequest::new(&task_id);
     let response = client2.invoke_task(request);
     assert!(response.is_err());
 
     // invoke task
-    let request = InvokeTaskRequest {
-        task_id: task_id.clone(),
-    };
+    let request = InvokeTaskRequest::new(&task_id);
     client.invoke_task(request).unwrap();
 
-    let request = GetTaskRequest { task_id };
+    let request = GetTaskRequest::new(&task_id);
     let response = client2.get_task(request).unwrap();
     assert_eq!(response.status, TaskStatus::Running);
 }
