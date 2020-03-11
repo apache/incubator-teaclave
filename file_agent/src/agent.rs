@@ -86,8 +86,11 @@ pub struct HandleFileInfo {
     remote: url::Url,
 }
 impl HandleFileInfo {
-    pub fn new(local: PathBuf, remote: url::Url) -> Self {
-        HandleFileInfo { local, remote }
+    pub fn new(local: impl AsRef<std::path::Path>, remote: &url::Url) -> Self {
+        HandleFileInfo {
+            local: local.as_ref().to_owned(),
+            remote: remote.to_owned(),
+        }
     }
 }
 
@@ -122,7 +125,10 @@ async fn handle_download(info: HandleFileInfo) -> anyhow::Result<()> {
             download_remote_input_to_file(info.remote, dst).await?;
         }
         "file" => {
-            let src = PathBuf::from(info.remote.path());
+            let src = info
+                .remote
+                .to_file_path()
+                .map_err(|e| anyhow::anyhow!("Cannot convert to path: {:?}", e))?;
             anyhow::ensure!(
                 src.exists(),
                 "[Download] Src local file: {:?} doesn't exist.",
@@ -148,10 +154,13 @@ async fn handle_upload(info: HandleFileInfo) -> anyhow::Result<()> {
             upload_output_file_to_remote(src, info.remote).await?;
         }
         "file" => {
-            let dst = PathBuf::from(info.remote.path());
+            let dst = info
+                .remote
+                .to_file_path()
+                .map_err(|e| anyhow::anyhow!("Cannot convert to path: {:?}", e))?;
             anyhow::ensure!(
-                dst.exists(),
-                "[Download] Dest local file: {:?} doesn't exist.",
+                dst.exists() == false,
+                "[Download] Dest local file: {:?} already exist.",
                 dst
             );
             copy_file(src, dst).await?;
@@ -189,10 +198,11 @@ fn handle_file_request(bytes: &[u8]) -> anyhow::Result<()> {
         });
 
     let (task_results, errs): (Vec<_>, Vec<_>) = results.into_iter().partition(Result::is_ok);
+
+    error!("{:?}, errs: {:?}", task_results, errs);
     if errs.len() > 0 {
         anyhow::bail!("Spawned task join error!");
     }
-    debug!("{:?}", task_results);
     anyhow::ensure!(
         task_results.into_iter().all(|x| x.unwrap().is_ok()),
         "Some handle file task failed"
@@ -217,11 +227,15 @@ mod tests {
 
     #[test]
     fn test_file_url() {
-        let s = "file:///tmp/abc.txt";
-        let url = Url::parse(s).unwrap();
+        let url = Url::parse("file:///tmp/abc.txt").unwrap();
         assert_eq!(url.scheme(), "file");
         assert_eq!(url.host(), None);
         assert_eq!(url.path(), "/tmp/abc.txt");
+
+        let url = Url::parse("file:///countries/việt nam").unwrap();
+        assert_eq!(url.path(), "/countries/vi%E1%BB%87t%20nam");
+        let file_path = url.to_file_path().unwrap();
+        assert_eq!(file_path, PathBuf::from("/countries/việt nam"));
     }
 
     #[test]
@@ -230,18 +244,18 @@ mod tests {
         let url = Url::parse(s).unwrap();
         let dest = PathBuf::from("/tmp/input_test.txt");
 
-        let info = HandleFileInfo::new(dest.clone(), url);
+        let info = HandleFileInfo::new(&dest, &url);
         let req = FileAgentRequest::new(HandleFileCommand::Download, vec![info]);
 
         let bytes = serde_json::to_vec(&req).unwrap();
         handle_file_request(&bytes).unwrap();
 
-        std::fs::remove_file(dest).unwrap();
+        std::fs::remove_file(&dest).unwrap();
     }
 
     #[test]
     fn test_put_single_file() {
-        let src = PathBuf::from("/tmp/output_test.txt");
+        let src = PathBuf::from("/tmp/output_single_test.txt");
         {
             let mut file = std::fs::File::create(&src).unwrap();
             file.write_all(b"Hello Teaclave Results!").unwrap();
@@ -250,10 +264,95 @@ mod tests {
         let s = "http://localhost:6789/fixtures/functions/mesapy/result.txt";
         let url = Url::parse(s).unwrap();
 
-        let info = HandleFileInfo::new(src.clone(), url);
+        let info = HandleFileInfo::new(&src, &url);
         let req = FileAgentRequest::new(HandleFileCommand::Upload, vec![info]);
 
         let bytes = serde_json::to_vec(&req).unwrap();
         handle_file_request(&bytes).unwrap();
+
+        std::fs::remove_file(&src).unwrap();
+    }
+
+    #[test]
+    fn test_get_multiple_files() {
+        let s = "http://localhost:6789/fixtures/functions/gbdt_training/train.txt";
+        let url = Url::parse(s).unwrap();
+
+        let base = PathBuf::from("/tmp/file_agent_test_base");
+        let fnames = vec!["a.txt", "b.txt", "c.txt", "d.txt"];
+
+        std::fs::create_dir_all(&base).unwrap();
+        let info_list: Vec<_> = fnames
+            .iter()
+            .map(|fname| HandleFileInfo::new(base.join(fname), &url))
+            .collect();
+        let req = FileAgentRequest::new(HandleFileCommand::Download, info_list);
+
+        let bytes = serde_json::to_vec(&req).unwrap();
+        handle_file_request(&bytes).unwrap();
+
+        std::fs::remove_dir_all(&base).unwrap();
+    }
+
+    #[test]
+    fn test_put_multiple_files() {
+        let src = PathBuf::from("/tmp/output_multiple_test.txt");
+        {
+            let mut file = std::fs::File::create(&src).unwrap();
+            file.write_all(b"Hello Teaclave Results!").unwrap();
+        }
+
+        let s = "http://localhost:6789/fixtures/functions/gbdt_training";
+        let url = Url::parse(s).unwrap();
+
+        let fnames = vec!["a.txt", "b.txt", "c.txt", "d.txt"];
+        let info_list: Vec<_> = fnames
+            .iter()
+            .map(|fname| {
+                let mut url = url.clone();
+                url.path_segments_mut().unwrap().push(fname);
+                HandleFileInfo::new(&src, &url)
+            })
+            .collect();
+
+        let req = FileAgentRequest::new(HandleFileCommand::Upload, info_list);
+
+        let bytes = serde_json::to_vec(&req).unwrap();
+        handle_file_request(&bytes).unwrap();
+
+        std::fs::remove_file(&src).unwrap();
+    }
+
+    #[test]
+    fn test_local_copy_file() {
+        let base_str = "/tmp/file_agent_local_copy";
+        let base = PathBuf::from(&base_str);
+        std::fs::create_dir_all(&base).unwrap();
+
+        let src = base.join("src.txt");
+        {
+            let mut file = std::fs::File::create(&src).unwrap();
+            file.write_all(b"Hello Teaclave Results!").unwrap();
+        }
+
+        // test local upload
+        let s = format!("file://{}/d1.txt", base_str);
+        let url = Url::parse(&s).unwrap();
+
+        let info = HandleFileInfo::new(&src, &url);
+        let req = FileAgentRequest::new(HandleFileCommand::Upload, vec![info]);
+
+        let bytes = serde_json::to_vec(&req).unwrap();
+        handle_file_request(&bytes).unwrap();
+
+        // test local download
+        let dest = base.join("d2.txt");
+        let info = HandleFileInfo::new(&dest, &url);
+        let req = FileAgentRequest::new(HandleFileCommand::Download, vec![info]);
+
+        let bytes = serde_json::to_vec(&req).unwrap();
+        handle_file_request(&bytes).unwrap();
+
+        std::fs::remove_dir_all(&base).unwrap();
     }
 }
