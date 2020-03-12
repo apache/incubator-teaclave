@@ -15,7 +15,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV RUST_TOOLCHAIN nightly-2019-11-25
 
 # install SGX dependencies
-RUN apt-get update && apt-get install -q -y \
+RUN apt-get update && apt-get --no-install-recommends install -q -y \
     build-essential \
     ocaml \
     automake \
@@ -44,7 +44,7 @@ RUN rm -rf ~/sgx
 
 # install Rust and its dependencies
 
-RUN apt-get update && apt-get install -q -y curl pkg-config
+RUN apt-get update && apt-get --no-install-recommends install -q -y curl pkg-config
 
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y   && \
     . $HOME/.cargo/env                                                        && \
@@ -56,7 +56,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y   &&
 
 # install other dependencies for building
 
-RUN apt-get update && apt-get install -q -y \
+RUN apt-get update && apt-get --no-install-recommends install -q -y \
     software-properties-common \
     apt-transport-https \
     ca-certificates \
@@ -67,11 +67,11 @@ RUN apt-get update && apt-get install -q -y \
 RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | apt-key add - && \
     apt-add-repository 'deb https://apt.kitware.com/ubuntu/ xenial main' && \
     apt-get update && \
-    apt-get install -q -y cmake
+    apt-get --no-install-recommends install -q -y cmake
 
 # install dependencies for testing and coverage
 
-RUN apt-get update && apt-get install -q -y \
+RUN apt-get update && apt-get --no-install-recommends install -q -y \
     lsof \
     procps \
     lcov \

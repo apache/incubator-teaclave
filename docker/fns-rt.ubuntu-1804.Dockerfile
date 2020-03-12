@@ -4,7 +4,7 @@ ENV SGX_DOWNLOAD_URL_BASE "https://download.01.org/intel-sgx/sgx-linux/2.7.1/dis
 ENV LIBSGX_ENCLAVE_COMMON        libsgx-enclave-common_2.7.101.3-bionic1_amd64.deb
 ENV LIBSGX_ENCLAVE_COMMON_URL    "$SGX_DOWNLOAD_URL_BASE/$LIBSGX_ENCLAVE_COMMON"
 
-RUN apt-get update && apt-get install -q -y \
+RUN apt-get update && apt-get --no-install-recommends install -q -y \
     libcurl4-openssl-dev \
     libprotobuf-dev \
     wget

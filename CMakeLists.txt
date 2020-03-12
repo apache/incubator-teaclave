@@ -107,7 +107,7 @@ add_library(pycomponent STATIC ${MESATEE_OUT_DIR}/acs_py_enclave.c)
 set_target_properties(pycomponent PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${MESATEE_OUT_DIR})
 target_compile_definitions(pycomponent PUBLIC SGX)
 if(NOT EXISTS "/usr/lib/pypy/include")
-    message(FATAL_ERROR "pypy development package not found\nFor Ubuntu, please run `apt-get install pypy-dev`")
+    message(FATAL_ERROR "pypy development package not found\nFor Ubuntu, please run `apt-get --no-install-recommends install pypy-dev`")
 endif()
 target_compile_options(pycomponent PUBLIC -UWITH_THREAD -O2 -fPIC -Wimplicit -I/usr/lib/pypy/include)
 

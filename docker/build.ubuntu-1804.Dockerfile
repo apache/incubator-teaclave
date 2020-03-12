@@ -17,7 +17,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV RUST_TOOLCHAIN nightly-2019-11-25
 
 # install SGX dependencies
-RUN apt-get update && apt-get install -q -y \
+RUN apt-get update && apt-get --no-install-recommends install -q -y \
     build-essential \
     ocaml \
     ocamlbuild \
@@ -50,7 +50,7 @@ RUN rm -rf ~/sgx
 
 # install Rust and its dependencies
 
-RUN apt-get update && apt-get install -q -y curl pkg-config
+RUN apt-get update && apt-get --no-install-recommends install -q -y curl pkg-config
 
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y   && \
     . $HOME/.cargo/env                                                        && \
@@ -62,7 +62,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y   &&
 
 # install other dependencies for building
 
-RUN apt-get update && apt-get install -q -y \
+RUN apt-get update && apt-get --no-install-recommends install -q -y \
     git \
     cmake \
     pypy \
@@ -70,7 +70,7 @@ RUN apt-get update && apt-get install -q -y \
 
 # install dependencies for testing and coverage
 
-RUN apt-get update && apt-get install -q -y \
+RUN apt-get update && apt-get --no-install-recommends install -q -y \
     lsof \
     procps \
     lcov \
