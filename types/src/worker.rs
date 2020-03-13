@@ -267,6 +267,11 @@ pub struct WorkerInvocation {
     pub output_files: TeaclaveWorkerFileRegistry<TeaclaveWorkerOutputFileInfo>,
 }
 
+pub struct WorkerInvocationResult {
+    pub return_value: Vec<u8>,
+    pub output_file_hash: HashMap<String, String>,
+}
+
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;

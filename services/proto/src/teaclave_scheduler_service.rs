@@ -4,7 +4,7 @@
 use std::collections::HashMap;
 use std::prelude::v1::*;
 
-use crate::teaclave_execution_service::StagedFunctionExecuteRequest;
+use crate::teaclave_common::{i32_from_task_status, i32_to_task_status};
 use crate::teaclave_scheduler_service_proto as proto;
 use anyhow::{Error, Result};
 use core::convert::TryInto;
@@ -13,7 +13,7 @@ pub use proto::TeaclaveSchedulerClient;
 pub use proto::TeaclaveSchedulerRequest;
 pub use proto::TeaclaveSchedulerResponse;
 use teaclave_rpc::into_request;
-use teaclave_types::StagedTask;
+use teaclave_types::{StagedTask, TaskStatus};
 
 #[into_request(TeaclaveSchedulerRequest::Subscribe)]
 pub struct SubscribeRequest {}
@@ -38,13 +38,46 @@ impl PullTaskResponse {
     }
 }
 
-#[into_request(TeaclaveSchedulerRequest::UpdateTask)]
-pub struct UpdateTaskRequest {
-    pub staged_task_id: String,
+#[into_request(TeaclaveSchedulerRequest::UpdateTaskResult)]
+pub struct UpdateTaskResultRequest {
+    pub task_id: String,
+    pub return_value: Vec<u8>,
+    pub output_file_hash: HashMap<String, String>,
 }
 
-#[into_request(TeaclaveSchedulerResponse::UpdateTask)]
-pub struct UpdateTaskResponse {}
+impl UpdateTaskResultRequest {
+    pub fn new(
+        task_id: impl Into<String>,
+        return_value: &[u8],
+        output_file_hash: HashMap<String, String>,
+    ) -> Self {
+        Self {
+            task_id: task_id.into(),
+            return_value: return_value.to_vec(),
+            output_file_hash,
+        }
+    }
+}
+
+#[into_request(TeaclaveSchedulerResponse::UpdateTaskResult)]
+pub struct UpdateTaskResultResponse {}
+
+#[into_request(TeaclaveSchedulerRequest::UpdateTaskStatus)]
+pub struct UpdateTaskStatusRequest {
+    pub task_id: String,
+    pub task_status: TaskStatus,
+}
+
+impl UpdateTaskStatusRequest {
+    pub fn new(task_id: impl Into<String>, task_status: TaskStatus) -> Self {
+        Self {
+            task_id: task_id.into(),
+            task_status,
+        }
+    }
+}
+#[into_request(TeaclaveSchedulerResponse::UpdateTaskStatus)]
+pub struct UpdateTaskStatusResponse {}
 
 #[into_request(TeaclaveSchedulerRequest::PublishTask)]
 pub struct PublishTaskRequest {
@@ -116,36 +149,75 @@ impl std::convert::From<PullTaskResponse> for proto::PullTaskResponse {
         }
     }
 }
-
-impl std::convert::TryFrom<proto::UpdateTaskRequest> for UpdateTaskRequest {
+impl std::convert::TryFrom<proto::UpdateTaskResultRequest> for UpdateTaskResultRequest {
     type Error = Error;
-    fn try_from(proto: proto::UpdateTaskRequest) -> Result<Self> {
+    fn try_from(proto: proto::UpdateTaskResultRequest) -> Result<Self> {
         let ret = Self {
-            staged_task_id: proto.staged_task_id,
+            task_id: proto.task_id,
+            return_value: proto.return_value,
+            output_file_hash: proto.output_file_hash,
         };
         Ok(ret)
     }
 }
 
-impl std::convert::From<UpdateTaskRequest> for proto::UpdateTaskRequest {
-    fn from(req: UpdateTaskRequest) -> Self {
-        proto::UpdateTaskRequest {
-            staged_task_id: req.staged_task_id,
+impl std::convert::From<UpdateTaskResultRequest> for proto::UpdateTaskResultRequest {
+    fn from(req: UpdateTaskResultRequest) -> Self {
+        proto::UpdateTaskResultRequest {
+            task_id: req.task_id,
+            return_value: req.return_value,
+            output_file_hash: req.output_file_hash,
         }
     }
 }
 
-impl std::convert::TryFrom<proto::UpdateTaskResponse> for UpdateTaskResponse {
+impl std::convert::TryFrom<proto::UpdateTaskResultResponse> for UpdateTaskResultResponse {
     type Error = Error;
-    fn try_from(proto: proto::UpdateTaskResponse) -> Result<Self> {
+    fn try_from(proto: proto::UpdateTaskResultResponse) -> Result<Self> {
         let ret = Self {};
         Ok(ret)
     }
 }
 
-impl std::convert::From<UpdateTaskResponse> for proto::UpdateTaskResponse {
-    fn from(req: UpdateTaskResponse) -> Self {
-        proto::UpdateTaskResponse {}
+impl std::convert::From<UpdateTaskResultResponse> for proto::UpdateTaskResultResponse {
+    fn from(req: UpdateTaskResultResponse) -> Self {
+        proto::UpdateTaskResultResponse {}
+    }
+}
+
+impl std::convert::TryFrom<proto::UpdateTaskStatusRequest> for UpdateTaskStatusRequest {
+    type Error = Error;
+    fn try_from(proto: proto::UpdateTaskStatusRequest) -> Result<Self> {
+        let task_status = i32_to_task_status(proto.task_status)?;
+        let ret = Self {
+            task_id: proto.task_id,
+            task_status,
+        };
+        Ok(ret)
+    }
+}
+
+impl std::convert::From<UpdateTaskStatusRequest> for proto::UpdateTaskStatusRequest {
+    fn from(req: UpdateTaskStatusRequest) -> Self {
+        let task_status = i32_from_task_status(req.task_status);
+        proto::UpdateTaskStatusRequest {
+            task_id: req.task_id,
+            task_status,
+        }
+    }
+}
+
+impl std::convert::TryFrom<proto::UpdateTaskStatusResponse> for UpdateTaskStatusResponse {
+    type Error = Error;
+    fn try_from(proto: proto::UpdateTaskStatusResponse) -> Result<Self> {
+        let ret = Self {};
+        Ok(ret)
+    }
+}
+
+impl std::convert::From<UpdateTaskStatusResponse> for proto::UpdateTaskStatusResponse {
+    fn from(req: UpdateTaskStatusResponse) -> Self {
+        proto::UpdateTaskStatusResponse {}
     }
 }
 

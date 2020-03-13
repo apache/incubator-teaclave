@@ -29,7 +29,7 @@ use teaclave_rpc::endpoint::Endpoint;
 use teaclave_rpc::Request;
 use teaclave_service_enclave_utils::teaclave_service;
 use teaclave_types::{
-    StagedTask, Storable, TeaclaveServiceResponseError, TeaclaveServiceResponseResult,
+    StagedTask, Storable, Task, TeaclaveServiceResponseError, TeaclaveServiceResponseResult,
 };
 
 use anyhow::anyhow;
@@ -94,6 +94,31 @@ impl TeaclaveSchedulerService {
         T::from_slice(dequeue_response.value.as_slice())
             .map_err(|_| TeaclaveSchedulerError::DataError.into())
     }
+
+    fn get_task(&self, key: &str) -> Result<Task> {
+        let key = format!("{}-{}", Task::key_prefix(), key);
+        let get_request = GetRequest::new(key.into_bytes());
+        let get_response = self
+            .storage_client
+            .clone()
+            .lock()
+            .map_err(|_| anyhow!("Cannot lock storage client"))?
+            .get(get_request)?;
+        Task::from_slice(get_response.value.as_slice())
+    }
+
+    fn put_task(&self, item: &impl Storable) -> Result<()> {
+        let k = item.key();
+        let v = item.to_vec()?;
+        let put_request = PutRequest::new(k.as_slice(), v.as_slice());
+        let _put_response = self
+            .storage_client
+            .clone()
+            .lock()
+            .map_err(|_| anyhow!("Cannot lock storage client"))?
+            .put(put_request)?;
+        Ok(())
+    }
 }
 
 impl TeaclaveScheduler for TeaclaveSchedulerService {
@@ -117,6 +142,7 @@ impl TeaclaveScheduler for TeaclaveSchedulerService {
         &self,
         request: Request<SubscribeRequest>,
     ) -> TeaclaveServiceResponseResult<SubscribeResponse> {
+        // TODO: subscribe a specific topic
         unimplemented!()
     }
 
@@ -130,11 +156,27 @@ impl TeaclaveScheduler for TeaclaveSchedulerService {
         Ok(response)
     }
 
-    fn update_task(
+    fn update_task_status(
         &self,
-        request: Request<UpdateTaskRequest>,
-    ) -> TeaclaveServiceResponseResult<UpdateTaskResponse> {
-        unimplemented!()
+        request: Request<UpdateTaskStatusRequest>,
+    ) -> TeaclaveServiceResponseResult<UpdateTaskStatusResponse> {
+        let request = request.message;
+        let mut task = self.get_task(&request.task_id)?;
+        task.status = request.task_status;
+        self.put_task(&task)?;
+        Ok(UpdateTaskStatusResponse {})
+    }
+
+    fn update_task_result(
+        &self,
+        request: Request<UpdateTaskResultRequest>,
+    ) -> TeaclaveServiceResponseResult<UpdateTaskResultResponse> {
+        let request = request.message;
+        let mut task = self.get_task(&request.task_id)?;
+        task.return_value = Some(request.return_value);
+        task.output_file_hash = request.output_file_hash;
+        self.put_task(&task)?;
+        Ok(UpdateTaskResultResponse {})
     }
 }
 

@@ -26,7 +26,6 @@ fn main() {
         "src/proto/teaclave_authentication_service.proto",
         "src/proto/teaclave_common.proto",
         "src/proto/teaclave_storage_service.proto",
-        "src/proto/teaclave_execution_service.proto",
         "src/proto/teaclave_frontend_service.proto",
         "src/proto/teaclave_management_service.proto",
         "src/proto/teaclave_scheduler_service.proto",

@@ -13,10 +13,18 @@ message PullTaskResponse {
   bytes staged_task = 1;
 }
 
-message UpdateTaskRequest {
-  string staged_task_id = 2;
+message UpdateTaskStatusRequest {
+  string task_id = 1;
+  teaclave_common_proto.TaskStatus task_status = 2;
 }
-message UpdateTaskResponse {}
+message UpdateTaskStatusResponse {}
+
+message UpdateTaskResultRequest {
+  string task_id = 1;
+  bytes return_value = 2;
+  map<string, string> output_file_hash = 3;
+}
+message UpdateTaskResultResponse {}
 
 message PublishTaskRequest {
   bytes staged_task = 1;
@@ -30,5 +38,7 @@ service TeaclaveScheduler {
   // Subscriber
   rpc Subscribe(SubscribeRequest) returns (SubscribeResponse);
   rpc PullTask(PullTaskRequest) returns (PullTaskResponse);
-  rpc UpdateTask(UpdateTaskRequest) returns (UpdateTaskResponse);
+
+  rpc UpdateTaskStatus(UpdateTaskStatusRequest) returns (UpdateTaskStatusResponse);
+  rpc UpdateTaskResult(UpdateTaskResultRequest) returns (UpdateTaskResultResponse);
 }
