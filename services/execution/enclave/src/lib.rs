@@ -22,55 +22,49 @@ extern crate sgx_tstd as std;
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-#[macro_use]
-extern crate log;
-
-use teaclave_attestation::{AttestationConfig, RemoteAttestation};
+use teaclave_attestation::verifier;
 use teaclave_binder::proto::{
     ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
     StartServiceInput, StartServiceOutput,
 };
 use teaclave_binder::{handle_ecall, register_ecall_handler};
 use teaclave_config::RuntimeConfig;
-use teaclave_proto::teaclave_execution_service::{
-    TeaclaveExecutionRequest, TeaclaveExecutionResponse,
-};
-use teaclave_rpc::config::SgxTrustedTlsServerConfig;
-use teaclave_rpc::server::SgxTrustedTlsServer;
+use teaclave_config::BUILD_CONFIG;
+use teaclave_service_enclave_utils::create_trusted_scheduler_endpoint;
 use teaclave_service_enclave_utils::ServiceEnclave;
-use teaclave_types::{TeeServiceError, TeeServiceResult};
+use teaclave_types::{EnclaveInfo, TeeServiceError, TeeServiceResult};
 
 mod service;
 
-fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
-    let listen_address = config.internal_endpoints.execution.listen_address;
-    let as_config = &config.attestation;
-    let attestation_config = AttestationConfig::new(
-        &as_config.algorithm,
-        &as_config.url,
-        &as_config.key,
-        &as_config.spid,
-    );
-    let attested_tls_config = RemoteAttestation::new()
-        .config(attestation_config)
-        .generate_and_endorse()
-        .unwrap()
-        .attested_tls_config()
-        .unwrap();
-    let server_config =
-        SgxTrustedTlsServerConfig::from_attested_tls_config(attested_tls_config).unwrap();
+const AS_ROOT_CA_CERT: &[u8] = BUILD_CONFIG.as_root_ca_cert;
+const AUDITOR_PUBLIC_KEYS_LEN: usize = BUILD_CONFIG.auditor_public_keys.len();
+const AUDITOR_PUBLIC_KEYS: &[&[u8]; AUDITOR_PUBLIC_KEYS_LEN] = BUILD_CONFIG.auditor_public_keys;
 
-    let mut server =
-        SgxTrustedTlsServer::<TeaclaveExecutionResponse, TeaclaveExecutionRequest>::new(
-            listen_address,
-            server_config,
-        );
-    match server.start(service::TeaclaveExecutionService::new()) {
-        Ok(_) => (),
-        Err(e) => {
-            error!("Service exit, error: {}.", e);
-        }
-    }
+fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
+    let enclave_info = EnclaveInfo::verify_and_new(
+        config
+            .audit
+            .enclave_info_bytes
+            .as_ref()
+            .expect("enclave_info"),
+        AUDITOR_PUBLIC_KEYS,
+        config
+            .audit
+            .auditor_signatures_bytes
+            .as_ref()
+            .expect("auditor signatures"),
+    )?;
+    let scheduler_service_address = &config.internal_endpoints.scheduler.advertised_address;
+    let scheduler_service_endpoint = create_trusted_scheduler_endpoint(
+        &scheduler_service_address,
+        &enclave_info,
+        AS_ROOT_CA_CERT,
+        verifier::universal_quote_verifier,
+    );
+
+    let mut service = service::TeaclaveExecutionService::new(scheduler_service_endpoint).unwrap();
+    let _ = service.start();
+
     Ok(())
 }
 
@@ -101,8 +95,10 @@ register_ecall_handler!(
 
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
+    use super::*;
+    use teaclave_test_utils::*;
 
     pub fn run_tests() -> bool {
-        true
+        run_tests!(service::tests::test_invoke_function)
     }
 }

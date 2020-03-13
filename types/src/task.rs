@@ -34,6 +34,8 @@ pub struct Task {
     pub approved_user_list: HashSet<String>,
     pub input_map: HashMap<String, String>,
     pub output_map: HashMap<String, String>,
+    pub return_value: Option<Vec<u8>>,
+    pub output_file_hash: HashMap<String, String>,
     pub status: TaskStatus,
 }
 

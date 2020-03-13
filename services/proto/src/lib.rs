@@ -22,7 +22,6 @@ extern crate sgx_tstd as std;
 pub mod teaclave_access_control_service;
 pub mod teaclave_authentication_service;
 pub mod teaclave_common;
-pub mod teaclave_execution_service;
 pub mod teaclave_frontend_service;
 pub mod teaclave_management_service;
 pub mod teaclave_scheduler_service;
@@ -44,10 +43,6 @@ pub mod teaclave_common_proto {
 
 pub mod teaclave_storage_service_proto {
     include_proto!("teaclave_storage_service_proto");
-}
-
-pub mod teaclave_execution_service_proto {
-    include_proto!("teaclave_execution_service_proto");
 }
 
 pub mod teaclave_frontend_service_proto {

@@ -18,64 +18,128 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use std::sync::Arc;
+use std::sync::{Arc, SgxMutex as Mutex};
 
-use teaclave_proto::teaclave_execution_service::{
-    StagedFunctionExecuteRequest, StagedFunctionExecuteResponse, TeaclaveExecution,
-};
-use teaclave_service_enclave_utils::teaclave_service;
-use teaclave_types::{TeaclaveServiceResponseError, TeaclaveServiceResponseResult};
-
-use teaclave_rpc::Request;
+use teaclave_proto::teaclave_scheduler_service::*;
+use teaclave_rpc::endpoint::Endpoint;
+use teaclave_types::{StagedTask, WorkerInvocationResult};
 use teaclave_worker::Worker;
-use thiserror::Error;
 
-#[derive(Error, Debug)]
-pub enum TeaclaveExecutionError {
-    #[error("woker running spec error")]
-    WorkerRunningSpecError,
-}
+use anyhow::Result;
 
-impl From<TeaclaveExecutionError> for TeaclaveServiceResponseError {
-    fn from(error: TeaclaveExecutionError) -> Self {
-        TeaclaveServiceResponseError::RequestError(error.to_string())
-    }
-}
-
-#[teaclave_service(teaclave_execution_service, TeaclaveExecution, TeaclaveExecutionError)]
 #[derive(Clone)]
 pub(crate) struct TeaclaveExecutionService {
     worker: Arc<Worker>,
+    scheduler_client: Arc<Mutex<TeaclaveSchedulerClient>>,
 }
 
 impl TeaclaveExecutionService {
-    pub(crate) fn new() -> Self {
-        TeaclaveExecutionService {
+    pub(crate) fn new(scheduler_service_endpoint: Endpoint) -> Result<Self> {
+        let mut i = 0;
+        let channel = loop {
+            match scheduler_service_endpoint.connect() {
+                Ok(channel) => break channel,
+                Err(_) => {
+                    anyhow::ensure!(i < 3, "failed to connect to storage service");
+                    log::debug!("Failed to connect to storage service, retry {}", i);
+                    i += 1;
+                }
+            }
+            std::thread::sleep(std::time::Duration::from_secs(1));
+        };
+        let scheduler_client = Arc::new(Mutex::new(TeaclaveSchedulerClient::new(channel)?));
+        Ok(TeaclaveExecutionService {
             worker: Arc::new(Worker::default()),
+            scheduler_client,
+        })
+    }
+
+    pub(crate) fn start(&mut self) -> Result<()> {
+        loop {
+            std::thread::sleep(std::time::Duration::from_secs(3));
+            let scheduler_client = self.scheduler_client.clone();
+            let mut client = match scheduler_client.lock() {
+                Ok(client) => client,
+                Err(e) => {
+                    log::error!("Error: {:?}", e);
+                    continue;
+                }
+            };
+
+            let request = PullTaskRequest {};
+            log::debug!("pull_task");
+            let response = match client.pull_task(request) {
+                Ok(response) => response,
+                Err(e) => {
+                    log::error!("Error: {:?}", e);
+                    continue;
+                }
+            };
+            log::debug!("response: {:?}", response);
+            let result = self.invoke_task(response.staged_task);
+            self.update_task(result);
         }
     }
-}
 
-impl TeaclaveExecution for TeaclaveExecutionService {
-    fn invoke_function(
-        &self,
-        request: Request<StagedFunctionExecuteRequest>,
-    ) -> TeaclaveServiceResponseResult<StagedFunctionExecuteResponse> {
-        let request = request.message;
-        match self.worker.invoke_function(request.into()) {
-            Ok(summary) => {
-                info!("[+] Invoking function ok: {}", summary);
-                Ok(summary.into())
-            }
-            Err(e) => {
-                error!("[+] Invoking function failed: {}", e);
-                Err(TeaclaveExecutionError::WorkerRunningSpecError.into())
-            }
-        }
+    fn invoke_task(&mut self, _task: StagedTask) -> WorkerInvocationResult {
+        // TODO: convert task to function, i.e., needs help from agent
+        unimplemented!()
+    }
+
+    fn update_task(&mut self, _result: WorkerInvocationResult) {
+        unimplemented!()
     }
 }
 
 #[cfg(test_mode)]
 mod test_mode {
     use super::*;
+}
+
+#[cfg(feature = "enclave_unit_test")]
+pub mod tests {
+    use super::*;
+    use std::convert::TryInto;
+    use teaclave_types::*;
+
+    pub fn test_invoke_function() {
+        let function_args = TeaclaveFunctionArguments::new(&hashmap!(
+            "feature_size"  => "4",
+            "max_depth"     => "4",
+            "iterations"    => "100",
+            "shrinkage"     => "0.1",
+            "feature_sample_ratio" => "1.0",
+            "data_sample_ratio" => "1.0",
+            "min_leaf_size" => "1",
+            "loss"          => "LAD",
+            "training_optimization_level" => "2"
+        ));
+
+        let plain_input = "fixtures/functions/gbdt_training/train.txt";
+        let enc_output = "fixtures/functions/gbdt_training/model.enc.out";
+
+        let input_info =
+            TeaclaveWorkerInputFileInfo::create_with_plaintext_file(plain_input).unwrap();
+        let input_files = TeaclaveWorkerFileRegistry::new(hashmap!(
+            "training_data".to_string() => input_info));
+
+        let output_info =
+            TeaclaveWorkerOutputFileInfo::new(enc_output, TeaclaveFileRootKey128::default());
+        let output_files = TeaclaveWorkerFileRegistry::new(hashmap!(
+            "trained_model".to_string() => output_info));
+        let invocation = WorkerInvocation {
+            runtime_name: "default".to_string(),
+            executor_type: "native".try_into().unwrap(),
+            function_name: "gbdt_training".to_string(),
+            function_payload: String::new(),
+            function_args,
+            input_files,
+            output_files,
+        };
+
+        let worker = Worker::default();
+        let result = worker.invoke_function(invocation);
+        assert!(result.is_ok());
+        log::debug!("summary: {:?}", result.unwrap());
+    }
 }

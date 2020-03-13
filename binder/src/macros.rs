@@ -94,13 +94,13 @@ macro_rules! register_ecall_handler {
             // The last argument could be either * mut usize, or &mut usize
             let input_buf: &[u8] = unsafe { std::slice::from_raw_parts(in_buf, in_len) };
 
-            trace!("tee receive cmd: {:x}, input_buf = {:?}", cmd, input_buf);
+            log::trace!("tee receive cmd: {:x}, input_buf = {:?}", cmd, input_buf);
 
             let inner_vec = unsafe {
                 match ecall_ipc_lib_dispatcher(cmd, input_buf) {
                     Ok(out) => out,
                     Err(e) => {
-                        error!("tee execute cmd: {:x}, error: {}", cmd, e);
+                        log::error!("tee execute cmd: {:x}, error: {}", cmd, e);
                         return teaclave_types::EnclaveStatus(1);
                     }
                 }
@@ -112,7 +112,7 @@ macro_rules! register_ecall_handler {
             *out_len = inner_len;
 
             if inner_len > out_max {
-                debug!("tee before copy out_buf check: out_max={:x} < inner={:x}", out_max, inner_len);
+                log::debug!("tee before copy out_buf check: out_max={:x} < inner={:x}", out_max, inner_len);
                 return teaclave_types::EnclaveStatus(0x0000_000c);
             }
 

@@ -180,14 +180,12 @@ fn test_get_output_file() {
     let response = client.register_output_file(request);
     let data_id = response.unwrap().data_id;
 
-    let request = GetOutputFileRequest {
-        data_id: data_id.clone(),
-    };
+    let request = GetOutputFileRequest::new(&data_id);
     let response = client.get_output_file(request);
     assert!(response.is_ok());
     assert!(response.unwrap().hash.is_empty());
 
-    let request = GetOutputFileRequest { data_id };
+    let request = GetOutputFileRequest::new(&data_id);
     client
         .metadata_mut()
         .insert("token".to_string(), "wrong token".to_string());
@@ -206,14 +204,12 @@ fn test_get_input_file() {
     let response = client.register_input_file(request);
     let data_id = response.unwrap().data_id;
 
-    let request = GetInputFileRequest {
-        data_id: data_id.clone(),
-    };
+    let request = GetInputFileRequest::new(&data_id);
     let response = client.get_input_file(request);
     assert!(response.is_ok());
     assert!(!response.unwrap().hash.is_empty());
 
-    let request = GetInputFileRequest { data_id };
+    let request = GetInputFileRequest::new(&data_id);
     client
         .metadata_mut()
         .insert("token".to_string(), "wrong token".to_string());
@@ -256,16 +252,12 @@ fn test_register_function() {
 fn test_get_function() {
     let mut client = get_client();
 
-    let request = GetFunctionRequest {
-        function_id: "function-00000000-0000-0000-0000-000000000001".to_string(),
-    };
+    let request = GetFunctionRequest::new("function-00000000-0000-0000-0000-000000000001");
     let response = client.get_function(request);
     assert!(response.is_ok());
     assert!(!response.unwrap().name.is_empty());
 
-    let request = GetFunctionRequest {
-        function_id: "function-00000000-0000-0000-0000-000000000001".to_string(),
-    };
+    let request = GetFunctionRequest::new("function-00000000-0000-0000-0000-000000000001");
     client
         .metadata_mut()
         .insert("token".to_string(), "wrong token".to_string());
@@ -332,14 +324,12 @@ fn test_get_task() {
     let response = client.create_task(request);
     let task_id = response.unwrap().task_id;
 
-    let request = GetTaskRequest {
-        task_id: task_id.clone(),
-    };
+    let request = GetTaskRequest::new(&task_id);
     let response = client.get_task(request);
     assert!(response.is_ok());
     assert!(!response.unwrap().function_id.is_empty());
 
-    let request = GetTaskRequest { task_id };
+    let request = GetTaskRequest::new(task_id);
     client
         .metadata_mut()
         .insert("token".to_string(), "wrong token".to_string());
@@ -436,9 +426,7 @@ fn test_approve_task() {
     };
     let _response = client.assign_data(request);
 
-    let request = ApproveTaskRequest {
-        task_id: task_id.clone(),
-    };
+    let request = ApproveTaskRequest::new(&task_id);
     let correct_token = client.metadata().get("token").unwrap().to_string();
     client
         .metadata_mut()
@@ -446,7 +434,7 @@ fn test_approve_task() {
     let response = client.approve_task(request);
     assert!(response.is_err());
 
-    let request = ApproveTaskRequest { task_id };
+    let request = ApproveTaskRequest::new(&task_id);
     client
         .metadata_mut()
         .insert("token".to_string(), correct_token);
@@ -489,14 +477,10 @@ fn test_invoke_task() {
     };
     let _response = client.assign_data(request);
 
-    let request = ApproveTaskRequest {
-        task_id: task_id.clone(),
-    };
+    let request = ApproveTaskRequest::new(&task_id);
     let _response = client.approve_task(request);
 
-    let request = InvokeTaskRequest {
-        task_id: task_id.clone(),
-    };
+    let request = InvokeTaskRequest::new(&task_id);
     let correct_token = client.metadata().get("token").unwrap().to_string();
     client
         .metadata_mut()
@@ -504,16 +488,14 @@ fn test_invoke_task() {
     let response = client.invoke_task(request);
     assert!(response.is_err());
 
-    let request = InvokeTaskRequest {
-        task_id: task_id.clone(),
-    };
+    let request = InvokeTaskRequest::new(&task_id);
     client
         .metadata_mut()
         .insert("token".to_string(), correct_token);
     let response = client.invoke_task(request);
     assert!(response.is_ok());
 
-    let request = GetTaskRequest { task_id };
+    let request = GetTaskRequest::new(&task_id);
     let response = client.get_task(request);
     assert_eq!(response.unwrap().status, TaskStatus::Running);
 }

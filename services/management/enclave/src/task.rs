@@ -59,6 +59,8 @@ pub(crate) fn create_task(
         approved_user_list: HashSet::new(),
         input_map: HashMap::new(),
         output_map: HashMap::new(),
+        return_value: None,
+        output_file_hash: HashMap::new(),
         status: TaskStatus::Created,
     };
     // check arguments

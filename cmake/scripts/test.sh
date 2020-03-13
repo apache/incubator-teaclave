@@ -73,7 +73,7 @@ run_functional_tests() {
   sleep 3    # wait for management service and scheduler_service
   ./teaclave_access_control_service &
   ./teaclave_frontend_service &
-  ./teaclave_execution_service &
+  # ./teaclave_execution_service &
   popd
   sleep 3    # wait for other services
   ./teaclave_functional_tests

@@ -70,3 +70,23 @@ pub fn create_trusted_storage_endpoint(
 
     Endpoint::new(storage_service_address).config(storage_service_client_config)
 }
+
+pub fn create_trusted_scheduler_endpoint(
+    advertised_address: &str,
+    enclave_info: &EnclaveInfo,
+    as_root_ca_cert: &[u8],
+    verifier: AttestationReportVerificationFn,
+) -> Endpoint {
+    let scheduler_service_enclave_attrs = enclave_info
+        .get_enclave_attr("teaclave_scheduler_service")
+        .expect("enclave_info");
+    let scheduler_service_client_config = SgxTrustedTlsClientConfig::new()
+        .attestation_report_verifier(
+            vec![scheduler_service_enclave_attrs],
+            as_root_ca_cert,
+            verifier,
+        );
+    let scheduler_service_address = &advertised_address;
+
+    Endpoint::new(scheduler_service_address).config(scheduler_service_client_config)
+}

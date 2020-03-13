@@ -11,7 +11,7 @@ use teaclave_types::*;
 pub fn run_tests() -> bool {
     use teaclave_test_utils::*;
 
-    run_tests!(test_pull_task,)
+    run_tests!(test_pull_task, test_update_task_status_result)
 }
 
 fn get_client(user_id: &str) -> TeaclaveSchedulerClient {
@@ -49,5 +49,23 @@ fn test_pull_task() {
     let request = PullTaskRequest {};
     let response = client.pull_task(request);
     log::debug!("response: {:?}", response);
+    assert!(response.is_ok());
+}
+
+fn test_update_task_status_result() {
+    let mut client = get_client("mock_user");
+    let request = PullTaskRequest {};
+    let response = client.pull_task(request).unwrap();
+    log::debug!("response: {:?}", response);
+    let task_id = response.staged_task.task_id.to_string();
+
+    let request = UpdateTaskStatusRequest::new(&task_id, TaskStatus::Finished);
+    let response = client.update_task_status(request);
+    assert!(response.is_ok());
+
+    let request =
+        UpdateTaskResultRequest::new(&task_id, "return".to_string().as_bytes(), HashMap::new());
+    let response = client.update_task_result(request);
+
     assert!(response.is_ok());
 }
