@@ -176,6 +176,7 @@ pub enum SgxQuoteStatus {
     ConfigurationNeeded,
     TcbOutOfDateAndConfigurationNeeded,
     SignatureInvalid,
+    SwHardeningNeeded,
     UnknownBadStatus,
 }
 
@@ -190,6 +191,7 @@ impl From<&str> for SgxQuoteStatus {
                 SgxQuoteStatus::TcbOutOfDateAndConfigurationNeeded
             }
             "SIGNATURE_INVALID" => SgxQuoteStatus::SignatureInvalid,
+            "SW_HARDENING_NEEDED" => SgxQuoteStatus::SwHardeningNeeded,
             _ => SgxQuoteStatus::UnknownBadStatus,
         }
     }
