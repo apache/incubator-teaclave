@@ -142,4 +142,22 @@ pub mod tests {
         assert!(result.is_ok());
         log::debug!("summary: {:?}", result.unwrap());
     }
+
+    pub fn test_invoke_echo_function() {
+        let invocation = WorkerInvocation {
+            runtime_name: "default".to_string(),
+            executor_type: "native".try_into().unwrap(),
+            function_name: "echo".to_string(),
+            function_payload: String::new(),
+            function_args: TeaclaveFunctionArguments::new(&hashmap!(
+                "payload" => "Hello Teaclave!"
+            )),
+            input_files: TeaclaveWorkerFileRegistry::default(),
+            output_files: TeaclaveWorkerFileRegistry::default(),
+        };
+
+        let worker = Worker::default();
+        let result = worker.invoke_function(invocation).unwrap();
+        assert_eq!(result, "Hello Teaclave!");
+    }
 }

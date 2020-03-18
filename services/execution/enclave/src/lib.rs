@@ -99,6 +99,9 @@ pub mod tests {
     use teaclave_test_utils::*;
 
     pub fn run_tests() -> bool {
-        run_tests!(service::tests::test_invoke_function)
+        run_tests!(
+            service::tests::test_invoke_function,
+            service::tests::test_invoke_echo_function,
+        )
     }
 }

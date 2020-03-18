@@ -18,44 +18,53 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
+use crate::function::TeaclaveFunction;
 use crate::runtime::TeaclaveRuntime;
 use anyhow;
 use teaclave_types::TeaclaveFunctionArguments;
 
-pub trait TeaclaveFunction {
+#[derive(Default)]
+pub struct Echo;
+
+impl TeaclaveFunction for Echo {
     fn execute(
         &self,
-        runtime: Box<dyn TeaclaveRuntime + Send + Sync>,
+        _runtime: Box<dyn TeaclaveRuntime + Send + Sync>,
         args: TeaclaveFunctionArguments,
-    ) -> anyhow::Result<String>;
-
-    // TODO: Add more flexible control support on a running function
-    // fn stop();
-    // fn handle_event();
+    ) -> anyhow::Result<String> {
+        let payload: String = args.try_get("payload")?;
+        Ok(payload)
+    }
 }
-
-mod echo;
-mod gbdt_prediction;
-mod gbdt_training;
-mod mesapy;
-pub use echo::Echo;
-pub use gbdt_prediction::GbdtPrediction;
-pub use gbdt_training::GbdtTraining;
-pub use mesapy::Mesapy;
-mod context;
 
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
     use teaclave_test_utils::*;
 
+    use teaclave_types::hashmap;
+    use teaclave_types::TeaclaveFunctionArguments;
+    use teaclave_types::TeaclaveWorkerFileRegistry;
+
+    use crate::function::TeaclaveFunction;
+    use crate::runtime::RawIoRuntime;
+
     pub fn run_tests() -> bool {
-        check_all_passed!(
-            echo::tests::run_tests(),
-            gbdt_training::tests::run_tests(),
-            gbdt_prediction::tests::run_tests(),
-            mesapy::tests::run_tests(),
-            context::tests::run_tests(),
-        )
+        run_tests!(test_echo)
+    }
+
+    fn test_echo() {
+        let func_args = TeaclaveFunctionArguments::new(&hashmap!(
+            "payload"  => "Hello Teaclave!"
+        ));
+
+        let input_files = TeaclaveWorkerFileRegistry::default();
+        let output_files = TeaclaveWorkerFileRegistry::default();
+
+        let runtime = Box::new(RawIoRuntime::new(input_files, output_files));
+        let function = Echo;
+
+        let summary = function.execute(runtime, func_args).unwrap();
+        assert_eq!(summary, "Hello Teaclave!");
     }
 }
