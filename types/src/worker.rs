@@ -26,7 +26,7 @@ macro_rules! hashmap {
     }}
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum TeaclaveExecutorSelector {
     Native,
     Python,
@@ -54,13 +54,13 @@ impl std::fmt::Display for TeaclaveExecutorSelector {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct TeaclaveWorkerInputFileInfo {
     pub path: std::path::PathBuf,
     pub crypto_info: TeaclaveFileRootKey128,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct TeaclaveWorkerOutputFileInfo {
     pub path: std::path::PathBuf,
     pub crypto_info: TeaclaveFileRootKey128,
@@ -167,7 +167,7 @@ pub fn convert_encrypted_input_file(
     TeaclaveWorkerInputFileInfo::create_with_bytes(dst.as_ref(), &plain_text)
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct TeaclaveWorkerFileRegistry<T> {
     pub entries: HashMap<String, T>,
 }

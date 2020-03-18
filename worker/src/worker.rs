@@ -32,6 +32,19 @@ use teaclave_types::{
 use crate::function::{self, TeaclaveFunction};
 use crate::runtime::{self, TeaclaveRuntime};
 
+macro_rules! register_functions{
+    ($($name: expr => ($executor: expr, $fn_type: ty),)*) => {{
+        let mut functions: HashMap<String, FunctionBuilder> = HashMap::new();
+        $(
+            functions.insert(
+                make_function_identifier($executor, $name),
+                Box::new(|| Box::new(<$fn_type>::default())),
+            );
+        )*
+        functions
+    }}
+}
+
 pub struct Worker {
     runtimes: HashMap<String, RuntimeBuilder>,
     functions: HashMap<String, FunctionBuilder>,
@@ -40,13 +53,18 @@ pub struct Worker {
 impl Worker {
     pub fn default() -> Worker {
         Worker {
-            functions: setup_functions(),
+            functions: register_functions!(
+                "gbdt_training"     => (TeaclaveExecutorSelector::Native, function::GbdtTraining),
+                "gbdt_predition"    => (TeaclaveExecutorSelector::Native, function::GbdtPrediction),
+                "echo"              => (TeaclaveExecutorSelector::Native, function::Echo),
+                "mesapy"            => (TeaclaveExecutorSelector::Python, function::Mesapy),
+            ),
             runtimes: setup_runtimes(),
         }
     }
 
     pub fn invoke_function(&self, req: WorkerInvocation) -> anyhow::Result<String> {
-        let function = self.get_function(&req.executor_type, &req.function_name)?;
+        let function = self.get_function(req.executor_type, &req.function_name)?;
         let runtime = self.get_runtime(&req.runtime_name, req.input_files, req.output_files)?;
         let unified_args =
             prepare_arguments(req.executor_type, req.function_args, req.function_payload)?;
@@ -77,7 +95,7 @@ impl Worker {
 
     fn get_function(
         &self,
-        func_type: &TeaclaveExecutorSelector,
+        func_type: TeaclaveExecutorSelector,
         func_name: &str,
     ) -> anyhow::Result<Box<dyn TeaclaveFunction + Send + Sync>> {
         let identifier = make_function_identifier(func_type, func_name);
@@ -91,22 +109,9 @@ impl Worker {
     }
 }
 
-fn make_function_identifier(func_type: &TeaclaveExecutorSelector, func_name: &str) -> String {
+fn make_function_identifier(func_type: TeaclaveExecutorSelector, func_name: &str) -> String {
     let type_str = func_type.to_string();
     format!("{}-{}", type_str, func_name)
-}
-
-fn setup_functions() -> HashMap<String, FunctionBuilder> {
-    let mut functions: HashMap<String, FunctionBuilder> = HashMap::new();
-    functions.insert(
-        make_function_identifier(&TeaclaveExecutorSelector::Native, "gbdt_training"),
-        Box::new(|| Box::new(function::GbdtTraining::default())),
-    );
-    functions.insert(
-        make_function_identifier(&TeaclaveExecutorSelector::Python, "mesapy"),
-        Box::new(|| Box::new(function::Mesapy::default())),
-    );
-    functions
 }
 
 fn setup_runtimes() -> HashMap<String, RuntimeBuilder> {
