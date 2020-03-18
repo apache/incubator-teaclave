@@ -122,6 +122,13 @@ fn setup_runtimes() -> HashMap<String, RuntimeBuilder> {
             Box::new(runtime::DefaultRuntime::new(input_files, output_files))
         }),
     );
+    #[cfg(test_mode)]
+    runtimes.insert(
+        "raw-io".to_string(),
+        Box::new(|input_files, output_files| {
+            Box::new(runtime::RawIoRuntime::new(input_files, output_files))
+        }),
+    );
 
     runtimes
 }

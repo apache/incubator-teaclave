@@ -145,6 +145,7 @@ pub enum TeaclaveFileCryptoInfo {
     AesGcm128(AesGcm128CryptoInfo),
     AesGcm256(AesGcm256CryptoInfo),
     TeaclaveFileRootKey128(TeaclaveFileRootKey128),
+    Raw,
 }
 
 impl TeaclaveFileCryptoInfo {
@@ -166,6 +167,7 @@ impl TeaclaveFileCryptoInfo {
                 let info = TeaclaveFileRootKey128::new(key)?;
                 TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(info)
             }
+            "raw" => TeaclaveFileCryptoInfo::Raw,
             _ => anyhow::bail!("Invalid crypto schema: {}", schema),
         };
         Ok(info)
@@ -178,6 +180,7 @@ impl TeaclaveFileCryptoInfo {
             TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(_) => {
                 "teaclave_file_root_key_128".to_string()
             }
+            TeaclaveFileCryptoInfo::Raw => "raw".to_string(),
         }
     }
 
@@ -188,6 +191,7 @@ impl TeaclaveFileCryptoInfo {
             TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(crypto) => {
                 (crypto.key.to_vec(), Vec::new())
             }
+            TeaclaveFileCryptoInfo::Raw => (vec![], vec![]),
         }
     }
 }
