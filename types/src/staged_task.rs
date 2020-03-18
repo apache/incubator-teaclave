@@ -25,6 +25,7 @@ pub struct OutputData {
 pub struct StagedTask {
     pub task_id: Uuid,
     pub function_id: String,
+    pub function_name: String,
     pub function_payload: Vec<u8>,
     pub arg_list: HashMap<String, String>,
     pub input_map: HashMap<String, InputData>,
@@ -72,6 +73,7 @@ impl StagedTask {
     pub fn function(self, function: &Function) -> Self {
         Self {
             function_id: function.external_id(),
+            function_name: function.name.clone(),
             function_payload: function.payload.clone(),
             ..self
         }

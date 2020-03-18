@@ -163,6 +163,7 @@ pub fn convert_encrypted_input_file(
             let path = path.as_ref().to_owned();
             return Ok(TeaclaveWorkerInputFileInfo::new(path, crypto));
         }
+        TeaclaveFileCryptoInfo::Raw => read_all_bytes(path)?,
     };
     TeaclaveWorkerInputFileInfo::create_with_bytes(dst.as_ref(), &plain_text)
 }
@@ -233,7 +234,7 @@ impl TeaclaveFunctionArguments {
     pub fn try_get<T: std::str::FromStr>(&self, key: &str) -> anyhow::Result<T> {
         self.args
             .get(key)
-            .ok_or_else(|| anyhow::anyhow!("Cannot find function argument"))
+            .ok_or_else(|| anyhow::anyhow!("Cannot find function argument: {}", key))
             .and_then(|s| {
                 s.parse::<T>()
                     .map_err(|_| anyhow::anyhow!("parse argument error"))

@@ -22,7 +22,7 @@ use std::sync::{Arc, SgxMutex as Mutex};
 
 use teaclave_proto::teaclave_scheduler_service::*;
 use teaclave_rpc::endpoint::Endpoint;
-use teaclave_types::{StagedTask, WorkerInvocationResult};
+use teaclave_types::{StagedTask, TeaclaveFunctionArguments, WorkerInvocationResult};
 use teaclave_worker::Worker;
 
 use anyhow::Result;
@@ -76,16 +76,18 @@ impl TeaclaveExecutionService {
                 }
             };
             log::debug!("response: {:?}", response);
-            let result = self.invoke_task(response.staged_task);
-            self.update_task(result);
+            let _result = self.invoke_task(response.staged_task);
+            // self.update_task(result);
         }
     }
 
-    fn invoke_task(&mut self, _task: StagedTask) -> WorkerInvocationResult {
+    fn invoke_task(&mut self, task: StagedTask) -> WorkerInvocationResult {
+        let _function_args = TeaclaveFunctionArguments::new(&task.arg_list);
         // TODO: convert task to function, i.e., needs help from agent
         unimplemented!()
     }
 
+    #[allow(unused)]
     fn update_task(&mut self, _result: WorkerInvocationResult) {
         unimplemented!()
     }
@@ -99,10 +101,15 @@ mod test_mode {
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
+    use std::collections::HashMap;
     use std::convert::TryInto;
+    use std::format;
+    use std::vec;
     use teaclave_types::*;
+    use url::Url;
+    use uuid::Uuid;
 
-    pub fn test_invoke_function() {
+    pub fn test_invoke_gbdt_training() {
         let function_args = TeaclaveFunctionArguments::new(&hashmap!(
             "feature_size"  => "4",
             "max_depth"     => "4",
@@ -159,5 +166,101 @@ pub mod tests {
         let worker = Worker::default();
         let result = worker.invoke_function(invocation).unwrap();
         assert_eq!(result, "Hello Teaclave!");
+    }
+
+    pub fn test_invoke_gbdt_prediction() {
+        let task_id = Uuid::new_v4();
+        let function = Function {
+            function_id: Uuid::new_v4(),
+            name: "gbdt_prediction".to_string(),
+            description: "".to_string(),
+            payload: b"".to_vec(),
+            is_public: false,
+            arg_list: vec![],
+            input_list: vec![],
+            output_list: vec![],
+            owner: "mock_user".to_string(),
+            is_native: true,
+        };
+        let arg_list = HashMap::new();
+        let test_install_dir = env!("TEACLAVE_TEST_INSTALL_DIR");
+        let fixture_dir = format!("{}/fixtures/functions/gbdt_prediction", test_install_dir);
+        let model_url = Url::parse(&format!("file:///{}/model.txt", fixture_dir)).unwrap();
+        let test_data_url = Url::parse(&format!("file:///{}/test_data.txt", fixture_dir)).unwrap();
+        let crypto_info = TeaclaveFileCryptoInfo::Raw;
+
+        let input_data_model = InputData {
+            url: model_url,
+            hash: "".to_string(),
+            crypto_info: crypto_info.clone(),
+        };
+        let input_data_test_data = InputData {
+            url: test_data_url,
+            hash: "".to_string(),
+            crypto_info: crypto_info.clone(),
+        };
+        let mut input_map = HashMap::new();
+        input_map.insert("if_model".to_string(), input_data_model);
+        input_map.insert("if_data".to_string(), input_data_test_data);
+
+        let result_url = Url::parse(&format!("file:///{}/result.txt.out", fixture_dir)).unwrap();
+        let output_data = OutputData {
+            url: result_url,
+            crypto_info,
+        };
+        let mut output_map = HashMap::new();
+        output_map.insert("of_result".to_string(), output_data);
+        let staged_task = StagedTask::new()
+            .task_id(task_id)
+            .function(&function)
+            .args(arg_list)
+            .input(input_map)
+            .output(output_map);
+
+        // StagedTask => WorkerInvocation
+
+        let function_args = TeaclaveFunctionArguments::new(&staged_task.arg_list);
+
+        let plain_if_model = "fixtures/functions/gbdt_prediction/model.txt";
+        let plain_if_data = "fixtures/functions/gbdt_prediction/test_data.txt";
+        let plain_output = "fixtures/functions/gbdt_prediction/result.txt.out";
+
+        // for (key, value) in staged_task.input_map.iter() {
+        // }
+
+        // for (key, value) in staged_task.output_map.iter() {
+        // }
+
+        let input_files = TeaclaveWorkerFileRegistry::new(hashmap!(
+            "if_model".to_string() =>
+                TeaclaveWorkerInputFileInfo::new(plain_if_model, TeaclaveFileRootKey128::default()),
+            "if_data".to_string() =>
+                TeaclaveWorkerInputFileInfo::new(plain_if_data, TeaclaveFileRootKey128::default())
+        ));
+
+        let output_info =
+            TeaclaveWorkerOutputFileInfo::new(plain_output, TeaclaveFileRootKey128::default());
+        let output_files = TeaclaveWorkerFileRegistry::new(hashmap!(
+            "of_result".to_string() => output_info
+        ));
+
+        let function_name = staged_task.function_name;
+        let function_payload = String::from_utf8_lossy(&staged_task.function_payload).to_string();
+
+        let invocation = WorkerInvocation {
+            runtime_name: "raw-io".to_string(),
+            executor_type: "native".try_into().unwrap(),
+            function_name,
+            function_payload,
+            function_args,
+            input_files,
+            output_files,
+        };
+
+        let worker = Worker::default();
+        let result = worker.invoke_function(invocation);
+        log::debug!("result: {:?}", result);
+        assert!(result.is_ok());
+        log::debug!("summary: {:?}", result.unwrap());
     }
 }

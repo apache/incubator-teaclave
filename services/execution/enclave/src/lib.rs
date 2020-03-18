@@ -100,8 +100,9 @@ pub mod tests {
 
     pub fn run_tests() -> bool {
         run_tests!(
-            service::tests::test_invoke_function,
             service::tests::test_invoke_echo_function,
+            service::tests::test_invoke_gbdt_training,
+            service::tests::test_invoke_gbdt_prediction
         )
     }
 }

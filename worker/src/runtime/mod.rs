@@ -29,9 +29,9 @@ pub trait TeaclaveRuntime {
 mod default;
 pub use default::DefaultRuntime;
 
-#[cfg(feature = "enclave_unit_test")]
+#[cfg(any(feature = "enclave_unit_test", test_mode))]
 mod raw_io;
-#[cfg(feature = "enclave_unit_test")]
+#[cfg(any(feature = "enclave_unit_test", test_mode))]
 pub use raw_io::RawIoRuntime;
 
 #[cfg(feature = "enclave_unit_test")]
