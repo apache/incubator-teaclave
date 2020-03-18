@@ -55,7 +55,7 @@ impl Worker {
         Worker {
             functions: register_functions!(
                 "gbdt_training"     => (TeaclaveExecutorSelector::Native, function::GbdtTraining),
-                "gbdt_predition"    => (TeaclaveExecutorSelector::Native, function::GbdtPrediction),
+                "gbdt_prediction"    => (TeaclaveExecutorSelector::Native, function::GbdtPrediction),
                 "echo"              => (TeaclaveExecutorSelector::Native, function::Echo),
                 "mesapy"            => (TeaclaveExecutorSelector::Python, function::Mesapy),
             ),
