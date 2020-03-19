@@ -82,7 +82,7 @@ async fn upload_output_file_to_remote(
 
 async fn handle_download(info: HandleFileInfo) -> anyhow::Result<()> {
     anyhow::ensure!(
-        info.local.exists() == false,
+        !info.local.exists(),
         "[Download] Dest local file: {:?} already exists.",
         info.local
     );
@@ -127,7 +127,7 @@ async fn handle_upload(info: HandleFileInfo) -> anyhow::Result<()> {
                 .to_file_path()
                 .map_err(|e| anyhow::anyhow!("Cannot convert to path: {:?}", e))?;
             anyhow::ensure!(
-                dst.exists() == false,
+                !dst.exists(),
                 "[Download] Dest local file: {:?} already exist.",
                 dst
             );
@@ -168,7 +168,7 @@ fn handle_file_request(bytes: &[u8]) -> anyhow::Result<()> {
     let (task_results, errs): (Vec<_>, Vec<_>) = results.into_iter().partition(Result::is_ok);
 
     debug!("{:?}, errs: {:?}", task_results, errs);
-    if errs.len() > 0 {
+    if !errs.is_empty() {
         anyhow::bail!("Spawned task join error!");
     }
     anyhow::ensure!(
@@ -179,6 +179,7 @@ fn handle_file_request(bytes: &[u8]) -> anyhow::Result<()> {
 }
 
 #[no_mangle]
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn ocall_handle_file_request(in_buf: *const u8, in_len: u32) -> u32 {
     let input_buf: &[u8] = unsafe { std::slice::from_raw_parts(in_buf, in_len as usize) };
     match handle_file_request(input_buf) {
