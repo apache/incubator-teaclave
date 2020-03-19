@@ -148,7 +148,7 @@ endfunction()
 # dir] [EXTRA_CARGO_FLAGS flg...] )
 function(add_sgx_build_target sgx_lib_path pkg_name)
   set(options)
-  set(oneValueArgs INSTALL_DIR)
+  set(oneValueArgs INSTALL_DIR EDL_LIB_NAME)
   set(multiValueArgs DEPENDS EXTRA_CARGO_FLAGS)
   cmake_parse_arguments(MTEE "${options}" "${oneValueArgs}" "${multiValueArgs}"
                         ${ARGN})
@@ -163,6 +163,12 @@ function(add_sgx_build_target sgx_lib_path pkg_name)
     set(_copy_dir ${MTEE_INSTALL_DIR})
   else()
     set(_copy_dir ${TEACLAVE_INSTALL_DIR})
+  endif()
+
+  if(DEFINED MTEE_EDL_LIB_NAME)
+    set(_edl_lib_name ${MTEE_EDL_LIB_NAME})
+  else()
+    set(_edl_lib_name)
   endif()
 
   rm_trailing_enclave(${pkg_name} pkg_name_no_enclave)
@@ -191,7 +197,7 @@ function(add_sgx_build_target sgx_lib_path pkg_name)
       ${CMAKE_COMMAND} -E env ${TARGET_SGXLIB_ENVS}
       SGX_COMMON_CFLAGS=${STR_SGX_COMMON_CFLAGS} CUR_PKG_NAME=${pkg_name}
       CUR_PKG_PATH=${sgx_lib_path} CUR_INSTALL_DIR=${_copy_dir}
-      ${MT_SCRIPT_DIR}/sgx_link_sign.sh ${_depends}
+      ${MT_SCRIPT_DIR}/sgx_link_sign.sh ${_edl_lib_name} ${_depends}
     COMMAND
       cat ${TEACLAVE_OUT_DIR}/${pkg_name}.meta.txt | python
       ${MT_SCRIPT_DIR}/gen_enclave_info_toml.py ${pkg_name_no_enclave} >
@@ -279,7 +285,7 @@ endfunction()
 
 function(parse_cargo_packages pkg_names)
   set(options)
-  set(oneValueArgs CARGO_TOML_PATH PKG_PATHS CATEGORIES)
+  set(oneValueArgs CARGO_TOML_PATH PKG_PATHS CATEGORIES EDL_NAMES)
   set(multiValueArgs)
 
   cmake_parse_arguments(MTEE "${options}" "${oneValueArgs}" "${multiValueArgs}"
@@ -300,6 +306,15 @@ function(parse_cargo_packages pkg_names)
 
   string(REGEX REPLACE "\n" ";" _out_list ${_output})
   list(LENGTH _out_list LLEN)
+
+  if(DEFINED MTEE_EDL_NAMES)
+    list(GET _out_list 3 _edl_names)
+    string(REPLACE ":" ";" _edl_names ${_edl_names})
+    set(${MTEE_EDL_NAMES}
+        ${_edl_names}
+        PARENT_SCOPE)
+    dbg_message("${MTEE_EDL_NAMES}=${_edl_names}\n")
+  endif()
 
   if(DEFINED MTEE_CATEGORIES)
     list(GET _out_list 2 _categories)

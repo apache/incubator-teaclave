@@ -17,6 +17,7 @@
 
 #![cfg_attr(feature = "mesalock_sgx", no_std)]
 #[cfg(feature = "mesalock_sgx")]
+#[macro_use]
 extern crate sgx_tstd as std;
 
 #[cfg(feature = "mesalock_sgx")]
@@ -100,6 +101,7 @@ pub mod tests {
 
     pub fn run_tests() -> bool {
         run_tests!(
+            service::tests::test_ocall,
             service::tests::test_invoke_echo_function,
             service::tests::test_invoke_gbdt_training,
             service::tests::test_invoke_gbdt_prediction

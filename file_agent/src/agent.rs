@@ -18,11 +18,11 @@
 use futures::future::join_all;
 use futures::TryFutureExt;
 use reqwest;
-use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
 use tokio::io::AsyncWriteExt;
 use tokio_util::codec;
 use url::Url;
+
+use teaclave_types::{FileAgentRequest, HandleFileCommand, HandleFileInfo};
 
 async fn download_remote_input_to_file(
     presigned_url: Url,
@@ -80,41 +80,9 @@ async fn upload_output_file_to_remote(
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct HandleFileInfo {
-    local: PathBuf,
-    remote: url::Url,
-}
-impl HandleFileInfo {
-    pub fn new(local: impl AsRef<std::path::Path>, remote: &url::Url) -> Self {
-        HandleFileInfo {
-            local: local.as_ref().to_owned(),
-            remote: remote.to_owned(),
-        }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub enum HandleFileCommand {
-    Download,
-    Upload,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct FileAgentRequest {
-    pub cmd: HandleFileCommand,
-    pub info: Vec<HandleFileInfo>,
-}
-
-impl FileAgentRequest {
-    pub fn new(cmd: HandleFileCommand, info: Vec<HandleFileInfo>) -> Self {
-        FileAgentRequest { cmd, info }
-    }
-}
-
 async fn handle_download(info: HandleFileInfo) -> anyhow::Result<()> {
     anyhow::ensure!(
-        info.local.exists() == false,
+        !info.local.exists(),
         "[Download] Dest local file: {:?} already exists.",
         info.local
     );
@@ -159,7 +127,7 @@ async fn handle_upload(info: HandleFileInfo) -> anyhow::Result<()> {
                 .to_file_path()
                 .map_err(|e| anyhow::anyhow!("Cannot convert to path: {:?}", e))?;
             anyhow::ensure!(
-                dst.exists() == false,
+                !dst.exists(),
                 "[Download] Dest local file: {:?} already exist.",
                 dst
             );
@@ -199,8 +167,8 @@ fn handle_file_request(bytes: &[u8]) -> anyhow::Result<()> {
 
     let (task_results, errs): (Vec<_>, Vec<_>) = results.into_iter().partition(Result::is_ok);
 
-    error!("{:?}, errs: {:?}", task_results, errs);
-    if errs.len() > 0 {
+    debug!("{:?}, errs: {:?}", task_results, errs);
+    if !errs.is_empty() {
         anyhow::bail!("Spawned task join error!");
     }
     anyhow::ensure!(
@@ -211,8 +179,9 @@ fn handle_file_request(bytes: &[u8]) -> anyhow::Result<()> {
 }
 
 #[no_mangle]
-pub extern "C" fn ocall_handle_file_request(in_buf: *const u8, in_len: usize) -> u32 {
-    let input_buf: &[u8] = unsafe { std::slice::from_raw_parts(in_buf, in_len) };
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+pub extern "C" fn ocall_handle_file_request(in_buf: *const u8, in_len: u32) -> u32 {
+    let input_buf: &[u8] = unsafe { std::slice::from_raw_parts(in_buf, in_len as usize) };
     match handle_file_request(input_buf) {
         Ok(_) => 0,
         Err(_) => 1,
@@ -223,6 +192,7 @@ pub extern "C" fn ocall_handle_file_request(in_buf: *const u8, in_len: usize) ->
 mod tests {
     use super::*;
     use std::io::Write;
+    use std::path::PathBuf;
     use url::Url;
 
     #[test]

@@ -26,6 +26,8 @@ use teaclave_types::TeeServiceResult;
 
 const PACKAGE_NAME: &str = env!("CARGO_PKG_NAME");
 
+pub use teaclave_file_agent::ocall_handle_file_request;
+
 fn register_signals(term: Arc<AtomicBool>) -> Result<()> {
     for signal in &[
         signal_hook::SIGTERM,

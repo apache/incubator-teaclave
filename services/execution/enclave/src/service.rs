@@ -101,13 +101,48 @@ mod test_mode {
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
+    use sgx_types::sgx_status_t::SGX_SUCCESS;
+    use sgx_types::*;
     use std::collections::HashMap;
     use std::convert::TryInto;
     use std::format;
+    use std::path::PathBuf;
     use std::vec;
     use teaclave_types::*;
     use url::Url;
     use uuid::Uuid;
+    extern "C" {
+        fn ocall_handle_file_request(
+            p_retval: *mut u32,
+            in_buf: *const u8,
+            in_len: u32,
+        ) -> sgx_status_t;
+    }
+
+    fn handle_file_request(bytes: Vec<u8>) -> anyhow::Result<()> {
+        let mut rt: u32 = 2;
+        let buf_len = bytes.len();
+        let res =
+            unsafe { ocall_handle_file_request(&mut rt as _, bytes.as_ptr() as _, buf_len as u32) };
+
+        anyhow::ensure!(res == SGX_SUCCESS, "ocall sgx_error = {:?}", res);
+        anyhow::ensure!(rt == 0, "ocall error = {:?}", rt);
+        Ok(())
+    }
+
+    pub fn test_ocall() {
+        let s = "http://localhost:6789/fixtures/functions/mesapy/input.txt";
+        let url = Url::parse(s).unwrap();
+        let dest = PathBuf::from("/tmp/execution_input_test.txt");
+
+        let info = HandleFileInfo::new(&dest, &url);
+        let req = FileAgentRequest::new(HandleFileCommand::Download, vec![info]);
+
+        let bytes = serde_json::to_vec(&req).unwrap();
+
+        handle_file_request(bytes).unwrap();
+        std::untrusted::fs::remove_file(&dest).unwrap();
+    }
 
     pub fn test_invoke_gbdt_training() {
         let function_args = TeaclaveFunctionArguments::new(&hashmap!(
