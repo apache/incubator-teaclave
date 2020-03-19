@@ -35,6 +35,7 @@ use teaclave_service_enclave_utils::create_trusted_scheduler_endpoint;
 use teaclave_service_enclave_utils::ServiceEnclave;
 use teaclave_types::{EnclaveInfo, TeeServiceError, TeeServiceResult};
 
+mod ocall;
 mod service;
 
 const AS_ROOT_CA_CERT: &[u8] = BUILD_CONFIG.as_root_ca_cert;
@@ -101,7 +102,7 @@ pub mod tests {
 
     pub fn run_tests() -> bool {
         run_tests!(
-            service::tests::test_ocall,
+            ocall::tests::test_handle_file_request,
             service::tests::test_invoke_echo_function,
             service::tests::test_invoke_gbdt_training,
             service::tests::test_invoke_gbdt_prediction
