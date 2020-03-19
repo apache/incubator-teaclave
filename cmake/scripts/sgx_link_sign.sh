@@ -8,6 +8,12 @@ for var in "${REQUIRED_ENVS[@]}"; do
     [ -z "${!var}" ] && echo "Please set ${var}" && exit -1
 done
 
+if [ $# -eq 0 ]; then
+    echo "Missing args: \$edl_lib_name."
+    exit 1
+fi
+edl_lib_name="$1"
+
 LIBENCLAVE_PATH="${TRUSTED_TARGET_DIR}/${TARGET}/lib${CUR_PKG_NAME}.a"
 CONFIG_PATH="${TEACLAVE_PROJECT_ROOT}/${CUR_PKG_PATH}/Enclave.config.xml"
 SIGNED_PATH="${CUR_INSTALL_DIR}/${CUR_PKG_NAME}.signed.so"
@@ -21,7 +27,7 @@ if [ ! "$LIBENCLAVE_PATH" -nt "$SIGNED_PATH" ] \
 fi
 
 cd ${TEACLAVE_OUT_DIR}
-${CMAKE_C_COMPILER} libEnclave_t.o -o \
+${CMAKE_C_COMPILER} "lib${edl_lib_name}.o" -o \
     ${TEACLAVE_OUT_DIR}/${CUR_PKG_NAME}.so ${SGX_COMMON_CFLAGS} \
     -Wl,--no-undefined -nostdlib -nodefaultlibs -nostartfiles \
     -L${SGX_LIBRARY_PATH} -Wl,--whole-archive -l${Trts_Library_Name} \

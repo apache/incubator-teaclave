@@ -7,6 +7,7 @@ REQUIRED_ENVS=("CMAKE_SOURCE_DIR" "CMAKE_BINARY_DIR"
 "TEACLAVE_SERVICE_INSTALL_DIR" "TEACLAVE_EXAMPLE_INSTALL_DIR" "TEACLAVE_BIN_INSTALL_DIR"
 "TEACLAVE_CLI_INSTALL_DIR" "TEACLAVE_DCAP_INSTALL_DIR" "TEACLAVE_LIB_INSTALL_DIR" "TEACLAVE_TEST_INSTALL_DIR"
 "TEACLAVE_AUDITORS_DIR" "TEACLAVE_EXAMPLE_AUDITORS_DIR" "DCAP" "TEACLAVE_SYMLINKS"
+"TEACLAVE_PROJECT_ROOT"
 )
 
 for var in "${REQUIRED_ENVS[@]}"; do
@@ -48,15 +49,22 @@ if [ ! -f ${TEACLAVE_OUT_DIR}/libpypy-c.a ] || [ ! -f ${TEACLAVE_OUT_DIR}/${MESA
     tar xzf ${MESAPY_VERSION}-mesapy-sgx.tar.gz;
     cd -
 fi
-# build libEnclave_u.a & libEnclave_t.o
-if [ ! -f ${TEACLAVE_OUT_DIR}/libEnclave_u.a ]; then
+# build edl_libs
+if [ ! -f ${TEACLAVE_OUT_DIR}/libEnclave_common_u.a ]; then
     echo 'INFO: Start to build EDL.'
     ${SGX_EDGER8R} --untrusted ${MT_EDL_FILE} --search-path ${SGX_SDK}/include \
-        --search-path ${RUST_SGX_SDK}/edl --untrusted-dir ${TEACLAVE_OUT_DIR}
+        --search-path ${RUST_SGX_SDK}/edl --search-path ${TEACLAVE_PROJECT_ROOT}/edls \
+        --untrusted-dir ${TEACLAVE_OUT_DIR}
     cd ${TEACLAVE_OUT_DIR}
-    ${CMAKE_C_COMPILER} ${SGX_UNTRUSTED_CFLAGS} -c Enclave_u.c -o libEnclave_u.o
-    ${CMAKE_AR} rcsD libEnclave_u.a libEnclave_u.o
+    ${CMAKE_C_COMPILER} ${SGX_UNTRUSTED_CFLAGS} -c Enclave_common_u.c -o libEnclave_common_u.o
+    ${CMAKE_AR} rcsD libEnclave_common_u.a libEnclave_common_u.o
+
+    ${CMAKE_C_COMPILER} ${SGX_UNTRUSTED_CFLAGS} -c Enclave_fa_u.c -o libEnclave_fa_u.o
+    ${CMAKE_AR} rcsD libEnclave_fa_u.a libEnclave_fa_u.o
+
     ${SGX_EDGER8R} --trusted ${MT_EDL_FILE} --search-path ${SGX_SDK}/include \
-        --search-path ${RUST_SGX_SDK}/edl --trusted-dir ${TEACLAVE_OUT_DIR}
-    ${CMAKE_C_COMPILER} ${SGX_TRUSTED_CFLAGS} -c Enclave_t.c -o libEnclave_t.o
+        --search-path ${RUST_SGX_SDK}/edl --search-path ${TEACLAVE_PROJECT_ROOT}/edls \
+        --trusted-dir ${TEACLAVE_OUT_DIR}
+    ${CMAKE_C_COMPILER} ${SGX_TRUSTED_CFLAGS} -c Enclave_common_t.c -o libEnclave_common_t.o
+    ${CMAKE_C_COMPILER} ${SGX_TRUSTED_CFLAGS} -c Enclave_fa_t.c -o libEnclave_fa_t.o
 fi

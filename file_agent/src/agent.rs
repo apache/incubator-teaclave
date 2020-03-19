@@ -18,11 +18,11 @@
 use futures::future::join_all;
 use futures::TryFutureExt;
 use reqwest;
-use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
 use tokio::io::AsyncWriteExt;
 use tokio_util::codec;
 use url::Url;
+
+use teaclave_types::{FileAgentRequest, HandleFileCommand, HandleFileInfo};
 
 async fn download_remote_input_to_file(
     presigned_url: Url,
@@ -77,38 +77,6 @@ async fn upload_output_file_to_remote(
     match res.status() {
         http::StatusCode::OK => Ok(()),
         status => anyhow::bail!("{}", status),
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct HandleFileInfo {
-    local: PathBuf,
-    remote: url::Url,
-}
-impl HandleFileInfo {
-    pub fn new(local: impl AsRef<std::path::Path>, remote: &url::Url) -> Self {
-        HandleFileInfo {
-            local: local.as_ref().to_owned(),
-            remote: remote.to_owned(),
-        }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub enum HandleFileCommand {
-    Download,
-    Upload,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct FileAgentRequest {
-    pub cmd: HandleFileCommand,
-    pub info: Vec<HandleFileInfo>,
-}
-
-impl FileAgentRequest {
-    pub fn new(cmd: HandleFileCommand, info: Vec<HandleFileInfo>) -> Self {
-        FileAgentRequest { cmd, info }
     }
 }
 
@@ -199,7 +167,7 @@ fn handle_file_request(bytes: &[u8]) -> anyhow::Result<()> {
 
     let (task_results, errs): (Vec<_>, Vec<_>) = results.into_iter().partition(Result::is_ok);
 
-    error!("{:?}, errs: {:?}", task_results, errs);
+    debug!("{:?}, errs: {:?}", task_results, errs);
     if errs.len() > 0 {
         anyhow::bail!("Spawned task join error!");
     }
@@ -211,8 +179,8 @@ fn handle_file_request(bytes: &[u8]) -> anyhow::Result<()> {
 }
 
 #[no_mangle]
-pub extern "C" fn ocall_handle_file_request(in_buf: *const u8, in_len: usize) -> u32 {
-    let input_buf: &[u8] = unsafe { std::slice::from_raw_parts(in_buf, in_len) };
+pub extern "C" fn ocall_handle_file_request(in_buf: *const u8, in_len: u32) -> u32 {
+    let input_buf: &[u8] = unsafe { std::slice::from_raw_parts(in_buf, in_len as usize) };
     match handle_file_request(input_buf) {
         Ok(_) => 0,
         Err(_) => 1,
@@ -223,6 +191,7 @@ pub extern "C" fn ocall_handle_file_request(in_buf: *const u8, in_len: usize) ->
 mod tests {
     use super::*;
     use std::io::Write;
+    use std::path::PathBuf;
     use url::Url;
 
     #[test]

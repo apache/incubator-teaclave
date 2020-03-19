@@ -36,7 +36,7 @@ fn main() {
     let out_dir = &PathBuf::from(out_path);
 
     println!("cargo:rustc-link-search=native={}", out_dir.display());
-    println!("cargo:rustc-link-lib=static=Enclave_u");
+    println!("cargo:rustc-link-lib=static=Enclave_fa_u");
 
     let is_sim = match env::var("SGX_MODE") {
         Ok(ref v) if v == "SW" => true,

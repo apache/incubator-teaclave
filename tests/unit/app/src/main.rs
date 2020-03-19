@@ -21,6 +21,8 @@ use teaclave_binder::proto::{ECallCommand, RunTestInput, RunTestOutput};
 use teaclave_binder::TeeBinder;
 use teaclave_types::TeeServiceResult;
 
+pub use teaclave_file_agent::ocall_handle_file_request;
+
 fn main() -> anyhow::Result<()> {
     env_logger::init();
     let tee = TeeBinder::new(env!("CARGO_PKG_NAME"))?;

@@ -17,5 +17,6 @@ libc        = { version = "0.2.66" }
 teaclave_binder            = { path = "../../../binder", features = ["app"] }
 teaclave_config            = { path = "../../../config" }
 teaclave_types             = { path = "../../../types" }
+teaclave_file_agent        = { path = "../../../file_agent" }
 
 sgx_types = { version = "1.1.0" }

@@ -49,6 +49,7 @@ def parse_package_name(package_toml_path):
 
     return regex.findall(manifest)[0]
 
+
 def pkg_path_2_category(pkg_path):
     """
     Take pkg path and return its category.
@@ -70,6 +71,20 @@ def pkg_path_2_category(pkg_path):
         sys.exit(-1)
 
 
+DEFAULT_EDL_LIB = "Enclave_common_t"
+PKG_NAME_TO_EDL_LIB = {
+        "teaclave_unit_tests_enclave" : "Enclave_fa_t",
+        "teaclave_execution_service_enclave" : "Enclave_fa_t",
+    }
+
+    
+def pkg_name_2_edl_lib_name(pkg_name):
+    """
+    Take pkg_name and return its configured edl libary name, default is DEFAULT_EDL_LIB.
+    """
+    return PKG_NAME_TO_EDL_LIB.get(pkg_name, DEFAULT_EDL_LIB)
+
+
 def main():
     """parses Cargo.toml to generate a list of package to be built"""
     if len(sys.argv) < 3:
@@ -83,6 +98,7 @@ def main():
     pkg_names = []
     pkg_paths = []
     pkg_categories = []
+    edl_lib_names = []
 
     members = parse_members_for_workspace(toml_path)
     for pkg_path in members:
@@ -92,8 +108,10 @@ def main():
         pkg_names.append(pkg_name)
         pkg_paths.append(pkg_path)
         pkg_categories.append(pkg_path_2_category(pkg_path))
+        edl_lib_names.append(pkg_name_2_edl_lib_name(pkg_name))
 
-    out = [":".join(pkg_names), ":".join(pkg_paths), ":".join(pkg_categories)]
+    out = [":".join(pkg_names), ":".join(pkg_paths),
+           ":".join(pkg_categories), ":".join(edl_lib_names)]
     sys.stdout.write("\n".join(out))
 
 

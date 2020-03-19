@@ -29,6 +29,8 @@ mod storage;
 pub use storage::Storable;
 mod task;
 pub use task::*;
+mod file_agent;
+pub use file_agent::*;
 
 /// Status for Ecall
 #[repr(C)]
