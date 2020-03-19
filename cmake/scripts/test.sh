@@ -23,12 +23,16 @@ echo_title() {
 }
 
 run_unit_tests() {
+  trap cleanup ERR
   pushd ${TEACLAVE_TEST_INSTALL_DIR}
 
+  python ${TEACLAVE_PROJECT_ROOT}/tests/scripts/simple_http_server.py 6789 &
   echo_title "encalve unit tests"
   ./teaclave_unit_tests
 
   popd
+
+  cleanup
 }
 
 cleanup() {
@@ -54,7 +58,7 @@ run_integration_tests() {
         --target-dir ${TEACLAVE_TARGET_DIR}/untrusted
 
   popd
-  
+
   cleanup 
 }
 

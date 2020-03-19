@@ -61,7 +61,9 @@ parse_cargo_packages(
   CATEGORIES
   SGX_LIB_CATEGORIES
   PKG_PATHS
-  SGX_LIB_PATHS)
+  SGX_LIB_PATHS
+  EDL_NAMES
+  EDL_LIB_NAMES)
 
 include(TeaclaveGenVars)
 
@@ -150,6 +152,7 @@ foreach(_i RANGE ${SGX_LIB_LAST_INDEX})
   list(GET SGX_LIBS ${_i} _pkg_name)
   list(GET SGX_LIB_PATHS ${_i} _pkg_path)
   list(GET SGX_LIB_CATEGORIES ${_i} _category)
+  list(GET EDL_LIB_NAMES ${_i} _edl_lib_name)
   add_sgx_build_target(
     ${_pkg_path}
     ${_pkg_name}
@@ -157,7 +160,9 @@ foreach(_i RANGE ${SGX_LIB_LAST_INDEX})
     prep
     pycomponent
     INSTALL_DIR
-    ${TEACLAVE_INSTALL_DIR}/${_category})
+    ${TEACLAVE_INSTALL_DIR}/${_category}
+    EDL_LIB_NAME
+    ${_edl_lib_name})
 endforeach()
 
 # Teaclave C SDK add_cargo_build_dylib_target(teaclave_sdk_c TARGET_NAME
