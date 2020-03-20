@@ -22,7 +22,7 @@ cfg_if! {
 
 use std::io::{self, Read, Write};
 use std::iter::FromIterator;
-use std::os::unix::io::IntoRawFd;
+use std::os::unix::io::{FromRawFd, IntoRawFd};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, SgxMutex as Mutex};
 
@@ -281,6 +281,10 @@ impl Env for PosixDiskEnv {
             };
             if result < 0 {
                 return err(StatusCode::LockError, &format!("unlock failed: {}", l.id));
+            } else {
+                unsafe {
+                    let _: fs::File = FromRawFd::from_raw_fd(fd);
+                }
             }
             Ok(())
         }
