@@ -770,7 +770,7 @@ pub mod tests {
         let input_data = InputData {
             url: url.clone(),
             hash,
-            crypto_info: crypto_info.clone(),
+            crypto_info,
         };
         let output_data = OutputData { url, crypto_info };
         let mut input_map = HashMap::new();

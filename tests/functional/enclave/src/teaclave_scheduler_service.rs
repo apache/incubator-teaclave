@@ -57,14 +57,14 @@ fn test_update_task_status_result() {
     let request = PullTaskRequest {};
     let response = client.pull_task(request).unwrap();
     log::debug!("response: {:?}", response);
-    let task_id = response.staged_task.task_id.to_string();
+    let task_id = response.staged_task.task_id;
 
-    let request = UpdateTaskStatusRequest::new(&task_id, TaskStatus::Finished);
+    let request = UpdateTaskStatusRequest::new(task_id, TaskStatus::Finished);
     let response = client.update_task_status(request);
     assert!(response.is_ok());
 
     let request =
-        UpdateTaskResultRequest::new(&task_id, "return".to_string().as_bytes(), HashMap::new());
+        UpdateTaskResultRequest::new(task_id, "return".to_string().as_bytes(), HashMap::new());
     let response = client.update_task_result(request);
 
     assert!(response.is_ok());

@@ -32,8 +32,8 @@ impl TeaclaveFunction for Echo {
         _runtime: Box<dyn TeaclaveRuntime + Send + Sync>,
         args: TeaclaveFunctionArguments,
     ) -> anyhow::Result<String> {
-        let payload: String = args.try_get("payload")?;
-        Ok(payload)
+        let message: String = args.try_get("message")?;
+        Ok(message)
     }
 }
 
@@ -55,7 +55,7 @@ pub mod tests {
 
     fn test_echo() {
         let func_args = TeaclaveFunctionArguments::new(&hashmap!(
-            "payload"  => "Hello Teaclave!"
+            "message"  => "Hello Teaclave!"
         ));
 
         let input_files = TeaclaveWorkerFileRegistry::default();

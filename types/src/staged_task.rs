@@ -1,4 +1,7 @@
-use crate::{Function, Storable, TeaclaveFileCryptoInfo, TeaclaveInputFile, TeaclaveOutputFile};
+use crate::{
+    Function, Storable, TeaclaveExecutorSelector, TeaclaveFileCryptoInfo, TeaclaveInputFile,
+    TeaclaveOutputFile,
+};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::prelude::v1::*;
@@ -79,6 +82,27 @@ impl StagedTask {
         }
     }
 
+    pub fn function_id(self, function_id: impl Into<String>) -> Self {
+        Self {
+            function_id: function_id.into(),
+            ..self
+        }
+    }
+
+    pub fn function_name(self, function_name: impl Into<String>) -> Self {
+        Self {
+            function_name: function_name.into(),
+            ..self
+        }
+    }
+
+    pub fn function_payload(self, function_payload: impl Into<Vec<u8>>) -> Self {
+        Self {
+            function_payload: function_payload.into(),
+            ..self
+        }
+    }
+
     pub fn args(self, args: HashMap<String, String>) -> Self {
         Self {
             arg_list: args,
@@ -102,5 +126,13 @@ impl StagedTask {
 
     pub fn get_queue_key() -> &'static str {
         QUEUE_KEY
+    }
+
+    pub fn executor_type(&self) -> TeaclaveExecutorSelector {
+        if self.function_payload.is_empty() {
+            TeaclaveExecutorSelector::Native
+        } else {
+            TeaclaveExecutorSelector::Python
+        }
     }
 }

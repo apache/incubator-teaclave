@@ -44,6 +44,7 @@ impl TeaclaveFunction for GbdtTraining {
         runtime: Box<dyn TeaclaveRuntime + Send + Sync>,
         args: TeaclaveFunctionArguments,
     ) -> anyhow::Result<String> {
+        log::debug!("start traning...");
         let feature_size: usize = args.try_get("feature_size")?;
         let max_depth: u32 = args.try_get("max_depth")?;
         let iterations: usize = args.try_get("iterations")?;
@@ -54,6 +55,7 @@ impl TeaclaveFunction for GbdtTraining {
         let loss: String = args.try_get("loss")?;
         let training_optimization_level: u8 = args.try_get("training_optimization_level")?;
 
+        log::debug!("open input...");
         // read input
         let training_file = runtime.open_input(IN_DATA)?;
         let mut train_dv = parse_training_data(training_file, feature_size)?;
@@ -77,6 +79,7 @@ impl TeaclaveFunction for GbdtTraining {
         gbdt_train_mod.fit(&mut train_dv);
         let model_json = serde_json::to_string(&gbdt_train_mod)?;
 
+        log::debug!("create file...");
         // save the model to output
         let mut model_file = runtime.create_output(OUT_MODEL)?;
         model_file.write_all(model_json.as_bytes())?;
