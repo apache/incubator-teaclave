@@ -87,6 +87,8 @@ impl TeaclaveWorkerInputFileInfo {
     }
 
     pub fn get_readable_io(&self) -> anyhow::Result<Box<dyn io::Read>> {
+        log::debug!("path: {:?}", self.path);
+        log::debug!("key: {:?}", self.crypto_info.key);
         let f = ProtectedFile::open_ex(&self.path, &self.crypto_info.key)?;
         Ok(Box::new(f))
     }
@@ -104,7 +106,8 @@ impl TeaclaveWorkerInputFileInfo {
         path: impl AsRef<std::path::Path>,
         bytes: &[u8],
     ) -> anyhow::Result<TeaclaveWorkerInputFileInfo> {
-        let crypto = TeaclaveFileRootKey128::default();
+        // let crypto = TeaclaveFileRootKey128::default();
+        let crypto = TeaclaveFileRootKey128::new(&[0; 16]).unwrap();
         let mut f = ProtectedFile::create_ex(&path, &crypto.key)?;
         f.write_all(bytes)?;
         Ok(Self::new(path.as_ref(), crypto))
@@ -123,6 +126,8 @@ impl TeaclaveWorkerOutputFileInfo {
     }
 
     pub fn get_writable_io(&self) -> anyhow::Result<Box<dyn io::Write>> {
+        log::debug!("path: {:?}", self.path);
+        log::debug!("key: {:?}", self.crypto_info.key);
         let f = ProtectedFile::create_ex(&self.path, &self.crypto_info.key)?;
         Ok(Box::new(f))
     }
@@ -148,6 +153,11 @@ pub fn convert_encrypted_input_file(
     crypto_info: TeaclaveFileCryptoInfo,
     dst: impl AsRef<std::path::Path>,
 ) -> anyhow::Result<TeaclaveWorkerInputFileInfo> {
+    log::debug!("from: {:?}, to: {:?}", path.as_ref(), dst.as_ref());
+    #[cfg(not(feature = "mesalock_sgx"))]
+    use std::fs;
+    #[cfg(feature = "mesalock_sgx")]
+    use std::untrusted::fs;
     let plain_text = match crypto_info {
         TeaclaveFileCryptoInfo::AesGcm128(crypto) => {
             let mut bytes = read_all_bytes(path)?;
@@ -160,8 +170,9 @@ pub fn convert_encrypted_input_file(
             bytes
         }
         TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(crypto) => {
-            let path = path.as_ref().to_owned();
-            return Ok(TeaclaveWorkerInputFileInfo::new(path, crypto));
+            fs::copy(path, dst.as_ref())?;
+            let dst = dst.as_ref().to_owned();
+            return Ok(TeaclaveWorkerInputFileInfo::new(dst, crypto));
         }
         TeaclaveFileCryptoInfo::Raw => read_all_bytes(path)?,
     };
@@ -268,6 +279,7 @@ pub struct WorkerInvocation {
     pub output_files: TeaclaveWorkerFileRegistry<TeaclaveWorkerOutputFileInfo>,
 }
 
+#[derive(Default)]
 pub struct WorkerInvocationResult {
     pub return_value: Vec<u8>,
     pub output_file_hash: HashMap<String, String>,

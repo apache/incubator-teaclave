@@ -161,7 +161,7 @@ impl TeaclaveScheduler for TeaclaveSchedulerService {
         request: Request<UpdateTaskStatusRequest>,
     ) -> TeaclaveServiceResponseResult<UpdateTaskStatusResponse> {
         let request = request.message;
-        let mut task = self.get_task(&request.task_id)?;
+        let mut task = self.get_task(&request.task_id.to_string())?;
         task.status = request.task_status;
         self.put_task(&task)?;
         Ok(UpdateTaskStatusResponse {})
@@ -172,7 +172,7 @@ impl TeaclaveScheduler for TeaclaveSchedulerService {
         request: Request<UpdateTaskResultRequest>,
     ) -> TeaclaveServiceResponseResult<UpdateTaskResultResponse> {
         let request = request.message;
-        let mut task = self.get_task(&request.task_id)?;
+        let mut task = self.get_task(&request.task_id.to_string())?;
         task.return_value = Some(request.return_value);
         task.output_file_hash = request.output_file_hash;
         self.put_task(&task)?;

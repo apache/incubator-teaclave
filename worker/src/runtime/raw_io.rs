@@ -52,6 +52,7 @@ impl TeaclaveRuntime for RawIoRuntime {
             .entries
             .get(identifier)
             .ok_or_else(|| anyhow::anyhow!("Invalid input file identifier."))?;
+        log::debug!("open_input: {:?}", file_info.path);
         let f = File::open(&file_info.path)?;
         Ok(Box::new(f))
     }

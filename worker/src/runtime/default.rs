@@ -51,6 +51,7 @@ impl TeaclaveRuntime for DefaultRuntime {
             .get(identifier)
             .ok_or_else(|| anyhow::anyhow!("Invalid input file identifier."))?;
 
+        log::debug!("open_input: {:?}", file_info.path);
         let readable = file_info.get_readable_io()?;
         Ok(readable)
     }
@@ -62,6 +63,7 @@ impl TeaclaveRuntime for DefaultRuntime {
             .get(identifier)
             .ok_or_else(|| anyhow::anyhow!("Invalide output file identifier"))?;
 
+        log::debug!("create_output: {:?}", file_info.path);
         let writable = file_info.get_writable_io()?;
         Ok(writable)
     }
