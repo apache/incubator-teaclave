@@ -65,9 +65,9 @@ pub(crate) fn create_task(
         status: TaskStatus::Created,
     };
     // check arguments
-    let function_args: HashSet<String> = function.arg_list.into_iter().collect();
+    let function_arguments: HashSet<String> = function.arg_list.into_iter().collect();
     let provide_args: HashSet<String> = task.function_arguments.inner().keys().cloned().collect();
-    let diff: HashSet<_> = function_args.difference(&provide_args).collect();
+    let diff: HashSet<_> = function_arguments.difference(&provide_args).collect();
     ensure!(diff.is_empty(), "bad arguments");
 
     // check input

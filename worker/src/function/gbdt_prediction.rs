@@ -124,14 +124,14 @@ pub mod tests {
 
         let input_files = TeaclaveWorkerFileRegistry::new(hashmap!(
             IN_MODEL.to_string() =>
-            TeaclaveWorkerInputFileInfo::new(plain_if_model, TeaclaveFileRootKey128::default()),
+            TeaclaveWorkerInputFileInfo::new(plain_if_model, TeaclaveFileRootKey128::random()),
             IN_DATA.to_string() =>
-            TeaclaveWorkerInputFileInfo::new(plain_if_data, TeaclaveFileRootKey128::default())
+            TeaclaveWorkerInputFileInfo::new(plain_if_data, TeaclaveFileRootKey128::random())
         ));
 
         let output_files = TeaclaveWorkerFileRegistry::new(hashmap!(
             OUT_RESULT.to_string() =>
-            TeaclaveWorkerOutputFileInfo::new(plain_output, TeaclaveFileRootKey128::default())
+            TeaclaveWorkerOutputFileInfo::new(plain_output, TeaclaveFileRootKey128::random())
         ));
 
         let runtime = Box::new(RawIoRuntime::new(input_files, output_files));

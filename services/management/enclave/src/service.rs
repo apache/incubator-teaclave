@@ -770,8 +770,8 @@ pub mod tests {
         let crypto_info = TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(
             TeaclaveFileRootKey128::new(&[0; 16]).unwrap(),
         );
-        let input_data = InputDataValue::new(&url, hash, crypto_info);
-        let output_data = OutputDataValue::new(&url, crypto_info);
+        let input_data = InputDataValue::new(url.clone(), hash, crypto_info);
+        let output_data = OutputDataValue::new(url, crypto_info);
         let mut input_map = HashMap::new();
         input_map.insert("input".to_string(), input_data);
         let mut output_map = HashMap::new();

@@ -46,15 +46,14 @@ impl TeaclaveFunction for GbdtTraining {
     ) -> anyhow::Result<String> {
         log::debug!("start traning...");
         let feature_size = arguments.get("feature_size")?.as_usize()?;
-        let max_depth: u32 = arguments.get("max_depth")?.as_u32()?;
-        let iterations: usize = arguments.get("iterations")?.as_usize()?;
-        let shrinkage: f32 = arguments.get("shrinkage")?.as_f32()?;
-        let feature_sample_ratio: f64 = arguments.get("feature_sample_ratio")?.as_f64()?;
-        let data_sample_ratio: f64 = arguments.get("data_sample_ratio")?.as_f64()?;
-        let min_leaf_size: usize = arguments.get("min_leaf_size")?.as_usize()?;
+        let max_depth = arguments.get("max_depth")?.as_u32()?;
+        let iterations = arguments.get("iterations")?.as_usize()?;
+        let shrinkage = arguments.get("shrinkage")?.as_f32()?;
+        let feature_sample_ratio = arguments.get("feature_sample_ratio")?.as_f64()?;
+        let data_sample_ratio = arguments.get("data_sample_ratio")?.as_f64()?;
+        let min_leaf_size = arguments.get("min_leaf_size")?.as_usize()?;
         let loss = arguments.get("loss")?.as_str();
-        let training_optimization_level: u8 =
-            arguments.get("training_optimization_level")?.as_u8()?;
+        let training_optimization_level = arguments.get("training_optimization_level")?.as_u8()?;
 
         log::debug!("open input...");
         // read input
@@ -169,12 +168,12 @@ pub mod tests {
 
         let input_files = TeaclaveWorkerFileRegistry::new(hashmap!(
             IN_DATA.to_string() =>
-            TeaclaveWorkerInputFileInfo::new(plain_input, TeaclaveFileRootKey128::default())
+            TeaclaveWorkerInputFileInfo::new(plain_input, TeaclaveFileRootKey128::random())
         ));
 
         let output_files = TeaclaveWorkerFileRegistry::new(hashmap!(
             OUT_MODEL.to_string() =>
-            TeaclaveWorkerOutputFileInfo::new(plain_output, TeaclaveFileRootKey128::default())
+            TeaclaveWorkerOutputFileInfo::new(plain_output, TeaclaveFileRootKey128::random())
         ));
 
         let runtime = Box::new(RawIoRuntime::new(input_files, output_files));

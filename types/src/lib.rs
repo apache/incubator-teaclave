@@ -31,6 +31,8 @@ mod task;
 pub use task::*;
 mod file_agent;
 pub use file_agent::*;
+mod macros;
+pub use macros::*;
 
 /// Status for Ecall
 #[repr(C)]
