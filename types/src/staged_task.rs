@@ -6,8 +6,8 @@ use url::Url;
 use uuid::Uuid;
 
 use crate::{
-    FunctionArguments, Storable, TeaclaveExecutorSelector, TeaclaveFileCryptoInfo,
-    TeaclaveInputFile, TeaclaveOutputFile,
+    ExecutorType, FunctionArguments, Storable, TeaclaveFileCryptoInfo, TeaclaveInputFile,
+    TeaclaveOutputFile,
 };
 
 const STAGED_TASK_PREFIX: &str = "staged-"; // staged-task-uuid
@@ -24,9 +24,9 @@ pub struct InputDataValue {
 }
 
 impl InputDataValue {
-    pub fn new(url: &Url, hash: impl ToString, crypto_info: TeaclaveFileCryptoInfo) -> Self {
+    pub fn new(url: Url, hash: impl ToString, crypto_info: TeaclaveFileCryptoInfo) -> Self {
         Self {
-            url: url.to_owned(),
+            url,
             hash: hash.to_string(),
             crypto_info,
         }
@@ -48,11 +48,8 @@ pub struct OutputDataValue {
 }
 
 impl OutputDataValue {
-    pub fn new(url: &Url, crypto_info: TeaclaveFileCryptoInfo) -> Self {
-        Self {
-            url: url.to_owned(),
-            crypto_info,
-        }
+    pub fn new(url: Url, crypto_info: TeaclaveFileCryptoInfo) -> Self {
+        Self { url, crypto_info }
     }
 
     pub fn from_teaclave_output_file(file: &TeaclaveOutputFile) -> Self {
@@ -100,16 +97,16 @@ impl StagedTask {
         }
     }
 
-    pub fn function_name(self, function_name: impl Into<String>) -> Self {
+    pub fn function_name(self, function_name: impl ToString) -> Self {
         Self {
-            function_name: function_name.into(),
+            function_name: function_name.to_string(),
             ..self
         }
     }
 
-    pub fn function_payload(self, function_payload: impl Into<Vec<u8>>) -> Self {
+    pub fn function_payload(self, function_payload: Vec<u8>) -> Self {
         Self {
-            function_payload: function_payload.into(),
+            function_payload,
             ..self
         }
     }
@@ -136,11 +133,11 @@ impl StagedTask {
         QUEUE_KEY
     }
 
-    pub fn executor_type(&self) -> TeaclaveExecutorSelector {
+    pub fn executor_type(&self) -> ExecutorType {
         if self.function_payload.is_empty() {
-            TeaclaveExecutorSelector::Native
+            ExecutorType::Native
         } else {
-            TeaclaveExecutorSelector::Python
+            ExecutorType::Python
         }
     }
 }

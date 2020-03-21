@@ -4,11 +4,10 @@ use std::format;
 use std::io::{self, Read, Write};
 use std::prelude::v1::*;
 
-#[cfg(feature = "mesalock_sgx")]
-use std::untrusted::fs::File;
-
 #[cfg(not(feature = "mesalock_sgx"))]
 use std::fs::File;
+#[cfg(feature = "mesalock_sgx")]
+use std::untrusted::fs::File;
 
 use anyhow;
 use anyhow::Context;
@@ -20,40 +19,30 @@ use protected_fs::ProtectedFile;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
-#[macro_export]
-macro_rules! hashmap {
-    ($( $key: expr => $value: expr,)+) => { hashmap!($($key => $value),+) };
-    ($( $key: expr => $value: expr ),*) => {{
-         let mut map = ::std::collections::HashMap::new();
-         $( map.insert($key, $value); )*
-         map
-    }}
-}
-
 #[derive(Debug, Copy, Clone)]
-pub enum TeaclaveExecutorSelector {
+pub enum ExecutorType {
     Native,
     Python,
 }
 
-impl std::convert::TryFrom<&str> for TeaclaveExecutorSelector {
+impl std::convert::TryFrom<&str> for ExecutorType {
     type Error = anyhow::Error;
 
     fn try_from(selector: &str) -> anyhow::Result<Self> {
         let sel = match selector {
-            "python" => TeaclaveExecutorSelector::Python,
-            "native" => TeaclaveExecutorSelector::Native,
+            "python" => ExecutorType::Python,
+            "native" => ExecutorType::Native,
             _ => anyhow::bail!("Invalid executor selector: {}", selector),
         };
         Ok(sel)
     }
 }
 
-impl std::fmt::Display for TeaclaveExecutorSelector {
+impl std::fmt::Display for ExecutorType {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            TeaclaveExecutorSelector::Native => write!(f, "native"),
-            TeaclaveExecutorSelector::Python => write!(f, "python"),
+            ExecutorType::Native => write!(f, "native"),
+            ExecutorType::Python => write!(f, "python"),
         }
     }
 }
@@ -110,8 +99,7 @@ impl TeaclaveWorkerInputFileInfo {
         path: impl AsRef<std::path::Path>,
         bytes: &[u8],
     ) -> anyhow::Result<TeaclaveWorkerInputFileInfo> {
-        // let crypto = TeaclaveFileRootKey128::default();
-        let crypto = TeaclaveFileRootKey128::new(&[0; 16]).unwrap();
+        let crypto = TeaclaveFileRootKey128::random();
         let mut f = ProtectedFile::create_ex(&path, &crypto.key)?;
         f.write_all(bytes)?;
         Ok(Self::new(path.as_ref(), crypto))
@@ -339,18 +327,18 @@ pub struct WorkerCapability {
 }
 
 #[derive(Debug)]
-pub struct WorkerInvocation {
-    pub runtime_name: String,
-    pub executor_type: TeaclaveExecutorSelector, // "native" | "python"
-    pub function_name: String,                   // "gbdt_training" | "mesapy" |
-    pub function_payload: String,
-    pub function_args: FunctionArguments,
+pub struct StagedFunction {
+    pub name: String,
+    pub payload: String,
+    pub arguments: FunctionArguments,
     pub input_files: TeaclaveWorkerFileRegistry<TeaclaveWorkerInputFileInfo>,
     pub output_files: TeaclaveWorkerFileRegistry<TeaclaveWorkerOutputFileInfo>,
+    pub runtime_name: String,
+    pub executor_type: ExecutorType,
 }
 
 #[derive(Default)]
-pub struct WorkerInvocationResult {
+pub struct ExecutionResult {
     pub return_value: Vec<u8>,
     pub output_file_hash: HashMap<String, String>,
 }

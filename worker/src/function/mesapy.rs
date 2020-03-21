@@ -168,10 +168,10 @@ def entrypoint(argv):
         let input = "fixtures/functions/mesapy/input.txt";
         let output = "fixtures/functions/mesapy/output.txt";
 
-        let input_info = TeaclaveWorkerInputFileInfo::new(input, TeaclaveFileRootKey128::default());
+        let input_info = TeaclaveWorkerInputFileInfo::new(input, TeaclaveFileRootKey128::random());
 
         let output_info =
-            TeaclaveWorkerOutputFileInfo::new(output, TeaclaveFileRootKey128::default());
+            TeaclaveWorkerOutputFileInfo::new(output, TeaclaveFileRootKey128::random());
 
         let input_files = TeaclaveWorkerFileRegistry {
             entries: hashmap!("in_f1".to_string() => input_info),

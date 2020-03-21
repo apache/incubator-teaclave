@@ -1,19 +1,14 @@
-use std::convert::TryInto;
 use std::prelude::v1::*;
 
-use teaclave_types::hashmap;
-use teaclave_types::read_all_bytes;
-use teaclave_types::FunctionArguments;
-use teaclave_types::TeaclaveFileRootKey128;
-use teaclave_types::TeaclaveWorkerFileRegistry;
-use teaclave_types::TeaclaveWorkerInputFileInfo;
-use teaclave_types::TeaclaveWorkerOutputFileInfo;
-use teaclave_types::WorkerInvocation;
-
+use teaclave_types::{
+    hashmap, read_all_bytes, ExecutorType, FunctionArguments, StagedFunction,
+    TeaclaveFileRootKey128, TeaclaveWorkerFileRegistry, TeaclaveWorkerInputFileInfo,
+    TeaclaveWorkerOutputFileInfo,
+};
 use teaclave_worker::Worker;
 
 fn test_start_worker() {
-    let function_args = FunctionArguments::from_map(&hashmap!(
+    let arguments = FunctionArguments::from_map(&hashmap!(
         "feature_size"  => "4",
         "max_depth"     => "4",
         "iterations"    => "100",
@@ -35,19 +30,19 @@ fn test_start_worker() {
         "training_data".to_string() => input_info));
 
     let output_info =
-        TeaclaveWorkerOutputFileInfo::new(enc_output, TeaclaveFileRootKey128::default());
+        TeaclaveWorkerOutputFileInfo::new(enc_output, TeaclaveFileRootKey128::random());
 
     let output_files = TeaclaveWorkerFileRegistry::new(hashmap!(
         "trained_model".to_string() => output_info.clone()));
 
-    let request = WorkerInvocation {
-        runtime_name: "default".to_string(),
-        executor_type: "native".try_into().unwrap(),
-        function_name: "gbdt_training".to_string(),
-        function_payload: String::new(),
-        function_args,
+    let request = StagedFunction {
+        name: "gbdt_training".to_string(),
+        payload: String::new(),
+        arguments,
         input_files,
         output_files,
+        runtime_name: "default".to_string(),
+        executor_type: ExecutorType::Native,
     };
 
     let worker = Worker::default();

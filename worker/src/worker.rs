@@ -25,8 +25,8 @@ use anyhow;
 use serde_json;
 
 use teaclave_types::{
-    FunctionArguments, TeaclaveExecutorSelector, TeaclaveWorkerFileRegistry,
-    TeaclaveWorkerInputFileInfo, TeaclaveWorkerOutputFileInfo, WorkerCapability, WorkerInvocation,
+    ExecutorType, FunctionArguments, StagedFunction, TeaclaveWorkerFileRegistry,
+    TeaclaveWorkerInputFileInfo, TeaclaveWorkerOutputFileInfo, WorkerCapability,
 };
 
 use crate::function::{self, TeaclaveFunction};
@@ -54,20 +54,27 @@ impl Worker {
     pub fn default() -> Worker {
         Worker {
             functions: register_functions!(
-                "gbdt_training"     => (TeaclaveExecutorSelector::Native, function::GbdtTraining),
-                "gbdt_prediction"    => (TeaclaveExecutorSelector::Native, function::GbdtPrediction),
-                "echo"              => (TeaclaveExecutorSelector::Native, function::Echo),
-                "mesapy"            => (TeaclaveExecutorSelector::Python, function::Mesapy),
+                "gbdt_training"     => (ExecutorType::Native, function::GbdtTraining),
+                "gbdt_prediction"    => (ExecutorType::Native, function::GbdtPrediction),
+                "echo"              => (ExecutorType::Native, function::Echo),
+                "mesapy"            => (ExecutorType::Python, function::Mesapy),
             ),
             runtimes: setup_runtimes(),
         }
     }
 
-    pub fn invoke_function(&self, req: WorkerInvocation) -> anyhow::Result<String> {
-        let function = self.get_function(req.executor_type, &req.function_name)?;
-        let runtime = self.get_runtime(&req.runtime_name, req.input_files, req.output_files)?;
-        let unified_args =
-            prepare_arguments(req.executor_type, req.function_args, req.function_payload)?;
+    pub fn invoke_function(&self, staged_function: StagedFunction) -> anyhow::Result<String> {
+        let function = self.get_function(staged_function.executor_type, &staged_function.name)?;
+        let runtime = self.get_runtime(
+            &staged_function.runtime_name,
+            staged_function.input_files,
+            staged_function.output_files,
+        )?;
+        let unified_args = prepare_arguments(
+            staged_function.executor_type,
+            staged_function.arguments,
+            staged_function.payload,
+        )?;
         function.execute(runtime, unified_args)
     }
 
@@ -95,7 +102,7 @@ impl Worker {
 
     fn get_function(
         &self,
-        func_type: TeaclaveExecutorSelector,
+        func_type: ExecutorType,
         func_name: &str,
     ) -> anyhow::Result<Box<dyn TeaclaveFunction + Send + Sync>> {
         let identifier = make_function_identifier(func_type, func_name);
@@ -109,7 +116,7 @@ impl Worker {
     }
 }
 
-fn make_function_identifier(func_type: TeaclaveExecutorSelector, func_name: &str) -> String {
+fn make_function_identifier(func_type: ExecutorType, func_name: &str) -> String {
     let type_str = func_type.to_string();
     format!("{}-{}", type_str, func_name)
 }
@@ -133,30 +140,30 @@ fn setup_runtimes() -> HashMap<String, RuntimeBuilder> {
     runtimes
 }
 
-// Native functions (TeaclaveExecutorSelector::Native) are not allowed to have function payload.
-// Script engines like Mesapy (TeaclaveExecutorSelector::Python) must have script payload.
+// Native functions (ExecutorType::Native) are not allowed to have function payload.
+// Script engines like Mesapy (ExecutorType::Python) must have script payload.
 // We assume that the script engines would take the script payload and
 // script arguments from the wrapped argument.
 fn prepare_arguments(
-    executor_type: TeaclaveExecutorSelector,
-    function_args: FunctionArguments,
+    executor_type: ExecutorType,
+    function_arguments: FunctionArguments,
     function_payload: String,
 ) -> anyhow::Result<FunctionArguments> {
     let unified_args = match executor_type {
-        TeaclaveExecutorSelector::Native => {
+        ExecutorType::Native => {
             anyhow::ensure!(
                 function_payload.is_empty(),
                 "Native function payload should be empty!"
             );
-            function_args
+            function_arguments
         }
-        TeaclaveExecutorSelector::Python => {
+        ExecutorType::Python => {
             anyhow::ensure!(
                 !function_payload.is_empty(),
                 "Python function payload must not be empty!"
             );
             let mut wrap_args = HashMap::new();
-            let req_args = serde_json::to_string(&function_args)?;
+            let req_args = serde_json::to_string(&function_arguments)?;
             wrap_args.insert("py_payload".to_string(), function_payload);
             wrap_args.insert("py_args".to_string(), req_args);
             FunctionArguments::from_map(&wrap_args)

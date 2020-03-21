@@ -25,7 +25,7 @@ use std::sync::{Arc, SgxMutex as Mutex};
 
 use teaclave_proto::teaclave_scheduler_service::*;
 use teaclave_rpc::endpoint::Endpoint;
-use teaclave_types::{StagedTask, TaskStatus, WorkerInvocation, WorkerInvocationResult};
+use teaclave_types::{ExecutionResult, StagedFunction, StagedTask, TaskStatus};
 use teaclave_worker::Worker;
 
 use anyhow::Result;
@@ -99,19 +99,19 @@ impl TeaclaveExecutionService {
         }
     }
 
-    fn invoke_task(&mut self, task: &StagedTask) -> Result<WorkerInvocationResult> {
+    fn invoke_task(&mut self, task: &StagedTask) -> Result<ExecutionResult> {
         self.update_task_status(&task.task_id, TaskStatus::Running)?;
         let invocation = prepare_task(&task);
         let worker = Worker::default();
         let summary = worker.invoke_function(invocation)?;
         finalize_task(&task)?;
-        let mut result = WorkerInvocationResult::default();
+        let mut result = ExecutionResult::default();
         result.return_value = summary.as_bytes().to_vec();
 
         Ok(result)
     }
 
-    fn update_task_result(&mut self, task_id: &Uuid, result: WorkerInvocationResult) -> Result<()> {
+    fn update_task_result(&mut self, task_id: &Uuid, result: ExecutionResult) -> Result<()> {
         let request = UpdateTaskResultRequest::new(
             task_id.to_owned(),
             &result.return_value,
@@ -160,7 +160,7 @@ fn finalize_task(task: &StagedTask) -> Result<()> {
     Ok(())
 }
 
-fn prepare_task(task: &StagedTask) -> WorkerInvocation {
+fn prepare_task(task: &StagedTask) -> StagedFunction {
     use std::path::Path;
     use std::path::PathBuf;
     use std::untrusted::fs;
@@ -171,7 +171,7 @@ fn prepare_task(task: &StagedTask) -> WorkerInvocation {
     let executor_type = task.executor_type();
     let function_name = task.function_name.clone();
     let function_payload = String::from_utf8_lossy(&task.function_payload).to_string();
-    let function_args = task.function_arguments.clone();
+    let function_arguments = task.function_arguments.clone();
 
     let agent_dir = format!("/tmp/teaclave_agent/{}", task.task_id);
     let agent_dir_path = Path::new(&agent_dir);
@@ -217,14 +217,14 @@ fn prepare_task(task: &StagedTask) -> WorkerInvocation {
     }
     let output_files = TeaclaveWorkerFileRegistry::new(output_file_map);
 
-    WorkerInvocation {
-        runtime_name,
-        executor_type,
-        function_name,
-        function_payload,
-        function_args,
+    StagedFunction {
+        name: function_name,
+        payload: function_payload,
+        arguments: function_arguments,
         input_files,
         output_files,
+        runtime_name,
+        executor_type,
     }
 }
 
@@ -287,8 +287,8 @@ pub mod tests {
         let crypto = TeaclaveFileRootKey128::new(&[0; 16]).unwrap();
         let crypto_info = TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(crypto);
 
-        let training_input_data = InputDataValue::new(&input_url, "", crypto_info);
-        let model_output_data = OutputDataValue::new(&output_url, crypto_info);
+        let training_input_data = InputDataValue::new(input_url, "", crypto_info);
+        let model_output_data = OutputDataValue::new(output_url, crypto_info);
 
         let input_data = hashmap!("training_data".to_string() => training_input_data);
         let output_data = hashmap!("trained_model".to_string() => model_output_data);

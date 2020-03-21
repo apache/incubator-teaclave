@@ -202,7 +202,7 @@ impl TeaclaveFileCryptoInfo {
 
 impl Default for TeaclaveFileCryptoInfo {
     fn default() -> Self {
-        TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(TeaclaveFileRootKey128::default())
+        TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(TeaclaveFileRootKey128::random())
     }
 }
 

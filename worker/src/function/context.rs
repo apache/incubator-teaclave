@@ -246,10 +246,10 @@ pub mod tests {
         let input = PathBuf::from_str("fixtures/functions/mesapy/input.txt").unwrap();
         let output = PathBuf::from_str("fixtures/functions/mesapy/output.txt.out").unwrap();
 
-        let input_info = TeaclaveWorkerInputFileInfo::new(input, TeaclaveFileRootKey128::default());
+        let input_info = TeaclaveWorkerInputFileInfo::new(input, TeaclaveFileRootKey128::random());
 
         let output_info =
-            TeaclaveWorkerOutputFileInfo::new(output, TeaclaveFileRootKey128::default());
+            TeaclaveWorkerOutputFileInfo::new(output, TeaclaveFileRootKey128::random());
 
         let in_fid = "in_f1";
         let out_fid = "out_f1";
