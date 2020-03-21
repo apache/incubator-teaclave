@@ -20,13 +20,13 @@ use std::prelude::v1::*;
 
 use crate::runtime::TeaclaveRuntime;
 use anyhow;
-use teaclave_types::TeaclaveFunctionArguments;
+use teaclave_types::FunctionArguments;
 
 pub trait TeaclaveFunction {
     fn execute(
         &self,
         runtime: Box<dyn TeaclaveRuntime + Send + Sync>,
-        args: TeaclaveFunctionArguments,
+        args: FunctionArguments,
     ) -> anyhow::Result<String>;
 
     // TODO: Add more flexible control support on a running function

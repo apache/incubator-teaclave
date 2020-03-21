@@ -148,7 +148,7 @@ fn finalize_task(task: &StagedTask) -> Result<()> {
     let agent_dir_path = Path::new(&agent_dir);
 
     let mut file_request_info = vec![];
-    for (key, value) in task.output_map.iter() {
+    for (key, value) in task.output_data.iter() {
         let mut src = agent_dir_path.to_path_buf();
         src.push(&format!("{}.out", key));
         let handle_file_info = HandleFileInfo::new(&src, &value.url);
@@ -171,7 +171,7 @@ fn prepare_task(task: &StagedTask) -> WorkerInvocation {
     let executor_type = task.executor_type();
     let function_name = task.function_name.clone();
     let function_payload = String::from_utf8_lossy(&task.function_payload).to_string();
-    let function_args = TeaclaveFunctionArguments::new(&task.arg_list);
+    let function_args = task.function_arguments.clone();
 
     let agent_dir = format!("/tmp/teaclave_agent/{}", task.task_id);
     let agent_dir_path = Path::new(&agent_dir);
@@ -181,7 +181,7 @@ fn prepare_task(task: &StagedTask) -> WorkerInvocation {
 
     let mut input_file_map: HashMap<String, (PathBuf, TeaclaveFileCryptoInfo)> = HashMap::new();
     let mut file_request_info = vec![];
-    for (key, value) in task.input_map.iter() {
+    for (key, value) in task.input_data.iter() {
         let mut dest = agent_dir_path.to_path_buf();
         dest.push(&format!("{}.in", key));
         let info = HandleFileInfo::new(&dest, &value.url);
@@ -204,7 +204,7 @@ fn prepare_task(task: &StagedTask) -> WorkerInvocation {
     let input_files = TeaclaveWorkerFileRegistry::new(converted_input_file_map);
 
     let mut output_file_map: HashMap<String, TeaclaveWorkerOutputFileInfo> = HashMap::new();
-    for (key, value) in task.output_map.iter() {
+    for (key, value) in task.output_data.iter() {
         let mut dest = agent_dir_path.to_path_buf();
         dest.push(&format!("{}.out", key));
         let crypto = match value.crypto_info {
@@ -246,9 +246,9 @@ pub mod tests {
         let staged_task = StagedTask::new()
             .task_id(task_id)
             .function_name("echo")
-            .args(arg_map)
-            .input(input_map)
-            .output(output_map);
+            .function_arguments(arg_map.into())
+            .input_data(input_map)
+            .output_data(output_map);
 
         let invocation = prepare_task(&staged_task);
 
@@ -271,7 +271,7 @@ pub mod tests {
             "data_sample_ratio".to_string()           => "1.0".to_string(),
             "min_leaf_size".to_string()               => "1".to_string(),
             "loss".to_string()                        => "LAD".to_string(),
-            "training_optimization_level".to_string() => "2".to_string()
+            "training_optimization_level".to_string() => "2".to_string(),
         );
         let fixture_dir = format!(
             "file:///{}/fixtures/functions/gbdt_training",
@@ -287,23 +287,18 @@ pub mod tests {
         let crypto = TeaclaveFileRootKey128::new(&[0; 16]).unwrap();
         let crypto_info = TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(crypto);
 
-        let input_data = InputData {
-            url: input_url,
-            hash: "".to_string(),
-            crypto_info,
-        };
-        let output_data = OutputData {
-            url: output_url,
-            crypto_info,
-        };
-        let input_map = hashmap!("training_data".to_string() => input_data);
-        let output_map = hashmap!("trained_model".to_string() => output_data);
+        let training_input_data = InputDataValue::new(&input_url, "", crypto_info);
+        let model_output_data = OutputDataValue::new(&output_url, crypto_info);
+
+        let input_data = hashmap!("training_data".to_string() => training_input_data);
+        let output_data = hashmap!("trained_model".to_string() => model_output_data);
+
         let staged_task = StagedTask::new()
             .task_id(task_id)
             .function_name("gbdt_training")
-            .args(arg_map)
-            .input(input_map)
-            .output(output_map);
+            .function_arguments(arg_map.into())
+            .input_data(input_data)
+            .output_data(output_data);
 
         let invocation = prepare_task(&staged_task);
 

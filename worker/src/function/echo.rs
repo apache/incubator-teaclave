@@ -21,7 +21,7 @@ use std::prelude::v1::*;
 use crate::function::TeaclaveFunction;
 use crate::runtime::TeaclaveRuntime;
 use anyhow;
-use teaclave_types::TeaclaveFunctionArguments;
+use teaclave_types::FunctionArguments;
 
 #[derive(Default)]
 pub struct Echo;
@@ -30,9 +30,9 @@ impl TeaclaveFunction for Echo {
     fn execute(
         &self,
         _runtime: Box<dyn TeaclaveRuntime + Send + Sync>,
-        args: TeaclaveFunctionArguments,
+        arguments: FunctionArguments,
     ) -> anyhow::Result<String> {
-        let message: String = args.try_get("message")?;
+        let message = arguments.get("message")?.to_string();
         Ok(message)
     }
 }
@@ -43,7 +43,7 @@ pub mod tests {
     use teaclave_test_utils::*;
 
     use teaclave_types::hashmap;
-    use teaclave_types::TeaclaveFunctionArguments;
+    use teaclave_types::FunctionArguments;
     use teaclave_types::TeaclaveWorkerFileRegistry;
 
     use crate::function::TeaclaveFunction;
@@ -54,7 +54,7 @@ pub mod tests {
     }
 
     fn test_echo() {
-        let func_args = TeaclaveFunctionArguments::new(&hashmap!(
+        let func_args = FunctionArguments::from_map(&hashmap!(
             "message"  => "Hello Teaclave!"
         ));
 

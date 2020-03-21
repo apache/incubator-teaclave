@@ -3,8 +3,8 @@ use std::prelude::v1::*;
 
 use teaclave_types::hashmap;
 use teaclave_types::read_all_bytes;
+use teaclave_types::FunctionArguments;
 use teaclave_types::TeaclaveFileRootKey128;
-use teaclave_types::TeaclaveFunctionArguments;
 use teaclave_types::TeaclaveWorkerFileRegistry;
 use teaclave_types::TeaclaveWorkerInputFileInfo;
 use teaclave_types::TeaclaveWorkerOutputFileInfo;
@@ -13,7 +13,7 @@ use teaclave_types::WorkerInvocation;
 use teaclave_worker::Worker;
 
 fn test_start_worker() {
-    let function_args = TeaclaveFunctionArguments::new(&hashmap!(
+    let function_args = FunctionArguments::from_map(&hashmap!(
         "feature_size"  => "4",
         "max_depth"     => "4",
         "iterations"    => "100",

@@ -47,12 +47,13 @@ pub(crate) fn create_task(
             participants.insert(user_id.clone());
         }
     }
+    let function_arguments = arg_list.into();
     let task = Task {
         task_id,
         creator,
         function_id: function.external_id(),
         function_owner: function.owner,
-        arg_list,
+        function_arguments,
         input_data_owner_list,
         output_data_owner_list,
         participants,
@@ -65,7 +66,7 @@ pub(crate) fn create_task(
     };
     // check arguments
     let function_args: HashSet<String> = function.arg_list.into_iter().collect();
-    let provide_args: HashSet<String> = task.arg_list.keys().cloned().collect();
+    let provide_args: HashSet<String> = task.function_arguments.inner().keys().cloned().collect();
     let diff: HashSet<_> = function_args.difference(&provide_args).collect();
     ensure!(diff.is_empty(), "bad arguments");
 

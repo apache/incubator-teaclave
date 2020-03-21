@@ -26,7 +26,7 @@ use serde_json;
 
 use crate::function::TeaclaveFunction;
 use crate::runtime::TeaclaveRuntime;
-use teaclave_types::TeaclaveFunctionArguments;
+use teaclave_types::FunctionArguments;
 
 use gbdt::decision_tree::Data;
 use gbdt::gradient_boost::GBDT;
@@ -42,7 +42,7 @@ impl TeaclaveFunction for GbdtPrediction {
     fn execute(
         &self,
         runtime: Box<dyn TeaclaveRuntime + Send + Sync>,
-        _args: TeaclaveFunctionArguments,
+        _args: FunctionArguments,
     ) -> anyhow::Result<String> {
         let mut json_model = String::new();
         let mut f = runtime.open_input(IN_MODEL)?;
@@ -101,8 +101,8 @@ pub mod tests {
     use std::untrusted::fs;
 
     use teaclave_types::hashmap;
+    use teaclave_types::FunctionArguments;
     use teaclave_types::TeaclaveFileRootKey128;
-    use teaclave_types::TeaclaveFunctionArguments;
     use teaclave_types::TeaclaveWorkerFileRegistry;
     use teaclave_types::TeaclaveWorkerInputFileInfo;
     use teaclave_types::TeaclaveWorkerOutputFileInfo;
@@ -115,7 +115,7 @@ pub mod tests {
     }
 
     fn test_gbdt_prediction() {
-        let func_args = TeaclaveFunctionArguments::default();
+        let func_args = FunctionArguments::default();
 
         let plain_if_model = "fixtures/functions/gbdt_prediction/model.txt";
         let plain_if_data = "fixtures/functions/gbdt_prediction/test_data.txt";

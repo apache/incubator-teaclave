@@ -26,7 +26,7 @@ use serde_json;
 
 use crate::function::TeaclaveFunction;
 use crate::runtime::TeaclaveRuntime;
-use teaclave_types::TeaclaveFunctionArguments;
+use teaclave_types::FunctionArguments;
 
 use gbdt::config::Config;
 use gbdt::decision_tree::Data;
@@ -42,18 +42,19 @@ impl TeaclaveFunction for GbdtTraining {
     fn execute(
         &self,
         runtime: Box<dyn TeaclaveRuntime + Send + Sync>,
-        args: TeaclaveFunctionArguments,
+        arguments: FunctionArguments,
     ) -> anyhow::Result<String> {
         log::debug!("start traning...");
-        let feature_size: usize = args.try_get("feature_size")?;
-        let max_depth: u32 = args.try_get("max_depth")?;
-        let iterations: usize = args.try_get("iterations")?;
-        let shrinkage: f32 = args.try_get("shrinkage")?;
-        let feature_sample_ratio: f64 = args.try_get("feature_sample_ratio")?;
-        let data_sample_ratio: f64 = args.try_get("data_sample_ratio")?;
-        let min_leaf_size: usize = args.try_get("min_leaf_size")?;
-        let loss: String = args.try_get("loss")?;
-        let training_optimization_level: u8 = args.try_get("training_optimization_level")?;
+        let feature_size = arguments.get("feature_size")?.as_usize()?;
+        let max_depth: u32 = arguments.get("max_depth")?.as_u32()?;
+        let iterations: usize = arguments.get("iterations")?.as_usize()?;
+        let shrinkage: f32 = arguments.get("shrinkage")?.as_f32()?;
+        let feature_sample_ratio: f64 = arguments.get("feature_sample_ratio")?.as_f64()?;
+        let data_sample_ratio: f64 = arguments.get("data_sample_ratio")?.as_f64()?;
+        let min_leaf_size: usize = arguments.get("min_leaf_size")?.as_usize()?;
+        let loss = arguments.get("loss")?.as_str();
+        let training_optimization_level: u8 =
+            arguments.get("training_optimization_level")?.as_u8()?;
 
         log::debug!("open input...");
         // read input
@@ -68,7 +69,7 @@ impl TeaclaveFunction for GbdtTraining {
         cfg.set_max_depth(max_depth);
         cfg.set_iterations(iterations);
         cfg.set_shrinkage(shrinkage);
-        cfg.set_loss(&loss);
+        cfg.set_loss(loss);
         cfg.set_min_leaf_size(min_leaf_size);
         cfg.set_data_sample_ratio(data_sample_ratio);
         cfg.set_feature_sample_ratio(feature_sample_ratio);
@@ -136,8 +137,8 @@ pub mod tests {
     use std::untrusted::fs;
 
     use teaclave_types::hashmap;
+    use teaclave_types::FunctionArguments;
     use teaclave_types::TeaclaveFileRootKey128;
-    use teaclave_types::TeaclaveFunctionArguments;
     use teaclave_types::TeaclaveWorkerFileRegistry;
     use teaclave_types::TeaclaveWorkerInputFileInfo;
     use teaclave_types::TeaclaveWorkerOutputFileInfo;
@@ -150,7 +151,7 @@ pub mod tests {
     }
 
     fn test_gbdt_training() {
-        let func_args = TeaclaveFunctionArguments::new(&hashmap!(
+        let func_arguments = FunctionArguments::from_map(&hashmap!(
             "feature_size"  => "4",
             "max_depth"     => "4",
             "iterations"    => "100",
@@ -179,7 +180,7 @@ pub mod tests {
         let runtime = Box::new(RawIoRuntime::new(input_files, output_files));
 
         let function = GbdtTraining;
-        let summary = function.execute(runtime, func_args).unwrap();
+        let summary = function.execute(runtime, func_arguments).unwrap();
         assert_eq!(summary, "Trained 120 lines of data.");
 
         let result = fs::read_to_string(&plain_output).unwrap();

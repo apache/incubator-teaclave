@@ -23,7 +23,7 @@ use itertools::Itertools;
 
 use crate::function::TeaclaveFunction;
 use crate::runtime::TeaclaveRuntime;
-use teaclave_types::TeaclaveFunctionArguments;
+use teaclave_types::FunctionArguments;
 
 use crate::function::context::reset_thread_context;
 use crate::function::context::set_thread_context;
@@ -52,18 +52,18 @@ impl TeaclaveFunction for Mesapy {
     fn execute(
         &self,
         runtime: Box<dyn TeaclaveRuntime + Send + Sync>,
-        args: TeaclaveFunctionArguments,
+        args: FunctionArguments,
     ) -> anyhow::Result<String> {
-        let script = args.try_get::<String>("py_payload")?;
-        let py_args = args.try_get::<String>("py_args")?;
-        let py_args: TeaclaveFunctionArguments = serde_json::from_str(&py_args)?;
+        let script = args.get("py_payload")?.as_str();
+        let py_args = args.get("py_args")?.as_str();
+        let py_args: FunctionArguments = serde_json::from_str(py_args)?;
         let py_argv = py_args.into_vec();
         let cstr_argv: Vec<_> = py_argv
             .iter()
             .map(|arg| CString::new(arg.as_str()).unwrap())
             .collect();
 
-        let mut script_bytes = script.into_bytes();
+        let mut script_bytes = script.to_owned().into_bytes();
         script_bytes.push(0u8);
 
         let mut p_argv: Vec<_> = cstr_argv
@@ -108,8 +108,8 @@ pub mod tests {
     use crate::function::TeaclaveFunction;
     use crate::runtime::RawIoRuntime;
     use teaclave_types::hashmap;
+    use teaclave_types::FunctionArguments;
     use teaclave_types::TeaclaveFileRootKey128;
-    use teaclave_types::TeaclaveFunctionArguments;
     use teaclave_types::TeaclaveWorkerFileRegistry;
     use teaclave_types::TeaclaveWorkerInputFileInfo;
     use teaclave_types::TeaclaveWorkerOutputFileInfo;
@@ -119,7 +119,7 @@ pub mod tests {
     }
 
     fn test_mesapy() {
-        let py_args = TeaclaveFunctionArguments::new(&hashmap!("--name" => "Teaclave"));
+        let py_args = FunctionArguments::from_map(&hashmap!("--name" => "Teaclave"));
         let py_payload = r#"
 def entrypoint(argv):
     in_file_id = "in_f1"
@@ -182,12 +182,10 @@ def entrypoint(argv):
         };
         let runtime = Box::new(RawIoRuntime::new(input_files, output_files));
 
-        let func_args = TeaclaveFunctionArguments {
-            args: hashmap!(
+        let func_args = FunctionArguments::from_map(&hashmap!(
                 "py_payload".to_string() => py_payload.to_string(),
                 "py_args".to_string() => serde_json::to_string(&py_args).unwrap()
-            ),
-        };
+        ));
 
         let function = Mesapy;
         let summary = function.execute(runtime, func_args).unwrap();

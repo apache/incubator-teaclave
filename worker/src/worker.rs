@@ -25,7 +25,7 @@ use anyhow;
 use serde_json;
 
 use teaclave_types::{
-    TeaclaveExecutorSelector, TeaclaveFunctionArguments, TeaclaveWorkerFileRegistry,
+    FunctionArguments, TeaclaveExecutorSelector, TeaclaveWorkerFileRegistry,
     TeaclaveWorkerInputFileInfo, TeaclaveWorkerOutputFileInfo, WorkerCapability, WorkerInvocation,
 };
 
@@ -139,9 +139,9 @@ fn setup_runtimes() -> HashMap<String, RuntimeBuilder> {
 // script arguments from the wrapped argument.
 fn prepare_arguments(
     executor_type: TeaclaveExecutorSelector,
-    function_args: TeaclaveFunctionArguments,
+    function_args: FunctionArguments,
     function_payload: String,
-) -> anyhow::Result<TeaclaveFunctionArguments> {
+) -> anyhow::Result<FunctionArguments> {
     let unified_args = match executor_type {
         TeaclaveExecutorSelector::Native => {
             anyhow::ensure!(
@@ -156,10 +156,10 @@ fn prepare_arguments(
                 "Python function payload must not be empty!"
             );
             let mut wrap_args = HashMap::new();
-            let req_args = serde_json::to_string(&function_args.args)?;
+            let req_args = serde_json::to_string(&function_args)?;
             wrap_args.insert("py_payload".to_string(), function_payload);
             wrap_args.insert("py_args".to_string(), req_args);
-            TeaclaveFunctionArguments { args: wrap_args }
+            FunctionArguments::from_map(&wrap_args)
         }
     };
 

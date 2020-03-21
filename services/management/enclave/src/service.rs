@@ -27,7 +27,7 @@ use teaclave_service_enclave_utils::teaclave_service;
 use teaclave_types::Function;
 #[cfg(test_mode)]
 use teaclave_types::{FunctionInput, FunctionOutput};
-use teaclave_types::{InputData, OutputData, StagedTask, Task, TaskStatus};
+use teaclave_types::{InputDataValue, OutputDataValue, StagedTask, Task, TaskStatus};
 use teaclave_types::{Storable, TeaclaveInputFile, TeaclaveOutputFile};
 use teaclave_types::{TeaclaveServiceResponseError, TeaclaveServiceResponseResult};
 use thiserror::Error;
@@ -352,7 +352,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
             creator: task.creator,
             function_id: task.function_id,
             function_owner: task.function_owner,
-            arg_list: task.arg_list,
+            arg_list: task.function_arguments.into(),
             input_data_owner_list: task.input_data_owner_list,
             output_data_owner_list: task.output_data_owner_list,
             participants: task.participants,
@@ -494,15 +494,15 @@ impl TeaclaveManagement for TeaclaveManagementService {
             .read_from_db(task.function_id.as_bytes())
             .map_err(|_| TeaclaveManagementError::PermissionDenied)?;
 
-        let arg_list: HashMap<String, String> = task.arg_list.clone();
-        let mut input_map: HashMap<String, InputData> = HashMap::new();
-        let mut output_map: HashMap<String, OutputData> = HashMap::new();
+        let function_arguments = task.function_arguments.clone();
+        let mut input_map: HashMap<String, InputDataValue> = HashMap::new();
+        let mut output_map: HashMap<String, OutputDataValue> = HashMap::new();
         for (data_name, data_id) in task.input_map.iter() {
-            let input_data: InputData = if TeaclaveInputFile::match_prefix(data_id) {
+            let input_data: InputDataValue = if TeaclaveInputFile::match_prefix(data_id) {
                 let input_file: TeaclaveInputFile = self
                     .read_from_db(data_id.as_bytes())
                     .map_err(|_| TeaclaveManagementError::PermissionDenied)?;
-                InputData::from_input_file(input_file)
+                InputDataValue::from_teaclave_input_file(&input_file)
             } else {
                 return Err(TeaclaveManagementError::PermissionDenied.into());
             };
@@ -510,14 +510,14 @@ impl TeaclaveManagement for TeaclaveManagementService {
         }
 
         for (data_name, data_id) in task.output_map.iter() {
-            let output_data: OutputData = if TeaclaveOutputFile::match_prefix(data_id) {
+            let output_data: OutputDataValue = if TeaclaveOutputFile::match_prefix(data_id) {
                 let output_file: TeaclaveOutputFile = self
                     .read_from_db(data_id.as_bytes())
                     .map_err(|_| TeaclaveManagementError::PermissionDenied)?;
                 if output_file.hash.is_some() {
                     return Err(TeaclaveManagementError::PermissionDenied.into());
                 }
-                OutputData::from_output_file(output_file)
+                OutputDataValue::from_teaclave_output_file(&output_file)
             } else {
                 return Err(TeaclaveManagementError::PermissionDenied.into());
             };
@@ -526,10 +526,12 @@ impl TeaclaveManagement for TeaclaveManagementService {
 
         let staged_task = StagedTask::new()
             .task_id(task.task_id)
-            .function(&function)
-            .args(arg_list)
-            .input(input_map)
-            .output(output_map);
+            .function_id(function.function_id)
+            .function_name(&function.name)
+            .function_payload(function.payload)
+            .function_arguments(function_arguments)
+            .input_data(input_map)
+            .output_data(output_map);
         self.enqueue_to_db(StagedTask::get_queue_key().as_bytes(), &staged_task)?;
         task.status = TaskStatus::Running;
         self.write_to_db(&task)
@@ -761,18 +763,15 @@ pub mod tests {
         };
         let mut arg_list = HashMap::new();
         arg_list.insert("arg".to_string(), "data".to_string());
+        let function_arguments = arg_list.into();
 
         let url = Url::parse("s3://bucket_id/path?token=mock_token").unwrap();
         let hash = "a6d604b5987b693a19d94704532b5d928c2729f24dfd40745f8d03ac9ac75a8b".to_string();
         let crypto_info = TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(
             TeaclaveFileRootKey128::new(&[0; 16]).unwrap(),
         );
-        let input_data = InputData {
-            url: url.clone(),
-            hash,
-            crypto_info,
-        };
-        let output_data = OutputData { url, crypto_info };
+        let input_data = InputDataValue::new(&url, hash, crypto_info);
+        let output_data = OutputDataValue::new(&url, crypto_info);
         let mut input_map = HashMap::new();
         input_map.insert("input".to_string(), input_data);
         let mut output_map = HashMap::new();
@@ -780,10 +779,12 @@ pub mod tests {
 
         let staged_task = StagedTask::new()
             .task_id(Uuid::new_v4())
-            .function(&function)
-            .args(arg_list)
-            .input(input_map)
-            .output(output_map);
+            .function_id(function.function_id)
+            .function_name(&function.name)
+            .function_payload(function.payload)
+            .function_arguments(function_arguments)
+            .input_data(input_map)
+            .output_data(output_map);
 
         let value = staged_task.to_vec().unwrap();
         let deserialized_data = StagedTask::from_slice(&value).unwrap();
