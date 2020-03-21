@@ -1,38 +1,77 @@
-use crate::{
-    Function, Storable, TeaclaveExecutorSelector, TeaclaveFileCryptoInfo, TeaclaveInputFile,
-    TeaclaveOutputFile,
-};
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::prelude::v1::*;
+
+use serde::{Deserialize, Serialize};
 use url::Url;
 use uuid::Uuid;
+
+use crate::{
+    FunctionArguments, Storable, TeaclaveExecutorSelector, TeaclaveFileCryptoInfo,
+    TeaclaveInputFile, TeaclaveOutputFile,
+};
 
 const STAGED_TASK_PREFIX: &str = "staged-"; // staged-task-uuid
 pub const QUEUE_KEY: &str = "staged-task";
 
+pub type FunctionInputData = HashMap<String, InputDataValue>;
+pub type FunctionOutputData = HashMap<String, OutputDataValue>;
+
 #[derive(Debug, Deserialize, Serialize)]
-pub struct InputData {
+pub struct InputDataValue {
     pub url: Url,
     pub hash: String,
     pub crypto_info: TeaclaveFileCryptoInfo,
 }
 
+impl InputDataValue {
+    pub fn new(url: &Url, hash: impl ToString, crypto_info: TeaclaveFileCryptoInfo) -> Self {
+        Self {
+            url: url.to_owned(),
+            hash: hash.to_string(),
+            crypto_info,
+        }
+    }
+
+    pub fn from_teaclave_input_file(file: &TeaclaveInputFile) -> Self {
+        Self {
+            url: file.url.to_owned(),
+            hash: file.hash.to_owned(),
+            crypto_info: file.crypto_info,
+        }
+    }
+}
+
 #[derive(Debug, Deserialize, Serialize)]
-pub struct OutputData {
+pub struct OutputDataValue {
     pub url: Url,
     pub crypto_info: TeaclaveFileCryptoInfo,
+}
+
+impl OutputDataValue {
+    pub fn new(url: &Url, crypto_info: TeaclaveFileCryptoInfo) -> Self {
+        Self {
+            url: url.to_owned(),
+            crypto_info,
+        }
+    }
+
+    pub fn from_teaclave_output_file(file: &TeaclaveOutputFile) -> Self {
+        Self {
+            url: file.url.to_owned(),
+            crypto_info: file.crypto_info,
+        }
+    }
 }
 
 #[derive(Debug, Default, Deserialize, Serialize)]
 pub struct StagedTask {
     pub task_id: Uuid,
-    pub function_id: String,
+    pub function_id: Uuid,
     pub function_name: String,
     pub function_payload: Vec<u8>,
-    pub arg_list: HashMap<String, String>,
-    pub input_map: HashMap<String, InputData>,
-    pub output_map: HashMap<String, OutputData>,
+    pub function_arguments: FunctionArguments,
+    pub input_data: FunctionInputData,
+    pub output_data: FunctionOutputData,
 }
 
 impl Storable for StagedTask {
@@ -45,25 +84,6 @@ impl Storable for StagedTask {
     }
 }
 
-impl InputData {
-    pub fn from_input_file(file: TeaclaveInputFile) -> InputData {
-        InputData {
-            url: file.url,
-            hash: file.hash,
-            crypto_info: file.crypto_info,
-        }
-    }
-}
-
-impl OutputData {
-    pub fn from_output_file(file: TeaclaveOutputFile) -> OutputData {
-        OutputData {
-            url: file.url,
-            crypto_info: file.crypto_info,
-        }
-    }
-}
-
 impl StagedTask {
     pub fn new() -> Self {
         Self::default()
@@ -73,18 +93,9 @@ impl StagedTask {
         Self { task_id, ..self }
     }
 
-    pub fn function(self, function: &Function) -> Self {
+    pub fn function_id(self, function_id: Uuid) -> Self {
         Self {
-            function_id: function.external_id(),
-            function_name: function.name.clone(),
-            function_payload: function.payload.clone(),
-            ..self
-        }
-    }
-
-    pub fn function_id(self, function_id: impl Into<String>) -> Self {
-        Self {
-            function_id: function_id.into(),
+            function_id,
             ..self
         }
     }
@@ -103,23 +114,20 @@ impl StagedTask {
         }
     }
 
-    pub fn args(self, args: HashMap<String, String>) -> Self {
+    pub fn function_arguments(self, function_arguments: FunctionArguments) -> Self {
         Self {
-            arg_list: args,
+            function_arguments,
             ..self
         }
     }
 
-    pub fn input(self, input: HashMap<String, InputData>) -> Self {
-        Self {
-            input_map: input,
-            ..self
-        }
+    pub fn input_data(self, input_data: FunctionInputData) -> Self {
+        Self { input_data, ..self }
     }
 
-    pub fn output(self, output: HashMap<String, OutputData>) -> Self {
+    pub fn output_data(self, output_data: FunctionOutputData) -> Self {
         Self {
-            output_map: output,
+            output_data,
             ..self
         }
     }

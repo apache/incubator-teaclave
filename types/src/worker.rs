@@ -11,17 +11,21 @@ use std::untrusted::fs::File;
 use std::fs::File;
 
 use anyhow;
+use anyhow::Context;
+use anyhow::Result;
 
 use crate::TeaclaveFileCryptoInfo;
 use crate::TeaclaveFileRootKey128;
 use protected_fs::ProtectedFile;
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 
 #[macro_export]
 macro_rules! hashmap {
-    ($( $key: expr => $val: expr ),*) => {{
+    ($( $key: expr => $value: expr,)+) => { hashmap!($($key => $value),+) };
+    ($( $key: expr => $value: expr ),*) => {{
          let mut map = ::std::collections::HashMap::new();
-         $( map.insert($key, $val); )*
+         $( map.insert($key, $value); )*
          map
     }}
 }
@@ -223,41 +227,107 @@ where
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Default)]
-pub struct TeaclaveFunctionArguments {
-    pub args: HashMap<String, String>,
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ArgumentValue {
+    inner: String,
 }
 
-impl TeaclaveFunctionArguments {
-    pub fn new<K, V>(input: &HashMap<K, V>) -> Self
+impl ArgumentValue {
+    pub fn new(value: String) -> Self {
+        Self { inner: value }
+    }
+
+    pub fn inner(&self) -> &String {
+        &self.inner
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.inner
+    }
+
+    pub fn as_usize(&self) -> Result<usize> {
+        usize::from_str(&self.inner).with_context(|| format!("cannot parse {}", self.inner))
+    }
+
+    pub fn as_u32(&self) -> Result<u32> {
+        u32::from_str(&self.inner).with_context(|| format!("cannot parse {}", self.inner))
+    }
+
+    pub fn as_f32(&self) -> Result<f32> {
+        f32::from_str(&self.inner).with_context(|| format!("cannot parse {}", self.inner))
+    }
+
+    pub fn as_f64(&self) -> Result<f64> {
+        f64::from_str(&self.inner).with_context(|| format!("cannot parse {}", self.inner))
+    }
+
+    pub fn as_u8(&self) -> Result<u8> {
+        u8::from_str(&self.inner).with_context(|| format!("cannot parse {}", self.inner))
+    }
+}
+
+impl std::fmt::Display for ArgumentValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.inner)
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug, Default)]
+pub struct FunctionArguments {
+    #[serde(flatten)]
+    pub inner: HashMap<String, ArgumentValue>,
+}
+
+impl<S: core::default::Default + std::hash::BuildHasher> From<FunctionArguments>
+    for HashMap<String, String, S>
+{
+    fn from(arguments: FunctionArguments) -> Self {
+        arguments
+            .inner()
+            .iter()
+            .map(|(k, v)| (k.to_owned(), v.as_str().to_owned()))
+            .collect()
+    }
+}
+
+impl From<HashMap<String, String>> for FunctionArguments {
+    fn from(map: HashMap<String, String>) -> Self {
+        FunctionArguments::from_map(&map)
+    }
+}
+
+impl FunctionArguments {
+    pub fn from_map<K, V>(input: &HashMap<K, V>) -> Self
     where
         K: std::string::ToString,
         V: std::string::ToString,
     {
-        let args = input.iter().fold(HashMap::new(), |mut acc, (k, v)| {
-            acc.insert(k.to_string(), v.to_string());
+        let inner = input.iter().fold(HashMap::new(), |mut acc, (k, v)| {
+            acc.insert(k.to_string(), ArgumentValue::new(v.to_string()));
             acc
         });
 
-        TeaclaveFunctionArguments { args }
+        Self { inner }
     }
 
-    pub fn try_get<T: std::str::FromStr>(&self, key: &str) -> anyhow::Result<T> {
-        self.args
+    pub fn inner(&self) -> &HashMap<String, ArgumentValue> {
+        &self.inner
+    }
+
+    pub fn get(&self, key: &str) -> anyhow::Result<&ArgumentValue> {
+        self.inner
             .get(key)
-            .ok_or_else(|| anyhow::anyhow!("Cannot find function argument: {}", key))
-            .and_then(|s| {
-                s.parse::<T>()
-                    .map_err(|_| anyhow::anyhow!("parse argument error"))
-            })
+            .with_context(|| format!("key not found: {}", key))
     }
 
     pub fn into_vec(self) -> Vec<String> {
         let mut vector = Vec::new();
-        self.args.into_iter().for_each(|(k, v)| {
+
+        self.inner.into_iter().for_each(|(k, v)| {
             vector.push(k);
-            vector.push(v);
+            vector.push(v.to_string());
         });
+
         vector
     }
 }
@@ -274,7 +344,7 @@ pub struct WorkerInvocation {
     pub executor_type: TeaclaveExecutorSelector, // "native" | "python"
     pub function_name: String,                   // "gbdt_training" | "mesapy" |
     pub function_payload: String,
-    pub function_args: TeaclaveFunctionArguments,
+    pub function_args: FunctionArguments,
     pub input_files: TeaclaveWorkerFileRegistry<TeaclaveWorkerInputFileInfo>,
     pub output_files: TeaclaveWorkerFileRegistry<TeaclaveWorkerOutputFileInfo>,
 }

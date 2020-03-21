@@ -1,3 +1,4 @@
+use crate::FunctionArguments;
 use crate::Storable;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -27,7 +28,7 @@ pub struct Task {
     pub creator: String,
     pub function_id: String,
     pub function_owner: String,
-    pub arg_list: HashMap<String, String>,
+    pub function_arguments: FunctionArguments,
     pub input_data_owner_list: HashMap<String, DataOwnerList>,
     pub output_data_owner_list: HashMap<String, DataOwnerList>,
     pub participants: HashSet<String>,
