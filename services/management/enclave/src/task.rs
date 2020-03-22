@@ -20,14 +20,15 @@ use std::collections::HashSet;
 use std::prelude::v1::*;
 use teaclave_types::Function;
 use teaclave_types::{
-    DataOwnerList, Storable, Task, TaskStatus, TeaclaveInputFile, TeaclaveOutputFile,
+    DataOwnerList, FunctionArguments, Storable, Task, TaskStatus, TeaclaveInputFile,
+    TeaclaveOutputFile,
 };
 use uuid::Uuid;
 
 pub(crate) fn create_task(
     function: Function,
     creator: String,
-    arg_list: HashMap<String, String>,
+    function_arguments: FunctionArguments,
     input_data_owner_list: HashMap<String, DataOwnerList>,
     output_data_owner_list: HashMap<String, DataOwnerList>,
 ) -> Result<Task> {
@@ -47,7 +48,6 @@ pub(crate) fn create_task(
             participants.insert(user_id.clone());
         }
     }
-    let function_arguments = arg_list.into();
     let task = Task {
         task_id,
         creator,

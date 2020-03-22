@@ -7,7 +7,7 @@ use teaclave_types::{
 use teaclave_worker::Worker;
 
 fn test_start_worker() {
-    let arguments = FunctionArguments::from_map(&hashmap!(
+    let arguments = FunctionArguments::new(hashmap!(
         "feature_size"  => "4",
         "max_depth"     => "4",
         "iterations"    => "100",
@@ -26,12 +26,12 @@ fn test_start_worker() {
     let input_info = StagedInputFile::create_with_plaintext_file(plain_input).unwrap();
 
     let input_files = StagedFiles::new(hashmap!(
-        "training_data".to_string() => input_info));
+        "training_data" => input_info));
 
     let output_info = StagedOutputFile::new(enc_output, TeaclaveFileRootKey128::random());
 
     let output_files = StagedFiles::new(hashmap!(
-        "trained_model".to_string() => output_info.clone()));
+        "trained_model" => output_info.clone()));
 
     let staged_function = StagedFunction::new()
         .name("gbdt_training")

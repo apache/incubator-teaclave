@@ -276,11 +276,10 @@ fn test_create_task() {
     let function_id = "function-00000000-0000-0000-0000-000000000002";
     let mut output_data_owner_list = HashMap::new();
     output_data_owner_list.insert("output".to_string(), data_owner_id_list);
+    let function_arguments = FunctionArguments::new(hashmap!("arg1" => "data1"));
     let request = CreateTaskRequest {
         function_id: function_id.to_string(),
-        arg_list: vec![("arg1".to_string(), "data1".to_string())]
-            .into_iter()
-            .collect(),
+        function_arguments,
         input_data_owner_list: HashMap::new(),
         output_data_owner_list: output_data_owner_list.clone(),
     };
@@ -288,11 +287,10 @@ fn test_create_task() {
     assert!(response.is_ok());
     assert!(!response.unwrap().task_id.is_empty());
 
+    let function_arguments = FunctionArguments::new(hashmap!("arg1" => "data1"));
     let request = CreateTaskRequest {
         function_id: function_id.to_string(),
-        arg_list: vec![("arg1".to_string(), "data1".to_string())]
-            .into_iter()
-            .collect(),
+        function_arguments,
         input_data_owner_list: HashMap::new(),
         output_data_owner_list,
     };
@@ -313,11 +311,10 @@ fn test_get_task() {
     };
     let mut output_data_owner_list = HashMap::new();
     output_data_owner_list.insert("output".to_string(), data_owner_id_list);
+    let function_arguments = FunctionArguments::new(hashmap!("arg1" => "data1"));
     let request = CreateTaskRequest {
         function_id: "function-00000000-0000-0000-0000-000000000002".to_string(),
-        arg_list: vec![("arg1".to_string(), "data1".to_string())]
-            .into_iter()
-            .collect(),
+        function_arguments,
         input_data_owner_list: HashMap::new(),
         output_data_owner_list,
     };
@@ -345,11 +342,10 @@ fn test_assign_data() {
     };
     let mut output_data_owner_list = HashMap::new();
     output_data_owner_list.insert("output".to_string(), data_owner_id_list);
+    let function_arguments = FunctionArguments::new(hashmap!("arg1" => "data1"));
     let request = CreateTaskRequest {
         function_id: "function-00000000-0000-0000-0000-000000000002".to_string(),
-        arg_list: vec![("arg1".to_string(), "data1".to_string())]
-            .into_iter()
-            .collect(),
+        function_arguments,
         input_data_owner_list: HashMap::new(),
         output_data_owner_list,
     };
@@ -399,11 +395,10 @@ fn test_approve_task() {
     };
     let mut output_data_owner_list = HashMap::new();
     output_data_owner_list.insert("output".to_string(), data_owner_id_list);
+    let function_arguments = FunctionArguments::new(hashmap!("arg1" => "data1"));
     let request = CreateTaskRequest {
         function_id: "function-00000000-0000-0000-0000-000000000002".to_string(),
-        arg_list: vec![("arg1".to_string(), "data1".to_string())]
-            .into_iter()
-            .collect(),
+        function_arguments,
         input_data_owner_list: HashMap::new(),
         output_data_owner_list,
     };
@@ -450,11 +445,10 @@ fn test_invoke_task() {
     };
     let mut output_data_owner_list = HashMap::new();
     output_data_owner_list.insert("output".to_string(), data_owner_id_list);
+    let function_arguments = FunctionArguments::new(hashmap!("arg1" => "data1"));
     let request = CreateTaskRequest {
         function_id: "function-00000000-0000-0000-0000-000000000002".to_string(),
-        arg_list: vec![("arg1".to_string(), "data1".to_string())]
-            .into_iter()
-            .collect(),
+        function_arguments,
         input_data_owner_list: HashMap::new(),
         output_data_owner_list,
     };

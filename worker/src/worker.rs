@@ -25,7 +25,7 @@ use anyhow;
 use serde_json;
 
 use teaclave_types::{
-    ExecutorType, FunctionArguments, StagedFiles, StagedFunction, StagedInputFile,
+    hashmap, ExecutorType, FunctionArguments, StagedFiles, StagedFunction, StagedInputFile,
     StagedOutputFile, WorkerCapability,
 };
 
@@ -162,11 +162,12 @@ fn prepare_arguments(
                 !function_payload.is_empty(),
                 "Python function payload must not be empty!"
             );
-            let mut wrap_args = HashMap::new();
             let req_args = serde_json::to_string(&function_arguments)?;
-            wrap_args.insert("py_payload".to_string(), function_payload);
-            wrap_args.insert("py_args".to_string(), req_args);
-            FunctionArguments::from_map(&wrap_args)
+            let wrap_args = hashmap!(
+                "py_payload" => function_payload,
+                "py_args" => req_args,
+            );
+            FunctionArguments::new(wrap_args)
         }
     };
 

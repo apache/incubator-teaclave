@@ -119,7 +119,7 @@ pub mod tests {
     }
 
     fn test_mesapy() {
-        let py_args = FunctionArguments::from_map(&hashmap!("--name" => "Teaclave"));
+        let py_args = FunctionArguments::new(hashmap!("--name" => "Teaclave"));
         let py_payload = r#"
 def entrypoint(argv):
     in_file_id = "in_f1"
@@ -157,8 +157,8 @@ def entrypoint(argv):
         teaclave_open("invalid_key", "wb")
     except RuntimeError as e:
         assert e.message == "fileio_init: teaclave_ffi_error"
-    
-    # open invalid option    
+
+    # open invalid option
     try:
         teaclave_open(out_file_id, "w")
     except RuntimeError as e:
@@ -181,9 +181,9 @@ def entrypoint(argv):
         };
         let runtime = Box::new(RawIoRuntime::new(input_files, output_files));
 
-        let func_args = FunctionArguments::from_map(&hashmap!(
-                "py_payload".to_string() => py_payload.to_string(),
-                "py_args".to_string() => serde_json::to_string(&py_args).unwrap()
+        let func_args = FunctionArguments::new(hashmap!(
+                "py_payload" => py_payload.to_string(),
+                "py_args" => serde_json::to_string(&py_args).unwrap()
         ));
 
         let function = Mesapy;

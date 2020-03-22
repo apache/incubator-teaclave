@@ -54,7 +54,7 @@ pub mod tests {
     }
 
     fn test_echo() {
-        let func_args = FunctionArguments::from_map(&hashmap!(
+        let func_args = FunctionArguments::new(hashmap!(
             "message"  => "Hello Teaclave!"
         ));
 

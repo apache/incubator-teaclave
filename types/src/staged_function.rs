@@ -12,6 +12,30 @@ pub struct ArgumentValue {
     inner: String,
 }
 
+impl From<String> for ArgumentValue {
+    fn from(value: String) -> Self {
+        ArgumentValue::new(value)
+    }
+}
+
+impl From<&str> for ArgumentValue {
+    fn from(value: &str) -> Self {
+        ArgumentValue::new(value.into())
+    }
+}
+
+impl From<&String> for ArgumentValue {
+    fn from(value: &String) -> Self {
+        ArgumentValue::new(value.into())
+    }
+}
+
+impl From<ArgumentValue> for String {
+    fn from(value: ArgumentValue) -> Self {
+        value.as_str().to_owned()
+    }
+}
+
 impl ArgumentValue {
     pub fn new(value: String) -> Self {
         Self { inner: value }
@@ -72,26 +96,26 @@ impl<S: core::default::Default + std::hash::BuildHasher> From<FunctionArguments>
 
 impl From<HashMap<String, String>> for FunctionArguments {
     fn from(map: HashMap<String, String>) -> Self {
-        FunctionArguments::from_map(&map)
-    }
-}
-
-impl FunctionArguments {
-    pub fn from_map<K, V>(input: &HashMap<K, V>) -> Self
-    where
-        K: std::string::ToString,
-        V: std::string::ToString,
-    {
-        let inner = input.iter().fold(HashMap::new(), |mut acc, (k, v)| {
-            acc.insert(k.to_string(), ArgumentValue::new(v.to_string()));
+        let inner = map.iter().fold(HashMap::new(), |mut acc, (k, v)| {
+            acc.insert(k.into(), v.into());
             acc
         });
 
         Self { inner }
     }
+}
+
+impl FunctionArguments {
+    pub fn new(map: HashMap<String, ArgumentValue>) -> Self {
+        Self { inner: map }
+    }
 
     pub fn inner(&self) -> &HashMap<String, ArgumentValue> {
         &self.inner
+    }
+
+    pub fn inner_mut(&mut self) -> &mut HashMap<String, ArgumentValue> {
+        &mut self.inner
     }
 
     pub fn get(&self, key: &str) -> anyhow::Result<&ArgumentValue> {
