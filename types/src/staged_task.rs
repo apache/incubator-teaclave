@@ -13,17 +13,17 @@ use crate::{
 const STAGED_TASK_PREFIX: &str = "staged-"; // staged-task-uuid
 pub const QUEUE_KEY: &str = "staged-task";
 
-pub type FunctionInputData = HashMap<String, InputDataValue>;
-pub type FunctionOutputData = HashMap<String, OutputDataValue>;
+pub type FunctionInputFiles = HashMap<String, FunctionInputFile>;
+pub type FunctionOutputFiles = HashMap<String, FunctionOutputFile>;
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct InputDataValue {
+pub struct FunctionInputFile {
     pub url: Url,
     pub hash: String,
     pub crypto_info: TeaclaveFileCryptoInfo,
 }
 
-impl InputDataValue {
+impl FunctionInputFile {
     pub fn new(url: Url, hash: impl ToString, crypto_info: TeaclaveFileCryptoInfo) -> Self {
         Self {
             url,
@@ -42,12 +42,12 @@ impl InputDataValue {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct OutputDataValue {
+pub struct FunctionOutputFile {
     pub url: Url,
     pub crypto_info: TeaclaveFileCryptoInfo,
 }
 
-impl OutputDataValue {
+impl FunctionOutputFile {
     pub fn new(url: Url, crypto_info: TeaclaveFileCryptoInfo) -> Self {
         Self { url, crypto_info }
     }
@@ -67,8 +67,8 @@ pub struct StagedTask {
     pub function_name: String,
     pub function_payload: Vec<u8>,
     pub function_arguments: FunctionArguments,
-    pub input_data: FunctionInputData,
-    pub output_data: FunctionOutputData,
+    pub input_data: FunctionInputFiles,
+    pub output_data: FunctionOutputFiles,
 }
 
 impl Storable for StagedTask {
@@ -118,11 +118,11 @@ impl StagedTask {
         }
     }
 
-    pub fn input_data(self, input_data: FunctionInputData) -> Self {
+    pub fn input_data(self, input_data: FunctionInputFiles) -> Self {
         Self { input_data, ..self }
     }
 
-    pub fn output_data(self, output_data: FunctionOutputData) -> Self {
+    pub fn output_data(self, output_data: FunctionOutputFiles) -> Self {
         Self {
             output_data,
             ..self

@@ -22,19 +22,19 @@ use anyhow;
 use std::io;
 
 use super::TeaclaveRuntime;
-use teaclave_types::TeaclaveWorkerFileRegistry;
-use teaclave_types::TeaclaveWorkerInputFileInfo;
-use teaclave_types::TeaclaveWorkerOutputFileInfo;
+use teaclave_types::StagedFiles;
+use teaclave_types::StagedInputFile;
+use teaclave_types::StagedOutputFile;
 
 pub struct DefaultRuntime {
-    input_files: TeaclaveWorkerFileRegistry<TeaclaveWorkerInputFileInfo>,
-    output_files: TeaclaveWorkerFileRegistry<TeaclaveWorkerOutputFileInfo>,
+    input_files: StagedFiles<StagedInputFile>,
+    output_files: StagedFiles<StagedOutputFile>,
 }
 
 impl DefaultRuntime {
     pub fn new(
-        input_files: TeaclaveWorkerFileRegistry<TeaclaveWorkerInputFileInfo>,
-        output_files: TeaclaveWorkerFileRegistry<TeaclaveWorkerOutputFileInfo>,
+        input_files: StagedFiles<StagedInputFile>,
+        output_files: StagedFiles<StagedOutputFile>,
     ) -> DefaultRuntime {
         DefaultRuntime {
             input_files,

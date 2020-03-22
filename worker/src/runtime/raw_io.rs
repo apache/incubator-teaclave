@@ -24,19 +24,19 @@ use std::untrusted::fs::File;
 use anyhow;
 
 use super::TeaclaveRuntime;
-use teaclave_types::TeaclaveWorkerFileRegistry;
-use teaclave_types::TeaclaveWorkerInputFileInfo;
-use teaclave_types::TeaclaveWorkerOutputFileInfo;
+use teaclave_types::StagedFiles;
+use teaclave_types::StagedInputFile;
+use teaclave_types::StagedOutputFile;
 
 pub struct RawIoRuntime {
-    input_files: TeaclaveWorkerFileRegistry<TeaclaveWorkerInputFileInfo>,
-    output_files: TeaclaveWorkerFileRegistry<TeaclaveWorkerOutputFileInfo>,
+    input_files: StagedFiles<StagedInputFile>,
+    output_files: StagedFiles<StagedOutputFile>,
 }
 
 impl RawIoRuntime {
     pub fn new(
-        input_files: TeaclaveWorkerFileRegistry<TeaclaveWorkerInputFileInfo>,
-        output_files: TeaclaveWorkerFileRegistry<TeaclaveWorkerOutputFileInfo>,
+        input_files: StagedFiles<StagedInputFile>,
+        output_files: StagedFiles<StagedOutputFile>,
     ) -> RawIoRuntime {
         RawIoRuntime {
             input_files,

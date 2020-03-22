@@ -27,7 +27,7 @@ use teaclave_service_enclave_utils::teaclave_service;
 use teaclave_types::Function;
 #[cfg(test_mode)]
 use teaclave_types::{FunctionInput, FunctionOutput};
-use teaclave_types::{InputDataValue, OutputDataValue, StagedTask, Task, TaskStatus};
+use teaclave_types::{FunctionInputFile, FunctionOutputFile, StagedTask, Task, TaskStatus};
 use teaclave_types::{Storable, TeaclaveInputFile, TeaclaveOutputFile};
 use teaclave_types::{TeaclaveServiceResponseError, TeaclaveServiceResponseResult};
 use thiserror::Error;
@@ -495,14 +495,14 @@ impl TeaclaveManagement for TeaclaveManagementService {
             .map_err(|_| TeaclaveManagementError::PermissionDenied)?;
 
         let function_arguments = task.function_arguments.clone();
-        let mut input_map: HashMap<String, InputDataValue> = HashMap::new();
-        let mut output_map: HashMap<String, OutputDataValue> = HashMap::new();
+        let mut input_map: HashMap<String, FunctionInputFile> = HashMap::new();
+        let mut output_map: HashMap<String, FunctionOutputFile> = HashMap::new();
         for (data_name, data_id) in task.input_map.iter() {
-            let input_data: InputDataValue = if TeaclaveInputFile::match_prefix(data_id) {
+            let input_data: FunctionInputFile = if TeaclaveInputFile::match_prefix(data_id) {
                 let input_file: TeaclaveInputFile = self
                     .read_from_db(data_id.as_bytes())
                     .map_err(|_| TeaclaveManagementError::PermissionDenied)?;
-                InputDataValue::from_teaclave_input_file(&input_file)
+                FunctionInputFile::from_teaclave_input_file(&input_file)
             } else {
                 return Err(TeaclaveManagementError::PermissionDenied.into());
             };
@@ -510,14 +510,14 @@ impl TeaclaveManagement for TeaclaveManagementService {
         }
 
         for (data_name, data_id) in task.output_map.iter() {
-            let output_data: OutputDataValue = if TeaclaveOutputFile::match_prefix(data_id) {
+            let output_data: FunctionOutputFile = if TeaclaveOutputFile::match_prefix(data_id) {
                 let output_file: TeaclaveOutputFile = self
                     .read_from_db(data_id.as_bytes())
                     .map_err(|_| TeaclaveManagementError::PermissionDenied)?;
                 if output_file.hash.is_some() {
                     return Err(TeaclaveManagementError::PermissionDenied.into());
                 }
-                OutputDataValue::from_teaclave_output_file(&output_file)
+                FunctionOutputFile::from_teaclave_output_file(&output_file)
             } else {
                 return Err(TeaclaveManagementError::PermissionDenied.into());
             };
@@ -770,8 +770,8 @@ pub mod tests {
         let crypto_info = TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(
             TeaclaveFileRootKey128::new(&[0; 16]).unwrap(),
         );
-        let input_data = InputDataValue::new(url.clone(), hash, crypto_info);
-        let output_data = OutputDataValue::new(url, crypto_info);
+        let input_data = FunctionInputFile::new(url.clone(), hash, crypto_info);
+        let output_data = FunctionOutputFile::new(url, crypto_info);
         let mut input_map = HashMap::new();
         input_map.insert("input".to_string(), input_data);
         let mut output_map = HashMap::new();
