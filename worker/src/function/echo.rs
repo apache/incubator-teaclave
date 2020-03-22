@@ -44,7 +44,7 @@ pub mod tests {
 
     use teaclave_types::hashmap;
     use teaclave_types::FunctionArguments;
-    use teaclave_types::TeaclaveWorkerFileRegistry;
+    use teaclave_types::StagedFiles;
 
     use crate::function::TeaclaveFunction;
     use crate::runtime::RawIoRuntime;
@@ -58,8 +58,8 @@ pub mod tests {
             "message"  => "Hello Teaclave!"
         ));
 
-        let input_files = TeaclaveWorkerFileRegistry::default();
-        let output_files = TeaclaveWorkerFileRegistry::default();
+        let input_files = StagedFiles::default();
+        let output_files = StagedFiles::default();
 
         let runtime = Box::new(RawIoRuntime::new(input_files, output_files));
         let function = Echo;

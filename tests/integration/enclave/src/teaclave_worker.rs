@@ -1,9 +1,8 @@
 use std::prelude::v1::*;
 
 use teaclave_types::{
-    hashmap, read_all_bytes, ExecutorType, FunctionArguments, StagedFunction,
-    TeaclaveFileRootKey128, TeaclaveWorkerFileRegistry, TeaclaveWorkerInputFileInfo,
-    TeaclaveWorkerOutputFileInfo,
+    hashmap, read_all_bytes, ExecutorType, FunctionArguments, StagedFiles, StagedFunction,
+    StagedInputFile, StagedOutputFile, TeaclaveFileRootKey128,
 };
 use teaclave_worker::Worker;
 
@@ -24,26 +23,23 @@ fn test_start_worker() {
     let enc_output = "fixtures/functions/gbdt_training/model.enc.out";
     let expected_output = "fixtures/functions/gbdt_training/expected_model.txt";
 
-    let input_info = TeaclaveWorkerInputFileInfo::create_with_plaintext_file(plain_input).unwrap();
+    let input_info = StagedInputFile::create_with_plaintext_file(plain_input).unwrap();
 
-    let input_files = TeaclaveWorkerFileRegistry::new(hashmap!(
+    let input_files = StagedFiles::new(hashmap!(
         "training_data".to_string() => input_info));
 
-    let output_info =
-        TeaclaveWorkerOutputFileInfo::new(enc_output, TeaclaveFileRootKey128::random());
+    let output_info = StagedOutputFile::new(enc_output, TeaclaveFileRootKey128::random());
 
-    let output_files = TeaclaveWorkerFileRegistry::new(hashmap!(
+    let output_files = StagedFiles::new(hashmap!(
         "trained_model".to_string() => output_info.clone()));
 
-    let request = StagedFunction {
-        name: "gbdt_training".to_string(),
-        payload: String::new(),
-        arguments,
-        input_files,
-        output_files,
-        runtime_name: "default".to_string(),
-        executor_type: ExecutorType::Native,
-    };
+    let staged_function = StagedFunction::new()
+        .name("gbdt_training")
+        .arguments(arguments)
+        .input_files(input_files)
+        .output_files(output_files)
+        .runtime_name("default")
+        .executor_type(ExecutorType::Native);
 
     let worker = Worker::default();
 
@@ -51,7 +47,7 @@ fn test_start_worker() {
     assert!(capability.runtimes.contains("default"));
     assert!(capability.functions.contains("native-gbdt_training"));
 
-    let summary = worker.invoke_function(request).unwrap();
+    let summary = worker.invoke_function(staged_function).unwrap();
     assert_eq!(summary, "Trained 120 lines of data.");
 
     let result = output_info.get_plaintext().unwrap();

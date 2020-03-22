@@ -109,10 +109,10 @@ pub mod tests {
     use crate::runtime::RawIoRuntime;
     use teaclave_types::hashmap;
     use teaclave_types::FunctionArguments;
+    use teaclave_types::StagedFiles;
+    use teaclave_types::StagedInputFile;
+    use teaclave_types::StagedOutputFile;
     use teaclave_types::TeaclaveFileRootKey128;
-    use teaclave_types::TeaclaveWorkerFileRegistry;
-    use teaclave_types::TeaclaveWorkerInputFileInfo;
-    use teaclave_types::TeaclaveWorkerOutputFileInfo;
 
     pub fn run_tests() -> bool {
         run_tests!(test_mesapy,)
@@ -168,16 +168,15 @@ def entrypoint(argv):
         let input = "fixtures/functions/mesapy/input.txt";
         let output = "fixtures/functions/mesapy/output.txt";
 
-        let input_info = TeaclaveWorkerInputFileInfo::new(input, TeaclaveFileRootKey128::random());
+        let input_info = StagedInputFile::new(input, TeaclaveFileRootKey128::random());
 
-        let output_info =
-            TeaclaveWorkerOutputFileInfo::new(output, TeaclaveFileRootKey128::random());
+        let output_info = StagedOutputFile::new(output, TeaclaveFileRootKey128::random());
 
-        let input_files = TeaclaveWorkerFileRegistry {
+        let input_files = StagedFiles {
             entries: hashmap!("in_f1".to_string() => input_info),
         };
 
-        let output_files = TeaclaveWorkerFileRegistry {
+        let output_files = StagedFiles {
             entries: hashmap!("out_f1".to_string() => output_info),
         };
         let runtime = Box::new(RawIoRuntime::new(input_files, output_files));

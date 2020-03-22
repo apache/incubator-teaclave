@@ -191,7 +191,7 @@ fn prepare_task(task: &StagedTask) -> StagedFunction {
     let request = FileAgentRequest::new(HandleFileCommand::Download, file_request_info);
     handle_file_request(request).unwrap();
 
-    let mut converted_input_file_map: HashMap<String, TeaclaveWorkerInputFileInfo> = HashMap::new();
+    let mut converted_input_file_map: HashMap<String, StagedInputFile> = HashMap::new();
     for (key, value) in input_file_map.iter() {
         let (from, crypto_info) = value;
         let mut dest = from.clone();
@@ -201,9 +201,9 @@ fn prepare_task(task: &StagedTask) -> StagedFunction {
         let input_file_info = convert_encrypted_input_file(from, *crypto_info, &dest).unwrap();
         converted_input_file_map.insert(key.to_string(), input_file_info);
     }
-    let input_files = TeaclaveWorkerFileRegistry::new(converted_input_file_map);
+    let input_files = StagedFiles::new(converted_input_file_map);
 
-    let mut output_file_map: HashMap<String, TeaclaveWorkerOutputFileInfo> = HashMap::new();
+    let mut output_file_map: HashMap<String, StagedOutputFile> = HashMap::new();
     for (key, value) in task.output_data.iter() {
         let mut dest = agent_dir_path.to_path_buf();
         dest.push(&format!("{}.out", key));
@@ -211,21 +211,19 @@ fn prepare_task(task: &StagedTask) -> StagedFunction {
             TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(crypto) => crypto,
             _ => unimplemented!(),
         };
-        let output_info =
-            TeaclaveWorkerOutputFileInfo::new(dest.to_string_lossy().to_string(), crypto);
+        let output_info = StagedOutputFile::new(dest.to_string_lossy().to_string(), crypto);
         output_file_map.insert(key.to_string(), output_info);
     }
-    let output_files = TeaclaveWorkerFileRegistry::new(output_file_map);
+    let output_files = StagedFiles::new(output_file_map);
 
-    StagedFunction {
-        name: function_name,
-        payload: function_payload,
-        arguments: function_arguments,
-        input_files,
-        output_files,
-        runtime_name,
-        executor_type,
-    }
+    StagedFunction::new()
+        .name(function_name)
+        .payload(function_payload)
+        .arguments(function_arguments)
+        .input_files(input_files)
+        .output_files(output_files)
+        .runtime_name(runtime_name)
+        .executor_type(executor_type)
 }
 
 #[cfg(feature = "enclave_unit_test")]
@@ -287,8 +285,8 @@ pub mod tests {
         let crypto = TeaclaveFileRootKey128::new(&[0; 16]).unwrap();
         let crypto_info = TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(crypto);
 
-        let training_input_data = InputDataValue::new(input_url, "", crypto_info);
-        let model_output_data = OutputDataValue::new(output_url, crypto_info);
+        let training_input_data = FunctionInputFile::new(input_url, "", crypto_info);
+        let model_output_data = FunctionOutputFile::new(output_url, crypto_info);
 
         let input_data = hashmap!("training_data".to_string() => training_input_data);
         let output_data = hashmap!("trained_model".to_string() => model_output_data);

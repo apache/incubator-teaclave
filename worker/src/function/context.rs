@@ -224,10 +224,10 @@ pub mod tests {
     use std::str::FromStr;
     use teaclave_test_utils::*;
     use teaclave_types::hashmap;
+    use teaclave_types::StagedFiles;
+    use teaclave_types::StagedInputFile;
+    use teaclave_types::StagedOutputFile;
     use teaclave_types::TeaclaveFileRootKey128;
-    use teaclave_types::TeaclaveWorkerFileRegistry;
-    use teaclave_types::TeaclaveWorkerInputFileInfo;
-    use teaclave_types::TeaclaveWorkerOutputFileInfo;
 
     pub fn run_tests() -> bool {
         run_tests!(test_file_handle_encoding, test_rtc_api,)
@@ -246,18 +246,17 @@ pub mod tests {
         let input = PathBuf::from_str("fixtures/functions/mesapy/input.txt").unwrap();
         let output = PathBuf::from_str("fixtures/functions/mesapy/output.txt.out").unwrap();
 
-        let input_info = TeaclaveWorkerInputFileInfo::new(input, TeaclaveFileRootKey128::random());
+        let input_info = StagedInputFile::new(input, TeaclaveFileRootKey128::random());
 
-        let output_info =
-            TeaclaveWorkerOutputFileInfo::new(output, TeaclaveFileRootKey128::random());
+        let output_info = StagedOutputFile::new(output, TeaclaveFileRootKey128::random());
 
         let in_fid = "in_f1";
         let out_fid = "out_f1";
-        let input_files = TeaclaveWorkerFileRegistry {
+        let input_files = StagedFiles {
             entries: hashmap!(in_fid.to_string() => input_info),
         };
 
-        let output_files = TeaclaveWorkerFileRegistry {
+        let output_files = StagedFiles {
             entries: hashmap!(out_fid.to_string() => output_info),
         };
 
