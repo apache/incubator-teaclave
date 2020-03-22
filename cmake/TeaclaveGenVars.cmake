@@ -30,7 +30,7 @@ set(MT_SCRIPT_DIR ${PROJECT_SOURCE_DIR}/cmake/scripts)
 set(MT_UNIX_TOML_DIR ${PROJECT_BINARY_DIR}/cmake_tomls/unix_app)
 set(MT_SGXLIB_TOML_DIR ${PROJECT_BINARY_DIR}/cmake_tomls/sgx_trusted_lib)
 set(MT_SGXAPP_TOML_DIR ${PROJECT_BINARY_DIR}/cmake_tomls/sgx_untrusted_app)
-set(MT_EDL_FILE ${PROJECT_SOURCE_DIR}/edls/Enclave_common.edl ${PROJECT_SOURCE_DIR}/edls/Enclave_fa.edl)
+set(MT_EDL_FILE ${PROJECT_SOURCE_DIR}/edl/Enclave_common.edl ${PROJECT_SOURCE_DIR}/edl/Enclave_fa.edl)
 join_string("${MT_EDL_FILE}" " " MT_EDL_FILE)
 
 set(SGX_EDGER8R ${SGX_SDK}/bin/x64/sgx_edger8r)
