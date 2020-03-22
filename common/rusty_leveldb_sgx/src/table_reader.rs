@@ -54,13 +54,13 @@ impl Table {
         let cache_id = opt.block_cache.borrow_mut().new_cache_id();
 
         Ok(Table {
-            file: file,
+            file,
             file_size: size,
-            cache_id: cache_id,
-            opt: opt,
-            footer: footer,
+            cache_id,
+            opt,
+            footer,
             filters: filter_block_reader,
-            indexblock: indexblock,
+            indexblock,
         })
     }
 

@@ -392,8 +392,8 @@ pub fn new_version_iter(
     ucmp: Rc<Box<dyn Cmp>>,
 ) -> VersionIter {
     VersionIter {
-        files: files,
-        cache: cache,
+        files,
+        cache,
         cmp: InternalKeyCmp(ucmp),
         current: None,
         current_ix: 0,
@@ -596,7 +596,7 @@ pub mod testutil {
         share(FileMetaData {
             allowed_seeks: 10,
             size: 163840,
-            num: num,
+            num,
             smallest: LookupKey::new(smallest, smallestix).internal_key().to_vec(),
             largest: LookupKey::new(largest, largestix).internal_key().to_vec(),
         })

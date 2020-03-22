@@ -47,7 +47,7 @@ impl Compaction {
     // Note: opt.cmp should be the user-supplied or default comparator (not an InternalKeyCmp).
     pub fn new(opt: &Options, level: usize, input: Option<Shared<Version>>) -> Compaction {
         Compaction {
-            level: level,
+            level,
             max_file_size: opt.max_file_size,
             input_version: input,
             level_ixs: Default::default(),
@@ -195,8 +195,8 @@ impl VersionSet {
         VersionSet {
             dbname: db.as_ref().to_owned(),
             cmp: InternalKeyCmp(opt.cmp.clone()),
-            opt: opt,
-            cache: cache,
+            opt,
+            cache,
 
             next_file_num: 2,
             manifest_num: 0,

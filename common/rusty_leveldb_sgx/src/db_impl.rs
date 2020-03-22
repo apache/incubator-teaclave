@@ -84,7 +84,7 @@ impl DB {
 
         DB {
             name: name.to_owned(),
-            path: path,
+            path,
             lock: None,
             internal_cmp: Rc::new(Box::new(InternalKeyCmp(opt.cmp.clone()))),
             fpol: InternalFilterPolicy::new(opt.filter_policy.clone()),
@@ -92,11 +92,11 @@ impl DB {
             mem: MemTable::new(opt.cmp.clone()),
             imm: None,
 
-            opt: opt,
+            opt,
 
             log: None,
             log_num: None,
-            cache: cache,
+            cache,
             vset: share(vset),
             snaps: SnapshotList::new(),
 

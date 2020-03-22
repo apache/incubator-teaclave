@@ -39,7 +39,7 @@ impl<W: Write> LogWriter<W> {
             dst: writer,
             current_block_offset: 0,
             block_size: BLOCK_SIZE,
-            digest: digest,
+            digest,
         }
     }
 
@@ -131,7 +131,7 @@ pub struct LogReader<R: Read> {
 impl<R: Read> LogReader<R> {
     pub fn new(src: R, chksum: bool) -> LogReader<R> {
         LogReader {
-            src: src,
+            src,
             blk_off: 0,
             blocksize: BLOCK_SIZE,
             checksums: chksum,

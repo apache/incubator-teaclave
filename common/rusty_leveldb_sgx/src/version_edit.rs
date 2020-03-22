@@ -121,7 +121,7 @@ impl VersionEdit {
 
     pub fn set_compact_pointer(&mut self, level: usize, key: InternalKey) {
         self.compaction_ptrs.push(CompactionPointer {
-            level: level,
+            level,
             key: Vec::from(key),
         })
     }
@@ -239,10 +239,8 @@ impl VersionEdit {
                         if let Ok(lvl) = reader.read_varint() {
                             let key = read_length_prefixed(&mut reader)?;
 
-                            ve.compaction_ptrs.push(CompactionPointer {
-                                level: lvl,
-                                key: key,
-                            });
+                            ve.compaction_ptrs
+                                .push(CompactionPointer { level: lvl, key });
                         } else {
                             return err(StatusCode::IOError, "Couldn't read level");
                         }
@@ -269,10 +267,10 @@ impl VersionEdit {
                                     ve.new_files.push((
                                         lvl,
                                         FileMetaData {
-                                            num: num,
-                                            size: size,
-                                            smallest: smallest,
-                                            largest: largest,
+                                            num,
+                                            size,
+                                            smallest,
+                                            largest,
                                             allowed_seeks: 0,
                                         },
                                     ))

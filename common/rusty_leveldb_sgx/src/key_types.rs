@@ -68,7 +68,7 @@ impl LookupKey {
         }
 
         LookupKey {
-            key: key,
+            key,
             key_offset: internal_keylen.required_space(),
         }
     }
