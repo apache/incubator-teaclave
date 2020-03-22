@@ -68,10 +68,7 @@ impl Status {
         } else {
             err = format!("{:?}: {}", code, msg);
         }
-        return Status {
-            code: code,
-            err: err,
-        };
+        return Status { code, err };
     }
 }
 

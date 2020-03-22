@@ -28,7 +28,7 @@ impl BlockBuilder {
         BlockBuilder {
             buffer: Vec::with_capacity(o.block_size),
             opt: o,
-            restarts: restarts,
+            restarts,
             last_key: Vec::new(),
             restart_counter: 0,
             counter: 0,

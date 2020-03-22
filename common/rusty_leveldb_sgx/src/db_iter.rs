@@ -45,10 +45,10 @@ impl DBIterator {
         ss: Snapshot,
     ) -> DBIterator {
         DBIterator {
-            cmp: cmp,
-            vset: vset,
-            iter: iter,
-            ss: ss,
+            cmp,
+            vset,
+            iter,
+            ss,
             dir: Direction::Forward,
             byte_count: random_period(),
 

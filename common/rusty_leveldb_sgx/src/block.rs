@@ -69,7 +69,7 @@ impl Block {
         assert!(contents.len() > 4);
         Block {
             block: Rc::new(contents),
-            opt: opt,
+            opt,
         }
     }
 }

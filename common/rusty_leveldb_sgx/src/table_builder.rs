@@ -44,7 +44,7 @@ impl Footer {
     pub fn new(metaix: BlockHandle, index: BlockHandle) -> Footer {
         Footer {
             meta_index: metaix,
-            index: index,
+            index,
         }
     }
 
@@ -120,7 +120,7 @@ impl<Dst: Write> TableBuilder<Dst> {
     pub fn new_raw(opt: Options, dst: Dst) -> TableBuilder<Dst> {
         TableBuilder {
             opt: opt.clone(),
-            dst: dst,
+            dst,
             offset: 0,
             prev_block_last_key: vec![],
             num_entries: 0,

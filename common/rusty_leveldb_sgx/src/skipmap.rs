@@ -62,7 +62,7 @@ impl SkipMap {
                 rand: StdRng::seed_from_u64(0xdeadbeef),
                 len: 0,
                 approx_mem: size_of::<Self>() + MAX_HEIGHT * size_of::<Option<*mut Node>>(),
-                cmp: cmp,
+                cmp,
             })),
         }
     }
@@ -241,7 +241,7 @@ impl InnerSkipMap {
         let mut new = Box::new(Node {
             skips: new_skips,
             next: None,
-            key: key,
+            key,
             value: val,
         });
         let newp = new.as_mut() as *mut Node;

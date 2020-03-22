@@ -69,7 +69,7 @@ impl SnapshotList {
         Snapshot {
             inner: Rc::new(InnerSnapshot {
                 id: sl.newest,
-                seq: seq,
+                seq,
                 sl: inner,
             }),
         }

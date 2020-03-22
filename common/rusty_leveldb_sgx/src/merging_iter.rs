@@ -30,10 +30,10 @@ impl MergingIter {
     /// Construct a new merging iterator.
     pub fn new(cmp: Rc<Box<dyn Cmp>>, iters: Vec<Box<dyn LdbIterator>>) -> MergingIter {
         let mi = MergingIter {
-            iters: iters,
+            iters,
             current: None,
             direction: Direction::Forward,
-            cmp: cmp,
+            cmp,
         };
         mi
     }
