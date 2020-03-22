@@ -315,7 +315,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
         let task = crate::task::create_task(
             function,
             user_id,
-            request.arg_list,
+            request.function_arguments,
             request.input_data_owner_list,
             request.output_data_owner_list,
         )
@@ -352,7 +352,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
             creator: task.creator,
             function_id: task.function_id,
             function_owner: task.function_owner,
-            arg_list: task.function_arguments.into(),
+            function_arguments: task.function_arguments,
             input_data_owner_list: task.input_data_owner_list,
             output_data_owner_list: task.output_data_owner_list,
             participants: task.participants,
@@ -663,7 +663,8 @@ pub mod tests {
     use super::*;
     use std::collections::{HashMap, HashSet};
     use teaclave_types::{
-        FunctionInput, FunctionOutput, TeaclaveFileCryptoInfo, TeaclaveFileRootKey128,
+        hashmap, FunctionArguments, FunctionInput, FunctionOutput, TeaclaveFileCryptoInfo,
+        TeaclaveFileRootKey128,
     };
     use url::Url;
 
@@ -730,13 +731,12 @@ pub mod tests {
             owner: "mock_user".to_string(),
             is_native: false,
         };
-        let mut arg_list = HashMap::new();
-        arg_list.insert("arg".to_string(), "data".to_string());
+        let function_arguments = FunctionArguments::new(hashmap!("arg" => "data"));
 
         let task = crate::task::create_task(
             function,
             "mock_user".to_string(),
-            arg_list,
+            function_arguments,
             HashMap::new(),
             HashMap::new(),
         )

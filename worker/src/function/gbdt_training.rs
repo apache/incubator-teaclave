@@ -150,7 +150,7 @@ pub mod tests {
     }
 
     fn test_gbdt_training() {
-        let func_arguments = FunctionArguments::from_map(&hashmap!(
+        let func_arguments = FunctionArguments::new(hashmap!(
             "feature_size"  => "4",
             "max_depth"     => "4",
             "iterations"    => "100",

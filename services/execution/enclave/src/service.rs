@@ -260,17 +260,17 @@ pub mod tests {
 
     pub fn test_invoke_gbdt_training() {
         let task_id = Uuid::new_v4();
-        let arg_map = hashmap!(
-            "feature_size".to_string()                => "4".to_string(),
-            "max_depth".to_string()                   => "4".to_string(),
-            "iterations".to_string()                  => "100".to_string(),
-            "shrinkage".to_string()                   => "0.1".to_string(),
-            "feature_sample_ratio".to_string()        => "1.0".to_string(),
-            "data_sample_ratio".to_string()           => "1.0".to_string(),
-            "min_leaf_size".to_string()               => "1".to_string(),
-            "loss".to_string()                        => "LAD".to_string(),
-            "training_optimization_level".to_string() => "2".to_string(),
-        );
+        let function_arguments = FunctionArguments::new(hashmap!(
+            "feature_size"                => "4",
+            "max_depth"                   => "4",
+            "iterations"                  => "100",
+            "shrinkage"                   => "0.1",
+            "feature_sample_ratio"        => "1.0",
+            "data_sample_ratio"           => "1.0",
+            "min_leaf_size"               => "1",
+            "loss"                        => "LAD",
+            "training_optimization_level" => "2",
+        ));
         let fixture_dir = format!(
             "file:///{}/fixtures/functions/gbdt_training",
             env!("TEACLAVE_TEST_INSTALL_DIR")
@@ -288,13 +288,13 @@ pub mod tests {
         let training_input_data = FunctionInputFile::new(input_url, "", crypto_info);
         let model_output_data = FunctionOutputFile::new(output_url, crypto_info);
 
-        let input_data = hashmap!("training_data".to_string() => training_input_data);
-        let output_data = hashmap!("trained_model".to_string() => model_output_data);
+        let input_data = hashmap!("training_data" => training_input_data);
+        let output_data = hashmap!("trained_model" => model_output_data);
 
         let staged_task = StagedTask::new()
             .task_id(task_id)
             .function_name("gbdt_training")
-            .function_arguments(arg_map.into())
+            .function_arguments(function_arguments)
             .input_data(input_data)
             .output_data(output_data);
 
