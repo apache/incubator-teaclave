@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use crate::utils::*;
 use std::collections::HashMap;
 use std::prelude::v1::*;
 use teaclave_attestation::verifier;
@@ -23,6 +24,7 @@ use teaclave_config::BUILD_CONFIG;
 use teaclave_proto::teaclave_authentication_service::*;
 use teaclave_proto::teaclave_common::*;
 use teaclave_proto::teaclave_frontend_service::*;
+use teaclave_proto::teaclave_scheduler_service::*;
 use teaclave_rpc::config::SgxTrustedTlsClientConfig;
 use teaclave_rpc::endpoint::Endpoint;
 use teaclave_types::*;
@@ -509,4 +511,9 @@ fn test_invoke_task() {
     let request = GetTaskRequest::new(&task_id);
     let response = client.get_task(request);
     assert_eq!(response.unwrap().status, TaskStatus::Running);
+
+    let request = PullTaskRequest {};
+    let mut scheduler_client = get_scheduler_client();
+    let response = scheduler_client.pull_task(request);
+    assert!(response.is_ok());
 }

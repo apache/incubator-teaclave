@@ -15,15 +15,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use crate::utils::*;
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::prelude::v1::*;
-use teaclave_attestation::verifier;
-use teaclave_config::RuntimeConfig;
-use teaclave_config::BUILD_CONFIG;
 use teaclave_proto::teaclave_scheduler_service::*;
-use teaclave_rpc::config::SgxTrustedTlsClientConfig;
-use teaclave_rpc::endpoint::Endpoint;
+use teaclave_proto::teaclave_storage_service::*;
 use teaclave_types::*;
+
+use uuid::Uuid;
 
 pub fn run_tests() -> bool {
     use teaclave_test_utils::*;
@@ -31,46 +31,70 @@ pub fn run_tests() -> bool {
     run_tests!(test_pull_task, test_update_task_status_result)
 }
 
-fn get_client(user_id: &str) -> TeaclaveSchedulerClient {
-    let runtime_config = RuntimeConfig::from_toml("runtime.config.toml").expect("runtime");
-    let enclave_info =
-        EnclaveInfo::from_bytes(&runtime_config.audit.enclave_info_bytes.as_ref().unwrap());
-    let enclave_attr = enclave_info
-        .get_enclave_attr("teaclave_scheduler_service")
-        .expect("scheduler");
-    let config = SgxTrustedTlsClientConfig::new().attestation_report_verifier(
-        vec![enclave_attr],
-        BUILD_CONFIG.as_root_ca_cert,
-        verifier::universal_quote_verifier,
-    );
-
-    let channel = Endpoint::new(
-        &runtime_config
-            .internal_endpoints
-            .scheduler
-            .advertised_address,
-    )
-    .config(config)
-    .connect()
-    .unwrap();
-
-    let mut metadata = HashMap::new();
-    metadata.insert("id".to_string(), user_id.to_string());
-    metadata.insert("token".to_string(), "".to_string());
-
-    TeaclaveSchedulerClient::new_with_metadata(channel, metadata).unwrap()
-}
-
 fn test_pull_task() {
-    let mut client = get_client("mock_user");
+    let task_id = Uuid::new_v4();
+    let function_id = Uuid::new_v4();
+    let function_name = "echo";
+
+    let staged_task = StagedTask::new()
+        .task_id(task_id)
+        .function_id(function_id.clone())
+        .function_name(function_name);
+
+    let mut storage_client = get_storage_client();
+    let enqueue_request = EnqueueRequest::new(
+        StagedTask::get_queue_key().as_bytes(),
+        staged_task.to_vec().unwrap(),
+    );
+    let _enqueue_response = storage_client.enqueue(enqueue_request).unwrap();
+
+    let mut client = get_scheduler_client();
     let request = PullTaskRequest {};
     let response = client.pull_task(request);
     log::debug!("response: {:?}", response);
     assert!(response.is_ok());
+    assert_eq!(response.unwrap().staged_task.function_id, function_id);
 }
 
 fn test_update_task_status_result() {
-    let mut client = get_client("mock_user");
+    let task_id = Uuid::new_v4();
+
+    let task = Task {
+        task_id,
+        creator: "".to_string(),
+        function_id: "".to_string(),
+        function_owner: "".to_string(),
+        function_arguments: FunctionArguments::default(),
+        input_data_owner_list: HashMap::new(),
+        output_data_owner_list: HashMap::new(),
+        participants: HashSet::new(),
+        approved_user_list: HashSet::new(),
+        input_map: HashMap::new(),
+        output_map: HashMap::new(),
+        return_value: None,
+        output_file_hash: HashMap::new(),
+        status: TaskStatus::Running,
+    };
+
+    let function_id = Uuid::new_v4();
+    let function_name = "echo";
+
+    let staged_task = StagedTask::new()
+        .task_id(task_id.clone())
+        .function_id(function_id)
+        .function_name(function_name);
+
+    let mut storage_client = get_storage_client();
+    let enqueue_request = EnqueueRequest::new(
+        StagedTask::get_queue_key().as_bytes(),
+        staged_task.to_vec().unwrap(),
+    );
+    let _enqueue_response = storage_client.enqueue(enqueue_request).unwrap();
+
+    let put_request = PutRequest::new(task.key().as_slice(), task.to_vec().unwrap().as_slice());
+    let _put_response = storage_client.put(put_request).unwrap();
+
+    let mut client = get_scheduler_client();
     let request = PullTaskRequest {};
     let response = client.pull_task(request).unwrap();
     log::debug!("response: {:?}", response);
