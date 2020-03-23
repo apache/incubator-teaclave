@@ -1072,7 +1072,7 @@ fn open_info_log<E: Env + ?Sized, P: AsRef<Path>>(env: &E, db: P) -> Logger {
     }
 }
 
-#[cfg(test)]
+#[cfg(feature = "enclave_unit_test")]
 pub mod testutil {
     use super::*;
 
@@ -1130,19 +1130,40 @@ pub mod testutil {
     }
 }
 
-#[cfg(test)]
-mod tests {
+#[cfg(feature = "enclave_unit_test")]
+pub mod tests {
     use super::testutil::{build_db, set_file_to_compact};
     use super::*;
 
     use crate::error::Status;
     use crate::key_types::LookupKey;
     use crate::mem_env::MemEnv;
+    use crate::options;
+    use crate::test_util::LdbIteratorIter;
     use crate::version::testutil::make_version;
-    use options;
-    use test_util::LdbIteratorIter;
+    use teaclave_test_utils::*;
 
-    #[test]
+    pub fn run_tests() -> bool {
+        run_tests!(
+            test_db_impl_open_info_log,
+            test_db_impl_init,
+            test_db_impl_compact_range,
+            test_db_impl_compact_range_memtable,
+            test_db_impl_locking,
+            test_db_impl_build_table,
+            test_db_impl_build_db_sanity,
+            test_db_impl_get_from_table_with_snapshot,
+            test_db_impl_delete,
+            test_db_impl_compact_single_file,
+            test_db_impl_compaction_trivial_move,
+            test_db_impl_memtable_compaction,
+            test_db_impl_compaction,
+            test_db_impl_compaction_trivial,
+            test_db_impl_compaction_state_cleanup,
+            test_db_impl_open_close_reopen,
+        )
+    }
+
     fn test_db_impl_open_info_log() {
         let e = MemEnv::new();
         {
@@ -1182,7 +1203,6 @@ mod tests {
         mt
     }
 
-    #[test]
     fn test_db_impl_init() {
         // A sanity check for recovery and basic persistence.
         let opt = options::for_test();
@@ -1299,7 +1319,6 @@ mod tests {
         }
     }
 
-    #[test]
     fn test_db_impl_compact_range() {
         let (mut db, opt) = build_db();
         let env = &opt.env;
@@ -1333,7 +1352,6 @@ mod tests {
         assert_eq!(b"val3".to_vec(), db.get(b"fab").unwrap());
     }
 
-    #[test]
     fn test_db_impl_compact_range_memtable() {
         let (mut db, opt) = build_db();
         let env = &opt.env;
@@ -1373,7 +1391,6 @@ mod tests {
     }
 
     #[allow(unused_variables)]
-    #[test]
     fn test_db_impl_locking() {
         let opt = options::for_test();
         let db = DB::open("db", opt.clone()).unwrap();
@@ -1384,7 +1401,6 @@ mod tests {
         assert_eq!(want_err, DB::open("db", opt.clone()).err().unwrap());
     }
 
-    #[test]
     fn test_db_impl_build_table() {
         let mut opt = options::for_test();
         opt.block_size = 128;
@@ -1440,7 +1456,6 @@ mod tests {
     }
 
     #[allow(unused_variables)]
-    #[test]
     fn test_db_impl_build_db_sanity() {
         let db = build_db().0;
         let env = &db.opt.env;
@@ -1449,7 +1464,6 @@ mod tests {
         assert!(env.exists(Path::new(&log_file_name(name, 12))).unwrap());
     }
 
-    #[test]
     fn test_db_impl_get_from_table_with_snapshot() {
         let mut db = build_db().0;
 
@@ -1501,7 +1515,6 @@ mod tests {
         );
     }
 
-    #[test]
     fn test_db_impl_delete() {
         let mut db = build_db().0;
 
@@ -1520,7 +1533,6 @@ mod tests {
         assert!(db.get(b"xyz").is_some());
     }
 
-    #[test]
     fn test_db_impl_compact_single_file() {
         let mut db = build_db().0;
         set_file_to_compact(&mut db, 4);
@@ -1534,7 +1546,6 @@ mod tests {
         assert!(env.exists(Path::new(&table_file_name(name, 13))).unwrap());
     }
 
-    #[test]
     fn test_db_impl_compaction_trivial_move() {
         let mut db = DB::open("db", options::for_test()).unwrap();
 
@@ -1570,7 +1581,6 @@ mod tests {
         }
     }
 
-    #[test]
     fn test_db_impl_memtable_compaction() {
         let mut opt = options::for_test();
         opt.write_buffer_size = 25;
@@ -1591,7 +1601,6 @@ mod tests {
         );
     }
 
-    #[test]
     fn test_db_impl_compaction() {
         let mut db = build_db().0;
         let v = db.current();
@@ -1610,7 +1619,6 @@ mod tests {
         assert_eq!(2, v.borrow().files[2].len());
     }
 
-    #[test]
     fn test_db_impl_compaction_trivial() {
         let (mut v, opt) = make_version();
 
@@ -1633,7 +1641,6 @@ mod tests {
         assert_eq!(3, v.borrow().files[3].len());
     }
 
-    #[test]
     fn test_db_impl_compaction_state_cleanup() {
         let env: Box<dyn Env> = Box::new(MemEnv::new());
         let name = "db";
@@ -1653,7 +1660,6 @@ mod tests {
         assert!(!env.exists(Path::new("db/000001.ldb")).unwrap());
     }
 
-    #[test]
     fn test_db_impl_open_close_reopen() {
         let opt;
         {

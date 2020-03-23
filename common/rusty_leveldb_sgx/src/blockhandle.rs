@@ -47,11 +47,16 @@ impl BlockHandle {
     }
 }
 
-#[cfg(test)]
-mod tests {
+#[cfg(feature = "enclave_unit_test")]
+pub mod tests {
     use super::*;
+    use std::prelude::v1::*;
+    use teaclave_test_utils::*;
 
-    #[test]
+    pub fn run_tests() -> bool {
+        run_tests!(test_blockhandle,)
+    }
+
     fn test_blockhandle() {
         let bh = BlockHandle::new(890, 777);
         let mut dst = [0 as u8; 128];

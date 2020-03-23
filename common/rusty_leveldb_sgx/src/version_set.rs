@@ -977,14 +977,28 @@ fn get_range<'a, C: Cmp, I: Iterator<Item = &'a FileMetaHandle>>(
     (smallest.unwrap(), largest.unwrap())
 }
 
-#[cfg(test)]
-mod tests {
+#[cfg(feature = "enclave_unit_test")]
+pub mod tests {
     use super::*;
     use crate::cmp::DefaultCmp;
     use crate::key_types::LookupKey;
+    use crate::test_util::LdbIteratorIter;
     use crate::types::FileMetaData;
     use crate::version::testutil::make_version;
-    use test_util::LdbIteratorIter;
+    use teaclave_test_utils::*;
+
+    pub fn run_tests() -> bool {
+        run_tests!(
+            test_version_set_merge_iters,
+            test_version_set_total_size,
+            test_version_set_get_range,
+            test_version_set_builder,
+            test_version_set_log_and_apply,
+            test_version_set_utils,
+            test_version_set_pick_compaction,
+            test_version_set_compaction,
+        )
+    }
 
     fn example_files() -> Vec<FileMetaHandle> {
         let mut f1 = FileMetaData::default();
@@ -1010,7 +1024,6 @@ mod tests {
         vec![f1, f2, f3, f4].into_iter().map(share).collect()
     }
 
-    #[test]
     fn test_version_set_merge_iters() {
         let v1 = vec![2, 4, 6, 8, 10];
         let v2 = vec![1, 3, 5, 7];
@@ -1020,12 +1033,10 @@ mod tests {
         );
     }
 
-    #[test]
     fn test_version_set_total_size() {
         assert_eq!(100, total_size(example_files().iter()));
     }
 
-    #[test]
     fn test_version_set_get_range() {
         let cmp = DefaultCmp;
         let fs = example_files();
@@ -1035,7 +1046,6 @@ mod tests {
         );
     }
 
-    #[test]
     fn test_version_set_builder() {
         let (v, opt) = make_version();
         let v = share(v);
@@ -1057,6 +1067,7 @@ mod tests {
         ve.delete_file(0, 2);
         ve.set_compact_pointer(2, LookupKey::new("xxx".as_bytes(), 123).internal_key());
 
+        println!("XXXXXXXXXXXXXXXXXXXXXXXX");
         let mut b = Builder::new();
         let mut ptrs: [Vec<u8>; NUM_LEVELS] = Default::default();
         b.apply(&ve, &mut ptrs);
@@ -1080,7 +1091,6 @@ mod tests {
         assert_eq!(21, v2.files[1][3].borrow().num);
     }
 
-    #[test]
     fn test_version_set_log_and_apply() {
         let (_, opt) = make_version();
         let mut vs = VersionSet::new(
@@ -1151,7 +1161,6 @@ mod tests {
         }
     }
 
-    #[test]
     fn test_version_set_utils() {
         let (v, opt) = make_version();
         let mut vs = VersionSet::new("db", opt.clone(), share(TableCache::new("db", opt, 100)));
@@ -1175,7 +1184,6 @@ mod tests {
         assert_eq!(3, vs.new_file_number());
     }
 
-    #[test]
     fn test_version_set_pick_compaction() {
         let (mut v, opt) = make_version();
         let mut vs = VersionSet::new("db", opt.clone(), share(TableCache::new("db", opt, 100)));
@@ -1224,11 +1232,9 @@ mod tests {
         assert_eq!(len, count);
     }
 
-    #[test]
     fn test_version_set_compaction() {
         let (v, opt) = make_version();
         let mut vs = VersionSet::new("db", opt.clone(), share(TableCache::new("db", opt, 100)));
-        time_test!();
         vs.add_version(v);
 
         {
@@ -1250,7 +1256,6 @@ mod tests {
         // The following tests reuse the same version set and verify that various compactions work
         // like they should.
         {
-            time_test!("compaction tests");
             // compact level 0 with a partial range.
             let from = LookupKey::new("000".as_bytes(), 1000);
             let to = LookupKey::new("ab".as_bytes(), 1010);
