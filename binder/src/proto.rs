@@ -79,8 +79,16 @@ pub struct FinalizeEnclaveInput;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct FinalizeEnclaveOutput;
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct RunTestInput;
+#[derive(Default, Serialize, Deserialize, Debug)]
+pub struct RunTestInput {
+    pub test_names: Vec<String>,
+}
+
+impl RunTestInput {
+    pub fn new(test_names: Vec<String>) -> Self {
+        Self { test_names }
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RunTestOutput;

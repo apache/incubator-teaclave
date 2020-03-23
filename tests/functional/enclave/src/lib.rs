@@ -23,6 +23,7 @@ extern crate sgx_tstd as std;
 #[macro_use]
 extern crate log;
 
+use std::collections::HashMap;
 use std::prelude::v1::*;
 
 use teaclave_binder::proto::{
@@ -31,28 +32,56 @@ use teaclave_binder::proto::{
 };
 use teaclave_binder::{handle_ecall, register_ecall_handler};
 use teaclave_service_enclave_utils::ServiceEnclave;
-use teaclave_test_utils::check_all_passed;
 use teaclave_types;
 use teaclave_types::TeeServiceResult;
 
 mod access_control_service;
 mod authentication_service;
+mod execution_service;
 mod frontend_service;
 mod management_service;
 mod scheduler_service;
 mod storage_service;
 mod utils;
 
+type BoxedFnTest = Box<dyn Fn() -> bool>;
+
 #[handle_ecall]
-fn handle_run_test(_: &RunTestInput) -> TeeServiceResult<RunTestOutput> {
-    let ret = check_all_passed!(
-        access_control_service::run_tests(),
-        authentication_service::run_tests(),
-        storage_service::run_tests(),
-        frontend_service::run_tests(),
-        management_service::run_tests(),
-        scheduler_service::run_tests(),
-    );
+fn handle_run_test(input: &RunTestInput) -> TeeServiceResult<RunTestOutput> {
+    let test_names = &input.test_names;
+    let v: Vec<(_, BoxedFnTest)> = vec![
+        (
+            "access_control_service",
+            Box::new(access_control_service::run_tests),
+        ),
+        (
+            "authentication_service",
+            Box::new(authentication_service::run_tests),
+        ),
+        ("storage_service", Box::new(storage_service::run_tests)),
+        ("frontend_service", Box::new(frontend_service::run_tests)),
+        (
+            "management_service",
+            Box::new(management_service::run_tests),
+        ),
+        ("scheduler_service", Box::new(scheduler_service::run_tests)),
+        ("execution_service", Box::new(execution_service::run_tests)),
+    ];
+    let test_map: HashMap<_, BoxedFnTest> =
+        v.into_iter().map(|(k, v)| (k.to_string(), v)).collect();
+
+    let mut ret = true;
+
+    if test_names.is_empty() {
+        for fn_test in test_map.values() {
+            ret &= fn_test();
+        }
+    }
+
+    for name in test_names.iter() {
+        let fn_test = test_map.get(name).unwrap();
+        ret &= fn_test();
+    }
 
     assert_eq!(ret, true);
     Ok(RunTestOutput)

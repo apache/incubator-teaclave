@@ -59,7 +59,7 @@ run_integration_tests() {
 
   popd
 
-  cleanup 
+  cleanup
 }
 
 run_functional_tests() {
@@ -77,11 +77,27 @@ run_functional_tests() {
   sleep 3    # wait for management service and scheduler_service
   ./teaclave_access_control_service &
   ./teaclave_frontend_service &
-  # ./teaclave_execution_service &
   popd
   sleep 3    # wait for other services
-  ./teaclave_functional_tests
 
+  # Run function tests for all except execution service
+  ./teaclave_functional_tests -t \
+    access_control_service \
+    authentication_service \
+    frontend_service \
+    management_service \
+    scheduler_service \
+    storage_service
+
+  # Run tests of execution service separately
+  pushd ${TEACLAVE_SERVICE_INSTALL_DIR}
+  ./teaclave_execution_service &
+  popd
+  sleep 3    # wait for execution services
+
+  ./teaclave_functional_tests -t execution_service
+
+  # Run script tests
   ./scripts/functional_tests.py -v
 
   popd
