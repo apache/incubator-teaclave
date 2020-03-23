@@ -28,18 +28,10 @@
 #[macro_use]
 extern crate sgx_tstd as std;
 
-#[macro_use]
-extern crate cfg_if;
-cfg_if! {
-    if #[cfg(feature = "mesalock_sgx")]  {
-        extern crate sgx_libc as libc;
-        extern crate sgx_trts;
-        extern crate sgx_types;
-        extern crate protected_fs;
-    } else {
-        extern crate libc;
-    }
-}
+extern crate protected_fs;
+extern crate sgx_libc as libc;
+extern crate sgx_trts;
+extern crate sgx_types;
 
 extern crate crc;
 extern crate integer_encoding;
@@ -97,3 +89,14 @@ pub use crate::types::LdbIterator;
 pub use crate::write_batch::WriteBatch;
 pub use db_impl::DB;
 pub use disk_env::PosixDiskEnv;
+
+#[cfg(feature = "enclave_unit_test")]
+pub mod tests {
+    use super::*;
+    use std::prelude::v1::*;
+    use teaclave_test_utils::check_all_passed;
+
+    pub fn run_tests() -> bool {
+        check_all_passed!(disk_env::tests::run_tests())
+    }
+}

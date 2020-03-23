@@ -36,6 +36,8 @@ mesalock_sgx = [
   "teaclave_scheduler_service_enclave/enclave_unit_test",
   "teaclave_worker/mesalock_sgx",
   "teaclave_worker/enclave_unit_test",
+  "rusty-leveldb/mesalock_sgx",
+  "rusty-leveldb/enclave_unit_test",
 ]
 cov = ["teaclave_service_enclave_utils/cov"]
 
@@ -52,7 +54,8 @@ teaclave_execution_service_enclave = { path = "../../../services/execution/encla
 teaclave_management_service_enclave = { path = "../../../services/management/enclave" }
 teaclave_scheduler_service_enclave = { path = "../../../services/scheduler/enclave" }
 
-teaclave_worker                 = { path = "../../../worker" }
+teaclave_worker                = { path = "../../../worker" }
+rusty-leveldb                  = { path = "../../../common/rusty_leveldb_sgx", default-features = false, optional = true }
 
 teaclave_test_utils            = { path = "../../utils" }
 teaclave_attestation           = { path = "../../../attestation" }
