@@ -35,23 +35,23 @@ use teaclave_test_utils::check_all_passed;
 use teaclave_types;
 use teaclave_types::TeeServiceResult;
 
-mod teaclave_access_control_service;
-mod teaclave_authentication_service;
-mod teaclave_frontend_service;
-mod teaclave_management_service;
-mod teaclave_scheduler_service;
-mod teaclave_storage_service;
+mod access_control_service;
+mod authentication_service;
+mod frontend_service;
+mod management_service;
+mod scheduler_service;
+mod storage_service;
 mod utils;
 
 #[handle_ecall]
 fn handle_run_test(_: &RunTestInput) -> TeeServiceResult<RunTestOutput> {
     let ret = check_all_passed!(
-        teaclave_access_control_service::run_tests(),
-        teaclave_authentication_service::run_tests(),
-        teaclave_storage_service::run_tests(),
-        teaclave_frontend_service::run_tests(),
-        teaclave_management_service::run_tests(),
-        teaclave_scheduler_service::run_tests(),
+        access_control_service::run_tests(),
+        authentication_service::run_tests(),
+        storage_service::run_tests(),
+        frontend_service::run_tests(),
+        management_service::run_tests(),
+        scheduler_service::run_tests(),
     );
 
     assert_eq!(ret, true);
