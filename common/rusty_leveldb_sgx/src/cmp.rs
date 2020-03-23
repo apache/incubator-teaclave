@@ -179,13 +179,23 @@ impl Cmp for MemtableKeyCmp {
     }
 }
 
-#[cfg(test)]
-mod tests {
+#[cfg(feature = "enclave_unit_test")]
+pub mod tests {
     use super::*;
     use crate::key_types::LookupKey;
-    use types;
+    use crate::types;
+    use teaclave_test_utils::*;
 
-    #[test]
+    pub fn run_tests() -> bool {
+        should_panic!(test_cmp_memtablekeycmp_panics());
+        run_tests!(
+            test_cmp_defaultcmp_shortest_sep,
+            test_cmp_defaultcmp_short_succ,
+            test_cmp_internalkeycmp_shortest_sep,
+            test_cmp_internalkeycmp,
+        )
+    }
+
     fn test_cmp_defaultcmp_shortest_sep() {
         assert_eq!(
             DefaultCmp.find_shortest_sep("abcd".as_bytes(), "abcf".as_bytes()),
@@ -221,7 +231,6 @@ mod tests {
         );
     }
 
-    #[test]
     fn test_cmp_defaultcmp_short_succ() {
         assert_eq!(
             DefaultCmp.find_short_succ("abcd".as_bytes()),
@@ -238,7 +247,6 @@ mod tests {
         );
     }
 
-    #[test]
     fn test_cmp_internalkeycmp_shortest_sep() {
         let cmp = InternalKeyCmp(Rc::new(Box::new(DefaultCmp)));
         assert_eq!(
@@ -292,7 +300,6 @@ mod tests {
         );
     }
 
-    #[test]
     fn test_cmp_internalkeycmp() {
         let cmp = InternalKeyCmp(Rc::new(Box::new(DefaultCmp)));
         // a < b < c
@@ -310,8 +317,6 @@ mod tests {
         assert_eq!(Ordering::Greater, cmp.cmp_inner(e, d));
     }
 
-    #[test]
-    #[should_panic]
     fn test_cmp_memtablekeycmp_panics() {
         let cmp = MemtableKeyCmp(Rc::new(Box::new(DefaultCmp)));
         cmp.cmp(&[1, 2, 3], &[4, 5, 6]);

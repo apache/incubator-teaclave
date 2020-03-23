@@ -26,8 +26,15 @@ use std::vec::Vec;
 #[macro_export]
 macro_rules! should_panic {
     ($fmt:expr) => {{
-        match panic::catch_unwind(|| $fmt).is_err() {
-            true => {}
+        match ::std::panic::catch_unwind(|| $fmt).is_err() {
+            true => {
+                println!(
+                    "{} {} ... {}!",
+                    "testing_should_panic",
+                    stringify!($fmt),
+                    "\x1B[1;32mok\x1B[0m"
+                );
+            }
             false => {
                 ::std::rt::begin_panic($fmt, {
                     // static requires less code at runtime, more constant data

@@ -215,25 +215,33 @@ pub fn unmask_crc(mc: u32) -> u32 {
     (rot.wrapping_shr(17) | rot.wrapping_shl(15))
 }
 
-#[cfg(test)]
-mod tests {
+#[cfg(feature = "enclave_unit_test")]
+pub mod tests {
     use super::*;
     use std::io::Cursor;
+    use teaclave_test_utils::*;
 
-    #[test]
+    pub fn run_tests() -> bool {
+        run_tests!(
+            test_crc_mask_crc,
+            test_crc_sanity,
+            test_writer,
+            test_writer_append,
+            test_reader,
+        )
+    }
+
     fn test_crc_mask_crc() {
         let crc = crc32::checksum_castagnoli("abcde".as_bytes());
         assert_eq!(crc, unmask_crc(mask_crc(crc)));
         assert!(crc != mask_crc(crc));
     }
 
-    #[test]
     fn test_crc_sanity() {
         assert_eq!(0x8a9136aa, crc32::checksum_castagnoli(&[0 as u8; 32]));
         assert_eq!(0x62a8ab43, crc32::checksum_castagnoli(&[0xff as u8; 32]));
     }
 
-    #[test]
     fn test_writer() {
         let data = &[
             "hello world. My first log entry.",
@@ -250,7 +258,6 @@ mod tests {
         assert_eq!(lw.current_block_offset, total_len + 3 * super::HEADER_SIZE);
     }
 
-    #[test]
     fn test_writer_append() {
         let data = &[
             "hello world. My first log entry.",
@@ -283,7 +290,6 @@ mod tests {
         assert_eq!(old, dst);
     }
 
-    #[test]
     fn test_reader() {
         let data = vec![
             "abcdefghi".as_bytes().to_vec(),    // fits one block of 17
