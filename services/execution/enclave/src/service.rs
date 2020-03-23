@@ -15,12 +15,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
-
 use crate::ocall::handle_file_request;
 
 use std::collections::HashMap;
+use std::prelude::v1::*;
 use std::sync::{Arc, SgxMutex as Mutex};
 
 use teaclave_proto::teaclave_scheduler_service::*;
@@ -229,7 +227,6 @@ fn prepare_task(task: &StagedTask) -> StagedFunction {
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
-    use std::collections::HashMap;
     use std::format;
     use teaclave_types::*;
     use url::Url;
@@ -237,16 +234,13 @@ pub mod tests {
 
     pub fn test_invoke_echo() {
         let task_id = Uuid::new_v4();
-        let mut arg_map = HashMap::new();
-        arg_map.insert("message".to_string(), "Hello, Teaclave!".to_string());
-        let input_map = HashMap::new();
-        let output_map = HashMap::new();
+        let function_arguments = FunctionArguments::new(hashmap!(
+            "message" => "Hello, Teaclave!"
+        ));
         let staged_task = StagedTask::new()
             .task_id(task_id)
             .function_name("echo")
-            .function_arguments(arg_map.into())
-            .input_data(input_map)
-            .output_data(output_map);
+            .function_arguments(function_arguments);
 
         let invocation = prepare_task(&staged_task);
 

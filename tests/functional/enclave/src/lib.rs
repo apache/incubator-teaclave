@@ -41,6 +41,7 @@ mod teaclave_frontend_service;
 mod teaclave_management_service;
 mod teaclave_scheduler_service;
 mod teaclave_storage_service;
+mod utils;
 
 #[handle_ecall]
 fn handle_run_test(_: &RunTestInput) -> TeeServiceResult<RunTestOutput> {
