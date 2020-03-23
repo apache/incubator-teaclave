@@ -21,6 +21,7 @@ extern crate sgx_tstd as std;
 
 use std::prelude::v1::*;
 
+use rusty_leveldb;
 use teaclave_access_control_service_enclave;
 use teaclave_authentication_service_enclave;
 use teaclave_binder::proto::{
@@ -45,6 +46,7 @@ fn handle_run_test(_: &RunTestInput) -> TeeServiceResult<RunTestOutput> {
         teaclave_authentication_service_enclave::tests::run_tests(),
         teaclave_worker::tests::run_tests(),
         teaclave_types::tests::run_tests(),
+        rusty_leveldb::tests::run_tests(),
     );
 
     assert!(ret);

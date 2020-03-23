@@ -12,17 +12,18 @@ publish = true
 edition = "2018"
 
 [features]
-default = []
+default = ["mesalock_sgx"]
 mesalock_sgx = ["protected_fs_rs/mesalock_sgx", "sgx_libc", "sgx_tstd", "sgx_types", "sgx_trts"]
+enclave_unit_test = ["teaclave_test_utils/mesalock_sgx"]
 
 [dependencies]
 crc 		= { version = "2.0" }
 rand 		= { version = "0.7" }
 snap 		= { version = "0.2" }
-cfg-if 		= { version = "0.1.9" }
 integer-encoding = { version = "1.0" }
 
 protected_fs_rs = { path = "../protected_fs_rs", optional = true }
+teaclave_test_utils = { path = "../../tests/utils", optional = true }
 
 sgx_tstd 	= { version = "1.1.0", optional = true }
 sgx_trts 	= { version = "1.1.0", optional = true }
