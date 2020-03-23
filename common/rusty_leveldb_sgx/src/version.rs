@@ -573,7 +573,7 @@ fn some_file_overlaps_range<'a, 'b>(
     false
 }
 
-#[cfg(test)]
+#[cfg(feature = "enclave_unit_test")]
 pub mod testutil {
     use super::*;
     use crate::cmp::DefaultCmp;
@@ -720,18 +720,34 @@ pub mod testutil {
     }
 }
 
-#[cfg(test)]
-mod tests {
+#[cfg(feature = "enclave_unit_test")]
+pub mod tests {
     use super::testutil::*;
     use super::*;
 
     use crate::cmp::DefaultCmp;
     use crate::error::Result;
     use crate::merging_iter::MergingIter;
-    use options;
-    use test_util::{test_iterator_properties, LdbIteratorIter};
+    use crate::options;
+    use crate::test_util::{test_iterator_properties, LdbIteratorIter};
+    use teaclave_test_utils::*;
 
-    #[test]
+    pub fn run_tests() -> bool {
+        run_tests!(
+            test_version_max_next_level_overlapping,
+            test_version_all_iters,
+            test_version_summary,
+            test_version_get_simple,
+            test_version_get_overlapping_basic,
+            test_version_overlap_in_level,
+            test_version_pick_memtable_output_level,
+            test_version_overlapping_inputs,
+            test_version_record_read_sample,
+            test_version_key_ordering,
+            test_version_file_overlaps,
+        )
+    }
+
     fn test_version_concat_iter() {
         let v = make_version().0;
 
@@ -743,20 +759,17 @@ mod tests {
         }
     }
 
-    #[test]
     fn test_version_concat_iter_properties() {
         let v = make_version().0;
         let iter = v.new_concat_iter(3);
         test_iterator_properties(iter);
     }
 
-    #[test]
     fn test_version_max_next_level_overlapping() {
         let v = make_version().0;
         assert_eq!(218, v.max_next_level_overlapping_bytes());
     }
 
-    #[test]
     fn test_version_all_iters() {
         let v = make_version().0;
         let iters = v.new_iters().unwrap();
@@ -775,7 +788,6 @@ mod tests {
         });
     }
 
-    #[test]
     fn test_version_summary() {
         let v = make_version().0;
         let expected = "level 0: 2 files, 483 bytes ([(1, 232), (2, 251)]); level 1: 3 files, 651 \
@@ -784,7 +796,6 @@ mod tests {
         assert_eq!(expected, &v.level_summary());
     }
 
-    #[test]
     fn test_version_get_simple() {
         let v = make_version().0;
         let cases: &[(&[u8], u64, Result<Option<Vec<u8>>>)] = &[
@@ -815,7 +826,6 @@ mod tests {
         }
     }
 
-    #[test]
     fn test_version_get_overlapping_basic() {
         let v = make_version().0;
 
@@ -836,7 +846,6 @@ mod tests {
         }
     }
 
-    #[test]
     fn test_version_overlap_in_level() {
         let v = make_version().0;
 
@@ -856,7 +865,6 @@ mod tests {
         }
     }
 
-    #[test]
     fn test_version_pick_memtable_output_level() {
         let v = make_version().0;
 
@@ -871,11 +879,9 @@ mod tests {
         }
     }
 
-    #[test]
     fn test_version_overlapping_inputs() {
         let v = make_version().0;
 
-        time_test!("overlapping-inputs");
         {
             // Range is expanded in overlapping level-0 files.
             let from = LookupKey::new("aab".as_bytes(), MAX_SEQUENCE_NUMBER);
@@ -913,7 +919,6 @@ mod tests {
         }
     }
 
-    #[test]
     fn test_version_record_read_sample() {
         let mut v = make_version().0;
         let k = LookupKey::new("aab".as_bytes(), MAX_SEQUENCE_NUMBER);
@@ -930,9 +935,7 @@ mod tests {
         assert!(v.record_read_sample(k.internal_key()));
     }
 
-    #[test]
     fn test_version_key_ordering() {
-        time_test!();
         let fmh = new_file(1, &[1, 0, 0], 0, &[2, 0, 0], 1);
         let cmp = InternalKeyCmp(Rc::new(Box::new(DefaultCmp)));
 
@@ -959,10 +962,7 @@ mod tests {
         }
     }
 
-    #[test]
     fn test_version_file_overlaps() {
-        time_test!();
-
         let files_disjoint = [
             new_file(1, &[2, 0, 0], 0, &[3, 0, 0], 1),
             new_file(2, &[3, 0, 1], 0, &[4, 0, 0], 1),

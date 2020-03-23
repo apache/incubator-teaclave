@@ -216,14 +216,16 @@ pub fn truncate_to_userkey(ikey: &mut Vec<u8>) {
     ikey.truncate(len - 8);
 }
 
-#[cfg(test)]
-mod tests {
+#[cfg(feature = "enclave_unit_test")]
+pub mod tests {
     use super::*;
+    use teaclave_test_utils::*;
 
-    #[test]
+    pub fn run_tests() -> bool {
+        run_tests!(test_memtable_lookupkey, test_build_memtable_key,)
+    }
+
     fn test_memtable_lookupkey() {
-        use integer_encoding::VarInt;
-
         let lk1 = LookupKey::new("abcde".as_bytes(), 123);
         let lk2 = LookupKey::new("xyabxy".as_bytes(), 97);
 
@@ -239,7 +241,6 @@ mod tests {
         );
     }
 
-    #[test]
     fn test_build_memtable_key() {
         assert_eq!(
             build_memtable_key(

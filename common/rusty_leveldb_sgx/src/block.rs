@@ -302,13 +302,25 @@ impl LdbIterator for BlockIter {
     }
 }
 
-#[cfg(test)]
-mod tests {
+#[cfg(feature = "enclave_unit_test")]
+pub mod tests {
     use super::*;
     use crate::block_builder::BlockBuilder;
+    use crate::options;
+    use crate::test_util::{test_iterator_properties, LdbIteratorIter};
     use crate::types::{current_key_val, LdbIterator};
-    use options;
-    use test_util::{test_iterator_properties, LdbIteratorIter};
+    use teaclave_test_utils::*;
+
+    pub fn run_tests() -> bool {
+        run_tests!(
+            test_block_iterator_properties,
+            test_block_empty,
+            test_block_build_iterate,
+            test_block_iterate_reverse,
+            test_block_seek,
+            test_block_seek_to_last,
+        )
+    }
 
     fn get_data() -> Vec<(&'static [u8], &'static [u8])> {
         vec![
@@ -324,7 +336,6 @@ mod tests {
         ]
     }
 
-    #[test]
     fn test_block_iterator_properties() {
         let o = options::for_test();
         let mut builder = BlockBuilder::new(o.clone());
@@ -339,7 +350,6 @@ mod tests {
         test_iterator_properties(block);
     }
 
-    #[test]
     fn test_block_empty() {
         let mut o = options::for_test();
         o.block_restart_interval = 16;
@@ -356,7 +366,6 @@ mod tests {
         }
     }
 
-    #[test]
     fn test_block_build_iterate() {
         let data = get_data();
         let mut builder = BlockBuilder::new(options::for_test());
@@ -379,7 +388,6 @@ mod tests {
         assert_eq!(i, data.len());
     }
 
-    #[test]
     fn test_block_iterate_reverse() {
         let mut o = options::for_test();
         o.block_restart_interval = 3;
@@ -425,7 +433,6 @@ mod tests {
         );
     }
 
-    #[test]
     fn test_block_seek() {
         let mut o = options::for_test();
         o.block_restart_interval = 3;
@@ -483,7 +490,6 @@ mod tests {
         assert_eq!(current_key_val(&block), None);
     }
 
-    #[test]
     fn test_block_seek_to_last() {
         let mut o = options::for_test();
 

@@ -115,12 +115,17 @@ impl InnerSnapshotList {
     }
 }
 
-#[cfg(test)]
-mod tests {
+#[cfg(feature = "enclave_unit_test")]
+pub mod tests {
     use super::*;
+    use std::prelude::v1::*;
+    use teaclave_test_utils::*;
+
+    pub fn run_tests() -> bool {
+        run_tests!(test_snapshot_list,)
+    }
 
     #[allow(unused_variables)]
-    #[test]
     fn test_snapshot_list() {
         let mut l = SnapshotList::new();
 

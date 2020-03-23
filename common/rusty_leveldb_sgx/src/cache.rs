@@ -240,16 +240,28 @@ impl<T> Cache<T> {
     }
 }
 
-#[cfg(test)]
-mod tests {
+#[cfg(feature = "enclave_unit_test")]
+pub mod tests {
     use super::LRUList;
     use super::*;
+    use teaclave_test_utils::*;
+
+    pub fn run_tests() -> bool {
+        run_tests!(
+            test_blockcache_cache_add_rm,
+            test_blockcache_cache_capacity,
+            test_blockcache_lru_remove,
+            test_blockcache_lru_1,
+            test_blockcache_lru_reinsert,
+            test_blockcache_lru_reinsert_2,
+            test_blockcache_lru_edge_cases,
+        )
+    }
 
     fn make_key(a: u8, b: u8, c: u8) -> CacheKey {
         [a, b, c, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     }
 
-    #[test]
     fn test_blockcache_cache_add_rm() {
         let mut cache = Cache::new(128);
 
@@ -277,7 +289,6 @@ mod tests {
         assert_eq!(cache.count(), 4);
     }
 
-    #[test]
     fn test_blockcache_cache_capacity() {
         let mut cache = Cache::new(3);
 
@@ -302,7 +313,6 @@ mod tests {
         assert_eq!(cache.get(&h_899), Some(&899));
     }
 
-    #[test]
     fn test_blockcache_lru_remove() {
         let mut lru = LRUList::<usize>::new();
 
@@ -322,7 +332,6 @@ mod tests {
         assert_eq!(lru.count(), 3);
     }
 
-    #[test]
     fn test_blockcache_lru_1() {
         let mut lru = LRUList::<usize>::new();
 
@@ -346,7 +355,6 @@ mod tests {
         assert_eq!(None, lru.remove_last());
     }
 
-    #[test]
     fn test_blockcache_lru_reinsert() {
         let mut lru = LRUList::<usize>::new();
 
@@ -373,7 +381,6 @@ mod tests {
         assert_eq!(lru.remove_last(), Some(22));
     }
 
-    #[test]
     fn test_blockcache_lru_reinsert_2() {
         let mut lru = LRUList::<usize>::new();
 
@@ -395,7 +402,6 @@ mod tests {
         }
     }
 
-    #[test]
     fn test_blockcache_lru_edge_cases() {
         let mut lru = LRUList::<usize>::new();
 

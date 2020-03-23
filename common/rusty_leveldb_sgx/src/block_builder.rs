@@ -122,10 +122,16 @@ impl BlockBuilder {
     }
 }
 
-#[cfg(test)]
-mod tests {
+#[cfg(feature = "enclave_unit_test")]
+pub mod tests {
     use super::*;
-    use options;
+    use crate::options;
+    use teaclave_test_utils::*;
+
+    pub fn run_tests() -> bool {
+        should_panic!(test_block_builder_panics());
+        run_tests!(test_block_builder_sanity, test_block_builder_reset,)
+    }
 
     fn get_data() -> Vec<(&'static [u8], &'static [u8])> {
         vec![
@@ -141,7 +147,6 @@ mod tests {
         ]
     }
 
-    #[test]
     fn test_block_builder_sanity() {
         let mut o = options::for_test();
         o.block_restart_interval = 3;
@@ -161,7 +166,6 @@ mod tests {
         assert_eq!(block.len(), 149);
     }
 
-    #[test]
     fn test_block_builder_reset() {
         let mut o = options::for_test();
         o.block_restart_interval = 3;
@@ -180,8 +184,6 @@ mod tests {
         assert_eq!(4, builder.size_estimate());
     }
 
-    #[test]
-    #[should_panic]
     fn test_block_builder_panics() {
         let mut d = get_data();
         // Identical key as d[3].

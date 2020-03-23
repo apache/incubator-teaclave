@@ -297,15 +297,20 @@ impl VersionEdit {
     }
 }
 
-#[cfg(test)]
-mod tests {
+#[cfg(feature = "enclave_unit_test")]
+pub mod tests {
     use super::CompactionPointer;
     use super::VersionEdit;
+    use super::*;
 
     use crate::cmp::{Cmp, DefaultCmp};
     use crate::types::FileMetaData;
+    use teaclave_test_utils::*;
 
-    #[test]
+    pub fn run_tests() -> bool {
+        run_tests!(test_version_edit_encode_decode,)
+    }
+
     fn test_version_edit_encode_decode() {
         let mut ve = VersionEdit::new();
 
