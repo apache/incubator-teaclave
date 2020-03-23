@@ -17,32 +17,36 @@
 
 use anyhow;
 use log::error;
+use structopt::StructOpt;
 use teaclave_binder::proto::{ECallCommand, RunTestInput, RunTestOutput};
 use teaclave_binder::TeeBinder;
 use teaclave_types::TeeServiceResult;
 
+#[derive(Debug, StructOpt)]
+struct Cli {
+    /// Names of tests to execute.
+    #[structopt(short = "t", required = false)]
+    test_names: Vec<String>,
+}
+
 fn main() -> anyhow::Result<()> {
+    let args = Cli::from_args();
     env_logger::init();
     let tee = TeeBinder::new(env!("CARGO_PKG_NAME"))?;
-    run(&tee)?;
+    start_enclave_unit_test_driver(&tee, args.test_names)?;
     tee.finalize();
 
     Ok(())
 }
 
-fn start_enclave_unit_test_driver(tee: &TeeBinder) -> anyhow::Result<()> {
+fn start_enclave_unit_test_driver(tee: &TeeBinder, test_names: Vec<String>) -> anyhow::Result<()> {
     let cmd = ECallCommand::RunTest;
-    match tee.invoke::<RunTestInput, TeeServiceResult<RunTestOutput>>(cmd, RunTestInput) {
+    let input = RunTestInput::new(test_names);
+    match tee.invoke::<RunTestInput, TeeServiceResult<RunTestOutput>>(cmd, input) {
         Err(e) => error!("{:?}", e),
         Ok(Err(e)) => error!("{:?}", e),
         _ => (),
     }
-
-    Ok(())
-}
-
-fn run(tee: &TeeBinder) -> anyhow::Result<()> {
-    start_enclave_unit_test_driver(tee)?;
 
     Ok(())
 }

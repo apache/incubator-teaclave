@@ -61,7 +61,7 @@ pub struct WorkerCapability {
     pub functions: HashSet<String>,
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct ExecutionResult {
     pub return_value: Vec<u8>,
     pub output_file_hash: HashMap<String, String>,

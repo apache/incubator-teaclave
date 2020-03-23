@@ -34,7 +34,8 @@ fn main() -> anyhow::Result<()> {
 
 fn start_enclave_unit_test_driver(tee: &TeeBinder) -> anyhow::Result<()> {
     let cmd = ECallCommand::RunTest;
-    match tee.invoke::<RunTestInput, TeeServiceResult<RunTestOutput>>(cmd, RunTestInput) {
+    let input = RunTestInput::default();
+    match tee.invoke::<RunTestInput, TeeServiceResult<RunTestOutput>>(cmd, input) {
         Err(e) => error!("{:?}", e),
         Ok(Err(e)) => error!("{:?}", e),
         _ => (),
