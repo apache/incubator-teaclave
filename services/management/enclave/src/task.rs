@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-use anyhow::{anyhow, ensure, Result};
+use anyhow::{bail, ensure, Result};
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::prelude::v1::*;
@@ -96,21 +96,21 @@ pub(crate) fn assign_input_to_task(
     user_id: &str,
 ) -> Result<()> {
     if !file.owner.contains(&user_id.to_string()) {
-        return Err(anyhow!("no permission"));
+        bail!("no permission");
     }
     match task.input_data_owner_list.get(data_name) {
         Some(data_owner_list) => {
             let user_id_list = &data_owner_list.user_id_list;
             if user_id_list.len() != file.owner.len() {
-                return Err(anyhow!("no permission"));
+                bail!("no permission");
             }
             for owner in user_id_list.iter() {
                 if !file.owner.contains(owner) {
-                    return Err(anyhow!("no permission"));
+                    bail!("no permission");
                 }
             }
         }
-        None => return Err(anyhow!("no such input name")),
+        None => bail!("no such input name"),
     };
     task.input_map
         .insert(data_name.to_owned(), file.external_id());
@@ -129,24 +129,24 @@ pub(crate) fn assign_output_to_task(
     user_id: &str,
 ) -> Result<()> {
     if file.hash.is_some() {
-        return Err(anyhow!("no permission"));
+        bail!("no permission");
     }
     if !file.owner.contains(&user_id.to_string()) {
-        return Err(anyhow!("no permission"));
+        bail!("no permission");
     }
     match task.output_data_owner_list.get(data_name) {
         Some(data_owner_list) => {
             let user_id_list = &data_owner_list.user_id_list;
             if user_id_list.len() != file.owner.len() {
-                return Err(anyhow!("no permission"));
+                bail!("no permission");
             }
             for owner in user_id_list.iter() {
                 if !file.owner.contains(owner) {
-                    return Err(anyhow!("no permission"));
+                    bail!("no permission");
                 }
             }
         }
-        None => return Err(anyhow!("no such output name")),
+        None => bail!("no such output name"),
     };
     task.output_map
         .insert(data_name.to_owned(), file.external_id());

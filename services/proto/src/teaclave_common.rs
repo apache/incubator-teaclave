@@ -19,7 +19,7 @@
 use std::prelude::v1::*;
 
 use crate::teaclave_common_proto as proto;
-use anyhow::{anyhow, Error, Result};
+use anyhow::{bail, Error, Result};
 use teaclave_types::{TaskStatus, TeaclaveFileCryptoInfo, TeaclaveFileRootKey128};
 
 #[derive(Debug)]
@@ -109,7 +109,7 @@ pub fn i32_to_task_status(status: i32) -> Result<TaskStatus> {
         Some(proto::TaskStatus::Running) => TaskStatus::Running,
         Some(proto::TaskStatus::Failed) => TaskStatus::Failed,
         Some(proto::TaskStatus::Finished) => TaskStatus::Finished,
-        None => return Err(anyhow!("invalid task status")),
+        None => bail!("invalid task status"),
     };
     Ok(ret)
 }
