@@ -17,32 +17,34 @@
 
 use std::prelude::v1::*;
 use teaclave_config::RuntimeConfig;
+use teaclave_proto::teaclave_access_control_service::*;
 use teaclave_proto::teaclave_scheduler_service::*;
 use teaclave_proto::teaclave_storage_service::*;
 use teaclave_rpc::endpoint::Endpoint;
 use teaclave_types::*;
 
-pub(crate) fn get_scheduler_client() -> TeaclaveSchedulerClient {
-    let runtime_config = RuntimeConfig::from_toml("runtime.config.toml").expect("runtime");
-    let address = runtime_config
-        .internal_endpoints
-        .scheduler
-        .advertised_address;
-    let channel = Endpoint::new(&address).connect().unwrap();
-    let metadata = hashmap!(
-        "id" => "mock_user",
-        "token" => "",
-    );
-    TeaclaveSchedulerClient::new_with_metadata(channel, metadata).unwrap()
+macro_rules! impl_get_service_client_fn {
+    ($service_name:ident, $fn_name:ident, $return:ident) => {
+        pub(crate) fn $fn_name() -> $return {
+            let runtime_config = RuntimeConfig::from_toml("runtime.config.toml").expect("runtime");
+            let address = runtime_config
+                .internal_endpoints
+                .$service_name
+                .advertised_address;
+            let channel = Endpoint::new(&address).connect().unwrap();
+            let metadata = hashmap!(
+                "id" => "mock_user",
+                "token" => "",
+            );
+            $return::new_with_metadata(channel, metadata).unwrap()
+        }
+    };
 }
 
-pub(crate) fn get_storage_client() -> TeaclaveStorageClient {
-    let runtime_config = RuntimeConfig::from_toml("runtime.config.toml").expect("runtime");
-    let address = runtime_config.internal_endpoints.storage.advertised_address;
-    let channel = Endpoint::new(&address).connect().unwrap();
-    let metadata = hashmap!(
-        "id" => "mock_user",
-        "token" => "",
-    );
-    TeaclaveStorageClient::new_with_metadata(channel, metadata).unwrap()
-}
+impl_get_service_client_fn!(scheduler, get_scheduler_client, TeaclaveSchedulerClient);
+impl_get_service_client_fn!(storage, get_storage_client, TeaclaveStorageClient);
+impl_get_service_client_fn!(
+    access_control,
+    get_access_control_client,
+    TeaclaveAccessControlClient
+);
