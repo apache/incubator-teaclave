@@ -51,18 +51,69 @@ impl FunctionOutput {
 }
 
 const FUNCION_PREFIX: &str = "function";
-#[derive(Debug, Deserialize, Serialize)]
+
+#[derive(Default, Debug, Deserialize, Serialize)]
 pub struct Function {
-    pub function_id: Uuid,
+    pub id: Uuid,
     pub name: String,
     pub description: String,
     pub payload: Vec<u8>,
-    pub is_public: bool,
-    pub arg_list: Vec<String>,
-    pub input_list: Vec<FunctionInput>,
-    pub output_list: Vec<FunctionOutput>,
+    pub public: bool,
+    pub arguments: Vec<String>,
+    pub inputs: Vec<FunctionInput>,
+    pub outputs: Vec<FunctionOutput>,
     pub owner: String,
-    pub is_native: bool,
+}
+
+impl Function {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn id(self, id: Uuid) -> Self {
+        Self { id, ..self }
+    }
+
+    pub fn name(self, name: impl ToString) -> Self {
+        Self {
+            name: name.to_string(),
+            ..self
+        }
+    }
+
+    pub fn description(self, description: impl ToString) -> Self {
+        Self {
+            description: description.to_string(),
+            ..self
+        }
+    }
+
+    pub fn payload(self, payload: Vec<u8>) -> Self {
+        Self { payload, ..self }
+    }
+
+    pub fn public(self, public: bool) -> Self {
+        Self { public, ..self }
+    }
+
+    pub fn arguments(self, arguments: Vec<String>) -> Self {
+        Self { arguments, ..self }
+    }
+
+    pub fn inputs(self, inputs: Vec<FunctionInput>) -> Self {
+        Self { inputs, ..self }
+    }
+
+    pub fn outputs(self, outputs: Vec<FunctionOutput>) -> Self {
+        Self { outputs, ..self }
+    }
+
+    pub fn owner(self, owner: impl ToString) -> Self {
+        Self {
+            owner: owner.to_string(),
+            ..self
+        }
+    }
 }
 
 impl Storable for Function {
@@ -71,6 +122,6 @@ impl Storable for Function {
     }
 
     fn uuid(&self) -> Uuid {
-        self.function_id
+        self.id
     }
 }
