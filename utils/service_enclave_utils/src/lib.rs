@@ -94,6 +94,14 @@ macro_rules! impl_create_trusted_endpoint_fn {
 
 impl_create_trusted_endpoint_fn!(create_trusted_storage_endpoint, "teaclave_storage_service");
 impl_create_trusted_endpoint_fn!(
+    create_trusted_authentication_endpoint,
+    "teaclave_authentication_service"
+);
+impl_create_trusted_endpoint_fn!(
+    create_trusted_management_endpoint,
+    "teaclave_management_service"
+);
+impl_create_trusted_endpoint_fn!(
     create_trusted_scheduler_endpoint,
     "teaclave_scheduler_service"
 );
