@@ -34,7 +34,7 @@ pub(crate) fn create_task(
 ) -> Result<Task> {
     let task_id = Uuid::new_v4();
     let mut participants = HashSet::new();
-    if !function.is_public {
+    if !function.public {
         participants.insert(function.owner.clone());
     }
     participants.insert(creator.clone());
@@ -65,19 +65,19 @@ pub(crate) fn create_task(
         status: TaskStatus::Created,
     };
     // check arguments
-    let function_arguments: HashSet<String> = function.arg_list.into_iter().collect();
+    let function_arguments: HashSet<String> = function.arguments.into_iter().collect();
     let provide_args: HashSet<String> = task.function_arguments.inner().keys().cloned().collect();
     let diff: HashSet<_> = function_arguments.difference(&provide_args).collect();
     ensure!(diff.is_empty(), "bad arguments");
 
     // check input
-    let input_args: HashSet<String> = function.input_list.into_iter().map(|f| f.name).collect();
+    let input_args: HashSet<String> = function.inputs.into_iter().map(|f| f.name).collect();
     let provide_args: HashSet<String> = task.input_data_owner_list.keys().cloned().collect();
     let diff: HashSet<_> = input_args.difference(&provide_args).collect();
     ensure!(diff.is_empty(), "bad input");
 
     // check output
-    let output_args: HashSet<String> = function.output_list.into_iter().map(|f| f.name).collect();
+    let output_args: HashSet<String> = function.outputs.into_iter().map(|f| f.name).collect();
     let provide_args: HashSet<String> = task.output_data_owner_list.keys().cloned().collect();
     let diff: HashSet<_> = output_args.difference(&provide_args).collect();
     ensure!(diff.is_empty(), "bad output");
