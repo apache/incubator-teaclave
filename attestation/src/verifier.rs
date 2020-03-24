@@ -1,3 +1,5 @@
+//! Types used to verify attestation reports
+
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -22,13 +24,18 @@ use teaclave_types::EnclaveAttr;
 
 pub type AttestationReportVerificationFn = fn(&AttestationReport) -> bool;
 
+/// Type used to verify attestation reports (this can be set as a certificate verifier in `rustls::ClientConfig`)
 #[derive(Clone)]
 pub struct AttestationReportVerifier {
+    /// Valid enclave attributes (only enclaves with attributes in this vector will be accepted)
     pub accepted_enclave_attrs: Vec<EnclaveAttr>,
+    /// Root certificate
     pub root_ca: Vec<u8>,
+    /// Attestation report verifier function
     pub verifier: AttestationReportVerificationFn,
 }
 
+/// Checks if he quote's status is not `UnknownBadStatus`
 pub fn universal_quote_verifier(report: &AttestationReport) -> bool {
     debug!("report.sgx_quote_status: {:?}", report.sgx_quote_status);
     report.sgx_quote_status != crate::report::SgxQuoteStatus::UnknownBadStatus
