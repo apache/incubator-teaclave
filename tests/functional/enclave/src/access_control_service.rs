@@ -15,14 +15,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use crate::utils::*;
 use std::prelude::v1::*;
-use teaclave_attestation::verifier;
-use teaclave_config::RuntimeConfig;
-use teaclave_config::BUILD_CONFIG;
 use teaclave_proto::teaclave_access_control_service::*;
-use teaclave_rpc::config::SgxTrustedTlsClientConfig;
-use teaclave_rpc::endpoint::Endpoint;
-use teaclave_types::EnclaveInfo;
 
 pub fn run_tests() -> bool {
     use teaclave_test_utils::*;
@@ -40,33 +35,8 @@ pub fn run_tests() -> bool {
     )
 }
 
-fn get_client() -> TeaclaveAccessControlClient {
-    let runtime_config = RuntimeConfig::from_toml("runtime.config.toml").expect("runtime");
-    let enclave_info =
-        EnclaveInfo::from_bytes(&runtime_config.audit.enclave_info_bytes.as_ref().unwrap());
-    let enclave_attr = enclave_info
-        .get_enclave_attr("teaclave_access_control_service")
-        .expect("access_control");
-    let config = SgxTrustedTlsClientConfig::new().attestation_report_verifier(
-        vec![enclave_attr],
-        BUILD_CONFIG.as_root_ca_cert,
-        verifier::universal_quote_verifier,
-    );
-
-    let channel = Endpoint::new(
-        &runtime_config
-            .internal_endpoints
-            .access_control
-            .advertised_address,
-    )
-    .config(config)
-    .connect()
-    .unwrap();
-    TeaclaveAccessControlClient::new(channel).unwrap()
-}
-
 fn test_authorize_data_success() {
-    let mut client = get_client();
+    let mut client = get_access_control_client();
 
     let request = AuthorizeDataRequest::new("mock_user_a", "mock_data");
     let response_result = client.authorize_data(request);
@@ -75,7 +45,7 @@ fn test_authorize_data_success() {
 }
 
 fn test_authorize_data_fail() {
-    let mut client = get_client();
+    let mut client = get_access_control_client();
 
     let request = AuthorizeDataRequest::new("mock_user_d", "mock_data");
     let response_result = client.authorize_data(request);
@@ -89,7 +59,7 @@ fn test_authorize_data_fail() {
 }
 
 fn test_authorize_function_success() {
-    let mut client = get_client();
+    let mut client = get_access_control_client();
 
     let request =
         AuthorizeFunctionRequest::new("mock_public_function_owner", "mock_public_function");
@@ -111,7 +81,7 @@ fn test_authorize_function_success() {
 }
 
 fn test_authorize_function_fail() {
-    let mut client = get_client();
+    let mut client = get_access_control_client();
     let request =
         AuthorizeFunctionRequest::new("mock_public_function_owner", "mock_private_function");
     let response_result = client.authorize_function(request);
@@ -120,7 +90,7 @@ fn test_authorize_function_fail() {
 }
 
 fn test_authorize_task_success() {
-    let mut client = get_client();
+    let mut client = get_access_control_client();
     let request = AuthorizeTaskRequest::new("mock_participant_a", "mock_task");
     let response_result = client.authorize_task(request);
     assert!(response_result.is_ok());
@@ -133,7 +103,7 @@ fn test_authorize_task_success() {
 }
 
 fn test_authorize_task_fail() {
-    let mut client = get_client();
+    let mut client = get_access_control_client();
     let request = AuthorizeTaskRequest::new("mock_participant_c", "mock_task");
     let response_result = client.authorize_task(request);
     assert!(response_result.is_ok());
@@ -141,7 +111,7 @@ fn test_authorize_task_fail() {
 }
 
 fn test_authorize_staged_task_success() {
-    let mut client = get_client();
+    let mut client = get_access_control_client();
     let request = AuthorizeStagedTaskRequest {
         subject_task_id: "mock_staged_task".to_string(),
         object_function_id: "mock_staged_allowed_private_function".to_string(),
@@ -162,7 +132,7 @@ fn test_authorize_staged_task_success() {
 }
 
 fn test_authorize_staged_task_fail() {
-    let mut client = get_client();
+    let mut client = get_access_control_client();
     let request = AuthorizeStagedTaskRequest {
         subject_task_id: "mock_staged_task".to_string(),
         object_function_id: "mock_staged_disallowed_private_function".to_string(),

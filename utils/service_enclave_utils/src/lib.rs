@@ -68,42 +68,32 @@ impl ServiceEnclave {
 
 pub use teaclave_service_enclave_utils_proc_macro::teaclave_service;
 
-pub fn create_trusted_storage_endpoint(
-    advertised_address: &str,
-    enclave_info: &EnclaveInfo,
-    as_root_ca_cert: &[u8],
-    verifier: AttestationReportVerificationFn,
-) -> Endpoint {
-    let storage_service_enclave_attrs = enclave_info
-        .get_enclave_attr("teaclave_storage_service")
-        .expect("enclave_info");
-    let storage_service_client_config = SgxTrustedTlsClientConfig::new()
-        .attestation_report_verifier(
-            vec![storage_service_enclave_attrs],
-            as_root_ca_cert,
-            verifier,
-        );
-    let storage_service_address = &advertised_address;
+macro_rules! impl_create_trusted_endpoint_fn {
+    ($fn_name:ident, $enclave_attr:literal) => {
+        pub fn $fn_name(
+            advertised_address: &str,
+            enclave_info: &EnclaveInfo,
+            as_root_ca_cert: &[u8],
+            verifier: AttestationReportVerificationFn,
+        ) -> Endpoint {
+            let service_enclave_attrs = enclave_info
+                .get_enclave_attr($enclave_attr)
+                .expect("enclave_info");
+            let service_client_config = SgxTrustedTlsClientConfig::new()
+                .attestation_report_verifier(
+                    vec![service_enclave_attrs],
+                    as_root_ca_cert,
+                    verifier,
+                );
+            let service_address = &advertised_address;
 
-    Endpoint::new(storage_service_address).config(storage_service_client_config)
+            Endpoint::new(service_address).config(service_client_config)
+        }
+    };
 }
 
-pub fn create_trusted_scheduler_endpoint(
-    advertised_address: &str,
-    enclave_info: &EnclaveInfo,
-    as_root_ca_cert: &[u8],
-    verifier: AttestationReportVerificationFn,
-) -> Endpoint {
-    let scheduler_service_enclave_attrs = enclave_info
-        .get_enclave_attr("teaclave_scheduler_service")
-        .expect("enclave_info");
-    let scheduler_service_client_config = SgxTrustedTlsClientConfig::new()
-        .attestation_report_verifier(
-            vec![scheduler_service_enclave_attrs],
-            as_root_ca_cert,
-            verifier,
-        );
-    let scheduler_service_address = &advertised_address;
-
-    Endpoint::new(scheduler_service_address).config(scheduler_service_client_config)
-}
+impl_create_trusted_endpoint_fn!(create_trusted_storage_endpoint, "teaclave_storage_service");
+impl_create_trusted_endpoint_fn!(
+    create_trusted_scheduler_endpoint,
+    "teaclave_scheduler_service"
+);
