@@ -35,11 +35,11 @@ use teaclave_config::{RuntimeConfig, BUILD_CONFIG};
 use teaclave_proto::teaclave_frontend_service::{
     TeaclaveFrontendRequest, TeaclaveFrontendResponse,
 };
-use teaclave_rpc::config::SgxTrustedTlsClientConfig;
 use teaclave_rpc::config::SgxTrustedTlsServerConfig;
-use teaclave_rpc::endpoint::Endpoint;
 use teaclave_rpc::server::SgxTrustedTlsServer;
-use teaclave_service_enclave_utils::ServiceEnclave;
+use teaclave_service_enclave_utils::{
+    create_trusted_authentication_endpoint, create_trusted_management_endpoint, ServiceEnclave,
+};
 use teaclave_types::{TeeServiceError, TeeServiceResult};
 
 mod service;
@@ -62,7 +62,7 @@ fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
         .attested_tls_config()
         .unwrap();
     let server_config =
-        SgxTrustedTlsServerConfig::from_attested_tls_config(attested_tls_config.clone()).unwrap();
+        SgxTrustedTlsServerConfig::from_attested_tls_config(attested_tls_config).unwrap();
 
     let mut server = SgxTrustedTlsServer::<TeaclaveFrontendResponse, TeaclaveFrontendRequest>::new(
         listen_address,
@@ -71,35 +71,19 @@ fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
 
     let enclave_info =
         teaclave_types::EnclaveInfo::from_bytes(&config.audit.enclave_info_bytes.as_ref().unwrap());
-    let enclave_attr = enclave_info
-        .get_enclave_attr("teaclave_authentication_service")
-        .expect("authentication");
-    let client_config =
-        SgxTrustedTlsClientConfig::from_attested_tls_config(attested_tls_config.clone())
-            .unwrap()
-            .attestation_report_verifier(
-                vec![enclave_attr],
-                AS_ROOT_CA_CERT,
-                verifier::universal_quote_verifier,
-            );
-    let authentication_service_address =
-        &config.internal_endpoints.authentication.advertised_address;
-    let authentication_service_endpoint =
-        Endpoint::new(authentication_service_address).config(client_config);
+    let authentication_service_endpoint = create_trusted_authentication_endpoint(
+        &config.internal_endpoints.authentication.advertised_address,
+        &enclave_info,
+        AS_ROOT_CA_CERT,
+        verifier::universal_quote_verifier,
+    );
 
-    let enclave_attr = enclave_info
-        .get_enclave_attr("teaclave_management_service")
-        .expect("management");
-    let client_config = SgxTrustedTlsClientConfig::from_attested_tls_config(attested_tls_config)
-        .unwrap()
-        .attestation_report_verifier(
-            vec![enclave_attr],
-            AS_ROOT_CA_CERT,
-            verifier::universal_quote_verifier,
-        );
-    let management_service_address = &config.internal_endpoints.management.advertised_address;
-    let management_service_endpoint =
-        Endpoint::new(management_service_address).config(client_config);
+    let management_service_endpoint = create_trusted_management_endpoint(
+        &config.internal_endpoints.management.advertised_address,
+        &enclave_info,
+        AS_ROOT_CA_CERT,
+        verifier::universal_quote_verifier,
+    );
 
     let service = service::TeaclaveFrontendService::new(
         authentication_service_endpoint,
