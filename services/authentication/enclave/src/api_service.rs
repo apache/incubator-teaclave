@@ -25,7 +25,7 @@ use teaclave_proto::teaclave_authentication_service::{
     UserRegisterResponse,
 };
 use teaclave_rpc::Request;
-use teaclave_service_enclave_utils::teaclave_service;
+use teaclave_service_enclave_utils::{bail, ensure, teaclave_service};
 use teaclave_types::{TeaclaveServiceResponseError, TeaclaveServiceResponseResult};
 use thiserror::Error;
 
@@ -73,11 +73,12 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
         request: Request<UserRegisterRequest>,
     ) -> TeaclaveServiceResponseResult<UserRegisterResponse> {
         let request = request.message;
-        if request.id.is_empty() {
-            return Err(TeaclaveAuthenticationApiError::InvalidUserId.into());
-        }
+        ensure!(
+            !request.id.is_empty(),
+            TeaclaveAuthenticationApiError::InvalidUserId
+        );
         if self.db_client.get_user(&request.id).is_ok() {
-            return Err(TeaclaveAuthenticationApiError::InvalidUserId.into());
+            bail!(TeaclaveAuthenticationApiError::InvalidUserId);
         }
         let new_user = UserInfo::new(&request.id, &request.password);
         match self.db_client.create_user(&new_user) {
@@ -92,18 +93,20 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
         request: Request<UserLoginRequest>,
     ) -> TeaclaveServiceResponseResult<UserLoginResponse> {
         let request = request.message;
-        if request.id.is_empty() {
-            return Err(TeaclaveAuthenticationApiError::InvalidUserId.into());
-        }
-        if request.password.is_empty() {
-            return Err(TeaclaveAuthenticationApiError::InvalidPassword.into());
-        }
+        ensure!(
+            !request.id.is_empty(),
+            TeaclaveAuthenticationApiError::InvalidUserId
+        );
+        ensure!(
+            !request.password.is_empty(),
+            TeaclaveAuthenticationApiError::InvalidPassword
+        );
         let user = self
             .db_client
             .get_user(&request.id)
             .map_err(|_| TeaclaveAuthenticationApiError::PermissionDenied)?;
         if !user.verify_password(&request.password) {
-            Err(TeaclaveAuthenticationApiError::PermissionDenied.into())
+            bail!(TeaclaveAuthenticationApiError::PermissionDenied)
         } else {
             let now = SystemTime::now()
                 .duration_since(UNIX_EPOCH)

@@ -40,7 +40,7 @@ use teaclave_proto::teaclave_storage_service::{
 };
 use teaclave_rpc::endpoint::Endpoint;
 use teaclave_rpc::Request;
-use teaclave_service_enclave_utils::teaclave_service;
+use teaclave_service_enclave_utils::{bail, ensure, teaclave_service};
 use teaclave_types::Function;
 #[cfg(test_mode)]
 use teaclave_types::{FunctionInput, FunctionOutput};
@@ -140,9 +140,10 @@ impl TeaclaveManagement for TeaclaveManagementService {
             .to_string();
 
         let owner_list = request.message.owner_list;
-        if !owner_list.contains(&user_id) {
-            return Err(TeaclaveManagementError::PermissionDenied.into());
-        }
+        ensure!(
+            owner_list.contains(&user_id),
+            TeaclaveManagementError::PermissionDenied
+        );
 
         let output_file = TeaclaveOutputFile::new_fusion_data(owner_list)
             .map_err(|_| TeaclaveManagementError::DataError)?;
@@ -166,15 +167,17 @@ impl TeaclaveManagement for TeaclaveManagementService {
             .get("id")
             .ok_or_else(|| TeaclaveManagementError::InvalidRequest)?
             .to_string();
-        if !TeaclaveOutputFile::match_prefix(&request.message.data_id) {
-            return Err(TeaclaveManagementError::PermissionDenied.into());
-        }
+        ensure!(
+            TeaclaveOutputFile::match_prefix(&request.message.data_id),
+            TeaclaveManagementError::PermissionDenied
+        );
         let output: TeaclaveOutputFile = self
             .read_from_db(request.message.data_id.as_bytes())
             .map_err(|_| TeaclaveManagementError::PermissionDenied)?;
-        if !output.owner.contains(&user_id) {
-            return Err(TeaclaveManagementError::PermissionDenied.into());
-        }
+        ensure!(
+            output.owner.contains(&user_id),
+            TeaclaveManagementError::PermissionDenied
+        );
 
         let input = TeaclaveInputFile::from_output(output)
             .map_err(|_| TeaclaveManagementError::PermissionDenied)?;
@@ -197,17 +200,19 @@ impl TeaclaveManagement for TeaclaveManagementService {
             .ok_or_else(|| TeaclaveManagementError::InvalidRequest)?
             .to_string();
 
-        if !TeaclaveOutputFile::match_prefix(&request.message.data_id) {
-            return Err(TeaclaveManagementError::PermissionDenied.into());
-        }
+        ensure!(
+            TeaclaveOutputFile::match_prefix(&request.message.data_id),
+            TeaclaveManagementError::PermissionDenied
+        );
 
         let output_file: TeaclaveOutputFile = self
             .read_from_db(&request.message.data_id.as_bytes())
             .map_err(|_| TeaclaveManagementError::PermissionDenied)?;
 
-        if !output_file.owner.contains(&user_id) {
-            return Err(TeaclaveManagementError::PermissionDenied.into());
-        }
+        ensure!(
+            output_file.owner.contains(&user_id),
+            TeaclaveManagementError::PermissionDenied
+        );
         let response = GetOutputFileResponse {
             owner: output_file.owner,
             hash: output_file.hash.unwrap_or_else(|| "".to_string()),
@@ -226,17 +231,19 @@ impl TeaclaveManagement for TeaclaveManagementService {
             .ok_or_else(|| TeaclaveManagementError::InvalidRequest)?
             .to_string();
 
-        if !TeaclaveInputFile::match_prefix(&request.message.data_id) {
-            return Err(TeaclaveManagementError::PermissionDenied.into());
-        }
+        ensure!(
+            TeaclaveInputFile::match_prefix(&request.message.data_id),
+            TeaclaveManagementError::PermissionDenied
+        );
 
         let input_file: TeaclaveInputFile = self
             .read_from_db(&request.message.data_id.as_bytes())
             .map_err(|_| TeaclaveManagementError::PermissionDenied)?;
 
-        if !input_file.owner.contains(&user_id) {
-            return Err(TeaclaveManagementError::PermissionDenied.into());
-        }
+        ensure!(
+            input_file.owner.contains(&user_id),
+            TeaclaveManagementError::PermissionDenied
+        );
         let response = GetInputFileResponse {
             owner: input_file.owner,
             hash: input_file.hash,
@@ -285,16 +292,18 @@ impl TeaclaveManagement for TeaclaveManagementService {
             .get("id")
             .ok_or_else(|| TeaclaveManagementError::InvalidRequest)?
             .to_string();
-        if !Function::match_prefix(&request.message.function_id) {
-            return Err(TeaclaveManagementError::PermissionDenied.into());
-        }
+        ensure!(
+            Function::match_prefix(&request.message.function_id),
+            TeaclaveManagementError::PermissionDenied
+        );
 
         let function: Function = self
             .read_from_db(request.message.function_id.as_bytes())
             .map_err(|_| TeaclaveManagementError::PermissionDenied)?;
-        if !(function.public || function.owner == user_id) {
-            return Err(TeaclaveManagementError::PermissionDenied.into());
-        }
+        ensure!(
+            (function.public || function.owner == user_id),
+            TeaclaveManagementError::PermissionDenied
+        );
         let response = GetFunctionResponse {
             name: function.name,
             description: function.description,
@@ -352,15 +361,17 @@ impl TeaclaveManagement for TeaclaveManagementService {
             .ok_or_else(|| TeaclaveManagementError::InvalidRequest)?
             .to_string();
 
-        if !Task::match_prefix(&request.message.task_id) {
-            return Err(TeaclaveManagementError::PermissionDenied.into());
-        }
+        ensure!(
+            Task::match_prefix(&request.message.task_id),
+            TeaclaveManagementError::PermissionDenied
+        );
         let task: Task = self
             .read_from_db(request.message.task_id.as_bytes())
             .map_err(|_| TeaclaveManagementError::PermissionDenied)?;
-        if !task.participants.contains(&user_id) {
-            return Err(TeaclaveManagementError::PermissionDenied.into());
-        }
+        ensure!(
+            task.participants.contains(&user_id),
+            TeaclaveManagementError::PermissionDenied
+        );
         let response = GetTaskResponse {
             task_id: task.external_id(),
             creator: task.creator,
@@ -398,19 +409,21 @@ impl TeaclaveManagement for TeaclaveManagementService {
             .ok_or_else(|| TeaclaveManagementError::InvalidRequest)?
             .to_string();
         let request = request.message;
-        if !Task::match_prefix(&request.task_id) {
-            return Err(TeaclaveManagementError::PermissionDenied.into());
-        }
+        ensure!(
+            Task::match_prefix(&request.task_id),
+            TeaclaveManagementError::PermissionDenied
+        );
         let mut task: Task = self
             .read_from_db(request.task_id.as_bytes())
             .map_err(|_| TeaclaveManagementError::PermissionDenied)?;
 
-        if !task.participants.contains(&user_id) {
-            return Err(TeaclaveManagementError::PermissionDenied.into());
-        }
+        ensure!(
+            task.participants.contains(&user_id),
+            TeaclaveManagementError::PermissionDenied
+        );
         match task.status {
             TaskStatus::Created => {}
-            _ => return Err(TeaclaveManagementError::PermissionDenied.into()),
+            _ => bail!(TeaclaveManagementError::PermissionDenied),
         }
         for (data_name, data_id) in request.input_map.iter() {
             if TeaclaveInputFile::match_prefix(data_id) {
@@ -420,7 +433,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
                 assign_input_to_task(&mut task, data_name, &input_file, &user_id)
                     .map_err(|_| TeaclaveManagementError::PermissionDenied)?;
             } else {
-                return Err(TeaclaveManagementError::PermissionDenied.into());
+                bail!(TeaclaveManagementError::PermissionDenied);
             }
         }
         for (data_name, data_id) in request.output_map.iter() {
@@ -431,7 +444,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
                 assign_output_to_task(&mut task, data_name, &output_file, &user_id)
                     .map_err(|_| TeaclaveManagementError::PermissionDenied)?;
             } else {
-                return Err(TeaclaveManagementError::PermissionDenied.into());
+                bail!(TeaclaveManagementError::PermissionDenied);
             }
         }
         try_update_task_to_ready_status(&mut task);
@@ -453,19 +466,21 @@ impl TeaclaveManagement for TeaclaveManagementService {
             .ok_or_else(|| TeaclaveManagementError::InvalidRequest)?
             .to_string();
         let request = request.message;
-        if !Task::match_prefix(&request.task_id) {
-            return Err(TeaclaveManagementError::PermissionDenied.into());
-        }
+        ensure!(
+            Task::match_prefix(&request.task_id),
+            TeaclaveManagementError::PermissionDenied
+        );
         let mut task: Task = self
             .read_from_db(request.task_id.as_bytes())
             .map_err(|_| TeaclaveManagementError::PermissionDenied)?;
 
-        if !task.participants.contains(&user_id) {
-            return Err(TeaclaveManagementError::PermissionDenied.into());
-        }
+        ensure!(
+            task.participants.contains(&user_id),
+            TeaclaveManagementError::PermissionDenied
+        );
         match task.status {
             TaskStatus::Ready => {}
-            _ => return Err(TeaclaveManagementError::PermissionDenied.into()),
+            _ => bail!(TeaclaveManagementError::PermissionDenied),
         }
         task.approved_user_list.insert(user_id);
         try_update_task_to_approved_status(&mut task);
@@ -487,23 +502,26 @@ impl TeaclaveManagement for TeaclaveManagementService {
             .ok_or_else(|| TeaclaveManagementError::InvalidRequest)?
             .to_string();
         let request = request.message;
-        if !Task::match_prefix(&request.task_id) {
-            return Err(TeaclaveManagementError::PermissionDenied.into());
-        }
+        ensure!(
+            Task::match_prefix(&request.task_id),
+            TeaclaveManagementError::PermissionDenied
+        );
         let mut task: Task = self
             .read_from_db(request.task_id.as_bytes())
             .map_err(|_| TeaclaveManagementError::PermissionDenied)?;
 
-        if task.creator != user_id {
-            return Err(TeaclaveManagementError::PermissionDenied.into());
-        }
+        ensure!(
+            task.creator == user_id,
+            TeaclaveManagementError::PermissionDenied
+        );
         match task.status {
             TaskStatus::Approved => {}
-            _ => return Err(TeaclaveManagementError::PermissionDenied.into()),
+            _ => bail!(TeaclaveManagementError::PermissionDenied),
         }
-        if !Function::match_prefix(&task.function_id) {
-            return Err(TeaclaveManagementError::PermissionDenied.into());
-        }
+        ensure!(
+            Function::match_prefix(&task.function_id),
+            TeaclaveManagementError::PermissionDenied
+        );
         let function: Function = self
             .read_from_db(task.function_id.as_bytes())
             .map_err(|_| TeaclaveManagementError::PermissionDenied)?;
@@ -518,7 +536,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
                     .map_err(|_| TeaclaveManagementError::PermissionDenied)?;
                 FunctionInputFile::from_teaclave_input_file(&input_file)
             } else {
-                return Err(TeaclaveManagementError::PermissionDenied.into());
+                bail!(TeaclaveManagementError::PermissionDenied);
             };
             input_map.insert(data_name.to_string(), input_data);
         }
@@ -528,12 +546,13 @@ impl TeaclaveManagement for TeaclaveManagementService {
                 let output_file: TeaclaveOutputFile = self
                     .read_from_db(data_id.as_bytes())
                     .map_err(|_| TeaclaveManagementError::PermissionDenied)?;
-                if output_file.hash.is_some() {
-                    return Err(TeaclaveManagementError::PermissionDenied.into());
-                }
+                ensure!(
+                    output_file.hash.is_none(),
+                    TeaclaveManagementError::PermissionDenied
+                );
                 FunctionOutputFile::from_teaclave_output_file(&output_file)
             } else {
-                return Err(TeaclaveManagementError::PermissionDenied.into());
+                bail!(TeaclaveManagementError::PermissionDenied);
             };
             output_map.insert(data_name.to_string(), output_data);
         }

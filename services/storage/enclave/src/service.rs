@@ -25,7 +25,7 @@ use teaclave_proto::teaclave_storage_service::{
     EnqueueResponse, GetRequest, GetResponse, PutRequest, PutResponse, TeaclaveStorage,
 };
 use teaclave_rpc::Request;
-use teaclave_service_enclave_utils::teaclave_service;
+use teaclave_service_enclave_utils::{bail, teaclave_service};
 use teaclave_types::{TeaclaveServiceResponseError, TeaclaveServiceResponseResult};
 use thiserror::Error;
 
@@ -141,7 +141,7 @@ impl<'a> DBQueue<'a> {
             let element_key = self.get_element_key(head_index);
             let result = match self.database.get(&element_key) {
                 Some(value) => value,
-                None => return Err(TeaclaveStorageError::None.into()),
+                None => bail!(TeaclaveStorageError::None),
             };
             // update head
             head_index += 1;
