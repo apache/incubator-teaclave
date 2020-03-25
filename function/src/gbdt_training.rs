@@ -157,12 +157,12 @@ pub mod tests {
         let expected_output = "fixtures/functions/gbdt_training/expected_model.txt";
 
         let input_files = StagedFiles::new(hashmap!(
-            IN_DATA.to_string() =>
+            IN_DATA =>
             StagedFileInfo::new(plain_input, TeaclaveFile128Key::random())
         ));
 
         let output_files = StagedFiles::new(hashmap!(
-            OUT_MODEL.to_string() =>
+            OUT_MODEL =>
             StagedFileInfo::new(plain_output, TeaclaveFile128Key::random())
         ));
 

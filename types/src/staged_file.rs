@@ -44,12 +44,12 @@ impl StagedFileInfo {
         }
     }
 
-    pub fn get_readable_io(&self) -> anyhow::Result<Box<dyn io::Read>> {
+    pub fn create_readable_io(&self) -> anyhow::Result<Box<dyn io::Read>> {
         let f = ProtectedFile::open_ex(&self.path, &self.crypto_info.key)?;
         Ok(Box::new(f))
     }
 
-    pub fn get_writable_io(&self) -> anyhow::Result<Box<dyn io::Write>> {
+    pub fn create_writable_io(&self) -> anyhow::Result<Box<dyn io::Write>> {
         let f = ProtectedFile::create_ex(&self.path, &self.crypto_info.key)?;
         Ok(Box::new(f))
     }
@@ -122,11 +122,15 @@ pub fn convert_encrypted_input_file(
 
 #[derive(Debug, Default)]
 pub struct StagedFiles {
-    pub entries: HashMap<String, StagedFileInfo>,
+    entries: HashMap<String, StagedFileInfo>,
 }
 
 impl StagedFiles {
     pub fn new(entries: HashMap<String, StagedFileInfo>) -> Self {
         StagedFiles { entries }
+    }
+
+    pub fn get(&self, key: &str) -> Option<&StagedFileInfo> {
+        self.entries.get(key)
     }
 }

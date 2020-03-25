@@ -44,7 +44,6 @@ impl TeaclaveRuntime for RawIoRuntime {
     fn open_input(&self, identifier: &str) -> anyhow::Result<Box<dyn io::Read>> {
         let file_info = self
             .input_files
-            .entries
             .get(identifier)
             .ok_or_else(|| anyhow::anyhow!("Invalid input file identifier."))?;
         log::debug!("open_input: {:?}", file_info.path);
@@ -55,7 +54,6 @@ impl TeaclaveRuntime for RawIoRuntime {
     fn create_output(&self, identifier: &str) -> anyhow::Result<Box<dyn io::Write>> {
         let file_info = self
             .output_files
-            .entries
             .get(identifier)
             .ok_or_else(|| anyhow::anyhow!("Invalide output file identifier"))?;
         let f = File::create(&file_info.path)?;
