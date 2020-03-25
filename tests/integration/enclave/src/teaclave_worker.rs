@@ -18,8 +18,8 @@
 use std::prelude::v1::*;
 
 use teaclave_types::{
-    hashmap, read_all_bytes, ExecutorType, FunctionArguments, StagedFiles, StagedFunction,
-    StagedInputFile, StagedOutputFile, TeaclaveFile128Key,
+    hashmap, read_all_bytes, ExecutorType, FunctionArguments, StagedFileInfo, StagedFiles,
+    StagedFunction, TeaclaveFile128Key,
 };
 use teaclave_worker::Worker;
 
@@ -40,12 +40,12 @@ fn test_start_worker() {
     let enc_output = "fixtures/functions/gbdt_training/model.enc.out";
     let expected_output = "fixtures/functions/gbdt_training/expected_model.txt";
 
-    let input_info = StagedInputFile::create_with_plaintext_file(plain_input).unwrap();
+    let input_info = StagedFileInfo::create_with_plaintext_file(plain_input).unwrap();
 
     let input_files = StagedFiles::new(hashmap!(
         "training_data" => input_info));
 
-    let output_info = StagedOutputFile::new(enc_output, TeaclaveFile128Key::random());
+    let output_info = StagedFileInfo::new(enc_output, TeaclaveFile128Key::random());
 
     let output_files = StagedFiles::new(hashmap!(
         "trained_model" => output_info.clone()));
