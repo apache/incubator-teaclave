@@ -37,7 +37,7 @@ use teaclave_proto::teaclave_frontend_service::{
 use teaclave_proto::teaclave_management_service::TeaclaveManagementClient;
 use teaclave_rpc::endpoint::Endpoint;
 use teaclave_rpc::Request;
-use teaclave_service_enclave_utils::teaclave_service;
+use teaclave_service_enclave_utils::{bail, teaclave_service};
 use teaclave_types::{TeaclaveServiceResponseError, TeaclaveServiceResponseResult};
 
 #[derive(Error, Debug)]
@@ -65,7 +65,7 @@ macro_rules! authentication_and_forward_to_management {
     ($service: ident, $request: ident, $func: ident) => {{
         match $service.authenticate(&$request) {
             Ok(true) => (),
-            _ => return Err(TeaclaveFrontendError::AuthenticationError.into()),
+            _ => bail!(TeaclaveFrontendError::AuthenticationError),
         }
 
         let client = $service.management_client.clone();

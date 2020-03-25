@@ -28,6 +28,8 @@ use teaclave_rpc::config::SgxTrustedTlsClientConfig;
 use teaclave_rpc::endpoint::Endpoint;
 use teaclave_types::EnclaveInfo;
 
+mod macros;
+
 #[cfg(feature = "cov")]
 use sgx_trts::global_dtors_object;
 #[cfg(feature = "cov")]

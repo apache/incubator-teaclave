@@ -23,7 +23,7 @@ use teaclave_proto::teaclave_access_control_service::{
     AuthorizeTaskRequest, AuthorizeTaskResponse, TeaclaveAccessControl,
 };
 use teaclave_rpc::Request;
-use teaclave_service_enclave_utils::teaclave_service;
+use teaclave_service_enclave_utils::{bail, teaclave_service};
 use teaclave_types::{TeaclaveServiceResponseError, TeaclaveServiceResponseResult};
 use thiserror::Error;
 
@@ -119,7 +119,7 @@ impl TeaclaveAccessControl for TeaclaveAccessControlService {
                     return Ok(AuthorizeStagedTaskResponse::new(false));
                 }
             }
-            Err(_) => return Err(TeaclavAccessControlError::AccessControlError.into()),
+            Err(_) => bail!(TeaclavAccessControlError::AccessControlError),
         }
         for object_data_id in request.object_input_data_id_list.iter() {
             let enforce_access_data_request = EnforceRequest::TaskAccessData(
@@ -135,7 +135,7 @@ impl TeaclaveAccessControl for TeaclaveAccessControlService {
                         return Ok(AuthorizeStagedTaskResponse::new(false));
                     }
                 }
-                Err(_) => return Err(TeaclavAccessControlError::AccessControlError.into()),
+                Err(_) => bail!(TeaclavAccessControlError::AccessControlError),
             }
         }
         for object_data_id in request.object_output_data_id_list.iter() {
@@ -152,7 +152,7 @@ impl TeaclaveAccessControl for TeaclaveAccessControlService {
                         return Ok(AuthorizeStagedTaskResponse::new(false));
                     }
                 }
-                Err(_) => return Err(TeaclavAccessControlError::AccessControlError.into()),
+                Err(_) => bail!(TeaclavAccessControlError::AccessControlError),
             }
         }
         Ok(AuthorizeStagedTaskResponse { accept: true })
