@@ -268,13 +268,8 @@ pub mod tests {
 
         let in_fid = "in_f1";
         let out_fid = "out_f1";
-        let input_files = StagedFiles {
-            entries: hashmap!(in_fid.to_string() => input_info),
-        };
-
-        let output_files = StagedFiles {
-            entries: hashmap!(out_fid.to_string() => output_info),
-        };
+        let input_files = StagedFiles::new(hashmap!(in_fid => input_info));
+        let output_files = StagedFiles::new(hashmap!(out_fid => output_info));
 
         let runtime = Box::new(RawIoRuntime::new(input_files, output_files));
         set_thread_context(Context::new(runtime)).unwrap();

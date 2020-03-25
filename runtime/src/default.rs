@@ -42,24 +42,22 @@ impl TeaclaveRuntime for DefaultRuntime {
     fn open_input(&self, identifier: &str) -> anyhow::Result<Box<dyn io::Read>> {
         let file_info = self
             .input_files
-            .entries
             .get(identifier)
             .ok_or_else(|| anyhow::anyhow!("Invalid input file identifier."))?;
 
         log::debug!("open_input: {:?}", file_info.path);
-        let readable = file_info.get_readable_io()?;
+        let readable = file_info.create_readable_io()?;
         Ok(readable)
     }
 
     fn create_output(&self, identifier: &str) -> anyhow::Result<Box<dyn io::Write>> {
         let file_info = self
             .output_files
-            .entries
             .get(identifier)
             .ok_or_else(|| anyhow::anyhow!("Invalide output file identifier"))?;
 
         log::debug!("create_output: {:?}", file_info.path);
-        let writable = file_info.get_writable_io()?;
+        let writable = file_info.create_writable_io()?;
         Ok(writable)
     }
 }

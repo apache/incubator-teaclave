@@ -161,20 +161,15 @@ def entrypoint(argv):
         let output = "fixtures/functions/mesapy/output.txt";
 
         let input_info = StagedFileInfo::new(input, TeaclaveFile128Key::random());
-
         let output_info = StagedFileInfo::new(output, TeaclaveFile128Key::random());
 
-        let input_files = StagedFiles {
-            entries: hashmap!("in_f1".to_string() => input_info),
-        };
+        let input_files = StagedFiles::new(hashmap!("in_f1" => input_info));
+        let output_files = StagedFiles::new(hashmap!("out_f1" => output_info));
 
-        let output_files = StagedFiles {
-            entries: hashmap!("out_f1".to_string() => output_info),
-        };
         let runtime = Box::new(RawIoRuntime::new(input_files, output_files));
 
         let func_args = FunctionArguments::new(hashmap!(
-                "py_payload" => py_payload.to_string(),
+                "py_payload" => py_payload,
                 "py_args" => serde_json::to_string(&py_args).unwrap()
         ));
 
