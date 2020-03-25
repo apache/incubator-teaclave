@@ -15,34 +15,39 @@
 // specific language governing permissions and limitations
 // under the License.
 
+#![cfg_attr(feature = "mesalock_sgx", no_std)]
+#[cfg(feature = "mesalock_sgx")]
+extern crate sgx_tstd as std;
+
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use std::io;
+#[macro_use]
+extern crate log;
 
-pub trait TeaclaveRuntime {
-    fn open_input(&self, identifier: &str) -> anyhow::Result<Box<dyn io::Read>>;
-    fn create_output(&self, identifier: &str) -> anyhow::Result<Box<dyn io::Write>>;
-    // TODO: add more constrained capabilities
-}
+mod context;
+mod echo;
+mod gbdt_prediction;
+mod gbdt_training;
+mod mesapy;
 
-mod default;
-pub use default::DefaultRuntime;
-
-#[cfg(any(feature = "enclave_unit_test", test_mode))]
-mod raw_io;
-#[cfg(any(feature = "enclave_unit_test", test_mode))]
-pub use raw_io::RawIoRuntime;
+pub use echo::Echo;
+pub use gbdt_prediction::GbdtPrediction;
+pub use gbdt_training::GbdtTraining;
+pub use mesapy::Mesapy;
 
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
-    use teaclave_test_utils::*;
+    use teaclave_test_utils::check_all_passed;
 
     pub fn run_tests() -> bool {
-        run_tests!(
-            //DefultRuntime::tests::test_open_input();
-            //DefultRuntime::tests::test_create_output();
+        check_all_passed!(
+            echo::tests::run_tests(),
+            gbdt_training::tests::run_tests(),
+            gbdt_prediction::tests::run_tests(),
+            mesapy::tests::run_tests(),
+            context::tests::run_tests(),
         )
     }
 }

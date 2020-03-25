@@ -15,47 +15,21 @@
 // specific language governing permissions and limitations
 // under the License.
 
+#![cfg_attr(feature = "mesalock_sgx", no_std)]
 #[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
+extern crate sgx_tstd as std;
 
-use crate::runtime::TeaclaveRuntime;
-use anyhow;
-use teaclave_types::FunctionArguments;
+mod default;
+pub use default::DefaultRuntime;
 
-pub trait TeaclaveFunction {
-    fn execute(
-        &self,
-        runtime: Box<dyn TeaclaveRuntime + Send + Sync>,
-        args: FunctionArguments,
-    ) -> anyhow::Result<String>;
-
-    // TODO: Add more flexible control support on a running function
-    // fn stop();
-    // fn handle_event();
-}
-
-mod echo;
-mod gbdt_prediction;
-mod gbdt_training;
-mod mesapy;
-pub use echo::Echo;
-pub use gbdt_prediction::GbdtPrediction;
-pub use gbdt_training::GbdtTraining;
-pub use mesapy::Mesapy;
-mod context;
+#[cfg(any(feature = "enclave_unit_test", test_mode))]
+mod raw_io;
+#[cfg(any(feature = "enclave_unit_test", test_mode))]
+pub use raw_io::RawIoRuntime;
 
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
-    use super::*;
-    use teaclave_test_utils::*;
-
     pub fn run_tests() -> bool {
-        check_all_passed!(
-            echo::tests::run_tests(),
-            gbdt_training::tests::run_tests(),
-            gbdt_prediction::tests::run_tests(),
-            mesapy::tests::run_tests(),
-            context::tests::run_tests(),
-        )
+        true
     }
 }

@@ -19,24 +19,12 @@
 #[cfg(feature = "mesalock_sgx")]
 extern crate sgx_tstd as std;
 
-#[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
-
-#[macro_use]
-extern crate log;
-
-mod function;
-mod runtime;
 mod worker;
-
 pub use worker::Worker;
 
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
-    use super::*;
-    use teaclave_test_utils::check_all_passed;
-
     pub fn run_tests() -> bool {
-        check_all_passed!(function::tests::run_tests(), runtime::tests::run_tests(),)
+        true
     }
 }

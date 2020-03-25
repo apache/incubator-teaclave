@@ -28,8 +28,9 @@ use teaclave_types::{
     hashmap, ExecutorType, FunctionArguments, StagedFiles, StagedFunction, WorkerCapability,
 };
 
-use crate::function::{self, TeaclaveFunction};
-use crate::runtime::{self, TeaclaveRuntime};
+use teaclave_function as function;
+use teaclave_runtime as runtime;
+use teaclave_types::{TeaclaveFunction, TeaclaveRuntime};
 
 macro_rules! register_functions{
     ($($name: expr => ($executor: expr, $fn_type: ty),)*) => {{
