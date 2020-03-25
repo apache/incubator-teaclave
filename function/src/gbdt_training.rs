@@ -24,9 +24,8 @@ use std::io::{self, BufRead, BufReader, Write};
 use anyhow;
 use serde_json;
 
-use crate::function::TeaclaveFunction;
-use crate::runtime::TeaclaveRuntime;
 use teaclave_types::FunctionArguments;
+use teaclave_types::{TeaclaveFunction, TeaclaveRuntime};
 
 use gbdt::config::Config;
 use gbdt::decision_tree::Data;
@@ -131,18 +130,10 @@ fn parse_training_data(input: impl io::Read, feature_size: usize) -> anyhow::Res
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
-    use teaclave_test_utils::*;
-
     use std::untrusted::fs;
-
-    use teaclave_types::hashmap;
-    use teaclave_types::FunctionArguments;
-    use teaclave_types::StagedFileInfo;
-    use teaclave_types::StagedFiles;
-    use teaclave_types::TeaclaveFile128Key;
-
-    use crate::function::TeaclaveFunction;
-    use crate::runtime::RawIoRuntime;
+    use teaclave_runtime::*;
+    use teaclave_test_utils::*;
+    use teaclave_types::*;
 
     pub fn run_tests() -> bool {
         run_tests!(test_gbdt_training, test_gbdt_parse_training_data,)

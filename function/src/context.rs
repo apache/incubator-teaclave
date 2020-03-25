@@ -28,7 +28,7 @@ use anyhow;
 use std::collections::HashMap;
 use std::format;
 
-use crate::runtime::TeaclaveRuntime;
+use teaclave_types::TeaclaveRuntime;
 
 const FFI_OK: c_uint = 0;
 const FFI_FILE_ERROR: c_uint = 1;
@@ -236,9 +236,9 @@ pub fn rtc_close_handle(f: FileHandle) -> anyhow::Result<()> {
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
-    use crate::runtime::RawIoRuntime;
     use std::path::PathBuf;
     use std::str::FromStr;
+    use teaclave_runtime::RawIoRuntime;
     use teaclave_test_utils::*;
     use teaclave_types::hashmap;
     use teaclave_types::StagedFileInfo;

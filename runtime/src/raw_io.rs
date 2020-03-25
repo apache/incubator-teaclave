@@ -18,37 +18,38 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use anyhow;
 use std::io;
+use std::untrusted::fs::File;
 
-use super::TeaclaveRuntime;
+use anyhow;
+
 use teaclave_types::StagedFiles;
+use teaclave_types::TeaclaveRuntime;
 
-pub struct DefaultRuntime {
+pub struct RawIoRuntime {
     input_files: StagedFiles,
     output_files: StagedFiles,
 }
 
-impl DefaultRuntime {
-    pub fn new(input_files: StagedFiles, output_files: StagedFiles) -> DefaultRuntime {
-        DefaultRuntime {
+impl RawIoRuntime {
+    pub fn new(input_files: StagedFiles, output_files: StagedFiles) -> RawIoRuntime {
+        RawIoRuntime {
             input_files,
             output_files,
         }
     }
 }
 
-impl TeaclaveRuntime for DefaultRuntime {
+impl TeaclaveRuntime for RawIoRuntime {
     fn open_input(&self, identifier: &str) -> anyhow::Result<Box<dyn io::Read>> {
         let file_info = self
             .input_files
             .entries
             .get(identifier)
             .ok_or_else(|| anyhow::anyhow!("Invalid input file identifier."))?;
-
         log::debug!("open_input: {:?}", file_info.path);
-        let readable = file_info.get_readable_io()?;
-        Ok(readable)
+        let f = File::open(&file_info.path)?;
+        Ok(Box::new(f))
     }
 
     fn create_output(&self, identifier: &str) -> anyhow::Result<Box<dyn io::Write>> {
@@ -57,9 +58,7 @@ impl TeaclaveRuntime for DefaultRuntime {
             .entries
             .get(identifier)
             .ok_or_else(|| anyhow::anyhow!("Invalide output file identifier"))?;
-
-        log::debug!("create_output: {:?}", file_info.path);
-        let writable = file_info.get_writable_io()?;
-        Ok(writable)
+        let f = File::create(&file_info.path)?;
+        Ok(Box::new(f))
     }
 }

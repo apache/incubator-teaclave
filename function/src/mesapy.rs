@@ -21,13 +21,12 @@ use std::prelude::v1::*;
 use anyhow;
 use itertools::Itertools;
 
-use crate::function::TeaclaveFunction;
-use crate::runtime::TeaclaveRuntime;
 use teaclave_types::FunctionArguments;
+use teaclave_types::{TeaclaveFunction, TeaclaveRuntime};
 
-use crate::function::context::reset_thread_context;
-use crate::function::context::set_thread_context;
-use crate::function::context::Context;
+use crate::context::reset_thread_context;
+use crate::context::set_thread_context;
+use crate::context::Context;
 use std::ffi::CString;
 use std::format;
 
@@ -103,15 +102,9 @@ impl TeaclaveFunction for Mesapy {
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
+    use teaclave_runtime::*;
     use teaclave_test_utils::*;
-
-    use crate::function::TeaclaveFunction;
-    use crate::runtime::RawIoRuntime;
-    use teaclave_types::hashmap;
-    use teaclave_types::FunctionArguments;
-    use teaclave_types::StagedFileInfo;
-    use teaclave_types::StagedFiles;
-    use teaclave_types::TeaclaveFile128Key;
+    use teaclave_types::*;
 
     pub fn run_tests() -> bool {
         run_tests!(test_mesapy,)

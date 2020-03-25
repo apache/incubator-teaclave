@@ -18,10 +18,9 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use crate::function::TeaclaveFunction;
-use crate::runtime::TeaclaveRuntime;
 use anyhow;
 use teaclave_types::FunctionArguments;
+use teaclave_types::{TeaclaveFunction, TeaclaveRuntime};
 
 #[derive(Default)]
 pub struct Echo;
@@ -40,14 +39,9 @@ impl TeaclaveFunction for Echo {
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
+    use teaclave_runtime::*;
     use teaclave_test_utils::*;
-
-    use teaclave_types::hashmap;
-    use teaclave_types::FunctionArguments;
-    use teaclave_types::StagedFiles;
-
-    use crate::function::TeaclaveFunction;
-    use crate::runtime::RawIoRuntime;
+    use teaclave_types::*;
 
     pub fn run_tests() -> bool {
         run_tests!(test_echo)
