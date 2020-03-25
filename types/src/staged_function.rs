@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use crate::{ExecutorType, StagedFiles, StagedInputFile, StagedOutputFile};
+use crate::{ExecutorType, StagedFiles};
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -158,8 +158,8 @@ pub struct StagedFunction {
     pub name: String,
     pub payload: String,
     pub arguments: FunctionArguments,
-    pub input_files: StagedFiles<StagedInputFile>,
-    pub output_files: StagedFiles<StagedOutputFile>,
+    pub input_files: StagedFiles,
+    pub output_files: StagedFiles,
     pub runtime_name: String,
     pub executor_type: ExecutorType,
 }
@@ -187,14 +187,14 @@ impl StagedFunction {
         Self { arguments, ..self }
     }
 
-    pub fn input_files(self, input_files: StagedFiles<StagedInputFile>) -> Self {
+    pub fn input_files(self, input_files: StagedFiles) -> Self {
         Self {
             input_files,
             ..self
         }
     }
 
-    pub fn output_files(self, output_files: StagedFiles<StagedOutputFile>) -> Self {
+    pub fn output_files(self, output_files: StagedFiles) -> Self {
         Self {
             output_files,
             ..self

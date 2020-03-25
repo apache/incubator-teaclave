@@ -25,19 +25,14 @@ use anyhow;
 
 use super::TeaclaveRuntime;
 use teaclave_types::StagedFiles;
-use teaclave_types::StagedInputFile;
-use teaclave_types::StagedOutputFile;
 
 pub struct RawIoRuntime {
-    input_files: StagedFiles<StagedInputFile>,
-    output_files: StagedFiles<StagedOutputFile>,
+    input_files: StagedFiles,
+    output_files: StagedFiles,
 }
 
 impl RawIoRuntime {
-    pub fn new(
-        input_files: StagedFiles<StagedInputFile>,
-        output_files: StagedFiles<StagedOutputFile>,
-    ) -> RawIoRuntime {
+    pub fn new(input_files: StagedFiles, output_files: StagedFiles) -> RawIoRuntime {
         RawIoRuntime {
             input_files,
             output_files,

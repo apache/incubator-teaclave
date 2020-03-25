@@ -197,7 +197,7 @@ fn prepare_task(task: &StagedTask) -> StagedFunction {
     let request = FileAgentRequest::new(HandleFileCommand::Download, file_request_info);
     handle_file_request(request).unwrap();
 
-    let mut converted_input_file_map: HashMap<String, StagedInputFile> = HashMap::new();
+    let mut converted_input_file_map: HashMap<String, StagedFileInfo> = HashMap::new();
     for (key, value) in input_file_map.iter() {
         let (from, crypto_info) = value;
         let mut dest = from.clone();
@@ -209,7 +209,7 @@ fn prepare_task(task: &StagedTask) -> StagedFunction {
     }
     let input_files = StagedFiles::new(converted_input_file_map);
 
-    let mut output_file_map: HashMap<String, StagedOutputFile> = HashMap::new();
+    let mut output_file_map: HashMap<String, StagedFileInfo> = HashMap::new();
     for (key, value) in task.output_data.iter() {
         let mut dest = agent_dir_path.to_path_buf();
         dest.push(&format!("{}.out", key));
@@ -217,7 +217,7 @@ fn prepare_task(task: &StagedTask) -> StagedFunction {
             FileCrypto::TeaclaveFile128(crypto) => crypto,
             _ => unimplemented!(),
         };
-        let output_info = StagedOutputFile::new(dest.to_string_lossy().to_string(), crypto);
+        let output_info = StagedFileInfo::new(&dest, crypto);
         output_file_map.insert(key.to_string(), output_info);
     }
     let output_files = StagedFiles::new(output_file_map);

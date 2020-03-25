@@ -109,9 +109,8 @@ pub mod tests {
     use crate::runtime::RawIoRuntime;
     use teaclave_types::hashmap;
     use teaclave_types::FunctionArguments;
+    use teaclave_types::StagedFileInfo;
     use teaclave_types::StagedFiles;
-    use teaclave_types::StagedInputFile;
-    use teaclave_types::StagedOutputFile;
     use teaclave_types::TeaclaveFile128Key;
 
     pub fn run_tests() -> bool {
@@ -168,9 +167,9 @@ def entrypoint(argv):
         let input = "fixtures/functions/mesapy/input.txt";
         let output = "fixtures/functions/mesapy/output.txt";
 
-        let input_info = StagedInputFile::new(input, TeaclaveFile128Key::random());
+        let input_info = StagedFileInfo::new(input, TeaclaveFile128Key::random());
 
-        let output_info = StagedOutputFile::new(output, TeaclaveFile128Key::random());
+        let output_info = StagedFileInfo::new(output, TeaclaveFile128Key::random());
 
         let input_files = StagedFiles {
             entries: hashmap!("in_f1".to_string() => input_info),

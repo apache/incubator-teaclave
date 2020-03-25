@@ -23,19 +23,14 @@ use std::io;
 
 use super::TeaclaveRuntime;
 use teaclave_types::StagedFiles;
-use teaclave_types::StagedInputFile;
-use teaclave_types::StagedOutputFile;
 
 pub struct DefaultRuntime {
-    input_files: StagedFiles<StagedInputFile>,
-    output_files: StagedFiles<StagedOutputFile>,
+    input_files: StagedFiles,
+    output_files: StagedFiles,
 }
 
 impl DefaultRuntime {
-    pub fn new(
-        input_files: StagedFiles<StagedInputFile>,
-        output_files: StagedFiles<StagedOutputFile>,
-    ) -> DefaultRuntime {
+    pub fn new(input_files: StagedFiles, output_files: StagedFiles) -> DefaultRuntime {
         DefaultRuntime {
             input_files,
             output_files,

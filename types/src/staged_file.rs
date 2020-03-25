@@ -28,80 +28,39 @@ use std::untrusted::fs::File;
 use protected_fs::ProtectedFile;
 
 #[derive(Clone, Debug, Default)]
-pub struct StagedInputFile {
+pub struct StagedFileInfo {
     pub path: std::path::PathBuf,
     pub crypto_info: TeaclaveFile128Key,
 }
 
-#[derive(Clone, Debug, Default)]
-pub struct StagedOutputFile {
-    pub path: std::path::PathBuf,
-    pub crypto_info: TeaclaveFile128Key,
-}
-
-impl std::convert::From<StagedOutputFile> for StagedInputFile {
-    fn from(info: StagedOutputFile) -> Self {
-        StagedInputFile {
-            path: info.path,
-            crypto_info: info.crypto_info,
-        }
-    }
-}
-
-impl StagedInputFile {
+impl StagedFileInfo {
     pub fn new(
         path: impl std::convert::Into<std::path::PathBuf>,
         crypto_info: TeaclaveFile128Key,
     ) -> Self {
-        StagedInputFile {
+        StagedFileInfo {
             path: path.into(),
             crypto_info,
         }
     }
 
     pub fn get_readable_io(&self) -> anyhow::Result<Box<dyn io::Read>> {
-        log::debug!("path: {:?}", self.path);
-        log::debug!("key: {:?}", self.crypto_info.key);
         let f = ProtectedFile::open_ex(&self.path, &self.crypto_info.key)?;
+        Ok(Box::new(f))
+    }
+
+    pub fn get_writable_io(&self) -> anyhow::Result<Box<dyn io::Write>> {
+        let f = ProtectedFile::create_ex(&self.path, &self.crypto_info.key)?;
         Ok(Box::new(f))
     }
 
     #[cfg(test_mode)]
     pub fn create_with_plaintext_file(
         path: impl AsRef<std::path::Path>,
-    ) -> anyhow::Result<StagedInputFile> {
+    ) -> anyhow::Result<StagedFileInfo> {
         let bytes = read_all_bytes(path.as_ref())?;
         let dst = path.as_ref().with_extension("enc");
         Self::create_with_bytes(dst, &bytes)
-    }
-
-    pub fn create_with_bytes(
-        path: impl AsRef<std::path::Path>,
-        bytes: &[u8],
-    ) -> anyhow::Result<StagedInputFile> {
-        let crypto = TeaclaveFile128Key::random();
-        let mut f = ProtectedFile::create_ex(&path, &crypto.key)?;
-        f.write_all(bytes)?;
-        Ok(Self::new(path.as_ref(), crypto))
-    }
-}
-
-impl StagedOutputFile {
-    pub fn new(
-        path: impl std::convert::Into<std::path::PathBuf>,
-        crypto_info: TeaclaveFile128Key,
-    ) -> Self {
-        StagedOutputFile {
-            path: path.into(),
-            crypto_info,
-        }
-    }
-
-    pub fn get_writable_io(&self) -> anyhow::Result<Box<dyn io::Write>> {
-        log::debug!("path: {:?}", self.path);
-        log::debug!("key: {:?}", self.crypto_info.key);
-        let f = ProtectedFile::create_ex(&self.path, &self.crypto_info.key)?;
-        Ok(Box::new(f))
     }
 
     #[cfg(test_mode)]
@@ -110,6 +69,16 @@ impl StagedOutputFile {
         let mut f = ProtectedFile::open_ex(&self.path, &self.crypto_info.key)?;
         f.read_to_end(&mut content)?;
         Ok(content)
+    }
+
+    pub fn create_with_bytes(
+        path: impl AsRef<std::path::Path>,
+        bytes: &[u8],
+    ) -> anyhow::Result<StagedFileInfo> {
+        let crypto = TeaclaveFile128Key::random();
+        let mut f = ProtectedFile::create_ex(&path, &crypto.key)?;
+        f.write_all(bytes)?;
+        Ok(Self::new(path.as_ref(), crypto))
     }
 }
 
@@ -124,7 +93,7 @@ pub fn convert_encrypted_input_file(
     path: impl AsRef<std::path::Path>,
     crypto_info: FileCrypto,
     dst: impl AsRef<std::path::Path>,
-) -> anyhow::Result<StagedInputFile> {
+) -> anyhow::Result<StagedFileInfo> {
     log::debug!("from: {:?}, to: {:?}", path.as_ref(), dst.as_ref());
     #[cfg(not(feature = "mesalock_sgx"))]
     use std::fs;
@@ -144,53 +113,20 @@ pub fn convert_encrypted_input_file(
         FileCrypto::TeaclaveFile128(crypto) => {
             fs::copy(path, dst.as_ref())?;
             let dst = dst.as_ref().to_owned();
-            return Ok(StagedInputFile::new(dst, crypto));
+            return Ok(StagedFileInfo::new(dst, crypto));
         }
         FileCrypto::Raw => read_all_bytes(path)?,
     };
-    StagedInputFile::create_with_bytes(dst.as_ref(), &plain_text)
+    StagedFileInfo::create_with_bytes(dst.as_ref(), &plain_text)
 }
 
 #[derive(Debug, Default)]
-pub struct StagedFiles<T> {
-    pub entries: HashMap<String, T>,
+pub struct StagedFiles {
+    pub entries: HashMap<String, StagedFileInfo>,
 }
 
-impl<T> StagedFiles<T> {
-    pub fn new(entries: HashMap<String, T>) -> Self {
+impl StagedFiles {
+    pub fn new(entries: HashMap<String, StagedFileInfo>) -> Self {
         StagedFiles { entries }
-    }
-}
-
-impl<U, V> std::convert::TryFrom<HashMap<String, U>> for StagedFiles<V>
-where
-    U: std::convert::TryInto<V, Error = anyhow::Error>,
-{
-    type Error = anyhow::Error;
-    fn try_from(entries: HashMap<String, U>) -> anyhow::Result<Self> {
-        let mut out_info: HashMap<String, V> = HashMap::new();
-        entries
-            .into_iter()
-            .try_for_each(|(fid, finfo): (String, U)| -> anyhow::Result<()> {
-                out_info.insert(fid, finfo.try_into()?);
-                Ok(())
-            })?;
-        Ok(StagedFiles { entries: out_info })
-    }
-}
-
-impl<U, V, S> std::convert::From<StagedFiles<U>> for HashMap<String, V, S>
-where
-    V: std::convert::From<U>,
-    S: std::hash::BuildHasher + Default,
-{
-    fn from(reg: StagedFiles<U>) -> Self {
-        let mut out_info: HashMap<String, V, S> = HashMap::default();
-        reg.entries
-            .into_iter()
-            .for_each(|(fid, finfo): (String, U)| {
-                out_info.insert(fid, finfo.into());
-            });
-        out_info
     }
 }
