@@ -241,9 +241,8 @@ pub mod tests {
     use std::str::FromStr;
     use teaclave_test_utils::*;
     use teaclave_types::hashmap;
+    use teaclave_types::StagedFileInfo;
     use teaclave_types::StagedFiles;
-    use teaclave_types::StagedInputFile;
-    use teaclave_types::StagedOutputFile;
     use teaclave_types::TeaclaveFile128Key;
 
     pub fn run_tests() -> bool {
@@ -263,9 +262,9 @@ pub mod tests {
         let input = PathBuf::from_str("fixtures/functions/mesapy/input.txt").unwrap();
         let output = PathBuf::from_str("fixtures/functions/mesapy/output.txt.out").unwrap();
 
-        let input_info = StagedInputFile::new(input, TeaclaveFile128Key::random());
+        let input_info = StagedFileInfo::new(input, TeaclaveFile128Key::random());
 
-        let output_info = StagedOutputFile::new(output, TeaclaveFile128Key::random());
+        let output_info = StagedFileInfo::new(output, TeaclaveFile128Key::random());
 
         let in_fid = "in_f1";
         let out_fid = "out_f1";
