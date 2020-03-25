@@ -673,8 +673,7 @@ pub mod tests {
     use super::*;
     use std::collections::{HashMap, HashSet};
     use teaclave_types::{
-        hashmap, FunctionArguments, FunctionInput, FunctionOutput, TeaclaveFileCryptoInfo,
-        TeaclaveFileRootKey128,
+        hashmap, FileCrypto, FunctionArguments, FunctionInput, FunctionOutput, TeaclaveFile128Key,
     };
     use url::Url;
 
@@ -683,9 +682,7 @@ pub mod tests {
         let hash = "a6d604b5987b693a19d94704532b5d928c2729f24dfd40745f8d03ac9ac75a8b".to_string();
         let mut user_id: HashSet<String> = HashSet::new();
         user_id.insert("mock_user".to_string());
-        let crypto_info = TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(
-            TeaclaveFileRootKey128::new(&[0; 16]).unwrap(),
-        );
+        let crypto_info = FileCrypto::TeaclaveFile128(TeaclaveFile128Key::new(&[0; 16]).unwrap());
         let input_file = TeaclaveInputFile::new(url, hash, crypto_info, user_id);
         assert!(TeaclaveInputFile::match_prefix(&input_file.key_string()));
         let value = input_file.to_vec().unwrap();
@@ -697,9 +694,7 @@ pub mod tests {
         let url = Url::parse("s3://bucket_id/path?token=mock_token").unwrap();
         let mut user_id: HashSet<String> = HashSet::new();
         user_id.insert("mock_user".to_string());
-        let crypto_info = TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(
-            TeaclaveFileRootKey128::new(&[0; 16]).unwrap(),
-        );
+        let crypto_info = FileCrypto::TeaclaveFile128(TeaclaveFile128Key::new(&[0; 16]).unwrap());
         let output_file = TeaclaveOutputFile::new(url, crypto_info, user_id);
         assert!(TeaclaveOutputFile::match_prefix(&output_file.key_string()));
         let value = output_file.to_vec().unwrap();
@@ -766,9 +761,7 @@ pub mod tests {
 
         let url = Url::parse("s3://bucket_id/path?token=mock_token").unwrap();
         let hash = "a6d604b5987b693a19d94704532b5d928c2729f24dfd40745f8d03ac9ac75a8b".to_string();
-        let crypto_info = TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(
-            TeaclaveFileRootKey128::new(&[0; 16]).unwrap(),
-        );
+        let crypto_info = FileCrypto::TeaclaveFile128(TeaclaveFile128Key::new(&[0; 16]).unwrap());
         let input_data = FunctionInputFile::new(url.clone(), hash, crypto_info);
         let output_data = FunctionOutputFile::new(url, crypto_info);
         let mut input_map = HashMap::new();

@@ -23,8 +23,7 @@ use url::Url;
 use uuid::Uuid;
 
 use crate::{
-    ExecutorType, FunctionArguments, Storable, TeaclaveFileCryptoInfo, TeaclaveInputFile,
-    TeaclaveOutputFile,
+    ExecutorType, FileCrypto, FunctionArguments, Storable, TeaclaveInputFile, TeaclaveOutputFile,
 };
 
 const STAGED_TASK_PREFIX: &str = "staged-"; // staged-task-uuid
@@ -37,11 +36,11 @@ pub type FunctionOutputFiles = HashMap<String, FunctionOutputFile>;
 pub struct FunctionInputFile {
     pub url: Url,
     pub hash: String,
-    pub crypto_info: TeaclaveFileCryptoInfo,
+    pub crypto_info: FileCrypto,
 }
 
 impl FunctionInputFile {
-    pub fn new(url: Url, hash: impl ToString, crypto_info: TeaclaveFileCryptoInfo) -> Self {
+    pub fn new(url: Url, hash: impl ToString, crypto_info: FileCrypto) -> Self {
         Self {
             url,
             hash: hash.to_string(),
@@ -61,11 +60,11 @@ impl FunctionInputFile {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct FunctionOutputFile {
     pub url: Url,
-    pub crypto_info: TeaclaveFileCryptoInfo,
+    pub crypto_info: FileCrypto,
 }
 
 impl FunctionOutputFile {
-    pub fn new(url: Url, crypto_info: TeaclaveFileCryptoInfo) -> Self {
+    pub fn new(url: Url, crypto_info: FileCrypto) -> Self {
         Self { url, crypto_info }
     }
 
