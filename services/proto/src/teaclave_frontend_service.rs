@@ -27,8 +27,7 @@ use std::collections::{HashMap, HashSet};
 use std::prelude::v1::*;
 use teaclave_rpc::into_request;
 use teaclave_types::{
-    DataOwnerList, FunctionArguments, FunctionInput, FunctionOutput, TaskStatus,
-    TeaclaveFileCryptoInfo,
+    DataOwnerList, FileCrypto, FunctionArguments, FunctionInput, FunctionOutput, TaskStatus,
 };
 use url::Url;
 
@@ -43,11 +42,11 @@ pub use proto::TeaclaveFrontendResponse;
 pub struct RegisterInputFileRequest {
     pub url: Url,
     pub hash: String,
-    pub crypto_info: TeaclaveFileCryptoInfo,
+    pub crypto_info: FileCrypto,
 }
 
 impl RegisterInputFileRequest {
-    pub fn new(url: Url, hash: impl Into<String>, crypto_info: TeaclaveFileCryptoInfo) -> Self {
+    pub fn new(url: Url, hash: impl Into<String>, crypto_info: FileCrypto) -> Self {
         Self {
             url,
             hash: hash.into(),
@@ -76,11 +75,11 @@ impl RegisterInputFileResponse {
 #[derive(Debug)]
 pub struct RegisterOutputFileRequest {
     pub url: Url,
-    pub crypto_info: TeaclaveFileCryptoInfo,
+    pub crypto_info: FileCrypto,
 }
 
 impl RegisterOutputFileRequest {
-    pub fn new(url: Url, crypto_info: TeaclaveFileCryptoInfo) -> Self {
+    pub fn new(url: Url, crypto_info: FileCrypto) -> Self {
         Self { url, crypto_info }
     }
 }

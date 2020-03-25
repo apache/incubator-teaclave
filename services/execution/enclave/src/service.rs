@@ -185,7 +185,7 @@ fn prepare_task(task: &StagedTask) -> StagedFunction {
         fs::create_dir_all(agent_dir_path).unwrap();
     }
 
-    let mut input_file_map: HashMap<String, (PathBuf, TeaclaveFileCryptoInfo)> = HashMap::new();
+    let mut input_file_map: HashMap<String, (PathBuf, FileCrypto)> = HashMap::new();
     let mut file_request_info = vec![];
     for (key, value) in task.input_data.iter() {
         let mut dest = agent_dir_path.to_path_buf();
@@ -214,7 +214,7 @@ fn prepare_task(task: &StagedTask) -> StagedFunction {
         let mut dest = agent_dir_path.to_path_buf();
         dest.push(&format!("{}.out", key));
         let crypto = match value.crypto_info {
-            TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(crypto) => crypto,
+            FileCrypto::TeaclaveFile128(crypto) => crypto,
             _ => unimplemented!(),
         };
         let output_info = StagedOutputFile::new(dest.to_string_lossy().to_string(), crypto);
@@ -284,8 +284,8 @@ pub mod tests {
             task_id.to_string()
         ))
         .unwrap();
-        let crypto = TeaclaveFileRootKey128::new(&[0; 16]).unwrap();
-        let crypto_info = TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(crypto);
+        let crypto = TeaclaveFile128Key::new(&[0; 16]).unwrap();
+        let crypto_info = FileCrypto::TeaclaveFile128(crypto);
 
         let training_input_data = FunctionInputFile::new(input_url, "", crypto_info);
         let model_output_data = FunctionOutputFile::new(output_url, crypto_info);

@@ -19,7 +19,7 @@ use std::prelude::v1::*;
 
 use teaclave_types::{
     hashmap, read_all_bytes, ExecutorType, FunctionArguments, StagedFiles, StagedFunction,
-    StagedInputFile, StagedOutputFile, TeaclaveFileRootKey128,
+    StagedInputFile, StagedOutputFile, TeaclaveFile128Key,
 };
 use teaclave_worker::Worker;
 
@@ -45,7 +45,7 @@ fn test_start_worker() {
     let input_files = StagedFiles::new(hashmap!(
         "training_data" => input_info));
 
-    let output_info = StagedOutputFile::new(enc_output, TeaclaveFileRootKey128::random());
+    let output_info = StagedOutputFile::new(enc_output, TeaclaveFile128Key::random());
 
     let output_files = StagedFiles::new(hashmap!(
         "trained_model" => output_info.clone()));

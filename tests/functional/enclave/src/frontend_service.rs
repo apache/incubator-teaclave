@@ -99,7 +99,7 @@ fn test_register_input_file() {
     let request = RegisterInputFileRequest {
         url: Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap(),
         hash: "deadbeefdeadbeef".to_string(),
-        crypto_info: TeaclaveFileCryptoInfo::default(),
+        crypto_info: FileCrypto::default(),
     };
     let response = client.register_input_file(request);
     assert!(response.is_ok());
@@ -108,7 +108,7 @@ fn test_register_input_file() {
     let request = RegisterInputFileRequest {
         url: Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap(),
         hash: "deadbeefdeadbeef".to_string(),
-        crypto_info: TeaclaveFileCryptoInfo::default(),
+        crypto_info: FileCrypto::default(),
     };
     client
         .metadata_mut()
@@ -127,7 +127,7 @@ fn test_register_output_file() {
 
     let request = RegisterOutputFileRequest {
         url: Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap(),
-        crypto_info: TeaclaveFileCryptoInfo::default(),
+        crypto_info: FileCrypto::default(),
     };
     let response = client.register_output_file(request);
     assert!(response.is_ok());
@@ -135,7 +135,7 @@ fn test_register_output_file() {
 
     let request = RegisterOutputFileRequest {
         url: Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap(),
-        crypto_info: TeaclaveFileCryptoInfo::default(),
+        crypto_info: FileCrypto::default(),
     };
     client
         .metadata_mut()
@@ -192,7 +192,7 @@ fn test_register_input_from_output() {
 fn test_get_output_file() {
     let request = RegisterOutputFileRequest {
         url: Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap(),
-        crypto_info: TeaclaveFileCryptoInfo::default(),
+        crypto_info: FileCrypto::default(),
     };
 
     let mut client = get_client();
@@ -216,7 +216,7 @@ fn test_get_input_file() {
     let request = RegisterInputFileRequest {
         url: Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap(),
         hash: "deadbeef".to_string(),
-        crypto_info: TeaclaveFileCryptoInfo::default(),
+        crypto_info: FileCrypto::default(),
     };
 
     let mut client = get_client();
@@ -373,7 +373,7 @@ fn test_assign_data() {
 
     let request = RegisterOutputFileRequest {
         url: Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap(),
-        crypto_info: TeaclaveFileCryptoInfo::default(),
+        crypto_info: FileCrypto::default(),
     };
     let response = client.register_output_file(request);
     let output_id = response.unwrap().data_id;
@@ -426,7 +426,7 @@ fn test_approve_task() {
 
     let request = RegisterOutputFileRequest {
         url: Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap(),
-        crypto_info: TeaclaveFileCryptoInfo::default(),
+        crypto_info: FileCrypto::default(),
     };
     let response = client.register_output_file(request);
     let output_id = response.unwrap().data_id;
@@ -476,7 +476,7 @@ fn test_invoke_task() {
 
     let request = RegisterOutputFileRequest {
         url: Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap(),
-        crypto_info: TeaclaveFileCryptoInfo::default(),
+        crypto_info: FileCrypto::default(),
     };
     let response = client.register_output_file(request);
     let output_id = response.unwrap().data_id;

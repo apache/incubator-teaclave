@@ -16,7 +16,7 @@
 // under the License.
 
 use crate::storage::Storable;
-use crate::TeaclaveFileCryptoInfo;
+use crate::FileCrypto;
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
@@ -35,7 +35,7 @@ fn create_uuid() -> Uuid {
 pub struct TeaclaveInputFile {
     pub url: Url,
     pub hash: String,
-    pub crypto_info: TeaclaveFileCryptoInfo,
+    pub crypto_info: FileCrypto,
     pub owner: HashSet<String>,
     pub uuid: Uuid,
 }
@@ -44,7 +44,7 @@ pub struct TeaclaveInputFile {
 pub struct TeaclaveOutputFile {
     pub url: Url,
     pub hash: Option<String>,
-    pub crypto_info: TeaclaveFileCryptoInfo,
+    pub crypto_info: FileCrypto,
     pub owner: HashSet<String>,
     pub uuid: Uuid,
 }
@@ -53,7 +53,7 @@ impl TeaclaveInputFile {
     pub fn new(
         url: Url,
         hash: String,
-        crypto_info: TeaclaveFileCryptoInfo,
+        crypto_info: FileCrypto,
         owner: HashSet<String>,
     ) -> TeaclaveInputFile {
         TeaclaveInputFile {
@@ -90,11 +90,7 @@ impl Storable for TeaclaveInputFile {
 }
 
 impl TeaclaveOutputFile {
-    pub fn new(
-        url: Url,
-        crypto_info: TeaclaveFileCryptoInfo,
-        owner: HashSet<String>,
-    ) -> TeaclaveOutputFile {
+    pub fn new(url: Url, crypto_info: FileCrypto, owner: HashSet<String>) -> TeaclaveOutputFile {
         TeaclaveOutputFile {
             url,
             hash: None,
@@ -108,7 +104,7 @@ impl TeaclaveOutputFile {
         let uuid = create_uuid();
         let url = format!("fusion://path/{}?token=fusion_token", uuid.to_string());
         let url = Url::parse(&url).map_err(|_| anyhow!("invalid url"))?;
-        let crypto_info = TeaclaveFileCryptoInfo::default();
+        let crypto_info = FileCrypto::default();
 
         Ok(TeaclaveOutputFile {
             url,

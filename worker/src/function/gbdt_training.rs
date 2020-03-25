@@ -140,7 +140,7 @@ pub mod tests {
     use teaclave_types::StagedFiles;
     use teaclave_types::StagedInputFile;
     use teaclave_types::StagedOutputFile;
-    use teaclave_types::TeaclaveFileRootKey128;
+    use teaclave_types::TeaclaveFile128Key;
 
     use crate::function::TeaclaveFunction;
     use crate::runtime::RawIoRuntime;
@@ -168,12 +168,12 @@ pub mod tests {
 
         let input_files = StagedFiles::new(hashmap!(
             IN_DATA.to_string() =>
-            StagedInputFile::new(plain_input, TeaclaveFileRootKey128::random())
+            StagedInputFile::new(plain_input, TeaclaveFile128Key::random())
         ));
 
         let output_files = StagedFiles::new(hashmap!(
             OUT_MODEL.to_string() =>
-            StagedOutputFile::new(plain_output, TeaclaveFileRootKey128::random())
+            StagedOutputFile::new(plain_output, TeaclaveFile128Key::random())
         ));
 
         let runtime = Box::new(RawIoRuntime::new(input_files, output_files));

@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use crate::{TeaclaveFileCryptoInfo, TeaclaveFileRootKey128};
+use crate::{FileCrypto, TeaclaveFile128Key};
 
 use std::collections::HashMap;
 #[cfg(not(feature = "mesalock_sgx"))]
@@ -30,13 +30,13 @@ use protected_fs::ProtectedFile;
 #[derive(Clone, Debug, Default)]
 pub struct StagedInputFile {
     pub path: std::path::PathBuf,
-    pub crypto_info: TeaclaveFileRootKey128,
+    pub crypto_info: TeaclaveFile128Key,
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct StagedOutputFile {
     pub path: std::path::PathBuf,
-    pub crypto_info: TeaclaveFileRootKey128,
+    pub crypto_info: TeaclaveFile128Key,
 }
 
 impl std::convert::From<StagedOutputFile> for StagedInputFile {
@@ -51,7 +51,7 @@ impl std::convert::From<StagedOutputFile> for StagedInputFile {
 impl StagedInputFile {
     pub fn new(
         path: impl std::convert::Into<std::path::PathBuf>,
-        crypto_info: TeaclaveFileRootKey128,
+        crypto_info: TeaclaveFile128Key,
     ) -> Self {
         StagedInputFile {
             path: path.into(),
@@ -79,7 +79,7 @@ impl StagedInputFile {
         path: impl AsRef<std::path::Path>,
         bytes: &[u8],
     ) -> anyhow::Result<StagedInputFile> {
-        let crypto = TeaclaveFileRootKey128::random();
+        let crypto = TeaclaveFile128Key::random();
         let mut f = ProtectedFile::create_ex(&path, &crypto.key)?;
         f.write_all(bytes)?;
         Ok(Self::new(path.as_ref(), crypto))
@@ -89,7 +89,7 @@ impl StagedInputFile {
 impl StagedOutputFile {
     pub fn new(
         path: impl std::convert::Into<std::path::PathBuf>,
-        crypto_info: TeaclaveFileRootKey128,
+        crypto_info: TeaclaveFile128Key,
     ) -> Self {
         StagedOutputFile {
             path: path.into(),
@@ -122,7 +122,7 @@ pub fn read_all_bytes(path: impl AsRef<std::path::Path>) -> anyhow::Result<Vec<u
 
 pub fn convert_encrypted_input_file(
     path: impl AsRef<std::path::Path>,
-    crypto_info: TeaclaveFileCryptoInfo,
+    crypto_info: FileCrypto,
     dst: impl AsRef<std::path::Path>,
 ) -> anyhow::Result<StagedInputFile> {
     log::debug!("from: {:?}, to: {:?}", path.as_ref(), dst.as_ref());
@@ -131,22 +131,22 @@ pub fn convert_encrypted_input_file(
     #[cfg(feature = "mesalock_sgx")]
     use std::untrusted::fs;
     let plain_text = match crypto_info {
-        TeaclaveFileCryptoInfo::AesGcm128(crypto) => {
+        FileCrypto::AesGcm128(crypto) => {
             let mut bytes = read_all_bytes(path)?;
             crypto.decrypt(&mut bytes)?;
             bytes
         }
-        TeaclaveFileCryptoInfo::AesGcm256(crypto) => {
+        FileCrypto::AesGcm256(crypto) => {
             let mut bytes = read_all_bytes(path)?;
             crypto.decrypt(&mut bytes)?;
             bytes
         }
-        TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(crypto) => {
+        FileCrypto::TeaclaveFile128(crypto) => {
             fs::copy(path, dst.as_ref())?;
             let dst = dst.as_ref().to_owned();
             return Ok(StagedInputFile::new(dst, crypto));
         }
-        TeaclaveFileCryptoInfo::Raw => read_all_bytes(path)?,
+        FileCrypto::Raw => read_all_bytes(path)?,
     };
     StagedInputFile::create_with_bytes(dst.as_ref(), &plain_text)
 }

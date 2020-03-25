@@ -109,8 +109,7 @@ fn get_scheduler_client(user_id: &str) -> TeaclaveSchedulerClient {
 
 fn test_register_input_file() {
     let url = Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap();
-    let crypto_info =
-        TeaclaveFileCryptoInfo::new("aes_gcm_128", &[0x90u8; 16], &[0x89u8; 12]).unwrap();
+    let crypto_info = FileCrypto::new("aes_gcm_128", &[0x90u8; 16], &[0x89u8; 12]).unwrap();
     let request = RegisterInputFileRequest::new(url, "deadbeefdeadbeef", crypto_info);
 
     let mut client = get_client("mock_user");
@@ -120,8 +119,7 @@ fn test_register_input_file() {
 }
 
 fn test_register_output_file() {
-    let crypto_info =
-        TeaclaveFileCryptoInfo::new("aes_gcm_128", &[0x90u8; 16], &[0x89u8; 12]).unwrap();
+    let crypto_info = FileCrypto::new("aes_gcm_128", &[0x90u8; 16], &[0x89u8; 12]).unwrap();
     let url = Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap();
     let request = RegisterOutputFileRequest::new(url, crypto_info);
 
@@ -166,7 +164,7 @@ fn test_register_input_from_output() {
 
     // output not ready
     let url = Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap();
-    let crypto_info = TeaclaveFileCryptoInfo::default();
+    let crypto_info = FileCrypto::default();
     let mut client = get_client("mock_user1");
     let request = RegisterOutputFileRequest::new(url, crypto_info);
     let response = client.register_output_file(request);
@@ -183,7 +181,7 @@ fn test_register_input_from_output() {
 
 fn test_get_output_file() {
     let url = Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap();
-    let crypto_info = TeaclaveFileCryptoInfo::default();
+    let crypto_info = FileCrypto::default();
     let request = RegisterOutputFileRequest::new(url, crypto_info);
 
     let mut client = get_client("mock_user");
@@ -200,7 +198,7 @@ fn test_get_output_file() {
 
 fn test_get_input_file() {
     let url = Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap();
-    let crypto_info = TeaclaveFileCryptoInfo::default();
+    let crypto_info = FileCrypto::default();
     let request = RegisterInputFileRequest::new(url, "deadbeef", crypto_info);
 
     let mut client = get_client("mock_user");
@@ -369,7 +367,7 @@ fn test_assign_data() {
     let request = RegisterInputFileRequest {
         url: Url::parse("input://path").unwrap(),
         hash: "deadbeefdeadbeef".to_string(),
-        crypto_info: TeaclaveFileCryptoInfo::default(),
+        crypto_info: FileCrypto::default(),
     };
     let response = client2.register_input_file(request);
     let input_file_id_user2 = response.unwrap().data_id;
@@ -388,7 +386,7 @@ fn test_assign_data() {
     // !output_file.owner.contains(user_id)
     let request = RegisterOutputFileRequest {
         url: Url::parse("output://path").unwrap(),
-        crypto_info: TeaclaveFileCryptoInfo::default(),
+        crypto_info: FileCrypto::default(),
     };
     let response = client2.register_output_file(request);
     let output_file_id_user2 = response.unwrap().data_id;
@@ -513,14 +511,14 @@ fn test_assign_data() {
     let request = RegisterInputFileRequest {
         url: Url::parse("input://path").unwrap(),
         hash: "deadbeefdeadbeef".to_string(),
-        crypto_info: TeaclaveFileCryptoInfo::default(),
+        crypto_info: FileCrypto::default(),
     };
     let response = client1.register_input_file(request);
     let input_file_id_user1 = response.unwrap().data_id;
 
     let request = RegisterOutputFileRequest {
         url: Url::parse("input://path").unwrap(),
-        crypto_info: TeaclaveFileCryptoInfo::default(),
+        crypto_info: FileCrypto::default(),
     };
     let response = client1.register_output_file(request);
     let output_file_id_user1 = response.unwrap().data_id;
@@ -610,13 +608,13 @@ fn test_approve_task() {
     let request = RegisterInputFileRequest {
         url: Url::parse("input://path").unwrap(),
         hash: "deadbeefdeadbeef".to_string(),
-        crypto_info: TeaclaveFileCryptoInfo::default(),
+        crypto_info: FileCrypto::default(),
     };
     let response = client1.register_input_file(request);
     let input_file_id_user1 = response.unwrap().data_id;
     let request = RegisterOutputFileRequest {
         url: Url::parse("input://path").unwrap(),
-        crypto_info: TeaclaveFileCryptoInfo::default(),
+        crypto_info: FileCrypto::default(),
     };
     let response = client1.register_output_file(request);
     let output_file_id_user1 = response.unwrap().data_id;
@@ -707,13 +705,13 @@ fn test_invoke_task() {
     let request = RegisterInputFileRequest {
         url: Url::parse("input://path").unwrap(),
         hash: "deadbeefdeadbeef".to_string(),
-        crypto_info: TeaclaveFileCryptoInfo::default(),
+        crypto_info: FileCrypto::default(),
     };
     let response = client1.register_input_file(request);
     let input_file_id_user1 = response.unwrap().data_id;
     let request = RegisterOutputFileRequest {
         url: Url::parse("input://path").unwrap(),
-        crypto_info: TeaclaveFileCryptoInfo::default(),
+        crypto_info: FileCrypto::default(),
     };
     let response = client1.register_output_file(request);
     let output_file_id_user1 = response.unwrap().data_id;

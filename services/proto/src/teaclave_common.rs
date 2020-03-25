@@ -20,7 +20,7 @@ use std::prelude::v1::*;
 
 use crate::teaclave_common_proto as proto;
 use anyhow::{bail, Error, Result};
-use teaclave_types::{TaskStatus, TeaclaveFileCryptoInfo, TeaclaveFileRootKey128};
+use teaclave_types::{FileCrypto, TaskStatus, TeaclaveFile128Key};
 
 #[derive(Debug)]
 pub struct UserCredential {
@@ -59,42 +59,42 @@ impl From<UserCredential> for proto::UserCredential {
     }
 }
 
-impl std::convert::TryFrom<proto::FileCryptoInfo> for TeaclaveFileCryptoInfo {
+impl std::convert::TryFrom<proto::FileCryptoInfo> for FileCrypto {
     type Error = Error;
     fn try_from(proto: proto::FileCryptoInfo) -> Result<Self> {
-        TeaclaveFileCryptoInfo::new(&proto.schema, &proto.key, &proto.iv)
+        FileCrypto::new(&proto.schema, &proto.key, &proto.iv)
     }
 }
 
-impl std::convert::TryFrom<proto::FileCryptoInfo> for TeaclaveFileRootKey128 {
+impl std::convert::TryFrom<proto::FileCryptoInfo> for TeaclaveFile128Key {
     type Error = Error;
     fn try_from(proto: proto::FileCryptoInfo) -> Result<Self> {
-        let file_crypto = TeaclaveFileCryptoInfo::new(&proto.schema, &proto.key, &proto.iv)?;
+        let file_crypto = FileCrypto::new(&proto.schema, &proto.key, &proto.iv)?;
         let crypto = match file_crypto {
-            TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(info) => info,
+            FileCrypto::TeaclaveFile128(info) => info,
             _ => anyhow::bail!("FileCryptoInfo not supported"),
         };
         Ok(crypto)
     }
 }
 
-impl std::convert::From<TeaclaveFileCryptoInfo> for proto::FileCryptoInfo {
-    fn from(crypto: TeaclaveFileCryptoInfo) -> Self {
+impl std::convert::From<FileCrypto> for proto::FileCryptoInfo {
+    fn from(crypto: FileCrypto) -> Self {
         let (key, iv) = crypto.key_iv();
         proto::FileCryptoInfo {
-            schema: crypto.schema(),
+            schema: crypto.schema().to_owned(),
             key,
             iv,
         }
     }
 }
 
-impl std::convert::From<TeaclaveFileRootKey128> for proto::FileCryptoInfo {
-    fn from(crypto: TeaclaveFileRootKey128) -> Self {
-        let crypto = TeaclaveFileCryptoInfo::TeaclaveFileRootKey128(crypto);
+impl std::convert::From<TeaclaveFile128Key> for proto::FileCryptoInfo {
+    fn from(crypto: TeaclaveFile128Key) -> Self {
+        let crypto = FileCrypto::TeaclaveFile128(crypto);
         let (key, iv) = crypto.key_iv();
         proto::FileCryptoInfo {
-            schema: crypto.schema(),
+            schema: crypto.schema().to_owned(),
             key,
             iv,
         }
