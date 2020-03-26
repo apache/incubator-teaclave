@@ -33,9 +33,9 @@ use gbdt::gradient_boost::GBDT;
 #[derive(Default)]
 pub struct GbdtPrediction;
 
-static IN_MODEL: &str = "if_model";
-static IN_DATA: &str = "if_data";
-static OUT_RESULT: &str = "of_result";
+static IN_MODEL: &str = "model_file";
+static IN_DATA: &str = "data_file";
+static OUT_RESULT: &str = "result_file";
 
 impl TeaclaveFunction for GbdtPrediction {
     fn execute(
@@ -107,16 +107,16 @@ pub mod tests {
     fn test_gbdt_prediction() {
         let func_args = FunctionArguments::default();
 
-        let plain_if_model = "fixtures/functions/gbdt_prediction/model.txt";
-        let plain_if_data = "fixtures/functions/gbdt_prediction/test_data.txt";
+        let plain_model = "fixtures/functions/gbdt_prediction/model.txt";
+        let plain_data = "fixtures/functions/gbdt_prediction/test_data.txt";
         let plain_output = "fixtures/functions/gbdt_prediction/result.txt.out";
         let expected_output = "fixtures/functions/gbdt_prediction/expected_result.txt";
 
         let input_files = StagedFiles::new(hashmap!(
             IN_MODEL =>
-            StagedFileInfo::new(plain_if_model, TeaclaveFile128Key::random()),
+            StagedFileInfo::new(plain_model, TeaclaveFile128Key::random()),
             IN_DATA =>
-            StagedFileInfo::new(plain_if_data, TeaclaveFile128Key::random())
+            StagedFileInfo::new(plain_data, TeaclaveFile128Key::random())
         ));
 
         let output_files = StagedFiles::new(hashmap!(

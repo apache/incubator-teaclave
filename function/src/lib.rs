@@ -29,11 +29,13 @@ mod context;
 mod echo;
 mod gbdt_prediction;
 mod gbdt_training;
+mod logistic_regression_training;
 mod mesapy;
 
 pub use echo::Echo;
 pub use gbdt_prediction::GbdtPrediction;
 pub use gbdt_training::GbdtTraining;
+pub use logistic_regression_training::LogitRegTraining;
 pub use mesapy::Mesapy;
 
 #[cfg(feature = "enclave_unit_test")]
@@ -48,6 +50,7 @@ pub mod tests {
             gbdt_prediction::tests::run_tests(),
             mesapy::tests::run_tests(),
             context::tests::run_tests(),
+            logistic_regression_training::tests::run_tests(),
         )
     }
 }
