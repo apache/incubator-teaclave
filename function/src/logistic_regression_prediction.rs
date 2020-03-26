@@ -23,78 +23,81 @@ use rusty_machine::learning::optim::grad_desc::GradientDesc;
 use rusty_machine::learning::SupModel;
 use rusty_machine::linalg;
 use serde_json;
-use std::format;
-use std::io::{self, BufRead, BufReader, Write};
 
 use anyhow;
+use std::format;
+use std::io::{self, BufRead, BufReader, Write};
 use teaclave_types::FunctionArguments;
 use teaclave_types::{TeaclaveFunction, TeaclaveRuntime};
 
 #[derive(Default)]
-pub struct LogitRegTraining;
+pub struct LogitRegPrediction;
 
-static TRAINING_DATA: &str = "training_data";
-static OUT_MODEL_FILE: &str = "model_file";
+static MODEL_FILE: &str = "model_file";
+static INPUT_DATA: &str = "data_file";
+static RESULT: &str = "result_file";
 
-impl TeaclaveFunction for LogitRegTraining {
+impl TeaclaveFunction for LogitRegPrediction {
     fn execute(
         &self,
         runtime: Box<dyn TeaclaveRuntime + Send + Sync>,
-        arguments: FunctionArguments,
+        _arguments: FunctionArguments,
     ) -> anyhow::Result<String> {
-        let alg_alpha = arguments.get("alg_alpha")?.as_f64()?;
-        let alg_iters = arguments.get("alg_iters")?.as_usize()?;
-        let feature_size = arguments.get("feature_size")?.as_usize()?;
+        let mut model_json = String::new();
+        let mut f = runtime.open_input(MODEL_FILE)?;
+        f.read_to_string(&mut model_json)?;
 
-        let input = runtime.open_input(TRAINING_DATA)?;
-        let (flattend_features, targets) = parse_training_data(input, feature_size)?;
-        let data_size = targets.len();
-        let data_matrix = linalg::Matrix::new(data_size, feature_size, flattend_features);
-        let targets = linalg::Vector::new(targets);
+        let lr: LogisticRegressor<GradientDesc> = serde_json::from_str(&model_json)?;
+        let feature_size = lr
+            .parameters()
+            .ok_or_else(|| anyhow::anyhow!("Model parameter is None"))?
+            .size()
+            - 1;
 
-        let gd = GradientDesc::new(alg_alpha, alg_iters);
-        let mut lr = LogisticRegressor::new(gd);
-        lr.train(&data_matrix, &targets)?;
+        let input = runtime.open_input(INPUT_DATA)?;
+        let data_matrix = parse_input_data(input, feature_size)?;
 
-        let model_json = serde_json::to_string(&lr).unwrap();
-        let mut model_file = runtime.create_output(OUT_MODEL_FILE)?;
-        model_file.write_all(model_json.as_bytes())?;
+        let result = lr.predict(&data_matrix)?;
 
-        Ok(format!("Trained {} lines of data.", data_size))
+        let mut output = runtime.create_output(RESULT)?;
+        let result_cnt = result.data().len();
+        for c in result.data().iter() {
+            writeln!(&mut output, "{:.4}", c)?;
+        }
+        Ok(format!("Predicted {} lines of data.", result_cnt))
     }
 }
 
-fn parse_training_data(
+fn parse_input_data(
     input: impl io::Read,
     feature_size: usize,
-) -> anyhow::Result<(Vec<f64>, Vec<f64>)> {
-    let reader = BufReader::new(input);
-    let mut targets = Vec::<f64>::new();
-    let mut features = Vec::new();
+) -> anyhow::Result<linalg::Matrix<f64>> {
+    let mut flattened_data = Vec::new();
+    let mut count = 0;
 
+    let reader = BufReader::new(input);
     for line_result in reader.lines() {
         let line = line_result?;
         let trimed_line = line.trim();
         anyhow::ensure!(!trimed_line.is_empty(), "Empty line");
 
-        let mut v: Vec<f64> = trimed_line
+        let v: Vec<f64> = trimed_line
             .split(',')
             .map(|x| x.parse::<f64>())
             .collect::<std::result::Result<_, _>>()?;
 
         anyhow::ensure!(
-            v.len() == feature_size + 1,
+            v.len() == feature_size,
             "Data format error: column len = {}, expected = {}",
             v.len(),
-            feature_size + 1
+            feature_size
         );
 
-        let label = v.swap_remove(feature_size);
-        targets.push(label);
-        features.extend(v);
+        flattened_data.extend(v);
+        count += 1;
     }
 
-    Ok((features, targets))
+    Ok(linalg::Matrix::new(count, feature_size, flattened_data))
 }
 
 #[cfg(feature = "enclave_unit_test")]
@@ -107,36 +110,35 @@ pub mod tests {
     use teaclave_types::*;
 
     pub fn run_tests() -> bool {
-        run_tests!(test_logistic_regression_training)
+        run_tests!(test_logistic_regression_prediction)
     }
 
-    fn test_logistic_regression_training() {
-        let func_args = FunctionArguments::new(hashmap! {
-            "alg_alpha" => "0.3",
-            "alg_iters" => "100",
-            "feature_size" => "30"
-        });
+    fn test_logistic_regression_prediction() {
+        let func_args = FunctionArguments::default();
 
-        let base = Path::new("fixtures/functions/logistic_regression_training");
-        let training_data = base.join("train.txt");
-        let plain_output = base.join("model.txt.out");
-        let expected_output = base.join("expected_model.txt");
+        let base = Path::new("fixtures/functions/logistic_regression_prediction");
+        let model = base.join("model.txt");
+        let plain_input = base.join("predict_input.txt");
+        let plain_output = base.join("predict_result.txt.out");
+        let expected_output = base.join("expected_result.txt");
 
         let input_files = StagedFiles::new(hashmap!(
-            TRAINING_DATA =>
-            StagedFileInfo::new(&training_data, TeaclaveFile128Key::random()),
+            MODEL_FILE =>
+            StagedFileInfo::new(&model, TeaclaveFile128Key::random()),
+            INPUT_DATA =>
+            StagedFileInfo::new(&plain_input, TeaclaveFile128Key::random()),
         ));
 
         let output_files = StagedFiles::new(hashmap!(
-            OUT_MODEL_FILE =>
+            RESULT =>
             StagedFileInfo::new(&plain_output, TeaclaveFile128Key::random())
         ));
 
         let runtime = Box::new(RawIoRuntime::new(input_files, output_files));
 
-        let function = LogitRegTraining;
+        let function = LogitRegPrediction;
         let summary = function.execute(runtime, func_args).unwrap();
-        assert_eq!(summary, "Trained 100 lines of data.");
+        assert_eq!(summary, "Predicted 5 lines of data.");
 
         let result = fs::read_to_string(&plain_output).unwrap();
         let expected = fs::read_to_string(&expected_output).unwrap();
