@@ -78,7 +78,6 @@ impl TeaclaveFunction for GbdtTraining {
         gbdt_train_mod.fit(&mut train_dv);
         let model_json = serde_json::to_string(&gbdt_train_mod)?;
 
-        log::debug!("create file...");
         // save the model to output
         let mut model_file = runtime.create_output(OUT_MODEL)?;
         model_file.write_all(model_json.as_bytes())?;
