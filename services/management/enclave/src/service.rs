@@ -343,6 +343,9 @@ impl TeaclaveManagement for TeaclaveManagementService {
             request.output_data_owner_list,
         )
         .map_err(|_| TeaclaveManagementError::BadTask)?;
+
+        log::info!("CreateTask: {:?}", task);
+
         self.write_to_db(&task)
             .map_err(|_| TeaclaveManagementError::StorageError)?;
         Ok(CreateTaskResponse {
@@ -384,6 +387,8 @@ impl TeaclaveManagement for TeaclaveManagementService {
             approved_user_list: task.approved_user_list,
             input_map: task.input_map,
             output_map: task.output_map,
+            return_value: task.return_value,
+            output_file_hash: task.output_file_hash,
             status: task.status,
         };
         Ok(response)
@@ -484,6 +489,9 @@ impl TeaclaveManagement for TeaclaveManagementService {
         }
         task.approved_user_list.insert(user_id);
         try_update_task_to_approved_status(&mut task);
+
+        log::info!("ApproveTask: try approve:{:?}", task);
+
         self.write_to_db(&task)
             .map_err(|_| TeaclaveManagementError::StorageError)?;
         Ok(ApproveTaskResponse)
@@ -506,9 +514,12 @@ impl TeaclaveManagement for TeaclaveManagementService {
             Task::match_prefix(&request.task_id),
             TeaclaveManagementError::PermissionDenied
         );
+
         let mut task: Task = self
             .read_from_db(request.task_id.as_bytes())
             .map_err(|_| TeaclaveManagementError::PermissionDenied)?;
+
+        log::info!("InvokeTask: get task: {:?}", task);
 
         ensure!(
             task.creator == user_id,
@@ -525,6 +536,8 @@ impl TeaclaveManagement for TeaclaveManagementService {
         let function: Function = self
             .read_from_db(task.function_id.as_bytes())
             .map_err(|_| TeaclaveManagementError::PermissionDenied)?;
+
+        log::info!("InvokeTask: get function: {:?}", function);
 
         let function_arguments = task.function_arguments.clone();
         let mut input_map: HashMap<String, FunctionInputFile> = HashMap::new();
@@ -567,6 +580,9 @@ impl TeaclaveManagement for TeaclaveManagementService {
             .output_data(output_map);
         self.enqueue_to_db(StagedTask::get_queue_key().as_bytes(), &staged_task)?;
         task.status = TaskStatus::Running;
+
+        log::info!("InvokeTask: staged task: {:?}", task);
+
         self.write_to_db(&task)
             .map_err(|_| TeaclaveManagementError::StorageError)?;
         Ok(InvokeTaskResponse)
