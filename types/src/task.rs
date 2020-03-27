@@ -37,7 +37,7 @@ pub enum TaskStatus {
     Finished,
 }
 
-const TASK_PREFIX: &str = "task-";
+const TASK_PREFIX: &str = "task";
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Task {
