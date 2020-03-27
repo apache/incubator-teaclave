@@ -2,7 +2,7 @@
 set -e
 REQUIRED_ENVS=("CMAKE_SOURCE_DIR" "CMAKE_BINARY_DIR"
 "TEACLAVE_OUT_DIR" "TEACLAVE_TARGET_DIR" "RUSTUP_TOOLCHAIN" "MESAPY_VERSION"
-"SGX_EDGER8R" "MT_EDL_FILE" "SGX_SDK" "RUST_SGX_SDK" "CMAKE_C_COMPILER"
+"SGX_EDGER8R" "TEACLAVE_EDL_DIR" "SGX_SDK" "RUST_SGX_SDK" "CMAKE_C_COMPILER"
 "CMAKE_AR" "SGX_UNTRUSTED_CFLAGS" "SGX_TRUSTED_CFLAGS" "MT_SCRIPT_DIR"
 "TEACLAVE_SERVICE_INSTALL_DIR" "TEACLAVE_EXAMPLE_INSTALL_DIR" "TEACLAVE_BIN_INSTALL_DIR"
 "TEACLAVE_CLI_INSTALL_DIR" "TEACLAVE_DCAP_INSTALL_DIR" "TEACLAVE_LIB_INSTALL_DIR" "TEACLAVE_TEST_INSTALL_DIR"
@@ -49,22 +49,44 @@ if [ ! -f ${TEACLAVE_OUT_DIR}/libpypy-c.a ] || [ ! -f ${TEACLAVE_OUT_DIR}/${MESA
     tar xzf ${MESAPY_VERSION}-mesapy-sgx.tar.gz;
     cd -
 fi
+
 # build edl_libs
-if [ ! -f ${TEACLAVE_OUT_DIR}/libEnclave_common_u.a ]; then
+function build_edl() {
     echo 'INFO: Start to build EDL.'
-    ${SGX_EDGER8R} --untrusted ${MT_EDL_FILE} --search-path ${SGX_SDK}/include \
-        --search-path ${RUST_SGX_SDK}/edl --search-path ${TEACLAVE_PROJECT_ROOT}/edl \
-        --untrusted-dir ${TEACLAVE_OUT_DIR}
+
     cd ${TEACLAVE_OUT_DIR}
-    ${CMAKE_C_COMPILER} ${SGX_UNTRUSTED_CFLAGS} -c Enclave_common_u.c -o libEnclave_common_u.o
-    ${CMAKE_AR} rcsD libEnclave_common_u.a libEnclave_common_u.o
+    for edl in ${TEACLAVE_EDL_DIR}/*.edl
+    do
+        # $FILE_NAME.edl to $FILE_NAME_t.c
+        ${SGX_EDGER8R} --trusted ${edl} --search-path ${SGX_SDK}/include \
+            --search-path ${RUST_SGX_SDK}/edl --search-path ${TEACLAVE_PROJECT_ROOT}/edl \
+            --trusted-dir ${TEACLAVE_OUT_DIR}
 
-    ${CMAKE_C_COMPILER} ${SGX_UNTRUSTED_CFLAGS} -c Enclave_fa_u.c -o libEnclave_fa_u.o
-    ${CMAKE_AR} rcsD libEnclave_fa_u.a libEnclave_fa_u.o
+        # $FILE_NAME.edl to $FILE_NAME_u.c
+        ${SGX_EDGER8R} --untrusted ${edl} --search-path ${SGX_SDK}/include \
+            --search-path ${RUST_SGX_SDK}/edl --search-path ${TEACLAVE_PROJECT_ROOT}/edl \
+            --untrusted-dir ${TEACLAVE_OUT_DIR}
 
-    ${SGX_EDGER8R} --trusted ${MT_EDL_FILE} --search-path ${SGX_SDK}/include \
-        --search-path ${RUST_SGX_SDK}/edl --search-path ${TEACLAVE_PROJECT_ROOT}/edl \
-        --trusted-dir ${TEACLAVE_OUT_DIR}
-    ${CMAKE_C_COMPILER} ${SGX_TRUSTED_CFLAGS} -c Enclave_common_t.c -o libEnclave_common_t.o
-    ${CMAKE_C_COMPILER} ${SGX_TRUSTED_CFLAGS} -c Enclave_fa_t.c -o libEnclave_fa_t.o
-fi
+        fname=$(basename "$edl" .edl)
+
+        # $FILE_NAME_u.c -> lib$FILE_NAME_u.o -> lib$FILE_NAME_u.a
+        ${CMAKE_C_COMPILER} ${SGX_UNTRUSTED_CFLAGS} -c "${fname}_u.c" -o "lib${fname}_u.o"
+        ${CMAKE_AR} rcsD "lib${fname}_u.a" "lib${fname}_u.o"
+
+        # $FILE_NAME_t.c to $FILE_NAME_t.o
+        ${CMAKE_C_COMPILER} ${SGX_TRUSTED_CFLAGS} -c "${fname}_t.c" -o "lib${fname}_t.o"
+    done
+}
+
+# check 
+for edl in ${TEACLAVE_EDL_DIR}/*.edl
+do
+    fname=$(basename "${edl}" .edl)
+    tlib="${TEACLAVE_OUT_DIR}/lib${fname}_t.o"
+    ulib="${TEACLAVE_OUT_DIR}/lib${fname}_u.a"
+
+    if [[ ! -f "${tlib}" ]] ||  [[ ! -f "${ulib}" ]] ; then
+        build_edl
+        break
+    fi
+done
