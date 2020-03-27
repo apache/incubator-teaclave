@@ -97,6 +97,8 @@ run_functional_tests() {
 
   ./teaclave_functional_tests -t execution_service
 
+  ./teaclave_functional_tests -t end_to_end
+
   # Run script tests
   ./scripts/functional_tests.py -v
 

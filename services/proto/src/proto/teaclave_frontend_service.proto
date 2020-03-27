@@ -133,7 +133,9 @@ message GetTaskResponse {
   repeated string approved_user_list = 9;
   repeated DataMap input_map = 10;
   repeated DataMap output_map = 11;
-  teaclave_common_proto.TaskStatus status = 12;
+  bytes return_value = 12;
+  map<string, string> output_file_hash = 13;
+  teaclave_common_proto.TaskStatus status = 14;
 }
 
 message AssignDataRequest {

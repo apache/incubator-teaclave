@@ -37,6 +37,7 @@ use teaclave_types::TeeServiceResult;
 
 mod access_control_service;
 mod authentication_service;
+mod end_to_end;
 mod execution_service;
 mod frontend_service;
 mod management_service;
@@ -66,6 +67,7 @@ fn handle_run_test(input: &RunTestInput) -> TeeServiceResult<RunTestOutput> {
         ),
         ("scheduler_service", Box::new(scheduler_service::run_tests)),
         ("execution_service", Box::new(execution_service::run_tests)),
+        ("end_to_end", Box::new(end_to_end::run_tests)),
     ];
     let test_map: HashMap<_, BoxedFnTest> =
         v.into_iter().map(|(k, v)| (k.to_string(), v)).collect();
