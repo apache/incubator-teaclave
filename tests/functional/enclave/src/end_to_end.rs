@@ -1,3 +1,5 @@
+use anyhow::Result;
+use lazy_static::lazy_static;
 use std::collections::HashMap;
 use std::prelude::v1::*;
 use teaclave_attestation::verifier;
@@ -10,57 +12,46 @@ use teaclave_rpc::config::SgxTrustedTlsClientConfig;
 use teaclave_rpc::endpoint::Endpoint;
 use teaclave_types::*;
 
+static USERNAME: &'static str = "alice";
+static PASSWORD: &'static str = "daHosldOdker0sS";
+static CONFIG_FILE: &'static str = "runtime.config.toml";
+static AUTH_SERVICE_ADDR: &'static str = "localhost:7776";
+static FRONTEND_SERVICE_ADDR: &'static str = "localhost:7777";
+
 pub fn run_tests() -> bool {
     use teaclave_test_utils::*;
-
+    setup();
     run_tests!(test_echo_task,)
 }
 
-fn get_credential() -> UserCredential {
-    let runtime_config = RuntimeConfig::from_toml("runtime.config.toml").expect("runtime");
-    let enclave_info =
-        EnclaveInfo::from_bytes(&runtime_config.audit.enclave_info_bytes.as_ref().unwrap());
-    let enclave_attr = enclave_info
-        .get_enclave_attr("teaclave_authentication_service")
-        .expect("authentication");
-    let config = SgxTrustedTlsClientConfig::new().attestation_report_verifier(
-        vec![enclave_attr],
-        BUILD_CONFIG.as_root_ca_cert,
-        verifier::universal_quote_verifier,
-    );
-    let channel = Endpoint::new("localhost:7776")
-        .config(config)
-        .connect()
-        .unwrap();
-    let mut api_client = TeaclaveAuthenticationApiClient::new(channel).unwrap();
-
-    let request = UserRegisterRequest::new("frontend_user", "test_password");
-    let _response_result = api_client.user_register(request);
-
-    let request = UserLoginRequest::new("frontend_user", "test_password");
-    let response_result = api_client.user_login(request);
-    assert!(response_result.is_ok());
-    UserCredential::new("frontend_user", response_result.unwrap().token)
+lazy_static! {
+    static ref ENCLAVE_INFO: EnclaveInfo = {
+        let runtime_config = RuntimeConfig::from_toml(CONFIG_FILE).expect("runtime config");
+        EnclaveInfo::from_bytes(
+            &runtime_config
+                .audit
+                .enclave_info_bytes
+                .as_ref()
+                .expect("encalve info"),
+        )
+    };
 }
 
-fn get_frontend_client() -> TeaclaveFrontendClient {
-    let user_credential = get_credential();
-    let runtime_config = RuntimeConfig::from_toml("runtime.config.toml").expect("runtime");
-    let port = &runtime_config.api_endpoints.frontend.listen_address.port();
-    let channel = Endpoint::new(&format!("localhost:{}", port))
-        .connect()
-        .unwrap();
-
-    let mut metadata = HashMap::new();
-    metadata.insert("id".to_string(), user_credential.id);
-    metadata.insert("token".to_string(), user_credential.token);
-
-    TeaclaveFrontendClient::new_with_metadata(channel, metadata).unwrap()
+fn setup() {
+    // Register user for the first time
+    let mut api_client =
+        create_authentication_api_client(&ENCLAVE_INFO, AUTH_SERVICE_ADDR).unwrap();
+    register_new_account(&mut api_client, USERNAME, PASSWORD).unwrap();
 }
 
 fn test_echo_task() {
-    let mut client = get_frontend_client();
+    // Authenticate user before talking to frontend service
+    let mut api_client =
+        create_authentication_api_client(&ENCLAVE_INFO, AUTH_SERVICE_ADDR).unwrap();
+    let cred = login(&mut api_client, USERNAME, PASSWORD).unwrap();
+    let mut client = create_frontend_client(&ENCLAVE_INFO, FRONTEND_SERVICE_ADDR, cred).unwrap();
 
+    // Register Function
     let request = RegisterFunctionRequest {
         name: "echo".to_string(),
         description: "Native Echo Function".to_string(),
@@ -74,6 +65,7 @@ fn test_echo_task() {
 
     log::info!("Resgister function: {:?}", response);
 
+    // Create Task
     let function_id = response.function_id;
     let function_arguments = FunctionArguments::new(hashmap!("message" => "Hello From Teaclave!"));
     let request = CreateTaskRequest {
@@ -86,6 +78,7 @@ fn test_echo_task() {
 
     log::info!("Create task: {:?}", response);
 
+    // Assign Data To Task
     let task_id = response.task_id;
     let request = AssignDataRequest {
         task_id: task_id.clone(),
@@ -96,16 +89,19 @@ fn test_echo_task() {
 
     log::info!("Assign data: {:?}", response);
 
+    // Approve Task
     let request = ApproveTaskRequest::new(&task_id);
     let response = client.approve_task(request).unwrap();
 
     log::info!("Approve task: {:?}", response);
 
+    // Invoke Task
     let request = InvokeTaskRequest::new(&task_id);
     let response = client.invoke_task(request).unwrap();
 
     log::info!("Invoke task: {:?}", response);
 
+    // Get Task
     loop {
         let request = GetTaskRequest::new(&task_id);
         let response = client.get_task(request).unwrap();
@@ -118,4 +114,72 @@ fn test_echo_task() {
             break;
         }
     }
+}
+
+fn create_client_config(
+    enclave_info: &EnclaveInfo,
+    service_name: &str,
+) -> Result<SgxTrustedTlsClientConfig> {
+    let enclave_attr = enclave_info
+        .get_enclave_attr(service_name)
+        .expect("enclave attr");
+    let config = SgxTrustedTlsClientConfig::new().attestation_report_verifier(
+        vec![enclave_attr],
+        BUILD_CONFIG.as_root_ca_cert,
+        verifier::universal_quote_verifier,
+    );
+    Ok(config)
+}
+
+fn create_frontend_client(
+    enclave_info: &EnclaveInfo,
+    service_addr: &str,
+    cred: UserCredential,
+) -> Result<TeaclaveFrontendClient> {
+    let tls_config = create_client_config(&enclave_info, "teaclave_frontend_service")?;
+    let channel = Endpoint::new(service_addr).config(tls_config).connect()?;
+
+    let mut metadata = HashMap::new();
+    metadata.insert("id".to_string(), cred.id);
+    metadata.insert("token".to_string(), cred.token);
+
+    let client = TeaclaveFrontendClient::new_with_metadata(channel, metadata)?;
+    Ok(client)
+}
+
+fn create_authentication_api_client(
+    enclave_info: &EnclaveInfo,
+    service_addr: &str,
+) -> Result<TeaclaveAuthenticationApiClient> {
+    let tls_config = create_client_config(&enclave_info, "teaclave_authentication_service")?;
+    let channel = Endpoint::new(service_addr).config(tls_config).connect()?;
+
+    let client = TeaclaveAuthenticationApiClient::new(channel)?;
+    Ok(client)
+}
+
+fn register_new_account(
+    api_client: &mut TeaclaveAuthenticationApiClient,
+    username: &str,
+    password: &str,
+) -> Result<()> {
+    let request = UserRegisterRequest::new(username, password);
+    let response = api_client.user_register(request)?;
+
+    log::info!("User register: {:?}", response);
+
+    Ok(())
+}
+
+fn login(
+    api_client: &mut TeaclaveAuthenticationApiClient,
+    username: &str,
+    password: &str,
+) -> Result<UserCredential> {
+    let request = UserLoginRequest::new(username, password);
+    let response = api_client.user_login(request)?;
+
+    log::info!("User login: {:?}", response);
+
+    Ok(UserCredential::new(username, response.token))
 }
