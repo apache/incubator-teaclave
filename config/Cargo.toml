@@ -9,6 +9,7 @@ edition = "2018"
 [features]
 default = []
 mesalock_sgx = ["sgx_tstd"]
+build_config = []
 
 [dependencies]
 anyhow = { version = "1.0.26" }

@@ -15,12 +15,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use std::env;
-use std::path::Path;
-use std::process::Command;
-use std::str;
-
+#[cfg(feature = "build_config")]
 fn main() {
+    use std::env;
+    use std::path::Path;
+    use std::process::Command;
+    use std::str;
+
     let is_sim = env::var("SGX_MODE").unwrap_or_else(|_| "HW".to_string());
     match is_sim.as_ref() {
         "HW" => {}
@@ -58,3 +59,6 @@ fn main() {
         );
     }
 }
+
+#[cfg(not(feature = "build_config"))]
+fn main() {}

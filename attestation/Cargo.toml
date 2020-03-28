@@ -38,7 +38,7 @@ url              = { version = "2.1.1" }
 yasna            = { version = "0.3.0", features = ["bit-vec", "num-bigint", "chrono"] }
 
 teaclave_types  = { path = "../types" }
-teaclave_config = { path = "../config" }
+teaclave_config = { path = "../config", features = ["build_config"] }
 teaclave_test_utils = { path = "../tests/utils" }
 
 sgx_rand    = { version = "1.1.0", optional = true }
