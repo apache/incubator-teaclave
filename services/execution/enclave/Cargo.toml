@@ -21,6 +21,7 @@ mesalock_sgx = [
   "teaclave_service_enclave_utils/mesalock_sgx",
   "teaclave_types/mesalock_sgx",
   "teaclave_config/mesalock_sgx",
+  "teaclave_config/build_config",
   "teaclave_worker/mesalock_sgx",
 ]
 cov = ["teaclave_service_enclave_utils/cov"]
