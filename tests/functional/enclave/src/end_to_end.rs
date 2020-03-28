@@ -12,11 +12,11 @@ use teaclave_rpc::config::SgxTrustedTlsClientConfig;
 use teaclave_rpc::endpoint::Endpoint;
 use teaclave_types::*;
 
-static USERNAME: &'static str = "alice";
-static PASSWORD: &'static str = "daHosldOdker0sS";
-static CONFIG_FILE: &'static str = "runtime.config.toml";
-static AUTH_SERVICE_ADDR: &'static str = "localhost:7776";
-static FRONTEND_SERVICE_ADDR: &'static str = "localhost:7777";
+const USERNAME: &str = "alice";
+const PASSWORD: &str = "daHosldOdker0sS";
+const CONFIG_FILE: &str = "runtime.config.toml";
+const AUTH_SERVICE_ADDR: &str = "localhost:7776";
+const FRONTEND_SERVICE_ADDR: &str = "localhost:7777";
 
 pub fn run_tests() -> bool {
     use teaclave_test_utils::*;
@@ -107,8 +107,8 @@ fn test_echo_task() {
         let response = client.get_task(request).unwrap();
         log::info!("Get task: {:?}", response);
         std::thread::sleep(std::time::Duration::from_secs(1));
-        if response.status != TaskStatus::Running {
-            let ret_val = String::from_utf8(response.return_value.unwrap()).unwrap();
+        if response.status == TaskStatus::Finished {
+            let ret_val = String::from_utf8(response.return_value).unwrap();
             log::info!("Task returns: {:?}", ret_val);
             assert_eq!(&ret_val, "Hello From Teaclave!");
             break;

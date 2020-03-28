@@ -329,7 +329,7 @@ pub struct GetTaskResponse {
     pub approved_user_list: HashSet<String>,
     pub input_map: HashMap<String, String>,
     pub output_map: HashMap<String, String>,
-    pub return_value: Option<Vec<u8>>,
+    pub return_value: Vec<u8>,
     pub output_file_hash: HashMap<String, String>,
     pub status: TaskStatus,
 }
@@ -976,7 +976,7 @@ impl std::convert::TryFrom<proto::GetTaskResponse> for GetTaskResponse {
             approved_user_list: proto.approved_user_list.into_iter().collect(),
             input_map,
             output_map,
-            return_value: Some(proto.return_value),
+            return_value: proto.return_value,
             output_file_hash: proto.output_file_hash,
             status,
         };
@@ -1005,7 +1005,7 @@ impl From<GetTaskResponse> for proto::GetTaskResponse {
             approved_user_list: response.approved_user_list.into_iter().collect(),
             input_map,
             output_map,
-            return_value: response.return_value.unwrap_or_default(),
+            return_value: response.return_value,
             output_file_hash: response.output_file_hash,
             status,
         }
