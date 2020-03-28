@@ -83,17 +83,17 @@ impl TeaclaveExecutionService {
             let staged_task = response.staged_task;
             let result = self.invoke_task(&staged_task).unwrap();
             log::debug!("result: {:?}", result);
-            match self.update_task_status(&staged_task.task_id, TaskStatus::Finished) {
-                Ok(_) => (),
-                Err(e) => {
-                    log::error!("UpdateTask Error: {:?}", e);
-                    continue;
-                }
-            }
             match self.update_task_result(&staged_task.task_id, result) {
                 Ok(_) => (),
                 Err(e) => {
                     log::error!("UpdateResult Error: {:?}", e);
+                    continue;
+                }
+            }
+            match self.update_task_status(&staged_task.task_id, TaskStatus::Finished) {
+                Ok(_) => (),
+                Err(e) => {
+                    log::error!("UpdateTask Error: {:?}", e);
                     continue;
                 }
             }

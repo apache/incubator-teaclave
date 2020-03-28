@@ -387,7 +387,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
             approved_user_list: task.approved_user_list,
             input_map: task.input_map,
             output_map: task.output_map,
-            return_value: task.return_value,
+            return_value: task.return_value.unwrap_or_default(),
             output_file_hash: task.output_file_hash,
             status: task.status,
         };
