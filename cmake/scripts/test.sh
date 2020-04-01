@@ -42,21 +42,25 @@ cleanup() {
 
 run_integration_tests() {
   trap cleanup ERR
+
   pushd ${TEACLAVE_TEST_INSTALL_DIR}
+    echo_title "integration tests"
+    ./teaclave_integration_tests
+  popd
 
-  echo_title "integration tests"
-  ./teaclave_integration_tests
-
+  pushd ${MT_SGXAPP_TOML_DIR}
   echo_title "protected_fs_rs tests (untrusted)"
   cargo test --manifest-path ${TEACLAVE_PROJECT_ROOT}/common/protected_fs_rs/Cargo.toml \
-        --target-dir ${TEACLAVE_TARGET_DIR}/untrusted
+            --target-dir ${TEACLAVE_TARGET_DIR}/untrusted
 
   echo_title "file_agent tests (untrusted)"
-  cd ${TEACLAVE_TEST_INSTALL_DIR}/
-  python ${TEACLAVE_PROJECT_ROOT}/tests/scripts/simple_http_server.py 6789 &
-  cargo test --manifest-path ${TEACLAVE_PROJECT_ROOT}/file_agent/Cargo.toml \
-        --target-dir ${TEACLAVE_TARGET_DIR}/untrusted
 
+  pushd ${TEACLAVE_TEST_INSTALL_DIR}
+  python ${TEACLAVE_PROJECT_ROOT}/tests/scripts/simple_http_server.py 6789 &
+  popd
+
+  cargo test --manifest-path ${TEACLAVE_PROJECT_ROOT}/file_agent/Cargo.toml \
+            --target-dir ${TEACLAVE_TARGET_DIR}/untrusted
   popd
 
   cleanup

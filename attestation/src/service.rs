@@ -22,7 +22,6 @@ use crate::EndorsedAttestationReport;
 use anyhow::Result;
 use anyhow::{anyhow, bail};
 use log::{debug, trace};
-use percent_encoding;
 use serde_json::json;
 use sgx_types::*;
 use std::collections::HashMap;
@@ -114,7 +113,7 @@ fn get_report(
     quote: &[u8],
 ) -> Result<EndorsedAttestationReport> {
     debug!("get_report");
-    let report_uri = "/sgx/dev/attestation/v3/report";
+    let report_uri = "/sgx/dev/attestation/v4/report";
     let encoded_quote = base64::encode(quote);
     let encoded_json = json!({ "isvEnclaveQuote": encoded_quote }).to_string();
     let host_str = url

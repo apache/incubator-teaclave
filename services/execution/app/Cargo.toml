@@ -19,4 +19,4 @@ teaclave_config            = { path = "../../../config" }
 teaclave_types             = { path = "../../../types" }
 teaclave_file_agent        = { path = "../../../file_agent" }
 
-sgx_types = { version = "1.1.0" }
+sgx_types = { version = "1.1.1" }

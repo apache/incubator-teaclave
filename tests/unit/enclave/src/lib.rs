@@ -21,20 +21,14 @@ extern crate sgx_tstd as std;
 
 use std::prelude::v1::*;
 
-use rusty_leveldb;
-use teaclave_access_control_service_enclave;
-use teaclave_authentication_service_enclave;
 use teaclave_binder::proto::{
     ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
     RunTestInput, RunTestOutput,
 };
 use teaclave_binder::{handle_ecall, register_ecall_handler};
-use teaclave_execution_service_enclave;
-use teaclave_management_service_enclave;
 use teaclave_service_enclave_utils::ServiceEnclave;
 use teaclave_test_utils::check_all_passed;
 use teaclave_types::{self, TeeServiceResult};
-use teaclave_worker;
 
 #[handle_ecall]
 fn handle_run_test(_: &RunTestInput) -> TeeServiceResult<RunTestOutput> {

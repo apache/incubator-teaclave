@@ -30,7 +30,6 @@ use std::net;
 use std::path::Path;
 use std::string::String;
 use std::vec::Vec;
-use toml;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RuntimeConfig {

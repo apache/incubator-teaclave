@@ -17,7 +17,6 @@
 
 use futures::future::join_all;
 use futures::TryFutureExt;
-use reqwest;
 use tokio::io::AsyncWriteExt;
 use tokio_util::codec;
 use url::Url;

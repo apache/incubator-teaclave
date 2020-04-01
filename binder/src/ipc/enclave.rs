@@ -17,9 +17,6 @@
 
 use std::prelude::v1::*;
 
-use serde;
-use serde_json;
-
 use crate::ipc::{IpcReceiver, IpcService};
 
 // Implementation of Receiver
