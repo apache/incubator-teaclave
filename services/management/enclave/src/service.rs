@@ -266,12 +266,13 @@ impl TeaclaveManagement for TeaclaveManagementService {
         let function = Function::new()
             .id(Uuid::new_v4())
             .name(request.name)
+            .executor_type(request.executor_type)
             .description(request.description)
             .payload(request.payload)
-            .public(request.is_public)
-            .arguments(request.arg_list)
-            .inputs(request.input_list)
-            .outputs(request.output_list)
+            .public(request.public)
+            .arguments(request.arguments)
+            .inputs(request.inputs)
+            .outputs(request.outputs)
             .owner(user_id);
 
         self.write_to_db(&function)
@@ -309,10 +310,10 @@ impl TeaclaveManagement for TeaclaveManagementService {
             description: function.description,
             owner: function.owner,
             payload: function.payload,
-            is_public: function.public,
-            arg_list: function.arguments,
-            input_list: function.inputs,
-            output_list: function.outputs,
+            public: function.public,
+            arguments: function.arguments,
+            inputs: function.inputs,
+            outputs: function.outputs,
         };
         Ok(response)
     }
@@ -338,9 +339,10 @@ impl TeaclaveManagement for TeaclaveManagementService {
         let task = crate::task::create_task(
             function,
             user_id,
+            request.executor,
             request.function_arguments,
-            request.input_data_owner_list,
-            request.output_data_owner_list,
+            request.inputs_owner_list,
+            request.outputs_owner_list,
         )
         .map_err(|_| TeaclaveManagementError::BadTask)?;
 
@@ -381,8 +383,8 @@ impl TeaclaveManagement for TeaclaveManagementService {
             function_id: task.function_id,
             function_owner: task.function_owner,
             function_arguments: task.function_arguments,
-            input_data_owner_list: task.input_data_owner_list,
-            output_data_owner_list: task.output_data_owner_list,
+            inputs_owner_list: task.inputs_owner_list,
+            outputs_owner_list: task.outputs_owner_list,
             participants: task.participants,
             approved_user_list: task.approved_user_list,
             input_map: task.input_map,
@@ -401,7 +403,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
     //    * input file: user_id == input_file.owner contains user_id
     //    * output file: output_file.owner contains user_id && output_file.hash.is_none()
     // 4) the data can be assgined to the task:
-    //    * input_data_owner_list or output_data_owner_list contains the data name
+    //    * inputs_owner_list or outputs_owner_list contains the data name
     //    * input file: DataOwnerList match input_file.owner
     //    * output file: DataOwnerList match output_file.owner
     fn assign_data(
@@ -572,8 +574,9 @@ impl TeaclaveManagement for TeaclaveManagementService {
 
         let staged_task = StagedTask::new()
             .task_id(task.task_id)
+            .native_func(task.executor.clone())
+            .executor_type(function.executor_type)
             .function_id(function.id)
-            .function_name(&function.name)
             .function_payload(function.payload)
             .function_arguments(function_arguments)
             .input_data(input_map)
@@ -770,6 +773,7 @@ pub mod tests {
         let task = crate::task::create_task(
             function,
             "mock_user".to_string(),
+            "mesapy".to_string(),
             function_arguments,
             HashMap::new(),
             HashMap::new(),
@@ -790,9 +794,6 @@ pub mod tests {
             .payload(b"python script".to_vec())
             .public(true)
             .owner("mock_user");
-        let mut arg_list = HashMap::new();
-        arg_list.insert("arg".to_string(), "data".to_string());
-        let function_arguments = arg_list.into();
 
         let url = Url::parse("s3://bucket_id/path?token=mock_token").unwrap();
         let hash = "a6d604b5987b693a19d94704532b5d928c2729f24dfd40745f8d03ac9ac75a8b".to_string();
@@ -806,10 +807,9 @@ pub mod tests {
 
         let staged_task = StagedTask::new()
             .task_id(Uuid::new_v4())
-            .function_id(function.id)
-            .function_name(&function.name)
+            .native_func("mesapy".to_string())
             .function_payload(function.payload)
-            .function_arguments(function_arguments)
+            .function_arguments(hashmap!("arg" => "data"))
             .input_data(input_map)
             .output_data(output_map);
 

@@ -75,11 +75,12 @@ message DataOwnerList {
 message RegisterFunctionRequest {
   string name = 1;
   string description = 2;
-  bytes payload = 3;
-  bool is_public = 4;
-  repeated string arg_list = 5;
-  repeated FunctionInput input_list = 6;
-  repeated FunctionOutput output_list = 7;
+  string executor_type = 3;
+  bool public = 4;
+  bytes payload = 5;
+  repeated string arguments = 6;
+  repeated FunctionInput inputs = 10;
+  repeated FunctionOutput outputs = 11;
 }
 
 message RegisterFunctionResponse {
@@ -95,10 +96,10 @@ message GetFunctionResponse {
   string description = 2;
   string owner = 3;
   bytes payload = 4;
-  bool is_public = 5;
-  repeated string arg_list = 6;
-  repeated FunctionInput input_list = 7;
-  repeated FunctionOutput output_list = 8;
+  bool public = 5;
+  repeated string arguments = 6;
+  repeated FunctionInput inputs = 7;
+  repeated FunctionOutput outputs = 8;
 }
 
 message DataMap {
@@ -109,8 +110,9 @@ message DataMap {
 message CreateTaskRequest {
   string function_id = 1;
   map<string, string> function_arguments = 2;
-  repeated DataOwnerList input_data_owner_list = 3;
-  repeated DataOwnerList output_data_owner_list = 4;
+  string executor = 3;
+  repeated DataOwnerList inputs_owner_list = 10;
+  repeated DataOwnerList outputs_owner_list = 11;
 }
 
 message CreateTaskResponse {
@@ -127,8 +129,8 @@ message GetTaskResponse {
   string function_id = 3;
   string function_owner = 4;
   map<string, string> function_arguments = 5;
-  repeated DataOwnerList input_data_owner_list = 6;
-  repeated DataOwnerList output_data_owner_list = 7;
+  repeated DataOwnerList inputs_owner_list = 6;
+  repeated DataOwnerList outputs_owner_list = 7;
   repeated string participants = 8;
   repeated string approved_user_list = 9;
   repeated DataMap input_map = 10;

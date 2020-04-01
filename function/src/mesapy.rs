@@ -19,7 +19,6 @@
 use std::prelude::v1::*;
 
 use anyhow;
-use itertools::Itertools;
 
 use teaclave_types::FunctionArguments;
 use teaclave_types::{TeaclaveFunction, TeaclaveRuntime};
@@ -28,7 +27,6 @@ use crate::context::reset_thread_context;
 use crate::context::set_thread_context;
 use crate::context::Context;
 use std::ffi::CString;
-use std::format;
 
 const MAXPYBUFLEN: usize = 20480;
 const MESAPY_ERROR_BUFFER_TOO_SHORT: i64 = -1i64;
@@ -92,7 +90,7 @@ impl TeaclaveFunction for Mesapy {
             MESAPY_EXEC_ERROR => Ok("MESAPY_EXEC_ERROR".to_string()),
             len => {
                 let r: Vec<u8> = py_result.iter().take(len as usize).copied().collect();
-                let payload = format!("marshal.loads(b\"\\x{:02X}\")", r.iter().format("\\x"));
+                let payload = String::from_utf8(r)?;
                 Ok(payload)
             }
         }
@@ -155,6 +153,8 @@ def entrypoint(argv):
         teaclave_open(out_file_id, "w")
     except RuntimeError as e:
         assert e.message == "Teaclave Not Supported"
+    
+    return
 "#;
 
         let input = "fixtures/functions/mesapy/input.txt";
@@ -175,6 +175,6 @@ def entrypoint(argv):
 
         let function = Mesapy;
         let summary = function.execute(runtime, func_args).unwrap();
-        assert_eq!(summary, "marshal.loads(b\"\\x4E\")");
+        assert_eq!(summary, "");
     }
 }

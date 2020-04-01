@@ -16,6 +16,7 @@
 // under the License.
 
 use crate::FunctionArguments;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::io;
@@ -36,7 +37,7 @@ pub trait TeaclaveFunction {
     ) -> anyhow::Result<String>;
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Deserialize, Serialize)]
 pub enum ExecutorType {
     Native,
     Python,
@@ -54,10 +55,16 @@ impl std::convert::TryFrom<&str> for ExecutorType {
     fn try_from(selector: &str) -> anyhow::Result<Self> {
         let sel = match selector {
             "python" => ExecutorType::Python,
-            "native" => ExecutorType::Native,
+            "native" | "platform" => ExecutorType::Native,
             _ => anyhow::bail!("Invalid executor selector: {}", selector),
         };
         Ok(sel)
+    }
+}
+
+impl std::convert::From<ExecutorType> for String {
+    fn from(executor_type: ExecutorType) -> String {
+        format!("{}", executor_type)
     }
 }
 
