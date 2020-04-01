@@ -109,8 +109,7 @@ fn get_scheduler_client(user_id: &str) -> TeaclaveSchedulerClient {
 
 fn test_register_input_file() {
     let url = Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap();
-    let crypto_info = FileCrypto::new("aes_gcm_128", &[0x90u8; 16], &[0x89u8; 12]).unwrap();
-    let request = RegisterInputFileRequest::new(url, "deadbeefdeadbeef", crypto_info);
+    let request = RegisterInputFileRequest::new(url, "deadbeefdeadbeef", FileCrypto::default());
 
     let mut client = get_client("mock_user");
     let response = client.register_input_file(request);
@@ -219,11 +218,12 @@ fn test_register_function() {
     let request = RegisterFunctionRequest {
         name: "mock_function".to_string(),
         description: "mock function".to_string(),
+        executor_type: ExecutorType::Python,
         payload: b"python script".to_vec(),
-        is_public: true,
-        arg_list: vec!["arg".to_string()],
-        input_list: vec![function_input],
-        output_list: vec![function_output],
+        public: true,
+        arguments: vec!["arg".to_string()],
+        inputs: vec![function_input],
+        outputs: vec![function_output],
     };
 
     let mut client = get_client("mock_user");
@@ -238,11 +238,12 @@ fn test_get_function() {
     let request = RegisterFunctionRequest {
         name: "mock_function".to_string(),
         description: "mock function".to_string(),
+        executor_type: ExecutorType::Python,
         payload: b"python script".to_vec(),
-        is_public: false,
-        arg_list: vec!["arg".to_string()],
-        input_list: vec![function_input],
-        output_list: vec![function_output],
+        public: false,
+        arguments: vec!["arg".to_string()],
+        inputs: vec![function_input],
+        outputs: vec![function_output],
     };
 
     let mut client = get_client("mock_user");
@@ -270,26 +271,22 @@ fn get_correct_create_task() -> CreateTaskRequest {
         "arg1" => "data1",
         "arg2" => "data2",
     ));
-    let data_owner_id_list = DataOwnerList {
-        user_id_list: vec!["mock_user1".to_string()].into_iter().collect(),
-    };
-    let data_owner_id_list2 = DataOwnerList {
-        user_id_list: vec!["mock_user2".to_string(), "mock_user3".to_string()]
-            .into_iter()
-            .collect(),
-    };
-    let mut input_data_owner_list = HashMap::new();
-    input_data_owner_list.insert("input".to_string(), data_owner_id_list.clone());
-    input_data_owner_list.insert("input2".to_string(), data_owner_id_list2.clone());
-    let mut output_data_owner_list = HashMap::new();
-    output_data_owner_list.insert("output".to_string(), data_owner_id_list);
-    output_data_owner_list.insert("output2".to_string(), data_owner_id_list2);
+    let data_owner_id_list = DataOwnerList::new(vec!["mock_user1"]);
+    let data_owner_id_list2 = DataOwnerList::new(vec!["mock_user2", "mock_user3"]);
+
+    let mut inputs_owner_list = HashMap::new();
+    inputs_owner_list.insert("input".to_string(), data_owner_id_list.clone());
+    inputs_owner_list.insert("input2".to_string(), data_owner_id_list2.clone());
+    let mut outputs_owner_list = HashMap::new();
+    outputs_owner_list.insert("output".to_string(), data_owner_id_list);
+    outputs_owner_list.insert("output2".to_string(), data_owner_id_list2);
 
     CreateTaskRequest {
         function_id: "function-00000000-0000-0000-0000-000000000001".to_string(),
         function_arguments,
-        input_data_owner_list,
-        output_data_owner_list,
+        executor: "mesapy".to_string(),
+        inputs_owner_list,
+        outputs_owner_list,
     }
 }
 
@@ -297,8 +294,9 @@ fn test_create_task() {
     let request = CreateTaskRequest {
         function_id: "invalid_function".to_string(),
         function_arguments: HashMap::new().into(),
-        input_data_owner_list: HashMap::new(),
-        output_data_owner_list: HashMap::new(),
+        executor: "mesapy".to_string(),
+        inputs_owner_list: HashMap::new(),
+        outputs_owner_list: HashMap::new(),
     };
     let mut client = get_client("mock_user");
     let response = client.create_task(request);
@@ -314,12 +312,12 @@ fn test_create_task() {
     assert!(response.is_err());
 
     let mut request = get_correct_create_task();
-    request.input_data_owner_list.remove("input");
+    request.inputs_owner_list.remove("input");
     let response = client.create_task(request);
     assert!(response.is_err());
 
     let mut request = get_correct_create_task();
-    request.output_data_owner_list.remove("output");
+    request.outputs_owner_list.remove("output");
     let response = client.create_task(request);
     assert!(response.is_err());
 }
@@ -435,7 +433,7 @@ fn test_assign_data() {
     let response = client1.assign_data(request);
     assert!(response.is_err());
 
-    // input_data_owner_list doesn't contain the name
+    // inputs_owner_list doesn't contain the name
     let mut request = AssignDataRequest {
         task_id: task_id.clone(),
         input_map: HashMap::new(),
@@ -447,7 +445,7 @@ fn test_assign_data() {
     let response = client2.assign_data(request);
     assert!(response.is_err());
 
-    // output_data_owner_list doesn't contain the name
+    // outputs_owner_list doesn't contain the name
     let mut request = AssignDataRequest {
         task_id: task_id.clone(),
         input_map: HashMap::new(),

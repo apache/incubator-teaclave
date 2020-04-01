@@ -239,28 +239,35 @@ fn test_get_input_file() {
 fn test_register_function() {
     let mut client = get_client();
 
-    let request = RegisterFunctionRequest {
+    let request = RegisterFunctionRequest::default();
+    /*
+     {
         name: "mock_function".to_string(),
         description: "mock function".to_string(),
+        executor_type: ExecutorType::Python,
         payload: b"python script".to_vec(),
-        is_public: true,
-        arg_list: vec!["arg".to_string()],
-        input_list: vec![],
-        output_list: vec![],
+        public: true,
+        arguments: vec!["arg".to_string()],
+        inputs: vec![],
+        outputs: vec![],
     };
-    let response = client.register_function(request);
-    assert!(response.is_ok());
-    assert!(!response.unwrap().function_id.is_empty());
+    */
+    let response = client.register_function(request).unwrap();
+    assert!(!response.function_id.is_empty());
 
+    let request = RegisterFunctionRequest::default();
+    /*
     let request = RegisterFunctionRequest {
         name: "mock_function".to_string(),
         description: "mock function".to_string(),
         payload: b"python script".to_vec(),
-        is_public: true,
-        arg_list: vec!["arg".to_string()],
-        input_list: vec![],
-        output_list: vec![],
+        executor_type: ExecutorType::Python,
+        public: true,
+        arguments: vec!["arg".to_string()],
+        inputs: vec![],
+        outputs: vec![],
     };
+    */
     client
         .metadata_mut()
         .insert("token".to_string(), "wrong token".to_string());
@@ -271,12 +278,12 @@ fn test_register_function() {
 fn test_get_function() {
     let mut client = get_client();
 
-    let request = GetFunctionRequest::new("function-00000000-0000-0000-0000-000000000001");
-    let response = client.get_function(request);
-    assert!(response.is_ok());
-    assert!(!response.unwrap().name.is_empty());
+    let registered_id = "function-00000000-0000-0000-0000-000000000001";
+    let request = GetFunctionRequest::new(registered_id);
+    let response = client.get_function(request).unwrap();
+    assert!(!response.name.is_empty());
 
-    let request = GetFunctionRequest::new("function-00000000-0000-0000-0000-000000000001");
+    let request = GetFunctionRequest::new(registered_id);
     client
         .metadata_mut()
         .insert("token".to_string(), "wrong token".to_string());
@@ -287,32 +294,23 @@ fn test_get_function() {
 fn test_create_task() {
     let mut client = get_client();
 
-    let data_owner_id_list = DataOwnerList {
-        user_id_list: vec!["frontend_user".to_string(), "mock_user".to_string()]
-            .into_iter()
-            .collect(),
-    };
-    let function_id = "function-00000000-0000-0000-0000-000000000002";
-    let mut output_data_owner_list = HashMap::new();
-    output_data_owner_list.insert("output".to_string(), data_owner_id_list);
-    let function_arguments = FunctionArguments::new(hashmap!("arg1" => "data1"));
-    let request = CreateTaskRequest {
-        function_id: function_id.to_string(),
-        function_arguments,
-        input_data_owner_list: HashMap::new(),
-        output_data_owner_list: output_data_owner_list.clone(),
-    };
-    let response = client.create_task(request);
-    assert!(response.is_ok());
-    assert!(!response.unwrap().task_id.is_empty());
+    let data_owner_id_list = DataOwnerList::new(vec!["frontend_user", "mock_user"]);
 
-    let function_arguments = FunctionArguments::new(hashmap!("arg1" => "data1"));
-    let request = CreateTaskRequest {
-        function_id: function_id.to_string(),
-        function_arguments,
-        input_data_owner_list: HashMap::new(),
-        output_data_owner_list,
-    };
+    let function_id = "function-00000000-0000-0000-0000-000000000002";
+
+    let request = CreateTaskRequest::new()
+        .function_id(function_id)
+        .function_arguments(hashmap!("arg1" => "data1"))
+        .executor("mesapy")
+        .outputs_owner_list(hashmap!("output" =>  data_owner_id_list.clone()));
+    let response = client.create_task(request).unwrap();
+    assert!(!response.task_id.is_empty());
+
+    let request = CreateTaskRequest::new()
+        .function_id(function_id)
+        .function_arguments(hashmap!("arg1" => "data1"))
+        .executor("mesapy")
+        .outputs_owner_list(hashmap!("output" => data_owner_id_list));
     client
         .metadata_mut()
         .insert("token".to_string(), "wrong token".to_string());
@@ -323,27 +321,19 @@ fn test_create_task() {
 fn test_get_task() {
     let mut client = get_client();
 
-    let data_owner_id_list = DataOwnerList {
-        user_id_list: vec!["frontend_user".to_string(), "mock_user".to_string()]
-            .into_iter()
-            .collect(),
-    };
-    let mut output_data_owner_list = HashMap::new();
-    output_data_owner_list.insert("output".to_string(), data_owner_id_list);
-    let function_arguments = FunctionArguments::new(hashmap!("arg1" => "data1"));
-    let request = CreateTaskRequest {
-        function_id: "function-00000000-0000-0000-0000-000000000002".to_string(),
-        function_arguments,
-        input_data_owner_list: HashMap::new(),
-        output_data_owner_list,
-    };
-    let response = client.create_task(request);
-    let task_id = response.unwrap().task_id;
+    let data_owner_id_list = DataOwnerList::new(vec!["frontend_user", "mock_user"]);
+
+    let request = CreateTaskRequest::new()
+        .function_id("function-00000000-0000-0000-0000-000000000002")
+        .function_arguments(hashmap!("arg1" => "data1"))
+        .executor("mesapy")
+        .outputs_owner_list(hashmap!("output" => data_owner_id_list));
+    let response = client.create_task(request).unwrap();
+    let task_id = response.task_id;
 
     let request = GetTaskRequest::new(&task_id);
-    let response = client.get_task(request);
-    assert!(response.is_ok());
-    assert!(!response.unwrap().function_id.is_empty());
+    let response = client.get_task(request).unwrap();
+    assert!(!response.function_id.is_empty());
 
     let request = GetTaskRequest::new(task_id);
     client
@@ -356,34 +346,28 @@ fn test_get_task() {
 fn test_assign_data() {
     let mut client = get_client();
 
-    let data_owner_id_list = DataOwnerList {
-        user_id_list: vec!["frontend_user".to_string()].into_iter().collect(),
-    };
-    let mut output_data_owner_list = HashMap::new();
-    output_data_owner_list.insert("output".to_string(), data_owner_id_list);
-    let function_arguments = FunctionArguments::new(hashmap!("arg1" => "data1"));
-    let request = CreateTaskRequest {
-        function_id: "function-00000000-0000-0000-0000-000000000002".to_string(),
-        function_arguments,
-        input_data_owner_list: HashMap::new(),
-        output_data_owner_list,
-    };
-    let response = client.create_task(request);
-    let task_id = response.unwrap().task_id;
+    let data_owner_id_list = DataOwnerList::new(vec!["frontend_user"]);
+
+    let request = CreateTaskRequest::new()
+        .function_id("function-00000000-0000-0000-0000-000000000002")
+        .function_arguments(hashmap!("arg1" => "data1"))
+        .executor("mesapy")
+        .outputs_owner_list(hashmap!("output" => data_owner_id_list));
+
+    let response = client.create_task(request).unwrap();
+    let task_id = response.task_id;
 
     let request = RegisterOutputFileRequest {
         url: Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap(),
         crypto_info: FileCrypto::default(),
     };
-    let response = client.register_output_file(request);
-    let output_id = response.unwrap().data_id;
+    let response = client.register_output_file(request).unwrap();
+    let output_id = response.data_id;
 
     let request = AssignDataRequest {
         task_id: task_id.clone(),
         input_map: HashMap::new(),
-        output_map: vec![("output".to_string(), output_id.clone())]
-            .into_iter()
-            .collect(),
+        output_map: hashmap!("output" => output_id.clone()),
     };
     let correct_token = client.metadata().get("token").unwrap().to_string();
     client
@@ -409,18 +393,12 @@ fn test_assign_data() {
 fn test_approve_task() {
     let mut client = get_client();
 
-    let data_owner_id_list = DataOwnerList {
-        user_id_list: vec!["frontend_user".to_string()].into_iter().collect(),
-    };
-    let mut output_data_owner_list = HashMap::new();
-    output_data_owner_list.insert("output".to_string(), data_owner_id_list);
-    let function_arguments = FunctionArguments::new(hashmap!("arg1" => "data1"));
-    let request = CreateTaskRequest {
-        function_id: "function-00000000-0000-0000-0000-000000000002".to_string(),
-        function_arguments,
-        input_data_owner_list: HashMap::new(),
-        output_data_owner_list,
-    };
+    let request = CreateTaskRequest::new()
+        .function_id("function-00000000-0000-0000-0000-000000000002")
+        .function_arguments(hashmap!("arg1" => "data1"))
+        .executor("mesapy")
+        .outputs_owner_list(hashmap!("output" => DataOwnerList::new(vec!["frontend_user"])));
+
     let response = client.create_task(request);
     let task_id = response.unwrap().task_id;
 
@@ -428,17 +406,17 @@ fn test_approve_task() {
         url: Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap(),
         crypto_info: FileCrypto::default(),
     };
-    let response = client.register_output_file(request);
-    let output_id = response.unwrap().data_id;
+
+    let response = client.register_output_file(request).unwrap();
+    let output_id = response.data_id;
 
     let request = AssignDataRequest {
         task_id: task_id.clone(),
         input_map: HashMap::new(),
-        output_map: vec![("output".to_string(), output_id)]
-            .into_iter()
-            .collect(),
+        output_map: hashmap!("output" => output_id),
     };
-    let _response = client.assign_data(request);
+
+    client.assign_data(request).unwrap();
 
     let request = ApproveTaskRequest::new(&task_id);
     let correct_token = client.metadata().get("token").unwrap().to_string();
@@ -459,39 +437,35 @@ fn test_approve_task() {
 fn test_invoke_task() {
     let mut client = get_client();
 
-    let data_owner_id_list = DataOwnerList {
-        user_id_list: vec!["frontend_user".to_string()].into_iter().collect(),
-    };
-    let mut output_data_owner_list = HashMap::new();
-    output_data_owner_list.insert("output".to_string(), data_owner_id_list);
-    let function_arguments = FunctionArguments::new(hashmap!("arg1" => "data1"));
-    let request = CreateTaskRequest {
-        function_id: "function-00000000-0000-0000-0000-000000000002".to_string(),
-        function_arguments,
-        input_data_owner_list: HashMap::new(),
-        output_data_owner_list,
-    };
-    let response = client.create_task(request);
-    let task_id = response.unwrap().task_id;
+    let request = CreateTaskRequest::new()
+        .function_id("function-00000000-0000-0000-0000-000000000002")
+        .function_arguments(hashmap!("arg1" => "data1"))
+        .executor("mesapy")
+        .outputs_owner_list(hashmap!(
+            "output" =>
+            DataOwnerList::new(vec!["frontend_user"])
+        ));
+
+    let response = client.create_task(request).unwrap();
+    let task_id = response.task_id;
 
     let request = RegisterOutputFileRequest {
         url: Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap(),
         crypto_info: FileCrypto::default(),
     };
-    let response = client.register_output_file(request);
-    let output_id = response.unwrap().data_id;
+    let response = client.register_output_file(request).unwrap();
+    let output_id = response.data_id;
 
     let request = AssignDataRequest {
         task_id: task_id.clone(),
         input_map: HashMap::new(),
-        output_map: vec![("output".to_string(), output_id)]
-            .into_iter()
-            .collect(),
+        output_map: hashmap!("output" => output_id),
     };
-    let _response = client.assign_data(request);
+
+    client.assign_data(request).unwrap();
 
     let request = ApproveTaskRequest::new(&task_id);
-    let _response = client.approve_task(request);
+    client.approve_task(request).unwrap();
 
     let request = InvokeTaskRequest::new(&task_id);
     let correct_token = client.metadata().get("token").unwrap().to_string();
@@ -509,8 +483,8 @@ fn test_invoke_task() {
     assert!(response.is_ok());
 
     let request = GetTaskRequest::new(&task_id);
-    let response = client.get_task(request);
-    assert_eq!(response.unwrap().status, TaskStatus::Running);
+    let response = client.get_task(request).unwrap();
+    assert_eq!(response.status, TaskStatus::Running);
 
     let request = PullTaskRequest {};
     let mut scheduler_client = get_scheduler_client();

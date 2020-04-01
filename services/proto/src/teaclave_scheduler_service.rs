@@ -84,13 +84,15 @@ pub struct UpdateTaskResultResponse {}
 pub struct UpdateTaskStatusRequest {
     pub task_id: Uuid,
     pub task_status: TaskStatus,
+    pub status_info: String,
 }
 
 impl UpdateTaskStatusRequest {
-    pub fn new(task_id: Uuid, task_status: TaskStatus) -> Self {
+    pub fn new(task_id: Uuid, task_status: TaskStatus, status_info: String) -> Self {
         Self {
             task_id,
             task_status,
+            status_info,
         }
     }
 }
@@ -210,6 +212,7 @@ impl std::convert::TryFrom<proto::UpdateTaskStatusRequest> for UpdateTaskStatusR
         let ret = Self {
             task_id: Uuid::parse_str(&proto.task_id)?,
             task_status,
+            status_info: proto.status_info,
         };
         Ok(ret)
     }
@@ -221,6 +224,7 @@ impl std::convert::From<UpdateTaskStatusRequest> for proto::UpdateTaskStatusRequ
         proto::UpdateTaskStatusRequest {
             task_id: req.task_id.to_string(),
             task_status,
+            status_info: req.status_info,
         }
     }
 }

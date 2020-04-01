@@ -28,9 +28,10 @@ use uuid::Uuid;
 pub(crate) fn create_task(
     function: Function,
     creator: String,
+    executor: String,
     function_arguments: FunctionArguments,
-    input_data_owner_list: HashMap<String, DataOwnerList>,
-    output_data_owner_list: HashMap<String, DataOwnerList>,
+    inputs_owner_list: HashMap<String, DataOwnerList>,
+    outputs_owner_list: HashMap<String, DataOwnerList>,
 ) -> Result<Task> {
     let task_id = Uuid::new_v4();
     let mut participants = HashSet::new();
@@ -38,12 +39,12 @@ pub(crate) fn create_task(
         participants.insert(function.owner.clone());
     }
     participants.insert(creator.clone());
-    for (_, data_owner_list) in input_data_owner_list.iter() {
+    for (_, data_owner_list) in inputs_owner_list.iter() {
         for user_id in data_owner_list.user_id_list.iter() {
             participants.insert(user_id.clone());
         }
     }
-    for (_, data_owner_list) in output_data_owner_list.iter() {
+    for (_, data_owner_list) in outputs_owner_list.iter() {
         for user_id in data_owner_list.user_id_list.iter() {
             participants.insert(user_id.clone());
         }
@@ -51,11 +52,12 @@ pub(crate) fn create_task(
     let task = Task {
         task_id,
         creator,
+        executor,
         function_id: function.external_id(),
         function_owner: function.owner,
         function_arguments,
-        input_data_owner_list,
-        output_data_owner_list,
+        inputs_owner_list,
+        outputs_owner_list,
         participants,
         approved_user_list: HashSet::new(),
         input_map: HashMap::new(),
@@ -64,6 +66,7 @@ pub(crate) fn create_task(
         output_file_hash: HashMap::new(),
         status: TaskStatus::Created,
     };
+
     // check arguments
     let function_arguments: HashSet<String> = function.arguments.into_iter().collect();
     let provide_args: HashSet<String> = task.function_arguments.inner().keys().cloned().collect();
@@ -72,13 +75,13 @@ pub(crate) fn create_task(
 
     // check input
     let input_args: HashSet<String> = function.inputs.into_iter().map(|f| f.name).collect();
-    let provide_args: HashSet<String> = task.input_data_owner_list.keys().cloned().collect();
+    let provide_args: HashSet<String> = task.inputs_owner_list.keys().cloned().collect();
     let diff: HashSet<_> = input_args.difference(&provide_args).collect();
     ensure!(diff.is_empty(), "bad input");
 
     // check output
     let output_args: HashSet<String> = function.outputs.into_iter().map(|f| f.name).collect();
-    let provide_args: HashSet<String> = task.output_data_owner_list.keys().cloned().collect();
+    let provide_args: HashSet<String> = task.outputs_owner_list.keys().cloned().collect();
     let diff: HashSet<_> = output_args.difference(&provide_args).collect();
     ensure!(diff.is_empty(), "bad output");
 
@@ -87,7 +90,7 @@ pub(crate) fn create_task(
 
 // access control:
 // 1) input_file.owner contains user_id
-// 2) input_data_owner_list contains the data name
+// 2) inputs_owner_list contains the data name
 // 3) user_id_list == input_file.owner
 pub(crate) fn assign_input_to_task(
     task: &mut Task,
@@ -98,7 +101,7 @@ pub(crate) fn assign_input_to_task(
     if !file.owner.contains(&user_id.to_string()) {
         bail!("no permission");
     }
-    match task.input_data_owner_list.get(data_name) {
+    match task.inputs_owner_list.get(data_name) {
         Some(data_owner_list) => {
             let user_id_list = &data_owner_list.user_id_list;
             if user_id_list.len() != file.owner.len() {
@@ -120,7 +123,7 @@ pub(crate) fn assign_input_to_task(
 // access control:
 // 1) output_file is not used.
 // 2) output_file.owner contains user_id
-// 3) output_data_owner_list contains the data name
+// 3) outputs_owner_list contains the data name
 // 4) user_id_list == output_file.owner
 pub(crate) fn assign_output_to_task(
     task: &mut Task,
@@ -134,7 +137,7 @@ pub(crate) fn assign_output_to_task(
     if !file.owner.contains(&user_id.to_string()) {
         bail!("no permission");
     }
-    match task.output_data_owner_list.get(data_name) {
+    match task.outputs_owner_list.get(data_name) {
         Some(data_owner_list) => {
             let user_id_list = &data_owner_list.user_id_list;
             if user_id_list.len() != file.owner.len() {
@@ -160,7 +163,7 @@ pub(crate) fn try_update_task_to_ready_status(task: &mut Task) {
     }
 
     // check input
-    let input_args: HashSet<String> = task.input_data_owner_list.keys().cloned().collect();
+    let input_args: HashSet<String> = task.inputs_owner_list.keys().cloned().collect();
     let assiged_inputs: HashSet<String> = task.input_map.keys().cloned().collect();
     let diff: HashSet<_> = input_args.difference(&assiged_inputs).collect();
     if !diff.is_empty() {
@@ -168,7 +171,7 @@ pub(crate) fn try_update_task_to_ready_status(task: &mut Task) {
     }
 
     // check output
-    let output_args: HashSet<String> = task.output_data_owner_list.keys().cloned().collect();
+    let output_args: HashSet<String> = task.outputs_owner_list.keys().cloned().collect();
     let assiged_outputs: HashSet<String> = task.output_map.keys().cloned().collect();
     let diff: HashSet<_> = output_args.difference(&assiged_outputs).collect();
     if !diff.is_empty() {
