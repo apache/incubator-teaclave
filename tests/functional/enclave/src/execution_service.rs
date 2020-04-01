@@ -35,11 +35,12 @@ fn test_execute_function() {
     let task = Task {
         task_id,
         creator: "".to_string(),
+        executor: "".to_string(),
         function_id: "".to_string(),
         function_owner: "".to_string(),
         function_arguments: FunctionArguments::default(),
-        input_data_owner_list: HashMap::new(),
-        output_data_owner_list: HashMap::new(),
+        inputs_owner_list: HashMap::new(),
+        outputs_owner_list: HashMap::new(),
         participants: HashSet::new(),
         approved_user_list: HashSet::new(),
         input_map: HashMap::new(),
@@ -50,16 +51,15 @@ fn test_execute_function() {
     };
 
     let function_id = Uuid::new_v4();
-    let function_name = "echo";
-    let function_arguments = FunctionArguments::new(hashmap!(
-        "message" => "Hello, Teaclave Tests!"
-    ));
+    let native_func = "echo";
 
     let staged_task = StagedTask::new()
         .task_id(task_id)
         .function_id(function_id.clone())
-        .function_name(function_name)
-        .function_arguments(function_arguments);
+        .native_func(native_func)
+        .function_arguments(hashmap!(
+            "message" => "Hello, Teaclave Tests!"
+        ));
 
     let mut storage_client = get_storage_client();
     let enqueue_request = EnqueueRequest::new(

@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use crate::Storable;
+use crate::{ExecutorType, Storable};
 use serde::{Deserialize, Serialize};
 use std::prelude::v1::*;
 use uuid::Uuid;
@@ -57,8 +57,9 @@ pub struct Function {
     pub id: Uuid,
     pub name: String,
     pub description: String,
-    pub payload: Vec<u8>,
     pub public: bool,
+    pub executor_type: ExecutorType,
+    pub payload: Vec<u8>,
     pub arguments: Vec<String>,
     pub inputs: Vec<FunctionInput>,
     pub outputs: Vec<FunctionOutput>,
@@ -72,6 +73,13 @@ impl Function {
 
     pub fn id(self, id: Uuid) -> Self {
         Self { id, ..self }
+    }
+
+    pub fn executor_type(self, executor_type: ExecutorType) -> Self {
+        Self {
+            executor_type,
+            ..self
+        }
     }
 
     pub fn name(self, name: impl ToString) -> Self {

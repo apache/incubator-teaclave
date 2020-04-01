@@ -27,7 +27,8 @@ use std::collections::{HashMap, HashSet};
 use std::prelude::v1::*;
 use teaclave_rpc::into_request;
 use teaclave_types::{
-    DataOwnerList, FileCrypto, FunctionArguments, FunctionInput, FunctionOutput, TaskStatus,
+    DataOwnerList, ExecutorType, FileCrypto, FunctionArguments, FunctionInput, FunctionOutput,
+    TaskStatus,
 };
 use url::Url;
 
@@ -223,15 +224,69 @@ impl GetOutputFileResponse {
 
 #[into_request(TeaclaveManagementRequest::RegisterFunction)]
 #[into_request(TeaclaveFrontendRequest::RegisterFunction)]
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct RegisterFunctionRequest {
     pub name: String,
     pub description: String,
+    pub executor_type: ExecutorType,
     pub payload: Vec<u8>,
-    pub is_public: bool,
-    pub arg_list: Vec<String>,
-    pub input_list: Vec<FunctionInput>,
-    pub output_list: Vec<FunctionOutput>,
+    pub public: bool,
+    pub arguments: Vec<String>,
+    pub inputs: Vec<FunctionInput>,
+    pub outputs: Vec<FunctionOutput>,
+}
+
+impl RegisterFunctionRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn name(self, name: impl ToString) -> Self {
+        Self {
+            name: name.to_string(),
+            ..self
+        }
+    }
+
+    pub fn description(self, description: impl ToString) -> Self {
+        Self {
+            description: description.to_string(),
+            ..self
+        }
+    }
+
+    pub fn executor_type(self, executor_type: ExecutorType) -> Self {
+        Self {
+            executor_type,
+            ..self
+        }
+    }
+
+    pub fn payload(self, payload: Vec<u8>) -> Self {
+        Self { payload, ..self }
+    }
+
+    pub fn public(self, public: bool) -> Self {
+        Self { public, ..self }
+    }
+
+    pub fn arguments<T: IntoIterator>(self, args: T) -> Self
+    where
+        <T as IntoIterator>::Item: ToString,
+    {
+        Self {
+            arguments: args.into_iter().map(|x| x.to_string()).collect(),
+            ..self
+        }
+    }
+
+    pub fn inputs(self, inputs: Vec<FunctionInput>) -> Self {
+        Self { inputs, ..self }
+    }
+
+    pub fn outputs(self, outputs: Vec<FunctionOutput>) -> Self {
+        Self { outputs, ..self }
+    }
 }
 
 #[into_request(TeaclaveManagementResponse::RegisterFunction)]
@@ -270,20 +325,62 @@ pub struct GetFunctionResponse {
     pub description: String,
     pub owner: String,
     pub payload: Vec<u8>,
-    pub is_public: bool,
-    pub arg_list: Vec<String>,
-    pub input_list: Vec<FunctionInput>,
-    pub output_list: Vec<FunctionOutput>,
+    pub public: bool,
+    pub arguments: Vec<String>,
+    pub inputs: Vec<FunctionInput>,
+    pub outputs: Vec<FunctionOutput>,
 }
 
 #[into_request(TeaclaveManagementRequest::CreateTask)]
 #[into_request(TeaclaveFrontendRequest::CreateTask)]
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct CreateTaskRequest {
     pub function_id: String,
     pub function_arguments: FunctionArguments,
-    pub input_data_owner_list: HashMap<String, DataOwnerList>,
-    pub output_data_owner_list: HashMap<String, DataOwnerList>,
+    pub executor: String,
+    pub inputs_owner_list: HashMap<String, DataOwnerList>,
+    pub outputs_owner_list: HashMap<String, DataOwnerList>,
+}
+
+impl CreateTaskRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn function_id(self, function_id: impl ToString) -> Self {
+        Self {
+            function_id: function_id.to_string(),
+            ..self
+        }
+    }
+
+    pub fn function_arguments(self, function_arguments: impl Into<FunctionArguments>) -> Self {
+        Self {
+            function_arguments: function_arguments.into(),
+            ..self
+        }
+    }
+
+    pub fn executor(self, executor: impl ToString) -> Self {
+        Self {
+            executor: executor.to_string(),
+            ..self
+        }
+    }
+
+    pub fn inputs_owner_list(self, map: HashMap<String, DataOwnerList>) -> Self {
+        Self {
+            inputs_owner_list: map,
+            ..self
+        }
+    }
+
+    pub fn outputs_owner_list(self, map: HashMap<String, DataOwnerList>) -> Self {
+        Self {
+            outputs_owner_list: map,
+            ..self
+        }
+    }
 }
 
 #[into_request(TeaclaveManagementResponse::CreateTask)]
@@ -323,8 +420,8 @@ pub struct GetTaskResponse {
     pub function_id: String,
     pub function_owner: String,
     pub function_arguments: FunctionArguments,
-    pub input_data_owner_list: HashMap<String, DataOwnerList>,
-    pub output_data_owner_list: HashMap<String, DataOwnerList>,
+    pub inputs_owner_list: HashMap<String, DataOwnerList>,
+    pub outputs_owner_list: HashMap<String, DataOwnerList>,
     pub participants: HashSet<String>,
     pub approved_user_list: HashSet<String>,
     pub input_map: HashMap<String, String>,
@@ -692,13 +789,13 @@ impl std::convert::TryFrom<proto::RegisterFunctionRequest> for RegisterFunctionR
     type Error = Error;
 
     fn try_from(proto: proto::RegisterFunctionRequest) -> Result<Self> {
-        let input_list: Result<Vec<FunctionInput>> = proto
-            .input_list
+        let inputs: Result<Vec<FunctionInput>> = proto
+            .inputs
             .into_iter()
             .map(FunctionInput::try_from)
             .collect();
-        let output_list: Result<Vec<FunctionOutput>> = proto
-            .output_list
+        let outputs: Result<Vec<FunctionOutput>> = proto
+            .outputs
             .into_iter()
             .map(FunctionOutput::try_from)
             .collect();
@@ -706,11 +803,12 @@ impl std::convert::TryFrom<proto::RegisterFunctionRequest> for RegisterFunctionR
         let ret = Self {
             name: proto.name,
             description: proto.description,
+            executor_type: proto.executor_type.as_str().try_into()?,
             payload: proto.payload,
-            is_public: proto.is_public,
-            arg_list: proto.arg_list,
-            input_list: input_list?,
-            output_list: output_list?,
+            public: proto.public,
+            arguments: proto.arguments,
+            inputs: inputs?,
+            outputs: outputs?,
         };
         Ok(ret)
     }
@@ -718,13 +816,13 @@ impl std::convert::TryFrom<proto::RegisterFunctionRequest> for RegisterFunctionR
 
 impl From<RegisterFunctionRequest> for proto::RegisterFunctionRequest {
     fn from(request: RegisterFunctionRequest) -> Self {
-        let input_list: Vec<proto::FunctionInput> = request
-            .input_list
+        let inputs: Vec<proto::FunctionInput> = request
+            .inputs
             .into_iter()
             .map(proto::FunctionInput::from)
             .collect();
-        let output_list: Vec<proto::FunctionOutput> = request
-            .output_list
+        let outputs: Vec<proto::FunctionOutput> = request
+            .outputs
             .into_iter()
             .map(proto::FunctionOutput::from)
             .collect();
@@ -732,11 +830,12 @@ impl From<RegisterFunctionRequest> for proto::RegisterFunctionRequest {
         Self {
             name: request.name,
             description: request.description,
+            executor_type: request.executor_type.into(),
             payload: request.payload,
-            is_public: request.is_public,
-            arg_list: request.arg_list,
-            input_list,
-            output_list,
+            public: request.public,
+            arguments: request.arguments,
+            inputs,
+            outputs,
         }
     }
 }
@@ -785,13 +884,13 @@ impl std::convert::TryFrom<proto::GetFunctionResponse> for GetFunctionResponse {
     type Error = Error;
 
     fn try_from(proto: proto::GetFunctionResponse) -> Result<Self> {
-        let input_list: Result<Vec<FunctionInput>> = proto
-            .input_list
+        let inputs: Result<Vec<FunctionInput>> = proto
+            .inputs
             .into_iter()
             .map(FunctionInput::try_from)
             .collect();
-        let output_list: Result<Vec<FunctionOutput>> = proto
-            .output_list
+        let outputs: Result<Vec<FunctionOutput>> = proto
+            .outputs
             .into_iter()
             .map(FunctionOutput::try_from)
             .collect();
@@ -801,10 +900,10 @@ impl std::convert::TryFrom<proto::GetFunctionResponse> for GetFunctionResponse {
             description: proto.description,
             owner: proto.owner,
             payload: proto.payload,
-            is_public: proto.is_public,
-            arg_list: proto.arg_list,
-            input_list: input_list?,
-            output_list: output_list?,
+            public: proto.public,
+            arguments: proto.arguments,
+            inputs: inputs?,
+            outputs: outputs?,
         };
 
         Ok(ret)
@@ -813,13 +912,13 @@ impl std::convert::TryFrom<proto::GetFunctionResponse> for GetFunctionResponse {
 
 impl From<GetFunctionResponse> for proto::GetFunctionResponse {
     fn from(response: GetFunctionResponse) -> Self {
-        let input_list: Vec<proto::FunctionInput> = response
-            .input_list
+        let inputs: Vec<proto::FunctionInput> = response
+            .inputs
             .into_iter()
             .map(proto::FunctionInput::from)
             .collect();
-        let output_list: Vec<proto::FunctionOutput> = response
-            .output_list
+        let outputs: Vec<proto::FunctionOutput> = response
+            .outputs
             .into_iter()
             .map(proto::FunctionOutput::from)
             .collect();
@@ -829,10 +928,10 @@ impl From<GetFunctionResponse> for proto::GetFunctionResponse {
             description: response.description,
             owner: response.owner,
             payload: response.payload,
-            is_public: response.is_public,
-            arg_list: response.arg_list,
-            input_list,
-            output_list,
+            public: response.public,
+            arguments: response.arguments,
+            inputs,
+            outputs,
         }
     }
 }
@@ -869,13 +968,15 @@ impl std::convert::TryFrom<proto::CreateTaskRequest> for CreateTaskRequest {
 
     fn try_from(proto: proto::CreateTaskRequest) -> Result<Self> {
         let function_arguments = proto.function_arguments.into();
-        let input_data_owner_list = data_owner_list_from_proto(proto.input_data_owner_list)?;
-        let output_data_owner_list = data_owner_list_from_proto(proto.output_data_owner_list)?;
+        let inputs_owner_list = data_owner_list_from_proto(proto.inputs_owner_list)?;
+        let outputs_owner_list = data_owner_list_from_proto(proto.outputs_owner_list)?;
+
         let ret = Self {
             function_id: proto.function_id,
             function_arguments,
-            input_data_owner_list,
-            output_data_owner_list,
+            executor: proto.executor,
+            inputs_owner_list,
+            outputs_owner_list,
         };
         Ok(ret)
     }
@@ -884,14 +985,15 @@ impl std::convert::TryFrom<proto::CreateTaskRequest> for CreateTaskRequest {
 impl From<CreateTaskRequest> for proto::CreateTaskRequest {
     fn from(request: CreateTaskRequest) -> Self {
         let function_arguments = request.function_arguments.into();
-        let input_data_owner_list = data_owner_list_to_proto(request.input_data_owner_list);
-        let output_data_owner_list = data_owner_list_to_proto(request.output_data_owner_list);
+        let inputs_owner_list = data_owner_list_to_proto(request.inputs_owner_list);
+        let outputs_owner_list = data_owner_list_to_proto(request.outputs_owner_list);
 
         Self {
             function_id: request.function_id,
             function_arguments,
-            input_data_owner_list,
-            output_data_owner_list,
+            executor: request.executor,
+            inputs_owner_list,
+            outputs_owner_list,
         }
     }
 }
@@ -958,8 +1060,8 @@ impl std::convert::TryFrom<proto::GetTaskResponse> for GetTaskResponse {
 
     fn try_from(proto: proto::GetTaskResponse) -> Result<Self> {
         let function_arguments = proto.function_arguments.into();
-        let input_data_owner_list = data_owner_list_from_proto(proto.input_data_owner_list)?;
-        let output_data_owner_list = data_owner_list_from_proto(proto.output_data_owner_list)?;
+        let inputs_owner_list = data_owner_list_from_proto(proto.inputs_owner_list)?;
+        let outputs_owner_list = data_owner_list_from_proto(proto.outputs_owner_list)?;
         let input_map = data_map_from_proto(proto.input_map)?;
         let output_map = data_map_from_proto(proto.output_map)?;
         let status = i32_to_task_status(proto.status)?;
@@ -970,8 +1072,8 @@ impl std::convert::TryFrom<proto::GetTaskResponse> for GetTaskResponse {
             function_id: proto.function_id,
             function_owner: proto.function_owner,
             function_arguments,
-            input_data_owner_list,
-            output_data_owner_list,
+            inputs_owner_list,
+            outputs_owner_list,
             participants: proto.participants.into_iter().collect(),
             approved_user_list: proto.approved_user_list.into_iter().collect(),
             input_map,
@@ -988,8 +1090,8 @@ impl std::convert::TryFrom<proto::GetTaskResponse> for GetTaskResponse {
 impl From<GetTaskResponse> for proto::GetTaskResponse {
     fn from(response: GetTaskResponse) -> Self {
         let function_arguments = response.function_arguments.into();
-        let input_data_owner_list = data_owner_list_to_proto(response.input_data_owner_list);
-        let output_data_owner_list = data_owner_list_to_proto(response.output_data_owner_list);
+        let inputs_owner_list = data_owner_list_to_proto(response.inputs_owner_list);
+        let outputs_owner_list = data_owner_list_to_proto(response.outputs_owner_list);
         let input_map = data_map_to_proto(response.input_map);
         let output_map = data_map_to_proto(response.output_map);
         let status = i32_from_task_status(response.status);
@@ -999,8 +1101,8 @@ impl From<GetTaskResponse> for proto::GetTaskResponse {
             function_id: response.function_id,
             function_owner: response.function_owner,
             function_arguments,
-            input_data_owner_list,
-            output_data_owner_list,
+            inputs_owner_list,
+            outputs_owner_list,
             participants: response.participants.into_iter().collect(),
             approved_user_list: response.approved_user_list.into_iter().collect(),
             input_map,

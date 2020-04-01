@@ -80,7 +80,8 @@ impl FunctionOutputFile {
 pub struct StagedTask {
     pub task_id: Uuid,
     pub function_id: Uuid,
-    pub function_name: String,
+    pub native_func: String,
+    pub executor_type: ExecutorType,
     pub function_payload: Vec<u8>,
     pub function_arguments: FunctionArguments,
     pub input_data: FunctionInputFiles,
@@ -113,9 +114,9 @@ impl StagedTask {
         }
     }
 
-    pub fn function_name(self, function_name: impl ToString) -> Self {
+    pub fn native_func(self, native_func: impl ToString) -> Self {
         Self {
-            function_name: function_name.to_string(),
+            native_func: native_func.to_string(),
             ..self
         }
     }
@@ -127,9 +128,9 @@ impl StagedTask {
         }
     }
 
-    pub fn function_arguments(self, function_arguments: FunctionArguments) -> Self {
+    pub fn function_arguments(self, function_arguments: impl Into<FunctionArguments>) -> Self {
         Self {
-            function_arguments,
+            function_arguments: function_arguments.into(),
             ..self
         }
     }
@@ -145,15 +146,14 @@ impl StagedTask {
         }
     }
 
-    pub fn get_queue_key() -> &'static str {
-        QUEUE_KEY
+    pub fn executor_type(self, executor_type: ExecutorType) -> Self {
+        Self {
+            executor_type,
+            ..self
+        }
     }
 
-    pub fn executor_type(&self) -> ExecutorType {
-        if self.function_payload.is_empty() {
-            ExecutorType::Native
-        } else {
-            ExecutorType::Python
-        }
+    pub fn get_queue_key() -> &'static str {
+        QUEUE_KEY
     }
 }

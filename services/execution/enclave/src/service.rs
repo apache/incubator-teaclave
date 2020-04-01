@@ -59,30 +59,32 @@ impl TeaclaveExecutionService {
     pub(crate) fn start(&mut self) -> Result<()> {
         loop {
             std::thread::sleep(std::time::Duration::from_secs(3));
-            let scheduler_client = self.scheduler_client.clone();
-            let mut client = match scheduler_client.lock() {
-                Ok(client) => client,
-                Err(e) => {
-                    log::error!("Start Error: {:?}", e);
-                    continue;
-                }
-            };
-
-            let request = PullTaskRequest {};
-            log::debug!("pull_task");
-            let response = match client.pull_task(request) {
-                Ok(response) => response,
+            let staged_task = match self.pull_task() {
+                Ok(staged_task) => staged_task,
                 Err(e) => {
                     log::error!("PullTask Error: {:?}", e);
                     continue;
                 }
             };
-            drop(client); // drop mutex guard
 
-            log::debug!("response: {:?}", response);
-            let staged_task = response.staged_task;
-            let result = self.invoke_task(&staged_task).unwrap();
-            log::debug!("result: {:?}", result);
+            let result = match self.invoke_task(&staged_task) {
+                Ok(exec_result) => exec_result,
+                Err(e) => {
+                    log::error!("InvokeTask Error: {:?}", e);
+                    match self.update_task_status(
+                        &staged_task.task_id,
+                        TaskStatus::Failed,
+                        e.to_string(),
+                    ) {
+                        Ok(_) => (),
+                        Err(e) => {
+                            log::error!("UpdateTask Error: {:?}", e);
+                        }
+                    }
+                    continue;
+                }
+            };
+
             match self.update_task_result(&staged_task.task_id, result) {
                 Ok(_) => (),
                 Err(e) => {
@@ -90,7 +92,9 @@ impl TeaclaveExecutionService {
                     continue;
                 }
             }
-            match self.update_task_status(&staged_task.task_id, TaskStatus::Finished) {
+
+            match self.update_task_status(&staged_task.task_id, TaskStatus::Finished, String::new())
+            {
                 Ok(_) => (),
                 Err(e) => {
                     log::error!("UpdateTask Error: {:?}", e);
@@ -100,13 +104,25 @@ impl TeaclaveExecutionService {
         }
     }
 
+    fn pull_task(&mut self) -> Result<StagedTask> {
+        let request = PullTaskRequest {};
+        let response = self
+            .scheduler_client
+            .clone()
+            .lock()
+            .map_err(|_| anyhow::anyhow!("Cannot lock scheduler client"))?
+            .pull_task(request)?;
+
+        log::debug!("pull_stask response: {:?}", response);
+        Ok(response.staged_task)
+    }
+
     fn invoke_task(&mut self, task: &StagedTask) -> Result<ExecutionResult> {
         log::debug!("invoke_task");
-        self.update_task_status(&task.task_id, TaskStatus::Running)?;
+        self.update_task_status(&task.task_id, TaskStatus::Running, String::new())?;
         let invocation = prepare_task(&task);
         let worker = Worker::default();
         let summary = worker.invoke_function(invocation)?;
-        log::debug!("summary: {:?}", summary);
         finalize_task(&task)?;
         let mut result = ExecutionResult::default();
         result.return_value = summary.as_bytes().to_vec();
@@ -115,7 +131,6 @@ impl TeaclaveExecutionService {
     }
 
     fn update_task_result(&mut self, task_id: &Uuid, result: ExecutionResult) -> Result<()> {
-        log::debug!("update_task_result");
         let request = UpdateTaskResultRequest::new(
             task_id.to_owned(),
             &result.return_value,
@@ -131,9 +146,13 @@ impl TeaclaveExecutionService {
         Ok(())
     }
 
-    fn update_task_status(&mut self, task_id: &Uuid, task_status: TaskStatus) -> Result<()> {
-        log::debug!("update_task_status");
-        let request = UpdateTaskStatusRequest::new(task_id.to_owned(), task_status);
+    fn update_task_status(
+        &mut self,
+        task_id: &Uuid,
+        task_status: TaskStatus,
+        status_info: String,
+    ) -> Result<()> {
+        let request = UpdateTaskStatusRequest::new(task_id.to_owned(), task_status, status_info);
         let _response = self
             .scheduler_client
             .clone()
@@ -173,8 +192,8 @@ fn prepare_task(task: &StagedTask) -> StagedFunction {
     use teaclave_types::*;
 
     let runtime_name = "default".to_string();
-    let executor_type = task.executor_type();
-    let function_name = task.function_name.clone();
+    let executor_type = task.executor_type;
+    let function_name = task.native_func.clone();
     let function_payload = String::from_utf8_lossy(&task.function_payload).to_string();
     let function_arguments = task.function_arguments.clone();
 
@@ -241,13 +260,13 @@ pub mod tests {
 
     pub fn test_invoke_echo() {
         let task_id = Uuid::new_v4();
-        let function_arguments = FunctionArguments::new(hashmap!(
-            "message" => "Hello, Teaclave!"
-        ));
         let staged_task = StagedTask::new()
             .task_id(task_id)
-            .function_name("echo")
-            .function_arguments(function_arguments);
+            .native_func("echo")
+            .function_arguments(hashmap!(
+            "message" => "Hello, Teaclave!"
+
+                ));
 
         let invocation = prepare_task(&staged_task);
 
@@ -294,7 +313,7 @@ pub mod tests {
 
         let staged_task = StagedTask::new()
             .task_id(task_id)
-            .function_name("gbdt_training")
+            .native_func("gbdt_training")
             .function_arguments(function_arguments)
             .input_data(input_data)
             .output_data(output_data);

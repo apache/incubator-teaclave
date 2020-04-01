@@ -34,12 +34,12 @@ pub fn run_tests() -> bool {
 fn test_pull_task() {
     let task_id = Uuid::new_v4();
     let function_id = Uuid::new_v4();
-    let function_name = "echo";
+    let native_func = "echo";
 
     let staged_task = StagedTask::new()
         .task_id(task_id)
         .function_id(function_id.clone())
-        .function_name(function_name);
+        .native_func(native_func);
 
     let mut storage_client = get_storage_client();
     let enqueue_request = EnqueueRequest::new(
@@ -62,11 +62,12 @@ fn test_update_task_status_result() {
     let task = Task {
         task_id,
         creator: "".to_string(),
+        executor: "".to_string(),
         function_id: "".to_string(),
         function_owner: "".to_string(),
         function_arguments: FunctionArguments::default(),
-        input_data_owner_list: HashMap::new(),
-        output_data_owner_list: HashMap::new(),
+        inputs_owner_list: HashMap::new(),
+        outputs_owner_list: HashMap::new(),
         participants: HashSet::new(),
         approved_user_list: HashSet::new(),
         input_map: HashMap::new(),
@@ -77,12 +78,12 @@ fn test_update_task_status_result() {
     };
 
     let function_id = Uuid::new_v4();
-    let function_name = "echo";
+    let native_func = "echo";
 
     let staged_task = StagedTask::new()
         .task_id(task_id.clone())
         .function_id(function_id)
-        .function_name(function_name);
+        .native_func(native_func);
 
     let mut storage_client = get_storage_client();
     let enqueue_request = EnqueueRequest::new(
@@ -100,7 +101,7 @@ fn test_update_task_status_result() {
     log::debug!("response: {:?}", response);
     let task_id = response.staged_task.task_id;
 
-    let request = UpdateTaskStatusRequest::new(task_id, TaskStatus::Finished);
+    let request = UpdateTaskStatusRequest::new(task_id, TaskStatus::Finished, String::new());
     let response = client.update_task_status(request);
     assert!(response.is_ok());
 

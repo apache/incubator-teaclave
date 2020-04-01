@@ -27,6 +27,17 @@ pub struct DataOwnerList {
     pub user_id_list: HashSet<String>,
 }
 
+impl DataOwnerList {
+    pub fn new<T: IntoIterator>(user_id_list: T) -> Self
+    where
+        <T as IntoIterator>::Item: ToString,
+    {
+        DataOwnerList {
+            user_id_list: user_id_list.into_iter().map(|x| x.to_string()).collect(),
+        }
+    }
+}
+
 #[derive(Debug, Deserialize, Serialize, std::cmp::PartialEq)]
 pub enum TaskStatus {
     Created,
@@ -46,8 +57,9 @@ pub struct Task {
     pub function_id: String,
     pub function_owner: String,
     pub function_arguments: FunctionArguments,
-    pub input_data_owner_list: HashMap<String, DataOwnerList>,
-    pub output_data_owner_list: HashMap<String, DataOwnerList>,
+    pub executor: String,
+    pub inputs_owner_list: HashMap<String, DataOwnerList>,
+    pub outputs_owner_list: HashMap<String, DataOwnerList>,
     pub participants: HashSet<String>,
     pub approved_user_list: HashSet<String>,
     pub input_map: HashMap<String, String>,
