@@ -45,5 +45,5 @@ teaclave_types                 = { path = "../../../types" }
 teaclave_proto                 = { path = "../../../services/proto" }
 teaclave_test_utils            = { path = "../../../tests/utils" }
 
-sgx_tstd      = { version = "1.1.0", features = ["net", "thread", "backtrace"], optional = true }
-sgx_types     = { version = "1.1.0" }
+sgx_tstd      = { version = "1.1.1", features = ["net", "thread", "backtrace"], optional = true }
+sgx_types     = { version = "1.1.1" }

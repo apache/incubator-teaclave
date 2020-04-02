@@ -18,7 +18,6 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use anyhow;
 use teaclave_types::FunctionArguments;
 use teaclave_types::{TeaclaveFunction, TeaclaveRuntime};
 

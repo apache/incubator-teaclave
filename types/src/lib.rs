@@ -27,7 +27,6 @@ use anyhow::Result;
 use anyhow::{bail, ensure};
 use std::collections::HashMap;
 
-use hex;
 use serde::{Deserialize, Deserializer, Serialize};
 
 use thiserror::Error;

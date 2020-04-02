@@ -22,7 +22,6 @@ use std::prelude::v1::*;
 use crate::deps::c_void;
 use crate::deps::cmp;
 use crate::deps::errno;
-use crate::deps::libc;
 use crate::deps::sgx_aes_gcm_128bit_tag_t;
 use crate::deps::sgx_key_128bit_t;
 use crate::deps::size_t;

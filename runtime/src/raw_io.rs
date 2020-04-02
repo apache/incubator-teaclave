@@ -21,8 +21,6 @@ use std::prelude::v1::*;
 use std::io;
 use std::untrusted::fs::File;
 
-use anyhow;
-
 use teaclave_types::StagedFiles;
 use teaclave_types::TeaclaveRuntime;
 

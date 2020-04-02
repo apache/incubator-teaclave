@@ -21,9 +21,6 @@ use std::prelude::v1::*;
 use std::collections::HashMap;
 use std::format;
 
-use anyhow;
-use serde_json;
-
 use teaclave_types::{
     hashmap, ExecutorType, FunctionArguments, StagedFiles, StagedFunction, WorkerCapability,
 };

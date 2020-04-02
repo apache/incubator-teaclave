@@ -24,7 +24,6 @@ use std::thread_local;
 
 use sgx_types::{c_char, c_int, c_uchar, c_uint, size_t};
 
-use anyhow;
 use std::collections::HashMap;
 use std::format;
 
@@ -274,7 +273,7 @@ pub mod tests {
         let runtime = Box::new(RawIoRuntime::new(input_files, output_files));
         set_thread_context(Context::new(runtime)).unwrap();
 
-        let expected_input = "Hello\nWorld".as_bytes();
+        let expected_input = b"Hello\nWorld";
         let f = rtc_open_input(&in_fid).unwrap();
         let mut buf = [0u8; 128];
         let size = rtc_read_handle(f, &mut buf).unwrap();
@@ -284,7 +283,7 @@ pub mod tests {
         assert!(rtc_close_handle(f).is_err());
 
         let f = rtc_create_output(&out_fid).unwrap();
-        let size = rtc_write_handle(f, &expected_input).unwrap();
+        let size = rtc_write_handle(f, &expected_input[..]).unwrap();
         assert_eq!(size, expected_input.len());
 
         assert!(rtc_close_handle(f).is_ok());

@@ -22,8 +22,6 @@ use std::collections::HashSet;
 use std::io;
 use std::prelude::v1::*;
 
-use anyhow;
-
 pub trait TeaclaveRuntime {
     fn open_input(&self, identifier: &str) -> anyhow::Result<Box<dyn io::Read>>;
     fn create_output(&self, identifier: &str) -> anyhow::Result<Box<dyn io::Write>>;

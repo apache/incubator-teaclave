@@ -21,9 +21,6 @@ use std::prelude::v1::*;
 use std::format;
 use std::io::{self, BufRead, BufReader, Write};
 
-use anyhow;
-use serde_json;
-
 use teaclave_types::FunctionArguments;
 use teaclave_types::{TeaclaveFunction, TeaclaveRuntime};
 

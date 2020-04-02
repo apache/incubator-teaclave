@@ -17,7 +17,6 @@
 
 use log::debug;
 use serde::{Deserialize, Serialize};
-use serde_json;
 use std::io;
 use std::mem::transmute;
 use std::prelude::v1::*;
