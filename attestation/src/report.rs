@@ -26,8 +26,6 @@ use crate::EndorsedAttestationReport;
 use anyhow::{anyhow, bail, ensure};
 use anyhow::{Error, Result};
 use chrono::DateTime;
-use rustls;
-use serde_json;
 use serde_json::Value;
 use std::convert::TryFrom;
 use std::time::*;

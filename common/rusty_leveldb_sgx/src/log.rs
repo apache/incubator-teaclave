@@ -212,7 +212,7 @@ pub fn mask_crc(c: u32) -> u32 {
 
 pub fn unmask_crc(mc: u32) -> u32 {
     let rot = mc.wrapping_sub(MASK_DELTA);
-    (rot.wrapping_shr(17) | rot.wrapping_shl(15))
+    rot.wrapping_shr(17) | rot.wrapping_shl(15)
 }
 
 #[cfg(feature = "enclave_unit_test")]

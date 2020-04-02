@@ -16,4 +16,4 @@ teaclave_file_agent        = { path = "../../../file_agent" }
 teaclave_binder            = { path = "../../../binder", features = ["app"] }
 teaclave_types             = { path = "../../../types" }
 
-sgx_types = { version = "1.1.0" }
+sgx_types = { version = "1.1.1" }

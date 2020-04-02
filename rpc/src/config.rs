@@ -17,7 +17,6 @@
 
 use anyhow::{anyhow, bail, Result};
 use log::debug;
-use rustls;
 use std::prelude::v1::*;
 use std::sync::{Arc, SgxRwLock as RwLock};
 use std::time::SystemTime;

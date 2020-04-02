@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+#[allow(dead_code)]
 pub(crate) fn get_tcs_num() -> usize {
     if sgx_trts::enclave::rsgx_is_supported_EDMM() {
         sgx_trts::enclave::SgxGlobalData::new().get_dyn_tcs_num() as usize

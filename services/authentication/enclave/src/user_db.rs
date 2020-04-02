@@ -16,7 +16,6 @@
 // under the License.
 
 use crate::user_info::UserInfo;
-use rusty_leveldb;
 use std::prelude::v1::*;
 use std::sync::mpsc::{channel, Sender};
 use std::thread;

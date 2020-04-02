@@ -19,7 +19,6 @@
 use cfg_if::cfg_if;
 cfg_if! {
     if #[cfg(feature = "mesalock_sgx")] {
-        pub(crate) use sgx_trts::libc;
         pub(crate) use sgx_trts::libc::c_void;
         pub(crate) use sgx_trts::c_str::CStr;
 
@@ -34,7 +33,6 @@ cfg_if! {
 
         pub(crate) use core::cmp;
     } else {
-        pub(crate) use libc;
         pub(crate) use std::ffi::c_void;
         pub(crate) use std::ffi::CStr;
 

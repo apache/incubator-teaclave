@@ -17,7 +17,6 @@
 
 use crate::config::SgxTrustedTlsServerConfig;
 use crate::transport::{ServerTransport, SgxTrustedTlsTransport};
-use crate::utils;
 use crate::TeaclaveService;
 use anyhow::Result;
 use log::{debug, error, warn};
@@ -31,6 +30,7 @@ where
     addr: std::net::SocketAddr,
     tls_config: SgxTrustedTlsServerConfig,
     tcp_nodelay: bool,
+    n_workers: usize,
     maker: std::marker::PhantomData<(U, V)>,
 }
 
@@ -47,6 +47,7 @@ where
             addr,
             tls_config: server_config,
             tcp_nodelay: true,
+            n_workers: 8,
             maker: std::marker::PhantomData::<(U, V)>,
         }
     }
@@ -58,12 +59,18 @@ where
         }
     }
 
+    pub fn n_workers(self, n: usize) -> Self {
+        Self {
+            n_workers: n,
+            ..self
+        }
+    }
+
     pub fn start<X>(&mut self, service: X) -> Result<()>
     where
         X: 'static + TeaclaveService<V, U> + Clone + core::marker::Send,
     {
-        let n_workers = utils::get_tcs_num();
-        let pool = threadpool::ThreadPool::new(n_workers);
+        let pool = threadpool::ThreadPool::new(self.n_workers);
         let listener = std::net::TcpListener::bind(self.addr)?;
         let mut tls_config_ref = self.tls_config.server_config();
         for stream in listener.incoming() {

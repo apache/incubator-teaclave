@@ -16,7 +16,6 @@
 // under the License.
 
 use anyhow::{Context, Result};
-use signal_hook;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use teaclave_binder::proto::{ECallCommand, StartServiceInput, StartServiceOutput};

@@ -18,8 +18,6 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use anyhow;
-
 use teaclave_types::FunctionArguments;
 use teaclave_types::{TeaclaveFunction, TeaclaveRuntime};
 
@@ -153,7 +151,7 @@ def entrypoint(argv):
         teaclave_open(out_file_id, "w")
     except RuntimeError as e:
         assert e.message == "Teaclave Not Supported"
-    
+
     return
 "#;
 

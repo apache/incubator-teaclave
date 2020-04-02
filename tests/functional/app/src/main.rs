@@ -15,7 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use anyhow;
 use log::error;
 use structopt::StructOpt;
 use teaclave_binder::proto::{ECallCommand, RunTestInput, RunTestOutput};

@@ -3,23 +3,23 @@ name: sgx-debug-ubuntu-1804
 
 steps:
 - name: prepare
-  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
   commands:
   - . /root/.cargo/env
   - mkdir -p build
   - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DTEST_MODE=ON ..
 - name: check
-  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
   commands:
   - . /root/.cargo/env
   - cd build && make check
 - name: compile
-  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
   commands:
   - . /root/.cargo/env
   - cd build && make VERBOSE=1 -j2
 - name: test
-  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
   environment:
     AS_ALGO: sgx_epid
     AS_URL: https://api.trustedservices.intel.com:443
@@ -122,23 +122,23 @@ name: sgx-release-ubuntu-1804
 
 steps:
 - name: prepare
-  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
   commands:
   - . /root/.cargo/env
   - mkdir -p build
   - cd build && cmake -DTEST_MODE=ON ..
 - name: check
-  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
   commands:
   - . /root/.cargo/env
   - cd build && make check
 - name: compile
-  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
   commands:
   - . /root/.cargo/env
   - cd build && make VERBOSE=1 -j2
 - name: test
-  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
   privileged: true
   environment:
     AS_ALGO: sgx_epid
@@ -174,23 +174,23 @@ name: sim-debug-ubuntu-1804
 
 steps:
 - name: prepare
-  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
   commands:
   - . /root/.cargo/env
   - mkdir -p build
   - cd build && cmake -DTEST_MODE=ON ..
 - name: check
-  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
   commands:
   - . /root/.cargo/env
   - cd build && make check
 - name: compile
-  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
   commands:
   - . /root/.cargo/env
   - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DSGX_SIM_MODE=ON .. && make VERBOSE=1 -j2
 - name: test
-  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
   commands:
   - . /root/.cargo/env
   - cd build && make run-tests
@@ -205,23 +205,23 @@ name: sim-release-ubuntu-1804
 
 steps:
 - name: prepare
-  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
   commands:
   - . /root/.cargo/env
   - mkdir -p build
   - cd build && cmake -DTEST_MODE=YES ..
 - name: check
-  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
   commands:
   - . /root/.cargo/env
   - cd build && make check
 - name: compile
-  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
   commands:
   - . /root/.cargo/env
   - cd build && cmake -DSGX_SIM_MODE=ON .. && make VERBOSE=1 -j2
 - name: test
-  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
   commands:
   - . /root/.cargo/env
   - cd build && make run-tests
@@ -229,171 +229,171 @@ steps:
 node:
   instance: mesatee-sgx
 
----
+# ---
 
-kind: pipeline
-name: sgx-debug-ubuntu-1604
+# kind: pipeline
+# name: sgx-debug-ubuntu-1604
 
-steps:
-- name: prepare
-  image: teaclave/teaclave-build-ubuntu-1604:0.1.0
-  commands:
-  - . /root/.cargo/env
-  - mkdir -p build
-  - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DTEST_MODE=ON ..
-- name: check
-  image: teaclave/teaclave-build-ubuntu-1604:0.1.0
-  commands:
-  - . /root/.cargo/env
-  - cd build && make check
-- name: compile
-  image: teaclave/teaclave-build-ubuntu-1604:0.1.0
-  commands:
-  - . /root/.cargo/env
-  - cd build && make VERBOSE=1 -j2
-- name: test
-  image: teaclave/teaclave-build-ubuntu-1604:0.1.0
-  environment:
-    AS_ALGO: sgx_epid
-    AS_URL: https://api.trustedservices.intel.com:443
-    AS_KEY:
-      from_secret: V5_KEY
-    AS_SPID:
-      from_secret: V5_SPID
-  privileged: true
-  volumes:
-  - name: isgx
-    path: /dev/isgx
-  - name: aesmd
-    path: /var/run/aesmd/aesm.socket
-  commands:
-  - . /root/.cargo/env
-  - cd build && make run-tests
+# steps:
+# - name: prepare
+#   image: teaclave/teaclave-build-ubuntu-1604:0.1.0
+#   commands:
+#   - . /root/.cargo/env
+#   - mkdir -p build
+#   - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DTEST_MODE=ON ..
+# - name: check
+#   image: teaclave/teaclave-build-ubuntu-1604:0.1.0
+#   commands:
+#   - . /root/.cargo/env
+#   - cd build && make check
+# - name: compile
+#   image: teaclave/teaclave-build-ubuntu-1604:0.1.0
+#   commands:
+#   - . /root/.cargo/env
+#   - cd build && make VERBOSE=1 -j2
+# - name: test
+#   image: teaclave/teaclave-build-ubuntu-1604:0.1.0
+#   environment:
+#     AS_ALGO: sgx_epid
+#     AS_URL: https://api.trustedservices.intel.com:443
+#     AS_KEY:
+#       from_secret: V5_KEY
+#     AS_SPID:
+#       from_secret: V5_SPID
+#   privileged: true
+#   volumes:
+#   - name: isgx
+#     path: /dev/isgx
+#   - name: aesmd
+#     path: /var/run/aesmd/aesm.socket
+#   commands:
+#   - . /root/.cargo/env
+#   - cd build && make run-tests
 
-volumes:
-- name: isgx
-  host:
-    path: /dev/isgx
-- name: aesmd
-  host:
-    path: /var/run/aesmd/aesm.socket
+# volumes:
+# - name: isgx
+#   host:
+#     path: /dev/isgx
+# - name: aesmd
+#   host:
+#     path: /var/run/aesmd/aesm.socket
 
-node:
-  instance: mesatee-sgx
+# node:
+#   instance: mesatee-sgx
 
----
+# ---
 
-kind: pipeline
-name: sgx-release-ubuntu-1604
+# kind: pipeline
+# name: sgx-release-ubuntu-1604
 
-steps:
-- name: prepare
-  image: teaclave/teaclave-build-ubuntu-1604:0.1.0
-  commands:
-  - . /root/.cargo/env
-  - mkdir -p build
-  - cd build && cmake -DTEST_MODE=ON ..
-- name: check
-  image: teaclave/teaclave-build-ubuntu-1604:0.1.0
-  commands:
-  - . /root/.cargo/env
-  - cd build && make check
-- name: compile
-  image: teaclave/teaclave-build-ubuntu-1604:0.1.0
-  commands:
-  - . /root/.cargo/env
-  - cd build && make VERBOSE=1 -j2
-- name: test
-  image: teaclave/teaclave-build-ubuntu-1604:0.1.0
-  privileged: true
-  environment:
-    AS_ALGO: sgx_epid
-    AS_URL: https://api.trustedservices.intel.com:443
-    AS_KEY:
-      from_secret: V5_KEY
-    AS_SPID:
-      from_secret: V5_SPID
-  volumes:
-  - name: isgx
-    path: /dev/isgx
-  - name: aesmd
-    path: /var/run/aesmd/aesm.socket
-  commands:
-  - . /root/.cargo/env
-  - cd build && make run-tests
+# steps:
+# - name: prepare
+#   image: teaclave/teaclave-build-ubuntu-1604:0.1.0
+#   commands:
+#   - . /root/.cargo/env
+#   - mkdir -p build
+#   - cd build && cmake -DTEST_MODE=ON ..
+# - name: check
+#   image: teaclave/teaclave-build-ubuntu-1604:0.1.0
+#   commands:
+#   - . /root/.cargo/env
+#   - cd build && make check
+# - name: compile
+#   image: teaclave/teaclave-build-ubuntu-1604:0.1.0
+#   commands:
+#   - . /root/.cargo/env
+#   - cd build && make VERBOSE=1 -j2
+# - name: test
+#   image: teaclave/teaclave-build-ubuntu-1604:0.1.0
+#   privileged: true
+#   environment:
+#     AS_ALGO: sgx_epid
+#     AS_URL: https://api.trustedservices.intel.com:443
+#     AS_KEY:
+#       from_secret: V5_KEY
+#     AS_SPID:
+#       from_secret: V5_SPID
+#   volumes:
+#   - name: isgx
+#     path: /dev/isgx
+#   - name: aesmd
+#     path: /var/run/aesmd/aesm.socket
+#   commands:
+#   - . /root/.cargo/env
+#   - cd build && make run-tests
 
-volumes:
-- name: isgx
-  host:
-    path: /dev/isgx
-- name: aesmd
-  host:
-    path: /var/run/aesmd/aesm.socket
+# volumes:
+# - name: isgx
+#   host:
+#     path: /dev/isgx
+# - name: aesmd
+#   host:
+#     path: /var/run/aesmd/aesm.socket
 
-node:
-  instance: mesatee-sgx
+# node:
+#   instance: mesatee-sgx
 
----
+# ---
 
-kind: pipeline
-name: sim-debug-ubuntu-1604
+# kind: pipeline
+# name: sim-debug-ubuntu-1604
 
-steps:
-- name: prepare
-  image: teaclave/teaclave-build-ubuntu-1604:0.1.0
-  commands:
-  - . /root/.cargo/env
-  - mkdir -p build
-  - cd build && cmake -DTEST_MODE=ON ..
-- name: check
-  image: teaclave/teaclave-build-ubuntu-1604:0.1.0
-  commands:
-  - . /root/.cargo/env
-  - cd build && make check
-- name: compile
-  image: teaclave/teaclave-build-ubuntu-1604:0.1.0
-  commands:
-  - . /root/.cargo/env
-  - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DSGX_SIM_MODE=ON .. && make VERBOSE=1 -j2
-- name: test
-  image: teaclave/teaclave-build-ubuntu-1604:0.1.0
-  commands:
-  - . /root/.cargo/env
-  - cd build && make run-tests
+# steps:
+# - name: prepare
+#   image: teaclave/teaclave-build-ubuntu-1604:0.1.0
+#   commands:
+#   - . /root/.cargo/env
+#   - mkdir -p build
+#   - cd build && cmake -DTEST_MODE=ON ..
+# - name: check
+#   image: teaclave/teaclave-build-ubuntu-1604:0.1.0
+#   commands:
+#   - . /root/.cargo/env
+#   - cd build && make check
+# - name: compile
+#   image: teaclave/teaclave-build-ubuntu-1604:0.1.0
+#   commands:
+#   - . /root/.cargo/env
+#   - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DSGX_SIM_MODE=ON .. && make VERBOSE=1 -j2
+# - name: test
+#   image: teaclave/teaclave-build-ubuntu-1604:0.1.0
+#   commands:
+#   - . /root/.cargo/env
+#   - cd build && make run-tests
 
-node:
-  instance: mesatee-sgx
+# node:
+#   instance: mesatee-sgx
 
----
+# ---
 
-kind: pipeline
-name: sim-release-ubuntu-1604
+# kind: pipeline
+# name: sim-release-ubuntu-1604
 
-steps:
-- name: prepare
-  image: teaclave/teaclave-build-ubuntu-1604:0.1.0
-  commands:
-  - . /root/.cargo/env
-  - mkdir -p build
-  - cd build && cmake ..
-- name: check
-  image: teaclave/teaclave-build-ubuntu-1604:0.1.0
-  commands:
-  - . /root/.cargo/env
-  - cd build && make check
-- name: compile
-  image: teaclave/teaclave-build-ubuntu-1604:0.1.0
-  commands:
-  - . /root/.cargo/env
-  - cd build && cmake -DSGX_SIM_MODE=ON -DTEST_MODE=ON .. && make VERBOSE=1 -j2
-- name: test
-  image: teaclave/teaclave-build-ubuntu-1604:0.1.0
-  commands:
-  - . /root/.cargo/env
-  - cd build && make run-tests
+# steps:
+# - name: prepare
+#   image: teaclave/teaclave-build-ubuntu-1604:0.1.0
+#   commands:
+#   - . /root/.cargo/env
+#   - mkdir -p build
+#   - cd build && cmake ..
+# - name: check
+#   image: teaclave/teaclave-build-ubuntu-1604:0.1.0
+#   commands:
+#   - . /root/.cargo/env
+#   - cd build && make check
+# - name: compile
+#   image: teaclave/teaclave-build-ubuntu-1604:0.1.0
+#   commands:
+#   - . /root/.cargo/env
+#   - cd build && cmake -DSGX_SIM_MODE=ON -DTEST_MODE=ON .. && make VERBOSE=1 -j2
+# - name: test
+#   image: teaclave/teaclave-build-ubuntu-1604:0.1.0
+#   commands:
+#   - . /root/.cargo/env
+#   - cd build && make run-tests
 
-node:
-  instance: mesatee-sgx
+# node:
+#   instance: mesatee-sgx
 
 ---
 
@@ -402,18 +402,18 @@ name: lint
 
 steps:
 - name: prepare
-  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
   commands:
   - . /root/.cargo/env
   - mkdir -p build
   - cd build && cmake -DRUSTFLAGS="-D warnings" -DTEST_MODE=ON ..
 - name: check
-  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
   commands:
   - . /root/.cargo/env
   - cd build && make check
 - name: clippy
-  image: teaclave/teaclave-build-ubuntu-1804:0.1.0
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
   commands:
   - . /root/.cargo/env
   - cd build && make CLP=1
@@ -428,24 +428,24 @@ node:
 
 # steps:
 # - name: prepare
-#   image: teaclave/teaclave-build-ubuntu-1804:0.1.0
+#   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
 #   commands:
 #   - . /root/.cargo/env
 #   - mkdir -p build
 #   - cd build && cmake -DCMAKE_BUILD_TYPE=DEBUG -DCOV=ON -DTEST_MODE=ON ..
 # - name: check
-#   image: teaclave/teaclave-build-ubuntu-1804:0.1.0
+#   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
 #   commands:
 #   - . /root/.cargo/env
 #   - cd build && make check
 # - name: compile
-#   image: teaclave/teaclave-build-ubuntu-1804:0.1.0
+#   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
 #   commands:
 #   - . /root/.cargo/env
 #   - export RUSTFLAGS="-D warnings"
 #   - cd build && make VERBOSE=1 -j2
 # - name: test
-#   image: teaclave/teaclave-build-ubuntu-1804:0.1.0
+#   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
 #   environment:
 #     AS_ALGO: sgx_epid
 #     AS_URL: https://api.trustedservices.intel.com:443
@@ -464,7 +464,7 @@ node:
 #   - cd build && make run-tests
 # - name: coverage
 #   failure: ignore
-#   image: teaclave/teaclave-build-ubuntu-1804:0.1.0
+#   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
 #   commands:
 #   - cd build && make cov
 #   - bash -c "bash <(curl -s https://codecov.io/bash) -f intermediate/cov.info"
@@ -496,13 +496,13 @@ node:
 
 # steps:
 # - name: prepare
-#   image: teaclave/teaclave-build-ubuntu-1804:0.1.0
+#   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
 #   commands:
 #   - . /root/.cargo/env
 #   - mkdir -p build
 #   - cd build && cmake ..
 # - name: doc
-#   image: teaclave/teaclave-build-ubuntu-1804:0.1.0
+#   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
 #   failure: ignore
 #   commands:
 #   - . /root/.cargo/env
@@ -566,10 +566,10 @@ depends_on:
   - sgx-release-ubuntu-1804
   - sim-debug-ubuntu-1804
   - sim-release-ubuntu-1804
-  - sgx-debug-ubuntu-1604
-  - sgx-release-ubuntu-1604
-  - sim-debug-ubuntu-1604
-  - sim-release-ubuntu-1604
+  # - sgx-debug-ubuntu-1604
+  # - sgx-release-ubuntu-1604
+  # - sim-debug-ubuntu-1604
+  # - sim-release-ubuntu-1604
   - lint
 
 node:

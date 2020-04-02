@@ -32,7 +32,6 @@ use teaclave_binder::proto::{
 };
 use teaclave_binder::{handle_ecall, register_ecall_handler};
 use teaclave_service_enclave_utils::ServiceEnclave;
-use teaclave_types;
 use teaclave_types::TeeServiceResult;
 
 mod access_control_service;

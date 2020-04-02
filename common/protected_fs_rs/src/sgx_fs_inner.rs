@@ -22,7 +22,6 @@ use std::ffi::{CStr, CString};
 use std::io::{self, Error, SeekFrom};
 use std::path::Path;
 
-use crate::deps::libc;
 use crate::deps::sgx_aes_gcm_128bit_tag_t;
 use crate::deps::sgx_key_128bit_t;
 

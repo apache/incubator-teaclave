@@ -20,7 +20,6 @@ use crate::Request;
 use crate::TeaclaveService;
 use anyhow::Result;
 use log::debug;
-use rustls;
 use serde::{Deserialize, Serialize};
 use std::prelude::v1::*;
 
