@@ -17,15 +17,15 @@
 
 use crate::storage::Storable;
 use crate::FileCrypto;
+use crate::OwnerList;
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
 use std::prelude::v1::*;
 use url::Url;
 use uuid::Uuid;
 
-const INPUT_FILE_PREFIX: &str = "input-file";
-const OUTPUT_FILE_PREFIX: &str = "output-file";
+const INPUT_FILE_PREFIX: &str = "input";
+const OUTPUT_FILE_PREFIX: &str = "output";
 
 fn create_uuid() -> Uuid {
     Uuid::new_v4()
@@ -36,7 +36,7 @@ pub struct TeaclaveInputFile {
     pub url: Url,
     pub hash: String,
     pub crypto_info: FileCrypto,
-    pub owner: HashSet<String>,
+    pub owner: OwnerList,
     pub uuid: Uuid,
 }
 
@@ -45,7 +45,7 @@ pub struct TeaclaveOutputFile {
     pub url: Url,
     pub hash: Option<String>,
     pub crypto_info: FileCrypto,
-    pub owner: HashSet<String>,
+    pub owner: OwnerList,
     pub uuid: Uuid,
 }
 
@@ -54,13 +54,13 @@ impl TeaclaveInputFile {
         url: Url,
         hash: String,
         crypto_info: FileCrypto,
-        owner: HashSet<String>,
+        owner: impl Into<OwnerList>,
     ) -> TeaclaveInputFile {
         TeaclaveInputFile {
             url,
             hash,
             crypto_info,
-            owner,
+            owner: owner.into(),
             uuid: create_uuid(),
         }
     }
@@ -90,17 +90,21 @@ impl Storable for TeaclaveInputFile {
 }
 
 impl TeaclaveOutputFile {
-    pub fn new(url: Url, crypto_info: FileCrypto, owner: HashSet<String>) -> TeaclaveOutputFile {
+    pub fn new(
+        url: Url,
+        crypto_info: FileCrypto,
+        owner: impl Into<OwnerList>,
+    ) -> TeaclaveOutputFile {
         TeaclaveOutputFile {
             url,
             hash: None,
             crypto_info,
-            owner,
+            owner: owner.into(),
             uuid: create_uuid(),
         }
     }
 
-    pub fn new_fusion_data(owner: HashSet<String>) -> Result<TeaclaveOutputFile> {
+    pub fn new_fusion_data(owner: impl Into<OwnerList>) -> Result<TeaclaveOutputFile> {
         let uuid = create_uuid();
         let url = format!("fusion://path/{}?token=fusion_token", uuid.to_string());
         let url = Url::parse(&url).map_err(|_| anyhow!("invalid url"))?;
@@ -110,7 +114,7 @@ impl TeaclaveOutputFile {
             url,
             hash: None,
             crypto_info,
-            owner,
+            owner: owner.into(),
             uuid,
         })
     }
