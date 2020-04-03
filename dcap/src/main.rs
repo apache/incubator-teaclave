@@ -47,7 +47,7 @@ lazy_static! {
     };
 }
 
-#[link(name = "dcap_quoteverify")]
+#[link(name = "sgx_dcap_quoteverify")]
 #[link(name = "sgx_dcap_ql")]
 #[link(name = "sgx_urts")]
 extern "C" {
@@ -146,7 +146,7 @@ impl<'r> response::Responder<'r> for QuoteVerificationResponse {
 }
 
 #[post(
-    "/sgx/dev/attestation/v3/report",
+    "/sgx/dev/attestation/v4/report",
     format = "application/json",
     data = "<request>"
 )]
