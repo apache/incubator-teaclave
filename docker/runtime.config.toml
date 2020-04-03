@@ -3,40 +3,18 @@
 # Note that this config is loaded at running time. We don't have to trust the
 # content though. Maliciously crafted config from this file will not break data
 # confidentiality/integrity.
-#
-# Topology of Services
-#
-#      ┌───────────────────────────────────────────────────┐
-#      │                                                   │FNS API Endpoint
-#      │                                                   ▼
-#      │                                        ┌─────────────────────┐
-#      │                                        │Function Node Service│
-#      │          TMS Internal ┌────────────────│        (FNS)        │─┐
-#      │            Endpoint   │                └─────────────────────┘ │
-#      │                       ▼                           │            │
-# ┌────────┐       ┌───────────────────────┐               │            │  ┌──────────────────────┐
-# │  User  │       │Task Management Service│  ┌────────────┘            │  │Key Management Service│
-# │        │──────▶│         (TMS)         │  │                         ├─▶│        (KMS)         │
-# └────────┘       └───────────────────────┘  │                         │  └──────────────────────┘
-#      │   TMS API Endpoint    │              │  ┌───────────────────┐  │KMS Internal
-#      │                       │              │  │Trusted Distributed│  │  Endpoint
-#      │                       └──────────────┴─▶│    File System    │──┘
-#      │                            TDFS Internal│      (TDFS)       │
-#      │                              Endpoint   └───────────────────┘
-#      │                                                   ▲
-#      │                                                   │ TDFS API Endpoint
-#      └───────────────────────────────────────────────────┘
 
 [api_endpoints]
-tms  = { listen_address = "0.0.0.0:5554" }
-tdfs = { listen_address = "0.0.0.0:5065" }
-fns  = { listen_address = "0.0.0.0:3444", advertised_address = "127.0.0.1:3444"}
+authentication = { listen_address = "0.0.0.0:7776" }
+frontend       = { listen_address = "0.0.0.0:7777" }
 
 [internal_endpoints]
-tms  = { listen_address = "0.0.0.0:5555", advertised_address = "172.18.18.100:5555" }
-tdfs = { listen_address = "0.0.0.0:5066", advertised_address = "172.18.18.101:5066" }
-kms  = { listen_address = "0.0.0.0:6016", advertised_address = "172.18.18.102:6016" }
-acs  = { listen_address = "0.0.0.0:5077", advertised_address = "172.18.18.103:5077" }
+authentication = { listen_address = "0.0.0.0:17776", advertised_address = "teaclave-authentication-service:17776" }
+management     = { listen_address = "0.0.0.0:17777", advertised_address = "teaclave-management-service:17777" }
+storage        = { listen_address = "0.0.0.0:17778", advertised_address = "teaclave-storage-service:17778" }
+access_control = { listen_address = "0.0.0.0:17779", advertised_address = "teaclave-access-control-service:17779" }
+execution      = { listen_address = "0.0.0.0:17770", advertised_address = "teaclave-execution-service:17770" }
+scheduler      = { listen_address = "0.0.0.0:17780", advertised_address = "teaclave-scheduler-service:17780" }
 
 [audit]
 enclave_info = { path = "enclave_info.toml" }
@@ -45,3 +23,9 @@ auditor_signatures = [
     { path = "auditors/optimus_prime/optimus_prime.sign.sha256" },
     { path = "auditors/albus_dumbledore/albus_dumbledore.sign.sha256" },
 ]
+
+[attestation]
+algorithm = "sgx_epid"
+url = "https://api.trustedservices.intel.com:443"
+key = "00000000000000000000000000000000"
+spid = "00000000000000000000000000000000"

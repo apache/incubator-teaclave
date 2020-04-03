@@ -93,12 +93,12 @@ impl TeaclaveFrontendService {
             match authentication_service_endpoint.connect() {
                 Ok(channel) => break channel,
                 Err(_) => {
-                    anyhow::ensure!(i < 3, "failed to connect to authentication service");
+                    anyhow::ensure!(i < 10, "failed to connect to authentication service");
                     log::debug!("Failed to connect to authentication service, retry {}", i);
                     i += 1;
                 }
             }
-            std::thread::sleep(std::time::Duration::from_secs(1));
+            std::thread::sleep(std::time::Duration::from_secs(3));
         };
         let authentication_client = Arc::new(Mutex::new(
             TeaclaveAuthenticationInternalClient::new(authentication_channel)?,
@@ -109,12 +109,12 @@ impl TeaclaveFrontendService {
             match management_service_endpoint.connect() {
                 Ok(channel) => break channel,
                 Err(_) => {
-                    anyhow::ensure!(i < 3, "failed to connect to management service");
+                    anyhow::ensure!(i < 10, "failed to connect to management service");
                     log::debug!("Failed to connect to management service, retry {}", i);
                     i += 1;
                 }
             }
-            std::thread::sleep(std::time::Duration::from_secs(1));
+            std::thread::sleep(std::time::Duration::from_secs(3));
         };
         let management_client = Arc::new(Mutex::new(TeaclaveManagementClient::new(
             management_channel,
