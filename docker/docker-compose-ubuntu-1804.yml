@@ -1,120 +1,197 @@
 version: '3.7'
 
 services:
-  mesatee-tms:
+  teaclave-authentication-service:
     build:
       context: ../
-      dockerfile: docker/tms-rt.ubuntu-1804.Dockerfile
+      dockerfile: docker/teaclave-rt.ubuntu-1804.Dockerfile
     ports:
-      - 5554:5554
+      - 7776:7776
     expose:
-      - 5555
+      - 7776
+      - 17776
     volumes:
-      - ./runtime.config.toml:/mesatee/runtime.config.toml
+      - ./runtime.config.toml:/teaclave/runtime.config.toml
       - type: bind
         source: /var/run/aesmd/aesm.socket
         target: /var/run/aesmd/aesm.socket
     devices:
       - /dev/isgx
-    working_dir: /mesatee
+    working_dir: /teaclave
     environment:
-      - IAS_SPID
-      - IAS_KEY
+      - AS_SPID
+      - AS_KEY
+      - AS_ALGO
+      - AS_URL
       - RUST_LOG
-      - MESATEE_CFG_DIR=.
+    entrypoint: ./teaclave_authentication_service
+    container_name: teaclave-authentication-service
     networks:
-      front:
-      mesatee_net:
-        ipv4_address: 172.18.18.100
+      api:
+      internal:
 
-  mesatee-tdfs:
+  teaclave-frontend-service:
     build:
       context: ../
-      dockerfile: docker/tdfs-rt.ubuntu-1804.Dockerfile
+      dockerfile: docker/teaclave-rt.ubuntu-1804.Dockerfile
     ports:
-      - 5065:5065
+      - 7777:7777
     expose:
-      - 5066
+      - 7777
     volumes:
-      - ./runtime.config.toml:/mesatee/runtime.config.toml
-      - type: bind
-        source: /tmp/mesatee_storage
-        target: /tmp/mesatee_storage
+      - ./runtime.config.toml:/teaclave/runtime.config.toml
       - type: bind
         source: /var/run/aesmd/aesm.socket
         target: /var/run/aesmd/aesm.socket
     devices:
       - /dev/isgx
-    working_dir: /mesatee
+    working_dir: /teaclave
     environment:
-      - IAS_SPID
-      - IAS_KEY
+      - AS_SPID
+      - AS_KEY
+      - AS_ALGO
+      - AS_URL
       - RUST_LOG
-      - MESATEE_CFG_DIR=.
-      - MESATEE_STORAGE_DIR=/tmp/mesatee_storage
+    entrypoint: ./teaclave_frontend_service
+    depends_on:
+      - teaclave-management-service
+    container_name: teaclave-frontend-service
     networks:
-      front:
-      mesatee_net:
-        ipv4_address: 172.18.18.101
+      api:
+      internal:
 
-  mesatee-fns:
+  teaclave-management-service:
     build:
       context: ../
-      dockerfile: docker/fns-rt.ubuntu-1804.Dockerfile
-    ports:
-      - 3444:3444
+      dockerfile: docker/teaclave-rt.ubuntu-1804.Dockerfile
+    expose:
+      - 17777
     volumes:
-      - ./runtime.config.toml:/mesatee/runtime.config.toml
-      - type: bind
-        source: /tmp/mesatee_storage
-        target: /tmp/mesatee_storage
+      - ./runtime.config.toml:/teaclave/runtime.config.toml
       - type: bind
         source: /var/run/aesmd/aesm.socket
         target: /var/run/aesmd/aesm.socket
     devices:
       - /dev/isgx
-    working_dir: /mesatee
+    working_dir: /teaclave
     environment:
-      - IAS_SPID
-      - IAS_KEY
+      - AS_SPID
+      - AS_KEY
+      - AS_ALGO
+      - AS_URL
       - RUST_LOG
-      - MESATEE_CFG_DIR=.
-      - MESATEE_STORAGE_DIR=/tmp/mesatee_storage
+    entrypoint: ./teaclave_management_service
+    depends_on:
+      - teaclave-storage-service
+      - teaclave-access-control-service
+    container_name: teaclave-management-service
     networks:
-      front:
-      mesatee_net:
-        ipv4_address: 172.18.18.104
+      internal:
 
-  mesatee-kms:
+  teaclave-storage-service:
     build:
       context: ../
-      dockerfile: docker/kms-rt.ubuntu-1804.Dockerfile
+      dockerfile: docker/teaclave-rt.ubuntu-1804.Dockerfile
     expose:
-      - 6016
+      - 17778
     volumes:
-      - ./runtime.config.toml:/mesatee/runtime.config.toml
+      - ./runtime.config.toml:/teaclave/runtime.config.toml
       - type: bind
         source: /var/run/aesmd/aesm.socket
         target: /var/run/aesmd/aesm.socket
     devices:
       - /dev/isgx
-    working_dir: /mesatee
+    working_dir: /teaclave
     environment:
-      - IAS_SPID
-      - IAS_KEY
+      - AS_SPID
+      - AS_KEY
+      - AS_ALGO
+      - AS_URL
       - RUST_LOG
-      - MESATEE_CFG_DIR=.
+    entrypoint: ./teaclave_storage_service
+    container_name: teaclave-storage-service
     networks:
-      mesatee_net:
-        ipv4_address: 172.18.18.102
+      internal:
+
+  teaclave-access-control-service:
+    build:
+      context: ../
+      dockerfile: docker/teaclave-rt.ubuntu-1804.Dockerfile
+    expose:
+      - 17779
+    volumes:
+      - ./runtime.config.toml:/teaclave/runtime.config.toml
+      - type: bind
+        source: /var/run/aesmd/aesm.socket
+        target: /var/run/aesmd/aesm.socket
+    devices:
+      - /dev/isgx
+    working_dir: /teaclave
+    environment:
+      - AS_SPID
+      - AS_KEY
+      - AS_ALGO
+      - AS_URL
+      - RUST_LOG
+    container_name: teaclave-access-control-service
+    entrypoint: ./teaclave_access_control_service
+    networks:
+      internal:
+
+  teaclave-execution-service:
+    build:
+      context: ../
+      dockerfile: docker/teaclave-rt.ubuntu-1804.Dockerfile
+    expose:
+      - 17770
+    volumes:
+      - ./runtime.config.toml:/teaclave/runtime.config.toml
+      - type: bind
+        source: /var/run/aesmd/aesm.socket
+        target: /var/run/aesmd/aesm.socket
+    devices:
+      - /dev/isgx
+    working_dir: /teaclave
+    environment:
+      - AS_SPID
+      - AS_KEY
+      - AS_ALGO
+      - AS_URL
+      - RUST_LOG
+    entrypoint: ./teaclave_execution_service
+    container_name: teaclave-execution-service
+    depends_on:
+      - teaclave-scheduler-service
+    networks:
+      internal:
+
+  teaclave-scheduler-service:
+    build:
+      context: ../
+      dockerfile: docker/teaclave-rt.ubuntu-1804.Dockerfile
+    expose:
+      - 17780
+    volumes:
+      - ./runtime.config.toml:/teaclave/runtime.config.toml
+      - type: bind
+        source: /var/run/aesmd/aesm.socket
+        target: /var/run/aesmd/aesm.socket
+    devices:
+      - /dev/isgx
+    working_dir: /teaclave
+    environment:
+      - AS_SPID
+      - AS_KEY
+      - AS_ALGO
+      - AS_URL
+      - RUST_LOG
+    entrypoint: ./teaclave_scheduler_service
+    container_name: teaclave-scheduler-service
+    depends_on:
+      - teaclave-storage-service
+    networks:
+      internal:
 
 networks:
-  mesatee_net:
-    driver: bridge
-    driver_opts:
-      com.docker.network.enable_ipv6: "false"
-    ipam:
-      driver: default
-      config:
-      - subnet: 172.18.18.0/24
-  front:
+  internal:
+  api:

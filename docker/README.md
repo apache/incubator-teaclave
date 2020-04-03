@@ -1,29 +1,29 @@
-# MesaTEE Docker
+# Teaclave Docker
 
 This directory contains the docker infrastructure for build and runtime
-environment. Both Ubuntu 16.04 and 18.04 images are provided. Note that
-you must mount SGX device and ASEM domain socket into the container
-environment to use SGX feature.
+environment. Note that you must mount SGX device and ASEM domain socket into the
+container environment to use SGX feature.
 
 ## Build
 
-The build dockerfile (`build.ubuntu-{1604,1804}.Dockerfile`) only contains
-minimal dependencies to build and test the project. To use them, you can
-directly use pre-built docker images from Docker Hub with:
+The build dockerfile (`build.*.Dockerfile`) only contains minimal dependencies
+to build and test the project. To use them, you can directly use pre-built
+docker images from Docker Hub with:
 
 ```
 $ docker run --rm \
   --device=/dev/isgx \
   -v/var/run/aesmd/aesm.socket:/var/run/aesmd/aesm.socket \
-  -v`pwd`:/mesatee \
-  -w /mesatee \
-  -it mesalocklinux/mesatee-build-ubuntu-1804
+  -v`pwd`:/teaclave \
+  -w /teaclave \
+  -it teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest \
+  /bin/bash
 ```
 
 or you can also build the image by yourself with `docker build`:
 
 ```
-$ docker build -t mesatee-build-ubuntu-1804 - < build.ubuntu-1804.Dockerfile
+$ docker build -t teaclave-build - < build.*.Dockerfile
 ```
 and run:
 
@@ -31,29 +31,37 @@ and run:
 $ docker run --rm \
   --device=/dev/isgx \
   -v/var/run/aesmd/aesm.socket:/var/run/aesmd/aesm.socket \
-  -v`pwd`:/mesatee \
-  -w /mesatee \
-  -it mesatee-build-ubuntu-1804
+  -v`pwd`:/teaclave \
+  -w /teaclave \
+  -it teaclave/teaclave-build \
+  /bin/bash
 ```
 
 ## Runtime
 
-MesaTEE contains many services, we have put each service, config and related
-resources into different docker image
-(`{tms,tdfs,kms,fns}-rt.ubuntu-{1604,1804}.Dockerfile`). To make the deployment
+Teaclave contains many services, we put services, config and related
+resources into one docker image
+(`teaclave-rt.ubuntu-1804.Dockerfile`). To make the deployment
 simpler, we recommend to use [docker-compose](https://docs.docker.com/compose/)
 to manage all services. Since the remote attestation is required for all
-services, you should setup the Intel Attestation Service ID (SPID) and key
+services, you should setup the attestation service configurations
 before start the services. You can use env vars or set them in the
-`docker-compose-ubuntu-{1604,1804}.yml` file.
+`docker-compose-ubuntu-1804.yml` file.
+
+Here is an example to start all services.
 
 ```
-$ export IAS_SPID=xxxxxx
-$ export IAS_KEY=xxxxxx
-$ cd docker && docker-compose -f docker-compose-ubuntu-1804.yml up
-Starting docker_mesatee-tms_1  ... done
-Starting docker_mesatee-tdfs_1 ... done
-Starting docker_mesatee-kms_1  ... done
-Starting docker_mesatee-fns_1  ... done
-Attaching to docker_mesatee-kms_1, docker_mesatee-tms_1, docker_mesatee-tdfs_1, docker_mesatee-fns_1
+$ export AS_SPID="xxx"
+$ export AS_KEY="xxx"
+$ export AS_ALGO="sgx_epid"
+$ export AS_URL="https://api.trustedservices.intel.com:443"
+
+$ docker-compose -f docker-compose-ubuntu-1804.yml up
+Starting teaclave-authentication-service ... done
+Starting teaclave-access-control-service ... done
+Starting teaclave-scheduler-service      ... done
+Starting teaclave-management-service     ... done
+Starting teaclave-execution-service      ... done
+Starting teaclave-frontend-service       ... done
+Attaching to ...
 ```
