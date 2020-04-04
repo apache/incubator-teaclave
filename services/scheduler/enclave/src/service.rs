@@ -163,6 +163,7 @@ impl TeaclaveScheduler for TeaclaveSchedulerService {
         let request = request.message;
         let mut task = self.get_task(&request.task_id.to_string())?;
         task.status = request.task_status;
+        log::info!("UpdateTaskStatus: Task {:?}", task);
         self.put_task(&task)?;
         Ok(UpdateTaskStatusResponse {})
     }

@@ -17,6 +17,7 @@
 
 use crate::utils::*;
 use std::collections::HashMap;
+use std::convert::TryFrom;
 use std::prelude::v1::*;
 use teaclave_attestation::verifier;
 use teaclave_config::RuntimeConfig;
@@ -103,7 +104,6 @@ fn test_register_input_file() {
     };
     let response = client.register_input_file(request);
     assert!(response.is_ok());
-    assert!(!response.unwrap().data_id.is_empty());
 
     let request = RegisterInputFileRequest {
         url: Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap(),
@@ -131,7 +131,6 @@ fn test_register_output_file() {
     };
     let response = client.register_output_file(request);
     assert!(response.is_ok());
-    assert!(!response.unwrap().data_id.is_empty());
 
     let request = RegisterOutputFileRequest {
         url: Url::parse("s3://s3.us-west-2.amazonaws.com/mybucket/puppy.jpg.enc?key-id=deadbeefdeadbeef&key=deadbeefdeadbeef").unwrap(),
@@ -147,20 +146,13 @@ fn test_register_output_file() {
 fn test_register_fusion_output() {
     let mut client = get_client();
     let request = RegisterFusionOutputRequest {
-        owner_list: vec!["frontend_user", "mock_user"]
-            .into_iter()
-            .map(|s| s.to_string())
-            .collect(),
+        owner_list: vec!["frontend_user", "mock_user"].into(),
     };
     let response = client.register_fusion_output(request);
     assert!(response.is_ok());
-    assert!(!response.unwrap().data_id.is_empty());
 
     let request = RegisterFusionOutputRequest {
-        owner_list: vec!["frontend_user", "mock_user"]
-            .into_iter()
-            .map(|s| s.to_string())
-            .collect(),
+        owner_list: vec!["frontend_user", "mock_user"].into(),
     };
     client
         .metadata_mut()
@@ -171,17 +163,14 @@ fn test_register_fusion_output() {
 
 fn test_register_input_from_output() {
     let mut client = get_client();
-    let data_id = "output-file-00000000-0000-0000-0000-000000000001";
+    let data_id = ExternalID::try_from("output-00000000-0000-0000-0000-000000000001").unwrap();
     let request = RegisterInputFromOutputRequest {
-        data_id: data_id.to_string(),
+        data_id: data_id.clone(),
     };
     let response = client.register_input_from_output(request);
     assert!(response.is_ok());
-    assert!(!response.unwrap().data_id.is_empty());
 
-    let request = RegisterInputFromOutputRequest {
-        data_id: data_id.to_string(),
-    };
+    let request = RegisterInputFromOutputRequest { data_id };
     client
         .metadata_mut()
         .insert("token".to_string(), "wrong token".to_string());
@@ -240,34 +229,10 @@ fn test_register_function() {
     let mut client = get_client();
 
     let request = RegisterFunctionRequest::default();
-    /*
-     {
-        name: "mock_function".to_string(),
-        description: "mock function".to_string(),
-        executor_type: ExecutorType::Python,
-        payload: b"python script".to_vec(),
-        public: true,
-        arguments: vec!["arg".to_string()],
-        inputs: vec![],
-        outputs: vec![],
-    };
-    */
-    let response = client.register_function(request).unwrap();
-    assert!(!response.function_id.is_empty());
+    let response = client.register_function(request);
+    assert!(response.is_ok());
 
     let request = RegisterFunctionRequest::default();
-    /*
-    let request = RegisterFunctionRequest {
-        name: "mock_function".to_string(),
-        description: "mock function".to_string(),
-        payload: b"python script".to_vec(),
-        executor_type: ExecutorType::Python,
-        public: true,
-        arguments: vec!["arg".to_string()],
-        inputs: vec![],
-        outputs: vec![],
-    };
-    */
     client
         .metadata_mut()
         .insert("token".to_string(), "wrong token".to_string());
@@ -278,8 +243,9 @@ fn test_register_function() {
 fn test_get_function() {
     let mut client = get_client();
 
-    let registered_id = "function-00000000-0000-0000-0000-000000000001";
-    let request = GetFunctionRequest::new(registered_id);
+    let registered_id =
+        ExternalID::try_from("function-00000000-0000-0000-0000-000000000001").unwrap();
+    let request = GetFunctionRequest::new(registered_id.clone());
     let response = client.get_function(request).unwrap();
     assert!(!response.name.is_empty());
 
@@ -294,23 +260,24 @@ fn test_get_function() {
 fn test_create_task() {
     let mut client = get_client();
 
-    let data_owner_id_list = DataOwnerList::new(vec!["frontend_user", "mock_user"]);
+    let data_owner_id_list = OwnerList::new(vec!["frontend_user", "mock_user"]);
 
-    let function_id = "function-00000000-0000-0000-0000-000000000002";
+    let function_id =
+        ExternalID::try_from("function-00000000-0000-0000-0000-000000000002").unwrap();
+
+    let request = CreateTaskRequest::new()
+        .function_id(function_id.clone())
+        .function_arguments(hashmap!("arg1" => "data1"))
+        .executor("mesapy")
+        .output_owners_map(hashmap!("output" =>  data_owner_id_list.clone()));
+    let response = client.create_task(request);
+    assert!(response.is_ok());
 
     let request = CreateTaskRequest::new()
         .function_id(function_id)
         .function_arguments(hashmap!("arg1" => "data1"))
         .executor("mesapy")
-        .outputs_owner_list(hashmap!("output" =>  data_owner_id_list.clone()));
-    let response = client.create_task(request).unwrap();
-    assert!(!response.task_id.is_empty());
-
-    let request = CreateTaskRequest::new()
-        .function_id(function_id)
-        .function_arguments(hashmap!("arg1" => "data1"))
-        .executor("mesapy")
-        .outputs_owner_list(hashmap!("output" => data_owner_id_list));
+        .output_owners_map(hashmap!("output" => data_owner_id_list));
     client
         .metadata_mut()
         .insert("token".to_string(), "wrong token".to_string());
@@ -320,20 +287,21 @@ fn test_create_task() {
 
 fn test_get_task() {
     let mut client = get_client();
-
-    let data_owner_id_list = DataOwnerList::new(vec!["frontend_user", "mock_user"]);
+    let function_id =
+        ExternalID::try_from("function-00000000-0000-0000-0000-000000000002").unwrap();
+    let data_owner_id_list = OwnerList::new(vec!["frontend_user", "mock_user"]);
 
     let request = CreateTaskRequest::new()
-        .function_id("function-00000000-0000-0000-0000-000000000002")
+        .function_id(function_id)
         .function_arguments(hashmap!("arg1" => "data1"))
         .executor("mesapy")
-        .outputs_owner_list(hashmap!("output" => data_owner_id_list));
+        .output_owners_map(hashmap!("output" => data_owner_id_list));
     let response = client.create_task(request).unwrap();
     let task_id = response.task_id;
 
     let request = GetTaskRequest::new(&task_id);
-    let response = client.get_task(request).unwrap();
-    assert!(!response.function_id.is_empty());
+    let response = client.get_task(request);
+    assert!(response.is_ok());
 
     let request = GetTaskRequest::new(task_id);
     client
@@ -346,13 +314,15 @@ fn test_get_task() {
 fn test_assign_data() {
     let mut client = get_client();
 
-    let data_owner_id_list = DataOwnerList::new(vec!["frontend_user"]);
+    let function_id =
+        ExternalID::try_from("function-00000000-0000-0000-0000-000000000002").unwrap();
+    let data_owner_id_list = OwnerList::new(vec!["frontend_user"]);
 
     let request = CreateTaskRequest::new()
-        .function_id("function-00000000-0000-0000-0000-000000000002")
+        .function_id(function_id)
         .function_arguments(hashmap!("arg1" => "data1"))
         .executor("mesapy")
-        .outputs_owner_list(hashmap!("output" => data_owner_id_list));
+        .output_owners_map(hashmap!("output" => data_owner_id_list));
 
     let response = client.create_task(request).unwrap();
     let task_id = response.task_id;
@@ -393,11 +363,13 @@ fn test_assign_data() {
 fn test_approve_task() {
     let mut client = get_client();
 
+    let function_id =
+        ExternalID::try_from("function-00000000-0000-0000-0000-000000000002").unwrap();
     let request = CreateTaskRequest::new()
-        .function_id("function-00000000-0000-0000-0000-000000000002")
+        .function_id(function_id)
         .function_arguments(hashmap!("arg1" => "data1"))
         .executor("mesapy")
-        .outputs_owner_list(hashmap!("output" => DataOwnerList::new(vec!["frontend_user"])));
+        .output_owners_map(hashmap!("output" => OwnerList::new(vec!["frontend_user"])));
 
     let response = client.create_task(request);
     let task_id = response.unwrap().task_id;
@@ -436,14 +408,15 @@ fn test_approve_task() {
 
 fn test_invoke_task() {
     let mut client = get_client();
-
+    let function_id =
+        ExternalID::try_from("function-00000000-0000-0000-0000-000000000002").unwrap();
     let request = CreateTaskRequest::new()
-        .function_id("function-00000000-0000-0000-0000-000000000002")
+        .function_id(function_id)
         .function_arguments(hashmap!("arg1" => "data1"))
         .executor("mesapy")
-        .outputs_owner_list(hashmap!(
+        .output_owners_map(hashmap!(
             "output" =>
-            DataOwnerList::new(vec!["frontend_user"])
+            OwnerList::new(vec!["frontend_user"])
         ));
 
     let response = client.create_task(request).unwrap();

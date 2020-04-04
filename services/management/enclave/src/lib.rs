@@ -41,7 +41,6 @@ use teaclave_service_enclave_utils::{create_trusted_storage_endpoint, ServiceEnc
 use teaclave_types::{EnclaveInfo, TeeServiceError, TeeServiceResult};
 
 mod service;
-mod task;
 
 const AS_ROOT_CA_CERT: &[u8] = BUILD_CONFIG.as_root_ca_cert;
 const AUDITOR_PUBLIC_KEYS_LEN: usize = BUILD_CONFIG.auditor_public_keys.len();
