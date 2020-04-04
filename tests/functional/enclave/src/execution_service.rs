@@ -16,8 +16,6 @@
 // under the License.
 
 use crate::utils::*;
-use std::collections::HashMap;
-use std::collections::HashSet;
 use std::prelude::v1::*;
 use teaclave_proto::teaclave_storage_service::*;
 use teaclave_types::*;
@@ -34,20 +32,7 @@ fn test_execute_function() {
     let task_id = Uuid::new_v4();
     let task = Task {
         task_id,
-        creator: "".to_string(),
-        executor: "".to_string(),
-        function_id: "".to_string(),
-        function_owner: "".to_string(),
-        function_arguments: FunctionArguments::default(),
-        inputs_owner_list: HashMap::new(),
-        outputs_owner_list: HashMap::new(),
-        participants: HashSet::new(),
-        approved_user_list: HashSet::new(),
-        input_map: HashMap::new(),
-        output_map: HashMap::new(),
-        return_value: None,
-        output_file_hash: HashMap::new(),
-        status: TaskStatus::Running,
+        ..Default::default()
     };
 
     let function_id = Uuid::new_v4();

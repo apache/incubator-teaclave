@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use crate::{ExecutorType, Storable};
+use crate::{ExecutorType, Storable, UserID};
 use serde::{Deserialize, Serialize};
 use std::prelude::v1::*;
 use uuid::Uuid;
@@ -63,7 +63,7 @@ pub struct Function {
     pub arguments: Vec<String>,
     pub inputs: Vec<FunctionInput>,
     pub outputs: Vec<FunctionOutput>,
-    pub owner: String,
+    pub owner: UserID,
 }
 
 impl Function {
@@ -116,9 +116,9 @@ impl Function {
         Self { outputs, ..self }
     }
 
-    pub fn owner(self, owner: impl ToString) -> Self {
+    pub fn owner(self, owner: impl Into<UserID>) -> Self {
         Self {
-            owner: owner.to_string(),
+            owner: owner.into(),
             ..self
         }
     }

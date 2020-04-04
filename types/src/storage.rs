@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use crate::ExternalID;
 use serde::{Deserialize, Serialize};
 use std::prelude::v1::*;
 use uuid::Uuid;
@@ -25,7 +26,7 @@ pub trait Storable: Serialize + for<'de> Deserialize<'de> {
     fn uuid(&self) -> Uuid;
 
     fn key_string(&self) -> String {
-        format!("{}-{}", Self::key_prefix(), self.uuid().to_string())
+        self.external_id().to_string()
     }
 
     fn key(&self) -> Vec<u8> {
@@ -46,7 +47,7 @@ pub trait Storable: Serialize + for<'de> Deserialize<'de> {
         Ok(obj)
     }
 
-    fn external_id(&self) -> String {
-        self.key_string()
+    fn external_id(&self) -> ExternalID {
+        ExternalID::new(Self::key_prefix(), self.uuid())
     }
 }

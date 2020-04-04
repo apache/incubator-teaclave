@@ -67,6 +67,7 @@ impl TeaclaveExecutionService {
                 }
             };
 
+            log::info!("InvokeTask: {:?}", staged_task);
             let result = match self.invoke_task(&staged_task) {
                 Ok(exec_result) => exec_result,
                 Err(e) => {
@@ -118,7 +119,6 @@ impl TeaclaveExecutionService {
     }
 
     fn invoke_task(&mut self, task: &StagedTask) -> Result<ExecutionResult> {
-        log::debug!("invoke_task");
         self.update_task_status(&task.task_id, TaskStatus::Running, String::new())?;
         let invocation = prepare_task(&task);
         let worker = Worker::default();
