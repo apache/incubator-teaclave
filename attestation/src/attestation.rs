@@ -27,9 +27,8 @@ use std::thread;
 use std::time::Duration;
 use std::time::{self, SystemTime};
 use std::untrusted::time::SystemTimeEx;
-use teaclave_config::BUILD_CONFIG;
+use teaclave_config::build::ATTESTATION_VALIDITY_SECS;
 
-const ATTESTATION_VALIDITY_SECS: u64 = BUILD_CONFIG.attestation_validity_secs;
 const CERT_ISSUER: &str = "Teaclave";
 const CERT_SUBJECT: &str = "CN=Teaclave";
 

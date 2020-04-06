@@ -31,7 +31,8 @@ use teaclave_binder::proto::{
     StartServiceInput, StartServiceOutput,
 };
 use teaclave_binder::{handle_ecall, register_ecall_handler};
-use teaclave_config::{RuntimeConfig, BUILD_CONFIG};
+use teaclave_config::build::AS_ROOT_CA_CERT;
+use teaclave_config::RuntimeConfig;
 use teaclave_proto::teaclave_frontend_service::{
     TeaclaveFrontendRequest, TeaclaveFrontendResponse,
 };
@@ -43,8 +44,6 @@ use teaclave_service_enclave_utils::{
 use teaclave_types::{TeeServiceError, TeeServiceResult};
 
 mod service;
-
-const AS_ROOT_CA_CERT: &[u8] = BUILD_CONFIG.as_root_ca_cert;
 
 fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
     let listen_address = config.api_endpoints.frontend.listen_address;

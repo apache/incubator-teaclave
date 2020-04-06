@@ -19,8 +19,8 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::prelude::v1::*;
 use teaclave_attestation::verifier;
+use teaclave_config::build::AS_ROOT_CA_CERT;
 use teaclave_config::RuntimeConfig;
-use teaclave_config::BUILD_CONFIG;
 use teaclave_proto::teaclave_management_service::*;
 use teaclave_proto::teaclave_scheduler_service::*;
 use teaclave_rpc::config::SgxTrustedTlsClientConfig;
@@ -57,7 +57,7 @@ fn get_client(user_id: &str) -> TeaclaveManagementClient {
         .expect("management");
     let config = SgxTrustedTlsClientConfig::new().attestation_report_verifier(
         vec![enclave_attr],
-        BUILD_CONFIG.as_root_ca_cert,
+        AS_ROOT_CA_CERT,
         verifier::universal_quote_verifier,
     );
 
@@ -87,7 +87,7 @@ fn get_scheduler_client(user_id: &str) -> TeaclaveSchedulerClient {
         .expect("scheduler");
     let config = SgxTrustedTlsClientConfig::new().attestation_report_verifier(
         vec![enclave_attr],
-        BUILD_CONFIG.as_root_ca_cert,
+        AS_ROOT_CA_CERT,
         verifier::universal_quote_verifier,
     );
 

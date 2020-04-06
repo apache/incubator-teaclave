@@ -30,7 +30,10 @@ use teaclave_binder::proto::{
     StartServiceInput, StartServiceOutput,
 };
 use teaclave_binder::{handle_ecall, register_ecall_handler};
-use teaclave_config::{RuntimeConfig, BUILD_CONFIG};
+use teaclave_config::build::{
+    ACCESS_CONTROL_INBOUND_SERVICES, AS_ROOT_CA_CERT, AUDITOR_PUBLIC_KEYS,
+};
+use teaclave_config::RuntimeConfig;
 use teaclave_proto::teaclave_access_control_service::{
     TeaclaveAccessControlRequest, TeaclaveAccessControlResponse,
 };
@@ -41,12 +44,6 @@ use teaclave_types::{EnclaveInfo, TeeServiceError, TeeServiceResult};
 
 mod acs;
 mod service;
-
-const AS_ROOT_CA_CERT: &[u8] = BUILD_CONFIG.as_root_ca_cert;
-const AUDITOR_PUBLIC_KEYS_LEN: usize = BUILD_CONFIG.auditor_public_keys.len();
-const AUDITOR_PUBLIC_KEYS: &[&[u8]; AUDITOR_PUBLIC_KEYS_LEN] = BUILD_CONFIG.auditor_public_keys;
-const INBOUND_SERVICES_LEN: usize = BUILD_CONFIG.inbound.access_control.len();
-const INBOUND_SERVICES: &[&str; INBOUND_SERVICES_LEN] = BUILD_CONFIG.inbound.access_control;
 
 fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
     let listen_address = config.internal_endpoints.access_control.listen_address;
@@ -76,7 +73,7 @@ fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
             .as_ref()
             .expect("auditor signatures"),
     )?;
-    let accepted_enclave_attrs: Vec<teaclave_types::EnclaveAttr> = INBOUND_SERVICES
+    let accepted_enclave_attrs: Vec<teaclave_types::EnclaveAttr> = ACCESS_CONTROL_INBOUND_SERVICES
         .iter()
         .map(|service| {
             enclave_info
