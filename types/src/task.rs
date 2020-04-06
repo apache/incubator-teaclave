@@ -21,7 +21,35 @@ use crate::*;
 use anyhow::{anyhow, bail, ensure, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
+use std::convert::TryInto;
 use uuid::Uuid;
+
+#[derive(Debug, Default, Clone, Deserialize, PartialEq, Eq, Hash, Serialize)]
+pub struct UserID(String);
+
+impl std::convert::From<String> for UserID {
+    fn from(uid: String) -> UserID {
+        UserID(uid)
+    }
+}
+
+impl std::convert::From<&str> for UserID {
+    fn from(uid: &str) -> UserID {
+        UserID(uid.to_string())
+    }
+}
+
+impl std::convert::From<UserID> for String {
+    fn from(user_id: UserID) -> String {
+        user_id.to_string()
+    }
+}
+
+impl std::fmt::Display for UserID {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 
 pub type UserList = OwnerList;
 
@@ -111,37 +139,6 @@ impl Default for TaskStatus {
     }
 }
 
-const TASK_PREFIX: &str = "task";
-
-#[derive(Debug, Default, Deserialize, Serialize)]
-pub struct Task {
-    pub task_id: Uuid,
-    pub creator: UserID,
-    pub function_id: ExternalID,
-    pub function_arguments: FunctionArguments,
-    pub executor: Executor,
-    pub input_owners_map: HashMap<String, OwnerList>,
-    pub output_owners_map: HashMap<String, OwnerList>,
-    pub function_owner: UserID,
-    pub participants: UserList,
-    pub approved_users: UserList,
-    pub input_map: HashMap<String, ExternalID>,
-    pub output_map: HashMap<String, ExternalID>,
-    pub return_value: Option<Vec<u8>>,
-    pub output_file_hash: HashMap<String, String>,
-    pub status: TaskStatus,
-}
-
-impl Storable for Task {
-    fn key_prefix() -> &'static str {
-        TASK_PREFIX
-    }
-
-    fn uuid(&self) -> Uuid {
-        self.task_id
-    }
-}
-
 #[derive(Debug, Clone, PartialEq, Default, Deserialize, Serialize)]
 pub struct ExternalID {
     pub prefix: String,
@@ -189,7 +186,6 @@ impl std::convert::TryFrom<&str> for ExternalID {
     }
 }
 
-use std::convert::TryInto;
 impl std::convert::TryFrom<String> for ExternalID {
     type Error = anyhow::Error;
     fn try_from(ext_id: String) -> Result<Self> {
@@ -197,40 +193,42 @@ impl std::convert::TryFrom<String> for ExternalID {
     }
 }
 
-#[derive(Debug, Default, Clone, Deserialize, PartialEq, Eq, Hash, Serialize)]
-pub struct UserID(String);
+const TASK_PREFIX: &str = "task";
 
-impl std::convert::From<String> for UserID {
-    fn from(uid: String) -> UserID {
-        UserID(uid)
-    }
+#[derive(Debug, Default, Deserialize, Serialize)]
+pub struct Task {
+    pub task_id: Uuid,
+    pub creator: UserID,
+    pub function_id: ExternalID,
+    pub function_arguments: FunctionArguments,
+    pub executor: Executor,
+    pub input_owners_map: HashMap<String, OwnerList>,
+    pub output_owners_map: HashMap<String, OwnerList>,
+    pub function_owner: UserID,
+    pub participants: UserList,
+    pub approved_users: UserList,
+    pub input_map: HashMap<String, ExternalID>,
+    pub output_map: HashMap<String, ExternalID>,
+    pub return_value: Option<Vec<u8>>,
+    pub output_file_hash: HashMap<String, String>,
+    pub status: TaskStatus,
 }
 
-impl std::convert::From<&str> for UserID {
-    fn from(uid: &str) -> UserID {
-        UserID(uid.to_string())
+impl Storable for Task {
+    fn key_prefix() -> &'static str {
+        TASK_PREFIX
+    }
+
+    fn uuid(&self) -> Uuid {
+        self.task_id
     }
 }
-
-impl std::convert::From<UserID> for String {
-    fn from(user_id: UserID) -> String {
-        user_id.to_string()
-    }
-}
-
-impl std::fmt::Display for UserID {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-pub type Executor = String;
 
 impl Task {
     pub fn new(
         requester: UserID,
-        function: &Function,
         executor: Executor,
+        function: &Function,
         function_arguments: FunctionArguments,
         input_owners_map: HashMap<String, OwnerList>,
         output_owners_map: HashMap<String, OwnerList>,

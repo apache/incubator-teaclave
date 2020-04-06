@@ -23,7 +23,8 @@ use url::Url;
 use uuid::Uuid;
 
 use crate::{
-    ExecutorType, FileCrypto, FunctionArguments, Storable, TeaclaveInputFile, TeaclaveOutputFile,
+    Executor, ExecutorType, FileCrypto, FunctionArguments, Storable, TeaclaveInputFile,
+    TeaclaveOutputFile,
 };
 
 const STAGED_TASK_PREFIX: &str = "staged-"; // staged-task-uuid
@@ -80,7 +81,7 @@ impl FunctionOutputFile {
 pub struct StagedTask {
     pub task_id: Uuid,
     pub function_id: Uuid,
-    pub native_func: String,
+    pub executor: Executor,
     pub executor_type: ExecutorType,
     pub function_payload: Vec<u8>,
     pub function_arguments: FunctionArguments,
@@ -114,11 +115,8 @@ impl StagedTask {
         }
     }
 
-    pub fn native_func(self, native_func: impl ToString) -> Self {
-        Self {
-            native_func: native_func.to_string(),
-            ..self
-        }
+    pub fn executor(self, executor: Executor) -> Self {
+        Self { executor, ..self }
     }
 
     pub fn function_payload(self, function_payload: Vec<u8>) -> Self {

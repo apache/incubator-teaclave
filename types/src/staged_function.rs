@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use crate::{ExecutorType, StagedFiles};
+use crate::{Executor, ExecutorType, StagedFiles};
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -155,7 +155,7 @@ impl FunctionArguments {
 
 #[derive(Debug, Default)]
 pub struct StagedFunction {
-    pub name: String,
+    pub executor: Executor,
     pub payload: String,
     pub arguments: FunctionArguments,
     pub input_files: StagedFiles,
@@ -169,11 +169,8 @@ impl StagedFunction {
         Self::default()
     }
 
-    pub fn name(self, name: impl ToString) -> Self {
-        Self {
-            name: name.to_string(),
-            ..self
-        }
+    pub fn executor(self, executor: Executor) -> Self {
+        Self { executor, ..self }
     }
 
     pub fn payload(self, payload: impl ToString) -> Self {
