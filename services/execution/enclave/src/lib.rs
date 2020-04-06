@@ -29,18 +29,14 @@ use teaclave_binder::proto::{
     StartServiceInput, StartServiceOutput,
 };
 use teaclave_binder::{handle_ecall, register_ecall_handler};
+use teaclave_config::build::{AS_ROOT_CA_CERT, AUDITOR_PUBLIC_KEYS};
 use teaclave_config::RuntimeConfig;
-use teaclave_config::BUILD_CONFIG;
 use teaclave_service_enclave_utils::create_trusted_scheduler_endpoint;
 use teaclave_service_enclave_utils::ServiceEnclave;
 use teaclave_types::{EnclaveInfo, TeeServiceError, TeeServiceResult};
 
 mod ocall;
 mod service;
-
-const AS_ROOT_CA_CERT: &[u8] = BUILD_CONFIG.as_root_ca_cert;
-const AUDITOR_PUBLIC_KEYS_LEN: usize = BUILD_CONFIG.auditor_public_keys.len();
-const AUDITOR_PUBLIC_KEYS: &[&[u8]; AUDITOR_PUBLIC_KEYS_LEN] = BUILD_CONFIG.auditor_public_keys;
 
 fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
     let enclave_info = EnclaveInfo::verify_and_new(

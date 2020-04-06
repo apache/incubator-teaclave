@@ -30,9 +30,7 @@ pub(crate) enum ConfigSource {
 }
 
 #[cfg(feature = "build_config")]
-mod build;
+pub mod build;
 mod runtime;
 
-#[cfg(feature = "build_config")]
-pub use build::BUILD_CONFIG;
 pub use runtime::RuntimeConfig;

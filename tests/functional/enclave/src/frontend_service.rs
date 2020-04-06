@@ -20,8 +20,8 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::prelude::v1::*;
 use teaclave_attestation::verifier;
+use teaclave_config::build::AS_ROOT_CA_CERT;
 use teaclave_config::RuntimeConfig;
-use teaclave_config::BUILD_CONFIG;
 use teaclave_proto::teaclave_authentication_service::*;
 use teaclave_proto::teaclave_common::*;
 use teaclave_proto::teaclave_frontend_service::*;
@@ -61,7 +61,7 @@ fn get_credential() -> UserCredential {
         .expect("authentication");
     let config = SgxTrustedTlsClientConfig::new().attestation_report_verifier(
         vec![enclave_attr],
-        BUILD_CONFIG.as_root_ca_cert,
+        AS_ROOT_CA_CERT,
         verifier::universal_quote_verifier,
     );
     let channel = Endpoint::new("localhost:7776")
