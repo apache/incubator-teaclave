@@ -85,6 +85,8 @@ impl QuoteVerificationResponse {
     }
 }
 
+/// Convert SGX QL QV Result to str, try best to match the string defined in IAS
+/// quote status APIs.
 fn to_report(rst: sgx_ql_qv_result_t) -> &'static str {
     use sgx_ql_qv_result_t::*;
     match rst {
@@ -94,6 +96,9 @@ fn to_report(rst: sgx_ql_qv_result_t) -> &'static str {
         SGX_QL_QV_RESULT_OUT_OF_DATE_CONFIG_NEEDED => "OUT_OF_DATE_CONFIGURATION_NEEDED",
         SGX_QL_QV_RESULT_INVALID_SIGNATURE => "SIGNATURE_INVALID",
         SGX_QL_QV_RESULT_REVOKED => "KEY_REVOKED",
+        SGX_QL_QV_RESULT_UNSPECIFIED => "UNSPECIFIED",
+        SGX_QL_QV_RESULT_SW_HARDENING_NEEDED => "SW_HARDENING_NEEDED",
+        SGX_QL_QV_RESULT_CONFIG_AND_SW_HARDENING_NEEDED => "CONFIGURATION_AND_SW_HARDENING_NEEDED",
         _ => panic!(),
     }
 }
@@ -102,6 +107,7 @@ impl QuoteVerificationResult {
     pub fn to_json(&self) -> String {
         serde_json::json!({
             "id": uuid::Uuid::new_v4().to_simple().to_string(),
+            "version": 4,
             "timestamp": Utc::now().format("%Y-%m-%dT%H:%M:%S%.f").to_string(),
             "isvEnclaveQuoteStatus": to_report(self.quote_status),
             "isvEnclaveQuoteBody": self.isv_enclave_quote,

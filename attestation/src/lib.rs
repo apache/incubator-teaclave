@@ -37,6 +37,8 @@ pub enum AttestationError {
     ReportError,
     #[error("Report error")]
     ConnectionError,
+    #[error("Attestation Service API version not compatible")]
+    ApiVersionNotCompatible,
 }
 
 /// Remote attestation configuration
@@ -114,7 +116,8 @@ impl AttestationConfig {
     }
 }
 
-/// AttestationReport can be endorsed by either the Intel Attestation Service using EPID or Data Center Attestation
+/// AttestationReport can be endorsed by either the Intel Attestation Service
+/// using EPID or Data Center Attestation
 /// Service (platform dependent) using ECDSA.
 #[derive(Default, Serialize, Deserialize)]
 pub(crate) struct EndorsedAttestationReport {
