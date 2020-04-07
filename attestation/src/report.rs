@@ -30,8 +30,7 @@ use std::time::*;
 #[cfg(feature = "mesalock_sgx")]
 use std::untrusted::time::SystemTimeEx;
 
-use anyhow::{anyhow, bail, ensure};
-use anyhow::{Error, Result};
+use anyhow::{anyhow, bail, ensure, Error, Result};
 use chrono::DateTime;
 use serde_json::Value;
 use uuid::Uuid;
@@ -99,6 +98,7 @@ impl std::fmt::Debug for SgxEnclaveReport {
 }
 
 impl SgxEnclaveReport {
+    /// Parse bytes of report into `SgxEnclaveReport`.
     pub fn parse_from<'a>(bytes: &'a [u8]) -> Result<Self> {
         let mut pos: usize = 0;
         let mut take = |n: usize| -> Result<&'a [u8]> {
@@ -111,6 +111,8 @@ impl SgxEnclaveReport {
             }
         };
 
+        // Start parsing report by bytes following specifications. Don't
+        // transmute directly, since there may cause endianness issue.
         // off 48, size 16
         let cpu_svn = <[u8; 16]>::try_from(take(16)?)?;
 
@@ -170,8 +172,11 @@ impl SgxEnclaveReport {
 /// SGX Quote structure version
 #[derive(Debug, PartialEq)]
 pub enum SgxQuoteVersion {
+    /// EPID quote version
     V1(SgxEpidQuoteSigType),
+    /// EPID quote version
     V2(SgxEpidQuoteSigType),
+    /// ECDSA quote version
     V3(SgxEcdsaQuoteAkType),
 }
 
@@ -279,6 +284,7 @@ pub enum SgxQuoteStatus {
 }
 
 impl From<&str> for SgxQuoteStatus {
+    /// Convert from str status from the report to enum.
     fn from(status: &str) -> Self {
         match status {
             "OK" => SgxQuoteStatus::OK,
@@ -335,6 +341,7 @@ impl std::fmt::Debug for SgxQuote {
 }
 
 impl SgxQuote {
+    /// Parse from bytes to `SgxQuote`.
     fn parse_from<'a>(bytes: &'a [u8]) -> Result<Self> {
         let mut pos: usize = 0;
         let mut take = |n: usize| -> Result<&'a [u8]> {
@@ -347,6 +354,7 @@ impl SgxQuote {
             }
         };
 
+        // Parse by bytes according to specifications.
         // off 0, size 2 + 2
         let version = match u16::from_le_bytes(<[u8; 2]>::try_from(take(2)?)?) {
             1 => {
@@ -426,40 +434,35 @@ pub struct AttestationReport {
 
 impl AttestationReport {
     pub fn from_cert(cert: &[u8], report_ca_cert: &[u8]) -> Result<Self> {
-        // Before we reach here, Webpki already verifed the cert is properly signed
-        use super::cert::*;
+        // Before we reach here, Webpki already verifed the cert is properly signed.
+        use crate::cert::*;
 
+        // Extract information for attestation from TLS certification.
         let x509 = yasna::parse_der(cert, X509::load)?;
-
         let tbs_cert: <TbsCert as Asn1Ty>::ValueTy = x509.0;
-
         let pub_key: <PubKey as Asn1Ty>::ValueTy = ((((((tbs_cert.1).1).1).1).1).1).0;
         let pub_k = (pub_key.1).0;
+        let cert_ext: <SgxRaCertExt as Asn1Ty>::ValueTy = (((((((tbs_cert.1).1).1).1).1).1).1).0;
+        let cert_ext_payload: Vec<u8> = ((cert_ext.0).1).0;
 
-        let sgx_ra_cert_ext: <SgxRaCertExt as Asn1Ty>::ValueTy =
-            (((((((tbs_cert.1).1).1).1).1).1).1).0;
+        // Convert to endorsed report
+        let report: EndorsedAttestationReport = serde_json::from_slice(&cert_ext_payload)?;
 
-        let payload: Vec<u8> = ((sgx_ra_cert_ext.0).1).0;
-
-        let report: EndorsedAttestationReport = serde_json::from_slice(&payload)?;
+        // Verify report's signature
         let signing_cert = webpki::EndEntityCert::from(&report.signing_cert)?;
-
-        let mut root_store = rustls::RootCertStore::empty();
-        root_store
-            .add(&rustls::Certificate(report_ca_cert.to_vec()))
-            .expect("Failed to add CA");
-
+        let root_store = {
+            let mut root_store = rustls::RootCertStore::empty();
+            root_store.add(&rustls::Certificate(report_ca_cert.to_vec()))?;
+            root_store
+        };
         let trust_anchors: Vec<webpki::TrustAnchor> = root_store
             .roots
             .iter()
             .map(|cert| cert.to_trust_anchor())
             .collect();
-
-        let chain: Vec<&[u8]> = vec![report_ca_cert];
-
+        let chain = vec![report_ca_cert];
         let time = webpki::Time::try_from(SystemTime::now())
             .map_err(|_| anyhow!("Cannot convert time."))?;
-
         signing_cert.verify_is_valid_tls_server_cert(
             SUPPORTED_SIG_ALGS,
             &webpki::TLSServerTrustAnchors(&trust_anchors),
@@ -502,7 +505,6 @@ impl AttestationReport {
             let status_string = attn_report["isvEnclaveQuoteStatus"]
                 .as_str()
                 .ok_or_else(|| Error::new(AttestationError::ReportError))?;
-
             SgxQuoteStatus::from(status_string)
         };
 
