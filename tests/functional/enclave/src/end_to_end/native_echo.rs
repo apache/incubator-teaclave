@@ -20,9 +20,10 @@ use super::*;
 pub fn test_echo_task_success() {
     // Authenticate user before talking to frontend service
     let mut api_client =
-        create_authentication_api_client(&ENCLAVE_INFO, AUTH_SERVICE_ADDR).unwrap();
+        create_authentication_api_client(shared_enclave_info(), AUTH_SERVICE_ADDR).unwrap();
     let cred = login(&mut api_client, USERNAME, PASSWORD).unwrap();
-    let mut client = create_frontend_client(&ENCLAVE_INFO, FRONTEND_SERVICE_ADDR, cred).unwrap();
+    let mut client =
+        create_frontend_client(shared_enclave_info(), FRONTEND_SERVICE_ADDR, cred).unwrap();
 
     // Register Function
     let request = RegisterFunctionRequest::new()
@@ -49,11 +50,7 @@ pub fn test_echo_task_success() {
 
     // Assign Data To Task
     let task_id = response.task_id;
-    let request = AssignDataRequest {
-        task_id: task_id.clone(),
-        input_map: HashMap::new(),
-        output_map: HashMap::new(),
-    };
+    let request = AssignDataRequest::new(task_id.clone(), hashmap!(), hashmap!());
     let response = client.assign_data(request).unwrap();
 
     log::info!("Assign data: {:?}", response);
