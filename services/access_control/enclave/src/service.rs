@@ -52,6 +52,7 @@ impl TeaclaveAccessControlService {
         }
     }
 }
+
 impl TeaclaveAccessControl for TeaclaveAccessControlService {
     fn authorize_data(
         &self,

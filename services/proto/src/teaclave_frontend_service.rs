@@ -104,8 +104,10 @@ pub struct RegisterFusionOutputRequest {
 }
 
 impl RegisterFusionOutputRequest {
-    pub fn new(owner_list: OwnerList) -> Self {
-        Self { owner_list }
+    pub fn new(owner_list: impl Into<OwnerList>) -> Self {
+        Self {
+            owner_list: owner_list.into(),
+        }
     }
 }
 
@@ -334,7 +336,7 @@ pub struct GetFunctionResponse {
 
 #[into_request(TeaclaveManagementRequest::CreateTask)]
 #[into_request(TeaclaveFrontendRequest::CreateTask)]
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct CreateTaskRequest {
     pub function_id: ExternalID,
     pub function_arguments: FunctionArguments,
