@@ -19,6 +19,7 @@ use crate::FunctionArguments;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::convert::TryInto;
 use std::io;
 use std::prelude::v1::*;
 
@@ -35,7 +36,7 @@ pub trait TeaclaveFunction {
     ) -> anyhow::Result<String>;
 }
 
-#[derive(Debug, Copy, Clone, Deserialize, Serialize)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
 pub enum ExecutorType {
     Native,
     Python,
@@ -51,12 +52,20 @@ impl std::convert::TryFrom<&str> for ExecutorType {
     type Error = anyhow::Error;
 
     fn try_from(selector: &str) -> anyhow::Result<Self> {
-        let sel = match selector {
+        let executor_type = match selector {
             "python" => ExecutorType::Python,
             "native" | "platform" => ExecutorType::Native,
-            _ => anyhow::bail!("Invalid executor selector: {}", selector),
+            _ => anyhow::bail!("Invalid executor type: {}", selector),
         };
-        Ok(sel)
+        Ok(executor_type)
+    }
+}
+
+impl std::convert::TryFrom<String> for ExecutorType {
+    type Error = anyhow::Error;
+
+    fn try_from(selector: String) -> anyhow::Result<Self> {
+        selector.as_str().try_into()
     }
 }
 
@@ -71,6 +80,60 @@ impl std::fmt::Display for ExecutorType {
         match self {
             ExecutorType::Native => write!(f, "native"),
             ExecutorType::Python => write!(f, "python"),
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
+pub enum Executor {
+    MesaPy,
+    GbdtTraining,
+    GbdtPrediction,
+    LogitRegTraining,
+    LogitRegPrediction,
+    Echo,
+}
+
+impl std::default::Default for Executor {
+    fn default() -> Self {
+        Executor::MesaPy
+    }
+}
+
+impl std::convert::TryFrom<&str> for Executor {
+    type Error = anyhow::Error;
+
+    fn try_from(selector: &str) -> anyhow::Result<Self> {
+        let executor = match selector {
+            "mesapy" => Executor::MesaPy,
+            "echo" => Executor::Echo,
+            "gbdt_training" => Executor::GbdtTraining,
+            "gbdt_prediction" => Executor::GbdtPrediction,
+            "logistic_regression_training" => Executor::LogitRegTraining,
+            "logistic_regression_prediction" => Executor::LogitRegPrediction,
+            _ => anyhow::bail!("Unsupported executor: {}", selector),
+        };
+        Ok(executor)
+    }
+}
+
+impl std::convert::TryFrom<String> for Executor {
+    type Error = anyhow::Error;
+
+    fn try_from(selector: String) -> anyhow::Result<Self> {
+        selector.as_str().try_into()
+    }
+}
+
+impl std::fmt::Display for Executor {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Executor::MesaPy => write!(f, "mesapy"),
+            Executor::Echo => write!(f, "echo"),
+            Executor::GbdtTraining => write!(f, "gbdt_training"),
+            Executor::GbdtPrediction => write!(f, "gbdt_prediction"),
+            Executor::LogitRegTraining => write!(f, "logistic_regression_training"),
+            Executor::LogitRegPrediction => write!(f, "logistic_regression_prediction"),
         }
     }
 }

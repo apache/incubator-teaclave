@@ -36,12 +36,11 @@ fn test_execute_function() {
     };
 
     let function_id = Uuid::new_v4();
-    let native_func = "echo";
 
     let staged_task = StagedTask::new()
         .task_id(task_id)
         .function_id(function_id.clone())
-        .native_func(native_func)
+        .executor(Executor::Echo)
         .function_arguments(hashmap!(
             "message" => "Hello, Teaclave Tests!"
         ));

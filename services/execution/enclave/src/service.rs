@@ -193,7 +193,7 @@ fn prepare_task(task: &StagedTask) -> StagedFunction {
 
     let runtime_name = "default".to_string();
     let executor_type = task.executor_type;
-    let function_name = task.native_func.clone();
+    let executor_name = task.executor;
     let function_payload = String::from_utf8_lossy(&task.function_payload).to_string();
     let function_arguments = task.function_arguments.clone();
 
@@ -241,7 +241,7 @@ fn prepare_task(task: &StagedTask) -> StagedFunction {
     let output_files = StagedFiles::new(output_file_map);
 
     StagedFunction::new()
-        .name(function_name)
+        .executor(executor_name)
         .payload(function_payload)
         .arguments(function_arguments)
         .input_files(input_files)
@@ -262,11 +262,8 @@ pub mod tests {
         let task_id = Uuid::new_v4();
         let staged_task = StagedTask::new()
             .task_id(task_id)
-            .native_func("echo")
-            .function_arguments(hashmap!(
-            "message" => "Hello, Teaclave!"
-
-                ));
+            .executor(Executor::Echo)
+            .function_arguments(hashmap!("message" => "Hello, Teaclave!"));
 
         let invocation = prepare_task(&staged_task);
 
@@ -313,7 +310,7 @@ pub mod tests {
 
         let staged_task = StagedTask::new()
             .task_id(task_id)
-            .native_func("gbdt_training")
+            .executor(Executor::GbdtTraining)
             .function_arguments(function_arguments)
             .input_data(input_data)
             .output_data(output_data);
