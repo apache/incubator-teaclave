@@ -18,27 +18,27 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
+use std::format;
+use std::io::{self, BufRead, BufReader, Write};
+
+use teaclave_types::{FunctionArguments, FunctionRuntime, TeaclaveFunction};
+
 use rusty_machine::learning::logistic_reg::LogisticRegressor;
 use rusty_machine::learning::optim::grad_desc::GradientDesc;
 use rusty_machine::learning::SupModel;
 use rusty_machine::linalg;
 
-use std::format;
-use std::io::{self, BufRead, BufReader, Write};
-use teaclave_types::FunctionArguments;
-use teaclave_types::{TeaclaveFunction, TeaclaveRuntime};
+const MODEL_FILE: &str = "model_file";
+const INPUT_DATA: &str = "data_file";
+const RESULT: &str = "result_file";
 
 #[derive(Default)]
 pub struct LogitRegPrediction;
 
-static MODEL_FILE: &str = "model_file";
-static INPUT_DATA: &str = "data_file";
-static RESULT: &str = "result_file";
-
 impl TeaclaveFunction for LogitRegPrediction {
     fn execute(
         &self,
-        runtime: Box<dyn TeaclaveRuntime + Send + Sync>,
+        runtime: FunctionRuntime,
         _arguments: FunctionArguments,
     ) -> anyhow::Result<String> {
         let mut model_json = String::new();

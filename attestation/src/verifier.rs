@@ -119,6 +119,7 @@ impl rustls::ServerCertVerifier for AttestationReportVerifier {
 
 impl rustls::ClientCertVerifier for AttestationReportVerifier {
     fn offer_client_auth(&self) -> bool {
+        // If test_mode is on, then disable TLS client authentication.
         !cfg!(test_mode)
     }
 

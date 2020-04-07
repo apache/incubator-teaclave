@@ -18,19 +18,32 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use teaclave_types::FunctionArguments;
-use teaclave_types::{TeaclaveFunction, TeaclaveRuntime};
+use std::convert::TryFrom;
+use teaclave_types::{FunctionArguments, FunctionRuntime, TeaclaveFunction};
 
 #[derive(Default)]
 pub struct Echo;
 
+struct EchoArguments {
+    message: String,
+}
+
+impl TryFrom<FunctionArguments> for EchoArguments {
+    type Error = anyhow::Error;
+
+    fn try_from(arguments: FunctionArguments) -> Result<Self, Self::Error> {
+        let message = arguments.get("message")?.to_string();
+        Ok(Self { message })
+    }
+}
+
 impl TeaclaveFunction for Echo {
     fn execute(
         &self,
-        _runtime: Box<dyn TeaclaveRuntime + Send + Sync>,
+        _runtime: FunctionRuntime,
         arguments: FunctionArguments,
     ) -> anyhow::Result<String> {
-        let message = arguments.get("message")?.to_string();
+        let message = EchoArguments::try_from(arguments)?.message;
         Ok(message)
     }
 }
