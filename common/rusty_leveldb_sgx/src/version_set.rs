@@ -1067,7 +1067,6 @@ pub mod tests {
         ve.delete_file(0, 2);
         ve.set_compact_pointer(2, LookupKey::new("xxx".as_bytes(), 123).internal_key());
 
-        println!("XXXXXXXXXXXXXXXXXXXXXXXX");
         let mut b = Builder::new();
         let mut ptrs: [Vec<u8>; NUM_LEVELS] = Default::default();
         b.apply(&ve, &mut ptrs);

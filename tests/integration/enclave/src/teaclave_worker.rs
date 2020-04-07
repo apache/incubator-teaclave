@@ -18,8 +18,8 @@
 use std::prelude::v1::*;
 
 use teaclave_types::{
-    hashmap, read_all_bytes, ExecutorType, FunctionArguments, StagedFileInfo, StagedFiles,
-    StagedFunction, TeaclaveFile128Key,
+    hashmap, read_all_bytes, Executor, ExecutorType, FunctionArguments, StagedFileInfo,
+    StagedFiles, StagedFunction, TeaclaveFile128Key,
 };
 use teaclave_worker::Worker;
 
@@ -51,12 +51,12 @@ fn test_start_worker() {
         "trained_model" => output_info.clone()));
 
     let staged_function = StagedFunction::new()
-        .name("gbdt_training")
+        .executor_type(ExecutorType::Native)
+        .executor(Executor::GbdtTraining)
         .arguments(arguments)
         .input_files(input_files)
         .output_files(output_files)
-        .runtime_name("default")
-        .executor_type(ExecutorType::Native);
+        .runtime_name("default");
 
     let worker = Worker::default();
 

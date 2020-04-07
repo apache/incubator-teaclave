@@ -31,14 +31,11 @@ pub fn run_tests() -> bool {
 }
 
 fn test_pull_task() {
-    let task_id = Uuid::new_v4();
     let function_id = Uuid::new_v4();
-    let native_func = "echo";
-
     let staged_task = StagedTask::new()
-        .task_id(task_id)
+        .task_id(Uuid::new_v4())
         .function_id(function_id.clone())
-        .native_func(native_func);
+        .executor(Executor::Echo);
 
     let mut storage_client = get_storage_client();
     let enqueue_request = EnqueueRequest::new(
@@ -64,12 +61,11 @@ fn test_update_task_status_result() {
     };
 
     let function_id = Uuid::new_v4();
-    let native_func = "echo";
 
     let staged_task = StagedTask::new()
         .task_id(task_id.clone())
         .function_id(function_id)
-        .native_func(native_func);
+        .executor(Executor::Echo);
 
     let mut storage_client = get_storage_client();
     let enqueue_request = EnqueueRequest::new(

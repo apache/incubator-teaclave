@@ -180,11 +180,11 @@ fn test_get_output_file() {
     let mut client = get_client("mock_user");
     let response = client.register_output_file(request).unwrap();
     let data_id = response.data_id;
-    let request = GetOutputFileRequest::new(&data_id);
+    let request = GetOutputFileRequest::new(data_id.clone());
     let response = client.get_output_file(request);
     assert!(response.is_ok());
     let mut client = get_client("mock_another_user");
-    let request = GetOutputFileRequest::new(&data_id);
+    let request = GetOutputFileRequest::new(data_id);
     let response = client.get_output_file(request);
     assert!(response.is_err());
 }
@@ -197,11 +197,11 @@ fn test_get_input_file() {
     let mut client = get_client("mock_user");
     let response = client.register_input_file(request).unwrap();
     let data_id = response.data_id;
-    let request = GetInputFileRequest::new(&data_id);
+    let request = GetInputFileRequest::new(data_id.clone());
     let response = client.get_input_file(request);
     assert!(response.is_ok());
     let mut client = get_client("mock_another_user");
-    let request = GetInputFileRequest::new(&data_id);
+    let request = GetInputFileRequest::new(data_id);
     let response = client.get_input_file(request);
     assert!(response.is_err());
 }
@@ -282,7 +282,7 @@ fn get_correct_create_task() -> CreateTaskRequest {
     CreateTaskRequest {
         function_id,
         function_arguments,
-        executor: "mesapy".to_string(),
+        executor: Executor::MesaPy,
         input_owners_map,
         output_owners_map,
     }
@@ -290,11 +290,8 @@ fn get_correct_create_task() -> CreateTaskRequest {
 
 fn test_create_task() {
     let request = CreateTaskRequest {
-        function_id: ExternalID::default(),
-        function_arguments: HashMap::new().into(),
-        executor: "mesapy".to_string(),
-        input_owners_map: HashMap::new(),
-        output_owners_map: HashMap::new(),
+        executor: Executor::MesaPy,
+        ..Default::default()
     };
     let mut client = get_client("mock_user");
     let response = client.create_task(request);
@@ -405,9 +402,8 @@ fn test_assign_data() {
     let request = GetOutputFileRequest {
         data_id: existing_outfile_id_user1.clone(),
     };
-    let response = client1.get_output_file(request);
-    assert!(response.is_ok());
-    assert!(!response.unwrap().hash.is_empty());
+    let response = client1.get_output_file(request).unwrap();
+    assert!(!response.hash.is_empty());
     let mut request = AssignDataRequest {
         task_id: task_id.clone(),
         input_map: HashMap::new(),
@@ -651,30 +647,30 @@ fn test_approve_task() {
     let response = client3.assign_data(request);
     assert!(response.is_ok());
 
-    let request = GetTaskRequest::new(&task_id);
+    let request = GetTaskRequest::new(task_id.clone());
     let response = client2.get_task(request);
     assert_eq!(response.unwrap().status, TaskStatus::Ready);
 
     // user_id not in task.participants
     let mut unknown_client = get_client("non-participant");
-    let request = ApproveTaskRequest::new(&task_id);
+    let request = ApproveTaskRequest::new(task_id.clone());
     let response = unknown_client.approve_task(request);
     assert!(response.is_err());
 
     //all participants approve the task
-    let request = ApproveTaskRequest::new(&task_id);
+    let request = ApproveTaskRequest::new(task_id.clone());
     let response = client.approve_task(request);
     assert!(response.is_ok());
-    let request = ApproveTaskRequest::new(&task_id);
+    let request = ApproveTaskRequest::new(task_id.clone());
     let response = client1.approve_task(request);
     assert!(response.is_ok());
-    let request = ApproveTaskRequest::new(&task_id);
+    let request = ApproveTaskRequest::new(task_id.clone());
     let response = client2.approve_task(request);
     assert!(response.is_ok());
-    let request = ApproveTaskRequest::new(&task_id);
+    let request = ApproveTaskRequest::new(task_id.clone());
     let response = client3.approve_task(request);
     assert!(response.is_ok());
-    let request = GetTaskRequest::new(&task_id);
+    let request = GetTaskRequest::new(task_id);
     let response = client2.get_task(request);
     assert_eq!(response.unwrap().status, TaskStatus::Approved);
 }
@@ -744,33 +740,33 @@ fn test_invoke_task() {
     assert!(response.is_ok());
 
     // task status != Approved
-    let request = InvokeTaskRequest::new(&task_id);
+    let request = InvokeTaskRequest::new(task_id.clone());
     let response = client.invoke_task(request);
     assert!(response.is_err());
 
     //all participants approve the task
-    let request = ApproveTaskRequest::new(&task_id);
+    let request = ApproveTaskRequest::new(task_id.clone());
     client.approve_task(request).unwrap();
-    let request = ApproveTaskRequest::new(&task_id);
+    let request = ApproveTaskRequest::new(task_id.clone());
     client1.approve_task(request).unwrap();
-    let request = ApproveTaskRequest::new(&task_id);
+    let request = ApproveTaskRequest::new(task_id.clone());
     client2.approve_task(request).unwrap();
-    let request = ApproveTaskRequest::new(&task_id);
+    let request = ApproveTaskRequest::new(task_id.clone());
     client3.approve_task(request).unwrap();
-    let request = GetTaskRequest::new(&task_id);
+    let request = GetTaskRequest::new(task_id.clone());
     let response = client2.get_task(request).unwrap();
     assert_eq!(response.status, TaskStatus::Approved);
 
     // user_id != task.creator
-    let request = InvokeTaskRequest::new(&task_id);
+    let request = InvokeTaskRequest::new(task_id.clone());
     let response = client2.invoke_task(request);
     assert!(response.is_err());
 
     // invoke task
-    let request = InvokeTaskRequest::new(&task_id);
+    let request = InvokeTaskRequest::new(task_id.clone());
     client.invoke_task(request).unwrap();
 
-    let request = GetTaskRequest::new(&task_id);
+    let request = GetTaskRequest::new(task_id);
     let response = client2.get_task(request).unwrap();
     assert_eq!(response.status, TaskStatus::Running);
 

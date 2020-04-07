@@ -64,10 +64,8 @@ pub struct RegisterInputFileResponse {
 }
 
 impl RegisterInputFileResponse {
-    pub fn new(data_id: impl Into<ExternalID>) -> Self {
-        Self {
-            data_id: data_id.into(),
-        }
+    pub fn new(data_id: ExternalID) -> Self {
+        Self { data_id }
     }
 }
 
@@ -93,10 +91,8 @@ pub struct RegisterOutputFileResponse {
 }
 
 impl RegisterOutputFileResponse {
-    pub fn new(data_id: impl Into<ExternalID>) -> Self {
-        Self {
-            data_id: data_id.into(),
-        }
+    pub fn new(data_id: ExternalID) -> Self {
+        Self { data_id }
     }
 }
 
@@ -121,10 +117,8 @@ pub struct RegisterFusionOutputResponse {
 }
 
 impl RegisterFusionOutputResponse {
-    pub fn new(data_id: impl Into<ExternalID>) -> Self {
-        Self {
-            data_id: data_id.into(),
-        }
+    pub fn new(data_id: ExternalID) -> Self {
+        Self { data_id }
     }
 }
 
@@ -136,10 +130,8 @@ pub struct RegisterInputFromOutputRequest {
 }
 
 impl RegisterInputFromOutputRequest {
-    pub fn new(data_id: impl Into<ExternalID>) -> Self {
-        Self {
-            data_id: data_id.into(),
-        }
+    pub fn new(data_id: ExternalID) -> Self {
+        Self { data_id }
     }
 }
 
@@ -151,10 +143,8 @@ pub struct RegisterInputFromOutputResponse {
 }
 
 impl RegisterInputFromOutputResponse {
-    pub fn new(data_id: impl Into<ExternalID>) -> Self {
-        Self {
-            data_id: data_id.into(),
-        }
+    pub fn new(data_id: ExternalID) -> Self {
+        Self { data_id }
     }
 }
 
@@ -166,10 +156,8 @@ pub struct GetInputFileRequest {
 }
 
 impl GetInputFileRequest {
-    pub fn new(data_id: impl Into<ExternalID>) -> Self {
-        Self {
-            data_id: data_id.into(),
-        }
+    pub fn new(data_id: ExternalID) -> Self {
+        Self { data_id }
     }
 }
 
@@ -198,10 +186,8 @@ pub struct GetOutputFileRequest {
 }
 
 impl GetOutputFileRequest {
-    pub fn new(data_id: impl Into<ExternalID>) -> Self {
-        Self {
-            data_id: data_id.into(),
-        }
+    pub fn new(data_id: ExternalID) -> Self {
+        Self { data_id }
     }
 }
 
@@ -314,10 +300,8 @@ pub struct RegisterFunctionResponse {
 }
 
 impl RegisterFunctionResponse {
-    pub fn new(function_id: impl Into<ExternalID>) -> Self {
-        Self {
-            function_id: function_id.into(),
-        }
+    pub fn new(function_id: ExternalID) -> Self {
+        Self { function_id }
     }
 }
 
@@ -329,10 +313,8 @@ pub struct GetFunctionRequest {
 }
 
 impl GetFunctionRequest {
-    pub fn new(function_id: impl Into<ExternalID>) -> Self {
-        Self {
-            function_id: function_id.into(),
-        }
+    pub fn new(function_id: ExternalID) -> Self {
+        Self { function_id }
     }
 }
 
@@ -366,9 +348,9 @@ impl CreateTaskRequest {
         Self::default()
     }
 
-    pub fn function_id(self, function_id: impl Into<ExternalID>) -> Self {
+    pub fn function_id(self, function_id: ExternalID) -> Self {
         Self {
-            function_id: function_id.into(),
+            function_id,
             ..self
         }
     }
@@ -380,9 +362,9 @@ impl CreateTaskRequest {
         }
     }
 
-    pub fn executor(self, executor: impl ToString) -> Self {
+    pub fn executor(self, executor: impl Into<Executor>) -> Self {
         Self {
-            executor: executor.to_string(),
+            executor: executor.into(),
             ..self
         }
     }
@@ -409,10 +391,8 @@ pub struct CreateTaskResponse {
 }
 
 impl CreateTaskResponse {
-    pub fn new(task_id: impl Into<ExternalID>) -> Self {
-        Self {
-            task_id: task_id.into(),
-        }
+    pub fn new(task_id: ExternalID) -> Self {
+        Self { task_id }
     }
 }
 
@@ -424,10 +404,8 @@ pub struct GetTaskRequest {
 }
 
 impl GetTaskRequest {
-    pub fn new(task_id: impl Into<ExternalID>) -> Self {
-        Self {
-            task_id: task_id.into(),
-        }
+    pub fn new(task_id: ExternalID) -> Self {
+        Self { task_id }
     }
 }
 
@@ -461,12 +439,12 @@ pub struct AssignDataRequest {
 
 impl AssignDataRequest {
     pub fn new(
-        task_id: impl Into<ExternalID>,
+        task_id: ExternalID,
         input_map: HashMap<String, ExternalID>,
         output_map: HashMap<String, ExternalID>,
     ) -> Self {
         Self {
-            task_id: task_id.into(),
+            task_id,
             input_map,
             output_map,
         }
@@ -484,10 +462,8 @@ pub struct ApproveTaskRequest {
 }
 
 impl ApproveTaskRequest {
-    pub fn new(task_id: impl Into<ExternalID>) -> Self {
-        Self {
-            task_id: task_id.into(),
-        }
+    pub fn new(task_id: ExternalID) -> Self {
+        Self { task_id }
     }
 }
 
@@ -502,10 +478,8 @@ pub struct InvokeTaskRequest {
 }
 
 impl InvokeTaskRequest {
-    pub fn new(task_id: impl Into<ExternalID>) -> Self {
-        Self {
-            task_id: task_id.into(),
-        }
+    pub fn new(task_id: ExternalID) -> Self {
+        Self { task_id }
     }
 }
 
@@ -811,11 +785,12 @@ impl std::convert::TryFrom<proto::RegisterFunctionRequest> for RegisterFunctionR
             .into_iter()
             .map(FunctionOutput::try_from)
             .collect();
+        let executor_type = proto.executor_type.try_into()?;
 
         let ret = Self {
             name: proto.name,
             description: proto.description,
-            executor_type: proto.executor_type.as_str().try_into()?,
+            executor_type,
             payload: proto.payload,
             public: proto.public,
             arguments: proto.arguments,
@@ -904,12 +879,13 @@ impl std::convert::TryFrom<proto::GetFunctionResponse> for GetFunctionResponse {
             .into_iter()
             .map(FunctionOutput::try_from)
             .collect();
+        let executor_type = proto.executor_type.try_into()?;
 
         let ret = Self {
             name: proto.name,
             description: proto.description,
             owner: proto.owner.into(),
-            executor_type: proto.executor_type.as_str().try_into()?,
+            executor_type,
             payload: proto.payload,
             public: proto.public,
             arguments: proto.arguments,
@@ -981,11 +957,12 @@ impl std::convert::TryFrom<proto::CreateTaskRequest> for CreateTaskRequest {
         let input_owners_map = data_owner_map_from_proto(proto.input_owners_map)?;
         let output_owners_map = data_owner_map_from_proto(proto.output_owners_map)?;
         let function_id = proto.function_id.try_into()?;
+        let executor = proto.executor.try_into()?;
 
         let ret = Self {
             function_id,
             function_arguments,
-            executor: proto.executor,
+            executor,
             input_owners_map,
             output_owners_map,
         };
@@ -1002,7 +979,7 @@ impl From<CreateTaskRequest> for proto::CreateTaskRequest {
         Self {
             function_id: request.function_id.to_string(),
             function_arguments,
-            executor: request.executor,
+            executor: request.executor.to_string(),
             input_owners_map,
             output_owners_map,
         }

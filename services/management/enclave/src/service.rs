@@ -281,8 +281,8 @@ impl TeaclaveManagement for TeaclaveManagementService {
 
         let mut task = Task::new(
             user_id,
-            &function,
             request.executor,
+            &function,
             request.function_arguments,
             request.input_owners_map,
             request.output_owners_map,
@@ -486,7 +486,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
 
         let staged_task = StagedTask::new()
             .task_id(task.task_id)
-            .native_func(task.executor.clone())
+            .executor(task.executor)
             .executor_type(function.executor_type)
             .function_id(function.id)
             .function_payload(function.payload)
@@ -685,8 +685,8 @@ pub mod tests {
 
         let task = Task::new(
             UserID::from("mock_user"),
+            Executor::MesaPy,
             &function,
-            "mesapy".to_string(),
             function_arguments,
             HashMap::new(),
             HashMap::new(),
@@ -714,7 +714,7 @@ pub mod tests {
 
         let staged_task = StagedTask::new()
             .task_id(Uuid::new_v4())
-            .native_func("mesapy".to_string())
+            .executor(Executor::MesaPy)
             .function_payload(function.payload)
             .function_arguments(hashmap!("arg" => "data"))
             .input_data(hashmap!("input" => input_data))

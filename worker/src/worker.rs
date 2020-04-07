@@ -22,7 +22,8 @@ use std::collections::HashMap;
 use std::format;
 
 use teaclave_types::{
-    hashmap, ExecutorType, FunctionArguments, StagedFiles, StagedFunction, WorkerCapability,
+    hashmap, Executor, ExecutorType, FunctionArguments, StagedFiles, StagedFunction,
+    WorkerCapability,
 };
 
 use teaclave_function as function;
@@ -30,11 +31,11 @@ use teaclave_runtime as runtime;
 use teaclave_types::{TeaclaveFunction, TeaclaveRuntime};
 
 macro_rules! register_functions{
-    ($($name: expr => ($executor: expr, $fn_type: ty),)*) => {{
-        let mut functions: HashMap<String, FunctionBuilder> = HashMap::new();
+    ($(($executor_type: expr, $executor_name: expr) => $fn_type: ty,)*) => {{
+        let mut functions: HashMap<(ExecutorType, Executor), FunctionBuilder> = HashMap::new();
         $(
             functions.insert(
-                make_function_identifier($executor, $name),
+                ($executor_type, $executor_name),
                 Box::new(|| Box::new(<$fn_type>::default())),
             );
         )*
@@ -44,24 +45,27 @@ macro_rules! register_functions{
 
 pub struct Worker {
     runtimes: HashMap<String, RuntimeBuilder>,
-    functions: HashMap<String, FunctionBuilder>,
+    functions: HashMap<(ExecutorType, Executor), FunctionBuilder>,
 }
 
 impl Worker {
     pub fn default() -> Worker {
         Worker {
             functions: register_functions!(
-                "gbdt_training"     => (ExecutorType::Native, function::GbdtTraining),
-                "gbdt_prediction"    => (ExecutorType::Native, function::GbdtPrediction),
-                "echo"              => (ExecutorType::Native, function::Echo),
-                "mesapy"            => (ExecutorType::Python, function::Mesapy),
+                (ExecutorType::Python, Executor::MesaPy) => function::Mesapy,
+                (ExecutorType::Native, Executor::Echo) => function::Echo,
+                (ExecutorType::Native, Executor::GbdtTraining) => function::GbdtTraining,
+                (ExecutorType::Native, Executor::GbdtPrediction) => function::GbdtPrediction,
+                (ExecutorType::Native, Executor::LogitRegTraining) => function::LogitRegTraining,
+                (ExecutorType::Native, Executor::LogitRegPrediction) => function::LogitRegPrediction,
             ),
             runtimes: setup_runtimes(),
         }
     }
 
     pub fn invoke_function(&self, staged_function: StagedFunction) -> anyhow::Result<String> {
-        let function = self.get_function(staged_function.executor_type, &staged_function.name)?;
+        let function =
+            self.get_function(staged_function.executor_type, staged_function.executor)?;
         let runtime = self.get_runtime(
             &staged_function.runtime_name,
             staged_function.input_files,
@@ -78,7 +82,12 @@ impl Worker {
     pub fn get_capability(&self) -> WorkerCapability {
         WorkerCapability {
             runtimes: self.runtimes.keys().cloned().collect(),
-            functions: self.functions.keys().cloned().collect(),
+            functions: self
+                .functions
+                .keys()
+                .cloned()
+                .map(|(exec_type, exec_name)| make_function_identifier(exec_type, exec_name))
+                .collect(),
         }
     }
 
@@ -99,23 +108,22 @@ impl Worker {
 
     fn get_function(
         &self,
-        func_type: ExecutorType,
-        func_name: &str,
+        exec_type: ExecutorType,
+        exec_name: Executor,
     ) -> anyhow::Result<Box<dyn TeaclaveFunction + Send + Sync>> {
-        let identifier = make_function_identifier(func_type, func_name);
+        let identifier = (exec_type, exec_name);
         let build_function = self
             .functions
             .get(&identifier)
-            .ok_or_else(|| anyhow::anyhow!(format!("function not available: {}", identifier)))?;
+            .ok_or_else(|| anyhow::anyhow!(format!("function not available: {:?}", identifier)))?;
 
         let function = build_function();
         Ok(function)
     }
 }
 
-fn make_function_identifier(func_type: ExecutorType, func_name: &str) -> String {
-    let type_str = func_type.to_string();
-    format!("{}-{}", type_str, func_name)
+fn make_function_identifier(exec_type: ExecutorType, exec_name: Executor) -> String {
+    format!("{}-{}", exec_type, exec_name)
 }
 
 fn setup_runtimes() -> HashMap<String, RuntimeBuilder> {

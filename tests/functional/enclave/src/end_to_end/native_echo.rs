@@ -41,7 +41,7 @@ pub fn test_echo_task_success() {
     let request = CreateTaskRequest::new()
         .function_id(function_id)
         .function_arguments(hashmap!("message" => "Hello From Teaclave!"))
-        .executor("echo");
+        .executor(Executor::Echo);
 
     let response = client.create_task(request).unwrap();
 
@@ -59,20 +59,20 @@ pub fn test_echo_task_success() {
     log::info!("Assign data: {:?}", response);
 
     // Approve Task
-    let request = ApproveTaskRequest::new(&task_id);
+    let request = ApproveTaskRequest::new(task_id.clone());
     let response = client.approve_task(request).unwrap();
 
     log::info!("Approve task: {:?}", response);
 
     // Invoke Task
-    let request = InvokeTaskRequest::new(&task_id);
+    let request = InvokeTaskRequest::new(task_id.clone());
     let response = client.invoke_task(request).unwrap();
 
     log::info!("Invoke task: {:?}", response);
 
     // Get Task
     loop {
-        let request = GetTaskRequest::new(&task_id);
+        let request = GetTaskRequest::new(task_id.clone());
         let response = client.get_task(request).unwrap();
         log::info!("Get task: {:?}", response);
         std::thread::sleep(std::time::Duration::from_secs(1));
