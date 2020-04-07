@@ -21,26 +21,35 @@ use std::prelude::v1::*;
 use std::format;
 use std::io::{self, BufRead, BufReader, Write};
 
-use teaclave_types::FunctionArguments;
-use teaclave_types::{TeaclaveFunction, TeaclaveRuntime};
+use std::convert::TryFrom;
+use teaclave_types::{FunctionArguments, FunctionRuntime, TeaclaveFunction};
 
 use gbdt::config::Config;
 use gbdt::decision_tree::Data;
 use gbdt::gradient_boost::GBDT;
 
+const IN_DATA: &str = "training_data";
+const OUT_MODEL: &str = "trained_model";
+
 #[derive(Default)]
 pub struct GbdtTraining;
 
-static IN_DATA: &str = "training_data";
-static OUT_MODEL: &str = "trained_model";
+struct GbdtTrainingArguments {
+    feature_size: usize,
+    max_depth: u32,
+    iterations: usize,
+    shrinkage: f32,
+    feature_sample_ratio: f64,
+    data_sample_ratio: f64,
+    min_leaf_size: usize,
+    loss: String,
+    training_optimization_level: u8,
+}
 
-impl TeaclaveFunction for GbdtTraining {
-    fn execute(
-        &self,
-        runtime: Box<dyn TeaclaveRuntime + Send + Sync>,
-        arguments: FunctionArguments,
-    ) -> anyhow::Result<String> {
-        log::debug!("start traning...");
+impl TryFrom<FunctionArguments> for GbdtTrainingArguments {
+    type Error = anyhow::Error;
+
+    fn try_from(arguments: FunctionArguments) -> Result<Self, Self::Error> {
         let feature_size = arguments.get("feature_size")?.as_usize()?;
         let max_depth = arguments.get("max_depth")?.as_u32()?;
         let iterations = arguments.get("iterations")?.as_usize()?;
@@ -48,27 +57,50 @@ impl TeaclaveFunction for GbdtTraining {
         let feature_sample_ratio = arguments.get("feature_sample_ratio")?.as_f64()?;
         let data_sample_ratio = arguments.get("data_sample_ratio")?.as_f64()?;
         let min_leaf_size = arguments.get("min_leaf_size")?.as_usize()?;
-        let loss = arguments.get("loss")?.as_str();
+        let loss = arguments.get("loss")?.as_str().to_owned();
         let training_optimization_level = arguments.get("training_optimization_level")?.as_u8()?;
+
+        Ok(Self {
+            feature_size,
+            max_depth,
+            iterations,
+            shrinkage,
+            feature_sample_ratio,
+            data_sample_ratio,
+            min_leaf_size,
+            loss,
+            training_optimization_level,
+        })
+    }
+}
+
+impl TeaclaveFunction for GbdtTraining {
+    fn execute(
+        &self,
+        runtime: FunctionRuntime,
+        arguments: FunctionArguments,
+    ) -> anyhow::Result<String> {
+        log::debug!("start traning...");
+        let args = GbdtTrainingArguments::try_from(arguments)?;
 
         log::debug!("open input...");
         // read input
         let training_file = runtime.open_input(IN_DATA)?;
-        let mut train_dv = parse_training_data(training_file, feature_size)?;
+        let mut train_dv = parse_training_data(training_file, args.feature_size)?;
         let data_size = train_dv.len();
 
         // init gbdt config
         let mut cfg = Config::new();
         cfg.set_debug(false);
-        cfg.set_feature_size(feature_size);
-        cfg.set_max_depth(max_depth);
-        cfg.set_iterations(iterations);
-        cfg.set_shrinkage(shrinkage);
-        cfg.set_loss(loss);
-        cfg.set_min_leaf_size(min_leaf_size);
-        cfg.set_data_sample_ratio(data_sample_ratio);
-        cfg.set_feature_sample_ratio(feature_sample_ratio);
-        cfg.set_training_optimization_level(training_optimization_level);
+        cfg.set_feature_size(args.feature_size);
+        cfg.set_max_depth(args.max_depth);
+        cfg.set_iterations(args.iterations);
+        cfg.set_shrinkage(args.shrinkage);
+        cfg.set_loss(&args.loss);
+        cfg.set_min_leaf_size(args.min_leaf_size);
+        cfg.set_data_sample_ratio(args.data_sample_ratio);
+        cfg.set_feature_sample_ratio(args.feature_sample_ratio);
+        cfg.set_training_optimization_level(args.training_optimization_level);
 
         // start training
         let mut gbdt_train_mod = GBDT::new(&cfg);

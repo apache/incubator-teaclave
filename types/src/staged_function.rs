@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use crate::{Executor, ExecutorType, StagedFiles};
+use crate::{Executor, ExecutorType, StagedFiles, TeaclaveRuntime};
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -23,6 +23,8 @@ use std::prelude::v1::*;
 use std::str::FromStr;
 
 use anyhow::{Context, Result};
+
+pub type FunctionRuntime = Box<dyn TeaclaveRuntime + Send + Sync>;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ArgumentValue {

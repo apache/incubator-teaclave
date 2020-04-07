@@ -18,13 +18,13 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use teaclave_types::FunctionArguments;
-use teaclave_types::{TeaclaveFunction, TeaclaveRuntime};
+use std::ffi::CString;
 
 use crate::context::reset_thread_context;
 use crate::context::set_thread_context;
 use crate::context::Context;
-use std::ffi::CString;
+
+use teaclave_types::{FunctionArguments, FunctionRuntime, TeaclaveFunction};
 
 const MAXPYBUFLEN: usize = 20480;
 const MESAPY_ERROR_BUFFER_TOO_SHORT: i64 = -1i64;
@@ -44,11 +44,7 @@ extern "C" {
 pub struct Mesapy;
 
 impl TeaclaveFunction for Mesapy {
-    fn execute(
-        &self,
-        runtime: Box<dyn TeaclaveRuntime + Send + Sync>,
-        args: FunctionArguments,
-    ) -> anyhow::Result<String> {
+    fn execute(&self, runtime: FunctionRuntime, args: FunctionArguments) -> anyhow::Result<String> {
         let script = args.get("py_payload")?.as_str();
         let py_args = args.get("py_args")?.as_str();
         let py_args: FunctionArguments = serde_json::from_str(py_args)?;

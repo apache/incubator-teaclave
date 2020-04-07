@@ -18,43 +18,64 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
+use std::convert::TryFrom;
+use std::format;
+use std::io::{self, BufRead, BufReader, Write};
+
+use teaclave_types::{FunctionArguments, FunctionRuntime, TeaclaveFunction};
+
 use rusty_machine::learning::logistic_reg::LogisticRegressor;
 use rusty_machine::learning::optim::grad_desc::GradientDesc;
 use rusty_machine::learning::SupModel;
 use rusty_machine::linalg;
-use std::format;
-use std::io::{self, BufRead, BufReader, Write};
 
-use teaclave_types::FunctionArguments;
-use teaclave_types::{TeaclaveFunction, TeaclaveRuntime};
+const TRAINING_DATA: &str = "training_data";
+const OUT_MODEL_FILE: &str = "model_file";
 
 #[derive(Default)]
 pub struct LogitRegTraining;
 
-static TRAINING_DATA: &str = "training_data";
-static OUT_MODEL_FILE: &str = "model_file";
+struct LogitRegTrainingArguments {
+    alg_alpha: f64,
+    alg_iters: usize,
+    feature_size: usize,
+}
 
-impl TeaclaveFunction for LogitRegTraining {
-    fn execute(
-        &self,
-        runtime: Box<dyn TeaclaveRuntime + Send + Sync>,
-        arguments: FunctionArguments,
-    ) -> anyhow::Result<String> {
+impl TryFrom<FunctionArguments> for LogitRegTrainingArguments {
+    type Error = anyhow::Error;
+
+    fn try_from(arguments: FunctionArguments) -> Result<Self, Self::Error> {
         let alg_alpha = arguments.get("alg_alpha")?.as_f64()?;
         let alg_iters = arguments.get("alg_iters")?.as_usize()?;
         let feature_size = arguments.get("feature_size")?.as_usize()?;
 
+        Ok(Self {
+            alg_alpha,
+            alg_iters,
+            feature_size,
+        })
+    }
+}
+
+impl TeaclaveFunction for LogitRegTraining {
+    fn execute(
+        &self,
+        runtime: FunctionRuntime,
+        arguments: FunctionArguments,
+    ) -> anyhow::Result<String> {
+        let args = LogitRegTrainingArguments::try_from(arguments)?;
+
         let input = runtime.open_input(TRAINING_DATA)?;
-        let (flattend_features, targets) = parse_training_data(input, feature_size)?;
+        let (flattend_features, targets) = parse_training_data(input, args.feature_size)?;
         let data_size = targets.len();
-        let data_matrix = linalg::Matrix::new(data_size, feature_size, flattend_features);
+        let data_matrix = linalg::Matrix::new(data_size, args.feature_size, flattend_features);
         let targets = linalg::Vector::new(targets);
 
-        let gd = GradientDesc::new(alg_alpha, alg_iters);
+        let gd = GradientDesc::new(args.alg_alpha, args.alg_iters);
         let mut lr = LogisticRegressor::new(gd);
         lr.train(&data_matrix, &targets)?;
 
-        let model_json = serde_json::to_string(&lr).unwrap();
+        let model_json = serde_json::to_string(&lr)?;
         let mut model_file = runtime.create_output(OUT_MODEL_FILE)?;
         model_file.write_all(model_json.as_bytes())?;
 

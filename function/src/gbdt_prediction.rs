@@ -21,24 +21,23 @@ use std::prelude::v1::*;
 use std::format;
 use std::io::{self, BufRead, BufReader, Write};
 
-use teaclave_types::FunctionArguments;
-use teaclave_types::{TeaclaveFunction, TeaclaveRuntime};
+use teaclave_types::{FunctionArguments, FunctionRuntime, TeaclaveFunction};
 
 use gbdt::decision_tree::Data;
 use gbdt::gradient_boost::GBDT;
 
+const IN_MODEL: &str = "model_file";
+const IN_DATA: &str = "data_file";
+const OUT_RESULT: &str = "result_file";
+
 #[derive(Default)]
 pub struct GbdtPrediction;
-
-static IN_MODEL: &str = "model_file";
-static IN_DATA: &str = "data_file";
-static OUT_RESULT: &str = "result_file";
 
 impl TeaclaveFunction for GbdtPrediction {
     fn execute(
         &self,
-        runtime: Box<dyn TeaclaveRuntime + Send + Sync>,
-        _args: FunctionArguments,
+        runtime: FunctionRuntime,
+        _arguments: FunctionArguments,
     ) -> anyhow::Result<String> {
         let mut json_model = String::new();
         let mut f = runtime.open_input(IN_MODEL)?;
