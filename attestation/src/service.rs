@@ -30,6 +30,12 @@ use std::net::TcpStream;
 use std::prelude::v1::*;
 use std::sync::Arc;
 
+#[cfg(dcap)]
+const DCAP_ROOT_CA_CERT: &str = include_str!("../../keys/dcap_root_ca_cert.pem");
+
+/// URL path to get the report
+const AS_REPORT_URL: &str = "/sgx/dev/attestation/v4/report";
+
 #[derive(thiserror::Error, Debug)]
 pub enum AttestationServiceError {
     #[error("Invalid attestation service address.")]
@@ -51,9 +57,6 @@ pub enum AttestationServiceError {
     #[error("Attestation service responds an unknown error.")]
     Unknown,
 }
-
-#[cfg(dcap)]
-const DCAP_ROOT_CA_CERT: &str = include_str!("../../keys/dcap_root_ca_cert.pem");
 
 impl EndorsedAttestationReport {
     pub(crate) fn new(
@@ -113,7 +116,6 @@ fn get_report(
     quote: &[u8],
 ) -> Result<EndorsedAttestationReport> {
     debug!("get_report");
-    let report_uri = "/sgx/dev/attestation/v4/report";
     let encoded_quote = base64::encode(quote);
     let encoded_json = json!({ "isvEnclaveQuote": encoded_quote }).to_string();
     let host_str = url
@@ -128,7 +130,7 @@ fn get_report(
          Content-Length: {}\r\n\
          Content-Type: application/json\r\n\r\n\
          {}",
-        report_uri,
+        AS_REPORT_URL,
         host_str,
         api_key,
         encoded_json.len(),

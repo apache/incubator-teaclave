@@ -132,7 +132,7 @@ fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
         .collect();
     let api_listen_address = config.api_endpoints.authentication.listen_address;
     let internal_listen_address = config.internal_endpoints.authentication.listen_address;
-    let attestation_config = AttestationConfig::from_teaclave_config(&config);
+    let attestation_config = AttestationConfig::from_teaclave_config(&config)?;
     let attested_tls_config = RemoteAttestation::new()
         .config(attestation_config)
         .generate_and_endorse()

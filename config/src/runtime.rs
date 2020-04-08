@@ -151,5 +151,9 @@ fn validate_config(config: &RuntimeConfig) -> Result<()> {
         bail!("Cannot find Attestation Service SPID/key or format error");
     }
 
+    if url::Url::parse(&config.attestation.url).is_err() {
+        bail!("Invalid URL of attestation service");
+    }
+
     Ok(())
 }
