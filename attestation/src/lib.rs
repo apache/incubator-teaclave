@@ -20,6 +20,7 @@
 #[macro_use]
 extern crate sgx_tstd as std;
 
+use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::prelude::v1::*;
 use std::sync::Arc;
@@ -91,32 +92,32 @@ impl AttestationConfig {
     }
 
     /// Creates `AttestationConfig` for attestation using given values
-    pub fn new(algorithm: &str, url: &str, api_key: &str, spid_str: &str) -> Arc<Self> {
+    pub fn new(algorithm: &str, url: &str, api_key: &str, spid_str: &str) -> Result<Arc<Self>> {
         if cfg!(sgx_sim) {
-            return Self::no_attestation();
+            return Ok(Self::no_attestation());
         }
 
         use core::convert::TryFrom;
 
         let mut spid = sgx_types::sgx_spid_t::default();
-        let hex = hex::decode(spid_str).expect("Illegal SPID provided");
-        spid.id = <[u8; 16]>::try_from(hex.as_slice()).expect("Illegal SPID provided");
+        let hex = hex::decode(spid_str).context("Illegal SPID provided")?;
+        spid.id = <[u8; 16]>::try_from(hex.as_slice()).context("Illegal SPID provided")?;
 
         let algo = AttestationAlgorithm::from_str(algorithm)
-            .unwrap_or_else(|| panic!("Unsupported remote attestation algorithm"));
+            .context("Unsupported remote attestation algorithm")?;
 
         let att_service_cfg = AttestationServiceConfig {
             algo,
-            as_url: url::Url::parse(url).unwrap(),
+            as_url: url::Url::parse(url).context("Invalid URL")?,
             api_key: api_key.to_string(),
             spid,
         };
 
-        Arc::new(Self::WithAttestation(att_service_cfg))
+        Ok(Arc::new(Self::WithAttestation(att_service_cfg)))
     }
 
     /// Crate attestation config from Teaclave runtime configuration.
-    pub fn from_teaclave_config(config: &teaclave_config::RuntimeConfig) -> Arc<Self> {
+    pub fn from_teaclave_config(config: &teaclave_config::RuntimeConfig) -> Result<Arc<Self>> {
         let as_config = &config.attestation;
         Self::new(
             &as_config.algorithm,
