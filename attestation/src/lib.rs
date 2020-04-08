@@ -114,6 +114,17 @@ impl AttestationConfig {
 
         Arc::new(Self::WithAttestation(att_service_cfg))
     }
+
+    /// Crate attestation config from Teaclave runtime configuration.
+    pub fn from_teaclave_config(config: &teaclave_config::RuntimeConfig) -> Arc<Self> {
+        let as_config = &config.attestation;
+        Self::new(
+            &as_config.algorithm,
+            &as_config.url,
+            &as_config.key,
+            &as_config.spid,
+        )
+    }
 }
 
 /// AttestationReport can be endorsed by either the Intel Attestation Service
