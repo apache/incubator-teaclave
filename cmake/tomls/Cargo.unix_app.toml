@@ -4,7 +4,8 @@
 # and for those to exclude from cmake build, just append the '# ignore'
 # annotation suffix
 members = [
-  "dcap"
+  "dcap",
+  "cli"
 ]
 
 exclude = [
