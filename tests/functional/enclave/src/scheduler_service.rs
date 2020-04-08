@@ -16,7 +16,6 @@
 // under the License.
 
 use crate::utils::*;
-use std::collections::HashMap;
 use std::prelude::v1::*;
 use teaclave_proto::teaclave_scheduler_service::*;
 use teaclave_proto::teaclave_storage_service::*;
@@ -87,8 +86,8 @@ fn test_update_task_status_result() {
     let response = client.update_task_status(request);
     assert!(response.is_ok());
 
-    let request =
-        UpdateTaskResultRequest::new(task_id, "return".to_string().as_bytes(), HashMap::new());
+    let task_outputs = TaskOutputs::new("return", hashmap!());
+    let request = UpdateTaskResultRequest::new(task_id, Ok(task_outputs));
     let response = client.update_task_result(request);
 
     assert!(response.is_ok());

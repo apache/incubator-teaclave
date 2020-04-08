@@ -413,7 +413,7 @@ fn test_assign_data() {
 
     let request = GetTaskRequest::new(task_id.clone());
     let response = client3.get_task(request).unwrap();
-    assert_eq!(response.status, TaskStatus::Ready);
+    assert_eq!(response.status, TaskStatus::DataAssigned);
 
     // task.status != Created
     let request = AssignDataRequest::new(
@@ -482,7 +482,7 @@ fn test_approve_task() {
 
     let request = GetTaskRequest::new(task_id.clone());
     let response = client2.get_task(request).unwrap();
-    assert_eq!(response.status, TaskStatus::Ready);
+    assert_eq!(response.status, TaskStatus::DataAssigned);
 
     // user_id not in task.participants
     let mut unknown_client = authorized_client("non-participant");

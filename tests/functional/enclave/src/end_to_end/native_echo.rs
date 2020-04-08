@@ -35,7 +35,7 @@ pub fn test_echo_task_success() {
 
     let response = client.register_function(request).unwrap();
 
-    log::info!("Resgister function: {:?}", response);
+    log::info!("Register function: {:?}", response);
 
     // Create Task
     let function_id = response.function_id;

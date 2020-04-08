@@ -32,21 +32,34 @@ pub struct FileAgentRequest {
 }
 
 impl FileAgentRequest {
-    pub fn new(cmd: HandleFileCommand, info: Vec<HandleFileInfo>) -> Self {
-        FileAgentRequest { cmd, info }
+    pub fn new<T: IntoIterator>(cmd: HandleFileCommand, info: T) -> Self
+    where
+        <T as IntoIterator>::Item: Into<HandleFileInfo>,
+    {
+        FileAgentRequest {
+            cmd,
+            info: info.into_iter().map(|x| x.into()).collect(),
+        }
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HandleFileInfo {
     pub local: PathBuf,
     pub remote: url::Url,
 }
+
 impl HandleFileInfo {
     pub fn new(local: impl AsRef<std::path::Path>, remote: &url::Url) -> Self {
         HandleFileInfo {
             local: local.as_ref().to_owned(),
             remote: remote.to_owned(),
         }
+    }
+}
+
+impl std::convert::From<&HandleFileInfo> for HandleFileInfo {
+    fn from(info: &HandleFileInfo) -> HandleFileInfo {
+        info.clone()
     }
 }

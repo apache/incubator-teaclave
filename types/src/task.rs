@@ -126,10 +126,11 @@ impl IntoIterator for OwnerList {
 #[derive(Debug, Deserialize, Serialize, std::cmp::PartialEq)]
 pub enum TaskStatus {
     Created,
-    Ready,
+    DataAssigned,
     Approved,
+    Staged,
+    DataPreparing,
     Running,
-    Failed,
     Finished,
 }
 
@@ -137,6 +138,26 @@ impl Default for TaskStatus {
     fn default() -> Self {
         Self::Created
     }
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct TaskOutputs {
+    pub return_value: Vec<u8>,
+    pub output_file_hash: HashMap<String, String>,
+}
+
+impl TaskOutputs {
+    pub fn new(value: impl Into<Vec<u8>>, output_file_hash: HashMap<String, String>) -> Self {
+        TaskOutputs {
+            return_value: value.into(),
+            output_file_hash,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct TaskFailure {
+    pub reason: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Default, Deserialize, Serialize)]

@@ -22,11 +22,15 @@ echo_title() {
     printf '\e[1m\e[96m%*.*s %s %*.*s\n\e[39m\e[0m' 0 "$padding_width" "$padding" "$1" 0 "$padding_width" "$padding"
 }
 
+start_storage_server() {
+  python ${TEACLAVE_PROJECT_ROOT}/tests/scripts/simple_http_server.py 6789 &
+}
+
 run_unit_tests() {
-  trap cleanup ERR
+  trap cleanup INT TERM ERR
   pushd ${TEACLAVE_TEST_INSTALL_DIR}
 
-  python ${TEACLAVE_PROJECT_ROOT}/tests/scripts/simple_http_server.py 6789 &
+  start_storage_server 
   echo_title "encalve unit tests"
   ./teaclave_unit_tests
 
@@ -41,7 +45,7 @@ cleanup() {
 }
 
 run_integration_tests() {
-  trap cleanup ERR
+  trap cleanup INT TERM ERR
 
   pushd ${TEACLAVE_TEST_INSTALL_DIR}
     echo_title "integration tests"
@@ -56,7 +60,7 @@ run_integration_tests() {
   echo_title "file_agent tests (untrusted)"
 
   pushd ${TEACLAVE_TEST_INSTALL_DIR}
-  python ${TEACLAVE_PROJECT_ROOT}/tests/scripts/simple_http_server.py 6789 &
+  start_storage_server 
   popd
 
   cargo test --manifest-path ${TEACLAVE_PROJECT_ROOT}/file_agent/Cargo.toml \
@@ -67,9 +71,7 @@ run_integration_tests() {
 }
 
 run_functional_tests() {
-  trap cleanup ERR
-
-  pushd ${TEACLAVE_TEST_INSTALL_DIR}
+  trap cleanup INT TERM ERR
 
   echo_title "functional tests"
   pushd ${TEACLAVE_SERVICE_INSTALL_DIR}
@@ -84,6 +86,7 @@ run_functional_tests() {
   popd
   sleep 3    # wait for other services
 
+  pushd ${TEACLAVE_TEST_INSTALL_DIR}
   # Run function tests for all except execution service
   ./teaclave_functional_tests -t \
     access_control_service \
@@ -92,6 +95,8 @@ run_functional_tests() {
     management_service \
     scheduler_service \
     storage_service
+
+  start_storage_server
 
   # Run tests of execution service separately
   pushd ${TEACLAVE_SERVICE_INSTALL_DIR}

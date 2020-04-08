@@ -20,7 +20,7 @@ use std::prelude::v1::*;
 
 use crate::teaclave_common_proto as proto;
 use anyhow::{bail, Error, Result};
-use teaclave_types::{FileCrypto, TaskStatus, TeaclaveFile128Key};
+use teaclave_types::{FileCrypto, TaskFailure, TaskOutputs, TaskStatus, TeaclaveFile128Key};
 
 #[derive(Debug)]
 pub struct UserCredential {
@@ -104,10 +104,11 @@ impl std::convert::From<TeaclaveFile128Key> for proto::FileCryptoInfo {
 pub fn i32_to_task_status(status: i32) -> Result<TaskStatus> {
     let ret = match proto::TaskStatus::from_i32(status) {
         Some(proto::TaskStatus::Created) => TaskStatus::Created,
-        Some(proto::TaskStatus::Ready) => TaskStatus::Ready,
+        Some(proto::TaskStatus::DataAssigned) => TaskStatus::DataAssigned,
         Some(proto::TaskStatus::Approved) => TaskStatus::Approved,
+        Some(proto::TaskStatus::Staged) => TaskStatus::Staged,
+        Some(proto::TaskStatus::DataPreparing) => TaskStatus::DataPreparing,
         Some(proto::TaskStatus::Running) => TaskStatus::Running,
-        Some(proto::TaskStatus::Failed) => TaskStatus::Failed,
         Some(proto::TaskStatus::Finished) => TaskStatus::Finished,
         None => bail!("invalid task status"),
     };
@@ -117,10 +118,47 @@ pub fn i32_to_task_status(status: i32) -> Result<TaskStatus> {
 pub fn i32_from_task_status(status: TaskStatus) -> i32 {
     match status {
         TaskStatus::Created => proto::TaskStatus::Created as i32,
-        TaskStatus::Ready => proto::TaskStatus::Ready as i32,
+        TaskStatus::DataAssigned => proto::TaskStatus::DataAssigned as i32,
         TaskStatus::Approved => proto::TaskStatus::Approved as i32,
+        TaskStatus::Staged => proto::TaskStatus::Staged as i32,
+        TaskStatus::DataPreparing => proto::TaskStatus::DataPreparing as i32,
         TaskStatus::Running => proto::TaskStatus::Running as i32,
-        TaskStatus::Failed => proto::TaskStatus::Failed as i32,
         TaskStatus::Finished => proto::TaskStatus::Finished as i32,
+    }
+}
+
+impl std::convert::TryFrom<proto::TaskOutputs> for TaskOutputs {
+    type Error = Error;
+    fn try_from(proto: proto::TaskOutputs) -> Result<Self> {
+        let ret = TaskOutputs {
+            return_value: proto.return_value,
+            output_file_hash: proto.output_file_hash,
+        };
+        Ok(ret)
+    }
+}
+impl std::convert::From<TaskOutputs> for proto::TaskOutputs {
+    fn from(outputs: TaskOutputs) -> Self {
+        proto::TaskOutputs {
+            return_value: outputs.return_value,
+            output_file_hash: outputs.output_file_hash,
+        }
+    }
+}
+
+impl std::convert::TryFrom<proto::TaskFailure> for TaskFailure {
+    type Error = Error;
+    fn try_from(proto: proto::TaskFailure) -> Result<Self> {
+        let ret = TaskFailure {
+            reason: proto.reason,
+        };
+        Ok(ret)
+    }
+}
+impl std::convert::From<TaskFailure> for proto::TaskFailure {
+    fn from(outputs: TaskFailure) -> Self {
+        proto::TaskFailure {
+            reason: outputs.reason,
+        }
     }
 }

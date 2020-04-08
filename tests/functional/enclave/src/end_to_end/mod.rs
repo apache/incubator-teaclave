@@ -19,9 +19,11 @@ use crate::utils::*;
 use std::prelude::v1::*;
 use teaclave_proto::teaclave_frontend_service::*;
 use teaclave_types::*;
+use url::Url;
 
 mod mesapy_echo;
 mod native_echo;
+mod native_gbdt_training;
 
 const USERNAME: &str = "alice";
 const PASSWORD: &str = "daHosldOdker0sS";
@@ -30,6 +32,7 @@ pub fn run_tests() -> bool {
     use teaclave_test_utils::*;
     setup();
     run_tests!(
+        native_gbdt_training::test_gbdt_training_task,
         native_echo::test_echo_task_success,
         mesapy_echo::test_echo_task_success,
     )
