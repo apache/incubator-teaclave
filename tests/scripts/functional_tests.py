@@ -5,10 +5,29 @@ import socket
 import struct
 import ssl
 import json
+import base64
+import toml
+import os
 
-hostname = 'localhost'
-authentication_service_address = (hostname, 7776)
-context = ssl._create_unverified_context()
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+
+from OpenSSL.crypto import load_certificate, FILETYPE_PEM, FILETYPE_ASN1
+from OpenSSL.crypto import X509Store, X509StoreContext
+from OpenSSL import crypto
+
+HOSTNAME = 'localhost'
+AUTHENTICATION_SERVICE_ADDRESS = (HOSTNAME, 7776)
+CONTEXT = ssl._create_unverified_context()
+
+if os.environ.get('TEACLAVE_PROJECT_ROOT'):
+    IAS_ROOT_CA_CERT_PATH = os.environ['TEACLAVE_PROJECT_ROOT'] + \
+        "/keys/ias_root_ca_cert.pem"
+    ENCLAVE_INFO_PATH = os.environ['TEACLAVE_PROJECT_ROOT'] + \
+        "/release/tests/enclave_info.toml"
+else:
+    IAS_ROOT_CA_CERT_PATH = "../../keys/ias_root_ca_cert.pem"
+    ENCLAVE_INFO_PATH = "../../release/tests/enclave_info.toml"
 
 
 def write_message(sock, message):
@@ -24,11 +43,54 @@ def read_message(sock):
     return response
 
 
+def verify_report(cert, endpoint_name):
+    cert = x509.load_der_x509_certificate(cert, default_backend())
+    ext = json.loads(cert.extensions[0].value.value)
+
+    report = bytes(ext["report"])
+    signature = bytes(ext["signature"])
+    signing_cert = bytes(ext["signing_cert"])
+    signing_cert = load_certificate(FILETYPE_ASN1, signing_cert)
+
+    # verify signing cert with IAS root cert
+    with open(IAS_ROOT_CA_CERT_PATH) as f:
+        ias_root_ca_cert = f.read()
+    ias_root_ca_cert = load_certificate(FILETYPE_PEM, ias_root_ca_cert)
+    store = X509Store()
+    store.add_cert(ias_root_ca_cert)
+    store_ctx = X509StoreContext(store, signing_cert)
+    store_ctx.verify_certificate()
+
+    # verify report's signature
+    crypto.verify(signing_cert, signature, bytes(ext["report"]), 'sha256')
+
+    report = json.loads(report)
+    quote = report['isvEnclaveQuoteBody']
+    quote = base64.b64decode(quote)
+
+    # get mr_enclave and mr_signer from the quote
+    mr_enclave = quote[112:112+32].hex()
+    mr_signer = quote[176:176+32].hex()
+
+    # get enclave_info
+    enclave_info = toml.load(ENCLAVE_INFO_PATH)
+
+    # verify mr_enclave and mr_signer
+    enclave_name = "teaclave_" + endpoint_name + "_service"
+    if mr_enclave != enclave_info[enclave_name]["mr_enclave"]:
+        raise Exception("mr_enclave error")
+
+    if mr_signer != enclave_info[enclave_name]["mr_signer"]:
+        raise Exception("mr_signer error")
+
+
 class TestAuthenticationService(unittest.TestCase):
 
     def setUp(self):
-        sock = socket.create_connection(authentication_service_address)
-        self.socket = context.wrap_socket(sock, server_hostname=hostname)
+        sock = socket.create_connection(AUTHENTICATION_SERVICE_ADDRESS)
+        self.socket = CONTEXT.wrap_socket(sock, server_hostname=HOSTNAME)
+        cert = self.socket.getpeercert(binary_form=True)
+        verify_report(cert, "authentication")
 
     def tearDown(self):
         self.socket.close()
