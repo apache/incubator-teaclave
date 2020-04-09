@@ -74,7 +74,10 @@ RUN apt-get update && apt-get install -q -y \
     lcov \
     llvm \
     curl \
-    iproute2
+    iproute2 \
+    python3-pip
+
+RUN pip3 install pyopenssl toml cryptography
 
 # clean up apt caches
 

@@ -3,23 +3,23 @@ name: sgx-debug-ubuntu-1804
 
 steps:
 - name: prepare
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:0.1.0
   commands:
   - . /root/.cargo/env
   - mkdir -p build
   - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DTEST_MODE=ON ..
 - name: check
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && make check
 - name: compile
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && make VERBOSE=1 -j2
 - name: test
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:0.1.0
   environment:
     AS_ALGO: sgx_epid
     AS_URL: https://api.trustedservices.intel.com:443
@@ -55,25 +55,25 @@ name: sgx-dcap-debug-ubuntu-1804
 
 steps:
 - name: prepare
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-dcap-1.5:latest
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-dcap-1.5:0.1.0
   commands:
   - . /root/.cargo/env
   - mkdir -p build
   - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DTEST_MODE=ON -DDCAP=ON ..
 - name: check
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-dcap-1.5:latest
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-dcap-1.5:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && make check
 - name: compile
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-dcap-1.5:latest
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-dcap-1.5:0.1.0
   commands:
   - . /root/.cargo/env
   - . /opt/sgxsdk/environment
   - sed -i 's/ias_root_ca_cert/dcap_root_ca_cert/' config/build.config.toml
   - cd build && make VERBOSE=1 -j2
 - name: test
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-dcap-1.5:latest
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-dcap-1.5:0.1.0
   environment:
     AS_ALGO: sgx_ecdsa
     AS_URL: https://localhost:8080
@@ -121,23 +121,23 @@ name: sgx-release-ubuntu-1804
 
 steps:
 - name: prepare
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:0.1.0
   commands:
   - . /root/.cargo/env
   - mkdir -p build
   - cd build && cmake -DTEST_MODE=ON ..
 - name: check
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && make check
 - name: compile
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && make VERBOSE=1 -j2
 - name: test
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:0.1.0
   privileged: true
   environment:
     AS_ALGO: sgx_epid
@@ -173,23 +173,23 @@ name: sim-debug-ubuntu-1804
 
 steps:
 - name: prepare
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:0.1.0
   commands:
   - . /root/.cargo/env
   - mkdir -p build
   - cd build && cmake -DTEST_MODE=ON ..
 - name: check
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && make check
 - name: compile
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DSGX_SIM_MODE=ON .. && make VERBOSE=1 -j2
 - name: test
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && make run-tests
@@ -204,23 +204,23 @@ name: sim-release-ubuntu-1804
 
 steps:
 - name: prepare
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:0.1.0
   commands:
   - . /root/.cargo/env
   - mkdir -p build
   - cd build && cmake -DTEST_MODE=YES ..
 - name: check
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && make check
 - name: compile
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && cmake -DSGX_SIM_MODE=ON .. && make VERBOSE=1 -j2
 - name: test
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && make run-tests
@@ -401,18 +401,18 @@ name: lint
 
 steps:
 - name: prepare
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:0.1.0
   commands:
   - . /root/.cargo/env
   - mkdir -p build
   - cd build && cmake -DRUSTFLAGS="-D warnings" -DTEST_MODE=ON ..
 - name: check
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && make check
 - name: clippy
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:0.1.0
   commands:
   - . /root/.cargo/env
   - cd build && make CLP=1
@@ -427,24 +427,24 @@ node:
 
 # steps:
 # - name: prepare
-#   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
+#   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:0.1.0
 #   commands:
 #   - . /root/.cargo/env
 #   - mkdir -p build
 #   - cd build && cmake -DCMAKE_BUILD_TYPE=DEBUG -DCOV=ON -DTEST_MODE=ON ..
 # - name: check
-#   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
+#   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:0.1.0
 #   commands:
 #   - . /root/.cargo/env
 #   - cd build && make check
 # - name: compile
-#   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
+#   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:0.1.0
 #   commands:
 #   - . /root/.cargo/env
 #   - export RUSTFLAGS="-D warnings"
 #   - cd build && make VERBOSE=1 -j2
 # - name: test
-#   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
+#   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:0.1.0
 #   environment:
 #     AS_ALGO: sgx_epid
 #     AS_URL: https://api.trustedservices.intel.com:443
@@ -463,7 +463,7 @@ node:
 #   - cd build && make run-tests
 # - name: coverage
 #   failure: ignore
-#   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
+#   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:0.1.0
 #   commands:
 #   - cd build && make cov
 #   - bash -c "bash <(curl -s https://codecov.io/bash) -f intermediate/cov.info"
@@ -495,13 +495,13 @@ node:
 
 # steps:
 # - name: prepare
-#   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
+#   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:0.1.0
 #   commands:
 #   - . /root/.cargo/env
 #   - mkdir -p build
 #   - cd build && cmake ..
 # - name: doc
-#   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest
+#   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9:0.1.0
 #   failure: ignore
 #   commands:
 #   - . /root/.cargo/env
