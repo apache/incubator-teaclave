@@ -13,4 +13,4 @@ env_logger = { version = "0.7.1" }
 anyhow     = { version = "1.0.26" }
 log        = { version = "0.4.6" }
 
-teaclave_binder = { path = "../../binder" }
+teaclave_binder = { path = "../../../binder" }
