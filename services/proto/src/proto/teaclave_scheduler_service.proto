@@ -22,8 +22,10 @@ message UpdateTaskStatusResponse {}
 
 message UpdateTaskResultRequest {
   string task_id = 1;
-  bytes return_value = 2;
-  map<string, string> output_file_hash = 3;
+  oneof TaskResult {
+    teaclave_common_proto.TaskOutputs Ok = 2;
+    teaclave_common_proto.TaskFailure Err = 3;
+  }
 }
 message UpdateTaskResultResponse {}
 

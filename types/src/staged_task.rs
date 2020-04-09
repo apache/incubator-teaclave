@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use std::collections::hash_map::Iter;
 use std::collections::HashMap;
 use std::prelude::v1::*;
 
@@ -30,10 +31,48 @@ use crate::{
 const STAGED_TASK_PREFIX: &str = "staged-"; // staged-task-uuid
 pub const QUEUE_KEY: &str = "staged-task";
 
-pub type FunctionInputFiles = HashMap<String, FunctionInputFile>;
-pub type FunctionOutputFiles = HashMap<String, FunctionOutputFile>;
+#[derive(Debug, Deserialize, Serialize, Clone, Default)]
+pub struct FunctionInputFiles {
+    inner: HashMap<String, FunctionInputFile>,
+}
 
-#[derive(Debug, Deserialize, Serialize)]
+impl FunctionInputFiles {
+    pub fn new(entries: HashMap<String, FunctionInputFile>) -> Self {
+        entries.into()
+    }
+    pub fn iter(&self) -> Iter<String, FunctionInputFile> {
+        self.inner.iter()
+    }
+}
+
+impl std::convert::From<HashMap<String, FunctionInputFile>> for FunctionInputFiles {
+    fn from(entries: HashMap<String, FunctionInputFile>) -> FunctionInputFiles {
+        FunctionInputFiles { inner: entries }
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, Default)]
+pub struct FunctionOutputFiles {
+    inner: HashMap<String, FunctionOutputFile>,
+}
+
+impl FunctionOutputFiles {
+    pub fn new(entries: HashMap<String, FunctionOutputFile>) -> Self {
+        entries.into()
+    }
+
+    pub fn iter(&self) -> Iter<String, FunctionOutputFile> {
+        self.inner.iter()
+    }
+}
+
+impl std::convert::From<HashMap<String, FunctionOutputFile>> for FunctionOutputFiles {
+    fn from(entries: HashMap<String, FunctionOutputFile>) -> FunctionOutputFiles {
+        FunctionOutputFiles { inner: entries }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct FunctionInputFile {
     pub url: Url,
     pub hash: String,
@@ -58,7 +97,7 @@ impl FunctionInputFile {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct FunctionOutputFile {
     pub url: Url,
     pub crypto_info: FileCrypto,
@@ -133,13 +172,16 @@ impl StagedTask {
         }
     }
 
-    pub fn input_data(self, input_data: FunctionInputFiles) -> Self {
-        Self { input_data, ..self }
+    pub fn input_data(self, input_data: impl Into<FunctionInputFiles>) -> Self {
+        Self {
+            input_data: input_data.into(),
+            ..self
+        }
     }
 
-    pub fn output_data(self, output_data: FunctionOutputFiles) -> Self {
+    pub fn output_data(self, output_data: impl Into<FunctionOutputFiles>) -> Self {
         Self {
-            output_data,
+            output_data: output_data.into(),
             ..self
         }
     }

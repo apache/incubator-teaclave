@@ -217,6 +217,24 @@ impl FileCrypto {
     }
 }
 
+impl std::convert::From<AesGcm128Key> for FileCrypto {
+    fn from(crypto: AesGcm128Key) -> Self {
+        FileCrypto::AesGcm128(crypto)
+    }
+}
+
+impl std::convert::From<AesGcm256Key> for FileCrypto {
+    fn from(crypto: AesGcm256Key) -> Self {
+        FileCrypto::AesGcm256(crypto)
+    }
+}
+
+impl std::convert::From<TeaclaveFile128Key> for FileCrypto {
+    fn from(crypto: TeaclaveFile128Key) -> Self {
+        FileCrypto::TeaclaveFile128(crypto)
+    }
+}
+
 impl Default for FileCrypto {
     fn default() -> Self {
         FileCrypto::TeaclaveFile128(TeaclaveFile128Key::random())
