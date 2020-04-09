@@ -72,7 +72,10 @@ RUN apt-get update && apt-get install -q -y \
     procps \
     lcov \
     llvm \
-    curl
+    curl \
+    python3-pip
+
+RUN pip3 install pyopenssl toml cryptography
 
 # clean up apt caches
 
