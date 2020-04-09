@@ -20,13 +20,18 @@ HOSTNAME = 'localhost'
 AUTHENTICATION_SERVICE_ADDRESS = (HOSTNAME, 7776)
 CONTEXT = ssl._create_unverified_context()
 
+if os.environ.get('DCAP'):
+    AS_ROOT_CERT_FILENAME = "dcap_root_ca_cert.pem"
+else:
+    AS_ROOT_CERT_FILENAME = "ias_root_ca_cert.pem"
+
 if os.environ.get('TEACLAVE_PROJECT_ROOT'):
-    IAS_ROOT_CA_CERT_PATH = os.environ['TEACLAVE_PROJECT_ROOT'] + \
-        "/keys/ias_root_ca_cert.pem"
+    AS_ROOT_CA_CERT_PATH = os.environ['TEACLAVE_PROJECT_ROOT'] + \
+        "/keys/" + AS_ROOT_CERT_FILENAME
     ENCLAVE_INFO_PATH = os.environ['TEACLAVE_PROJECT_ROOT'] + \
         "/release/tests/enclave_info.toml"
 else:
-    IAS_ROOT_CA_CERT_PATH = "../../keys/ias_root_ca_cert.pem"
+    AS_ROOT_CA_CERT_PATH = "../../keys/" + AS_ROOT_CERT_FILENAME
     ENCLAVE_INFO_PATH = "../../release/tests/enclave_info.toml"
 
 
@@ -44,6 +49,9 @@ def read_message(sock):
 
 
 def verify_report(cert, endpoint_name):
+    if os.environ.get('SGX_MODE') == 'SW':
+        return
+
     cert = x509.load_der_x509_certificate(cert, default_backend())
     ext = json.loads(cert.extensions[0].value.value)
 
@@ -52,13 +60,14 @@ def verify_report(cert, endpoint_name):
     signing_cert = bytes(ext["signing_cert"])
     signing_cert = load_certificate(FILETYPE_ASN1, signing_cert)
 
-    # verify signing cert with IAS root cert
-    with open(IAS_ROOT_CA_CERT_PATH) as f:
-        ias_root_ca_cert = f.read()
-    ias_root_ca_cert = load_certificate(FILETYPE_PEM, ias_root_ca_cert)
+    # verify signing cert with AS root cert
+    with open(AS_ROOT_CA_CERT_PATH) as f:
+        as_root_ca_cert = f.read()
+    as_root_ca_cert = load_certificate(FILETYPE_PEM, as_root_ca_cert)
     store = X509Store()
-    store.add_cert(ias_root_ca_cert)
-    store_ctx = X509StoreContext(store, signing_cert)
+    store.add_cert(as_root_ca_cert)
+    store.add_cert(signing_cert)
+    store_ctx = X509StoreContext(store, as_root_ca_cert)
     store_ctx.verify_certificate()
 
     # verify report's signature
