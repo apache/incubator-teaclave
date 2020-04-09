@@ -47,11 +47,11 @@ pub struct RegisterInputFileRequest {
 }
 
 impl RegisterInputFileRequest {
-    pub fn new(url: Url, hash: impl Into<String>, crypto_info: FileCrypto) -> Self {
+    pub fn new(url: Url, hash: impl Into<String>, crypto: impl Into<FileCrypto>) -> Self {
         Self {
             url,
             hash: hash.into(),
-            crypto_info,
+            crypto_info: crypto.into(),
         }
     }
 }
@@ -78,8 +78,11 @@ pub struct RegisterOutputFileRequest {
 }
 
 impl RegisterOutputFileRequest {
-    pub fn new(url: Url, crypto_info: FileCrypto) -> Self {
-        Self { url, crypto_info }
+    pub fn new(url: Url, crypto: impl Into<FileCrypto>) -> Self {
+        Self {
+            url,
+            crypto_info: crypto.into(),
+        }
     }
 }
 

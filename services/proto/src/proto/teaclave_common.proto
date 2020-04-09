@@ -12,11 +12,21 @@ message FileCryptoInfo {
   bytes iv = 3;
 }
 
+message TaskOutputs {
+  bytes return_value = 1;
+  map<string, string> output_file_hash = 2;
+}
+
+message TaskFailure {
+  string reason = 1;
+}
+
 enum TaskStatus {
   Created = 0;
-  Ready = 1;
+  DataAssigned = 1;
   Approved = 2;
-  Running = 3;
-  Failed = 4;
-  Finished = 5;
+  Staged = 3;
+  DataPreparing = 4;
+  Running = 5;
+  Finished = 6;
 }

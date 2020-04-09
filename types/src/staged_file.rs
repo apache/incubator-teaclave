@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use crate::{FileCrypto, TeaclaveFile128Key};
+use crate::TeaclaveFile128Key;
 
 use std::collections::HashMap;
 #[cfg(not(feature = "mesalock_sgx"))]
@@ -34,22 +34,21 @@ pub struct StagedFileInfo {
 }
 
 impl StagedFileInfo {
-    pub fn new(
-        path: impl std::convert::Into<std::path::PathBuf>,
-        crypto_info: TeaclaveFile128Key,
-    ) -> Self {
+    pub fn new(path: impl AsRef<std::path::Path>, crypto_info: TeaclaveFile128Key) -> Self {
         StagedFileInfo {
-            path: path.into(),
+            path: path.as_ref().into(),
             crypto_info,
         }
     }
 
     pub fn create_readable_io(&self) -> anyhow::Result<Box<dyn io::Read>> {
+        log::debug!("Open Protected File: {:?}", self.path);
         let f = ProtectedFile::open_ex(&self.path, &self.crypto_info.key)?;
         Ok(Box::new(f))
     }
 
     pub fn create_writable_io(&self) -> anyhow::Result<Box<dyn io::Write>> {
+        log::debug!("Create Protected File: {:?}", self.path);
         let f = ProtectedFile::create_ex(&self.path, &self.crypto_info.key)?;
         Ok(Box::new(f))
     }
@@ -59,7 +58,7 @@ impl StagedFileInfo {
         path: impl AsRef<std::path::Path>,
     ) -> anyhow::Result<StagedFileInfo> {
         let bytes = read_all_bytes(path.as_ref())?;
-        let dst = path.as_ref().with_extension("enc");
+        let dst = path.as_ref().with_extension("test_enc");
         Self::create_with_bytes(dst, &bytes)
     }
 
@@ -89,37 +88,6 @@ pub fn read_all_bytes(path: impl AsRef<std::path::Path>) -> anyhow::Result<Vec<u
     Ok(content)
 }
 
-pub fn convert_encrypted_input_file(
-    path: impl AsRef<std::path::Path>,
-    crypto_info: FileCrypto,
-    dst: impl AsRef<std::path::Path>,
-) -> anyhow::Result<StagedFileInfo> {
-    log::debug!("from: {:?}, to: {:?}", path.as_ref(), dst.as_ref());
-    #[cfg(not(feature = "mesalock_sgx"))]
-    use std::fs;
-    #[cfg(feature = "mesalock_sgx")]
-    use std::untrusted::fs;
-    let plain_text = match crypto_info {
-        FileCrypto::AesGcm128(crypto) => {
-            let mut bytes = read_all_bytes(path)?;
-            crypto.decrypt(&mut bytes)?;
-            bytes
-        }
-        FileCrypto::AesGcm256(crypto) => {
-            let mut bytes = read_all_bytes(path)?;
-            crypto.decrypt(&mut bytes)?;
-            bytes
-        }
-        FileCrypto::TeaclaveFile128(crypto) => {
-            fs::copy(path, dst.as_ref())?;
-            let dst = dst.as_ref().to_owned();
-            return Ok(StagedFileInfo::new(dst, crypto));
-        }
-        FileCrypto::Raw => read_all_bytes(path)?,
-    };
-    StagedFileInfo::create_with_bytes(dst.as_ref(), &plain_text)
-}
-
 #[derive(Debug, Default)]
 pub struct StagedFiles {
     entries: HashMap<String, StagedFileInfo>,
@@ -132,5 +100,13 @@ impl StagedFiles {
 
     pub fn get(&self, key: &str) -> Option<&StagedFileInfo> {
         self.entries.get(key)
+    }
+}
+
+impl std::iter::FromIterator<(String, StagedFileInfo)> for StagedFiles {
+    fn from_iter<T: IntoIterator<Item = (String, StagedFileInfo)>>(iter: T) -> Self {
+        StagedFiles {
+            entries: HashMap::from_iter(iter),
+        }
     }
 }

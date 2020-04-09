@@ -30,7 +30,7 @@ pub use proto::TeaclaveSchedulerClient;
 pub use proto::TeaclaveSchedulerRequest;
 pub use proto::TeaclaveSchedulerResponse;
 use teaclave_rpc::into_request;
-use teaclave_types::{StagedTask, TaskStatus};
+use teaclave_types::{StagedTask, TaskFailure, TaskOutputs, TaskStatus};
 use uuid::Uuid;
 
 #[into_request(TeaclaveSchedulerRequest::Subscribe)]
@@ -56,23 +56,25 @@ impl PullTaskResponse {
     }
 }
 
+pub type TaskResult = std::result::Result<TaskOutputs, TaskFailure>;
+
 #[into_request(TeaclaveSchedulerRequest::UpdateTaskResult)]
 pub struct UpdateTaskResultRequest {
     pub task_id: Uuid,
-    pub return_value: Vec<u8>,
-    pub output_file_hash: HashMap<String, String>,
+    pub task_result: TaskResult,
 }
 
 impl UpdateTaskResultRequest {
-    pub fn new(
-        task_id: Uuid,
-        return_value: &[u8],
-        output_file_hash: HashMap<String, String>,
-    ) -> Self {
+    pub fn new(task_id: Uuid, task_result: Result<TaskOutputs>) -> Self {
+        let result = match task_result {
+            Ok(task_output) => TaskResult::Ok(task_output),
+            Err(e) => TaskResult::Err(TaskFailure {
+                reason: e.to_string(),
+            }),
+        };
         Self {
             task_id,
-            return_value: return_value.to_vec(),
-            output_file_hash,
+            task_result: result,
         }
     }
 }
@@ -169,13 +171,28 @@ impl std::convert::From<PullTaskResponse> for proto::PullTaskResponse {
         }
     }
 }
+
 impl std::convert::TryFrom<proto::UpdateTaskResultRequest> for UpdateTaskResultRequest {
     type Error = Error;
     fn try_from(proto: proto::UpdateTaskResultRequest) -> Result<Self> {
+        let task_id = Uuid::parse_str(&proto.task_id)?;
+        let proto_result = proto
+            .task_result
+            .ok_or_else(|| anyhow::anyhow!("task result is empty"))?;
+        let task_result = match proto_result {
+            proto::update_task_result_request::TaskResult::Ok(task_outputs) => {
+                let outputs_info = task_outputs.try_into()?;
+                Ok(outputs_info)
+            }
+            proto::update_task_result_request::TaskResult::Err(task_failure) => {
+                let failure_info = task_failure.try_into()?;
+                Err(failure_info)
+            }
+        };
+
         let ret = Self {
-            task_id: Uuid::parse_str(&proto.task_id)?,
-            return_value: proto.return_value,
-            output_file_hash: proto.output_file_hash,
+            task_id,
+            task_result,
         };
         Ok(ret)
     }
@@ -183,10 +200,18 @@ impl std::convert::TryFrom<proto::UpdateTaskResultRequest> for UpdateTaskResultR
 
 impl std::convert::From<UpdateTaskResultRequest> for proto::UpdateTaskResultRequest {
     fn from(req: UpdateTaskResultRequest) -> Self {
+        let task_result = match req.task_result {
+            Ok(task_outputs) => {
+                proto::update_task_result_request::TaskResult::Ok(task_outputs.into())
+            }
+            Err(task_failure) => {
+                proto::update_task_result_request::TaskResult::Err(task_failure.into())
+            }
+        };
+
         proto::UpdateTaskResultRequest {
             task_id: req.task_id.to_string(),
-            return_value: req.return_value,
-            output_file_hash: req.output_file_hash,
+            task_result: Some(task_result),
         }
     }
 }

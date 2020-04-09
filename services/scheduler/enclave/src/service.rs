@@ -29,7 +29,8 @@ use teaclave_rpc::endpoint::Endpoint;
 use teaclave_rpc::Request;
 use teaclave_service_enclave_utils::teaclave_service;
 use teaclave_types::{
-    StagedTask, Storable, Task, TeaclaveServiceResponseError, TeaclaveServiceResponseResult,
+    StagedTask, Storable, Task, TaskStatus, TeaclaveServiceResponseError,
+    TeaclaveServiceResponseResult,
 };
 
 use anyhow::anyhow;
@@ -174,8 +175,17 @@ impl TeaclaveScheduler for TeaclaveSchedulerService {
     ) -> TeaclaveServiceResponseResult<UpdateTaskResultResponse> {
         let request = request.message;
         let mut task = self.get_task(&request.task_id.to_string())?;
-        task.return_value = Some(request.return_value);
-        task.output_file_hash = request.output_file_hash;
+        match request.task_result {
+            Ok(result) => {
+                task.return_value = Some(result.return_value);
+                task.output_file_hash = result.output_file_hash;
+            }
+            Err(failure) => unimplemented!(),
+        };
+
+        // Updating task result means we have finished execution
+        task.status = TaskStatus::Finished;
+
         self.put_task(&task)?;
         Ok(UpdateTaskResultResponse {})
     }

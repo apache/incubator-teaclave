@@ -37,6 +37,7 @@ use teaclave_types::{EnclaveInfo, TeeServiceError, TeeServiceResult};
 
 mod ocall;
 mod service;
+mod task_file_manager;
 
 fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
     let enclave_info = EnclaveInfo::verify_and_new(

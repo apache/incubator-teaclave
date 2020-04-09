@@ -387,7 +387,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
         }
 
         if task.all_data_assigned() {
-            task.update_status(TaskStatus::Ready);
+            task.update_status(TaskStatus::DataAssigned);
         }
 
         log::info!("AssignData: {:?}", task);
@@ -418,7 +418,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
         );
 
         ensure!(
-            task.status == TaskStatus::Ready,
+            task.status == TaskStatus::DataAssigned,
             ServiceError::PermissionDenied,
         );
 

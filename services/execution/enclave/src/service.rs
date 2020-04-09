@@ -15,19 +15,19 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use crate::ocall::handle_file_request;
-
-use std::collections::HashMap;
 use std::prelude::v1::*;
 use std::sync::{Arc, SgxMutex as Mutex};
 
+use crate::task_file_manager::TaskFileManager;
 use teaclave_proto::teaclave_scheduler_service::*;
 use teaclave_rpc::endpoint::Endpoint;
-use teaclave_types::{ExecutionResult, StagedFunction, StagedTask, TaskStatus};
+use teaclave_types::*;
 use teaclave_worker::Worker;
 
 use anyhow::Result;
 use uuid::Uuid;
+
+static WORKER_BASE_DIR: &str = "/tmp/teaclave_agent/";
 
 #[derive(Clone)]
 pub(crate) struct TeaclaveExecutionService {
@@ -68,37 +68,13 @@ impl TeaclaveExecutionService {
             };
 
             log::info!("InvokeTask: {:?}", staged_task);
-            let result = match self.invoke_task(&staged_task) {
-                Ok(exec_result) => exec_result,
-                Err(e) => {
-                    log::error!("InvokeTask Error: {:?}", e);
-                    match self.update_task_status(
-                        &staged_task.task_id,
-                        TaskStatus::Failed,
-                        e.to_string(),
-                    ) {
-                        Ok(_) => (),
-                        Err(e) => {
-                            log::error!("UpdateTask Error: {:?}", e);
-                        }
-                    }
-                    continue;
-                }
-            };
+            let result = self.invoke_task(&staged_task);
+            log::info!("InvokeTask result: {:?}", result);
 
             match self.update_task_result(&staged_task.task_id, result) {
                 Ok(_) => (),
                 Err(e) => {
                     log::error!("UpdateResult Error: {:?}", e);
-                    continue;
-                }
-            }
-
-            match self.update_task_status(&staged_task.task_id, TaskStatus::Finished, String::new())
-            {
-                Ok(_) => (),
-                Err(e) => {
-                    log::error!("UpdateTask Error: {:?}", e);
                     continue;
                 }
             }
@@ -118,24 +94,25 @@ impl TeaclaveExecutionService {
         Ok(response.staged_task)
     }
 
-    fn invoke_task(&mut self, task: &StagedTask) -> Result<ExecutionResult> {
+    fn invoke_task(&mut self, task: &StagedTask) -> Result<TaskOutputs> {
         self.update_task_status(&task.task_id, TaskStatus::Running, String::new())?;
-        let invocation = prepare_task(&task);
+        let file_mgr = TaskFileManager::new(WORKER_BASE_DIR, task)?;
+        let invocation = prepare_task(&task, &file_mgr)?;
+        log::info!("Invoke function: {:?}", invocation);
         let worker = Worker::default();
         let summary = worker.invoke_function(invocation)?;
-        finalize_task(&task)?;
-        let mut result = ExecutionResult::default();
-        result.return_value = summary.as_bytes().to_vec();
-
-        Ok(result)
+        finalize_task(&file_mgr)?;
+        let task_outputs = TaskOutputs::new(summary.as_bytes(), hashmap!());
+        Ok(task_outputs)
     }
 
-    fn update_task_result(&mut self, task_id: &Uuid, result: ExecutionResult) -> Result<()> {
-        let request = UpdateTaskResultRequest::new(
-            task_id.to_owned(),
-            &result.return_value,
-            result.output_file_hash,
-        );
+    fn update_task_result(
+        &mut self,
+        task_id: &Uuid,
+        task_result: Result<TaskOutputs>,
+    ) -> Result<()> {
+        let request = UpdateTaskResultRequest::new(*task_id, task_result);
+
         let _response = self
             .scheduler_client
             .clone()
@@ -164,97 +141,31 @@ impl TeaclaveExecutionService {
     }
 }
 
-fn finalize_task(task: &StagedTask) -> Result<()> {
-    use std::path::Path;
-    use teaclave_types::*;
-
-    let agent_dir = format!("/tmp/teaclave_agent/{}", task.task_id);
-    let agent_dir_path = Path::new(&agent_dir);
-
-    let mut file_request_info = vec![];
-    for (key, value) in task.output_data.iter() {
-        let mut src = agent_dir_path.to_path_buf();
-        src.push(&format!("{}.out", key));
-        let handle_file_info = HandleFileInfo::new(&src, &value.url);
-        file_request_info.push(handle_file_info);
-    }
-    let request = FileAgentRequest::new(HandleFileCommand::Upload, file_request_info);
-    handle_file_request(request)?;
-
-    Ok(())
-}
-
-fn prepare_task(task: &StagedTask) -> StagedFunction {
-    use std::path::Path;
-    use std::path::PathBuf;
-    use std::untrusted::fs;
-    use std::untrusted::path::PathEx;
-    use teaclave_types::*;
-
-    let runtime_name = "default".to_string();
-    let executor_type = task.executor_type;
-    let executor_name = task.executor;
+fn prepare_task(task: &StagedTask, file_mgr: &TaskFileManager) -> Result<StagedFunction> {
+    file_mgr.download_inputs()?;
+    let input_files = file_mgr.convert_downloaded_inputs()?;
+    let output_files = file_mgr.prepare_staged_outputs()?;
     let function_payload = String::from_utf8_lossy(&task.function_payload).to_string();
-    let function_arguments = task.function_arguments.clone();
 
-    let agent_dir = format!("/tmp/teaclave_agent/{}", task.task_id);
-    let agent_dir_path = Path::new(&agent_dir);
-    if !agent_dir_path.exists() {
-        fs::create_dir_all(agent_dir_path).unwrap();
-    }
-
-    let mut input_file_map: HashMap<String, (PathBuf, FileCrypto)> = HashMap::new();
-    let mut file_request_info = vec![];
-    for (key, value) in task.input_data.iter() {
-        let mut dest = agent_dir_path.to_path_buf();
-        dest.push(&format!("{}.in", key));
-        let info = HandleFileInfo::new(&dest, &value.url);
-        file_request_info.push(info);
-        input_file_map.insert(key.to_string(), (dest, value.crypto_info));
-    }
-    let request = FileAgentRequest::new(HandleFileCommand::Download, file_request_info);
-    handle_file_request(request).unwrap();
-
-    let mut converted_input_file_map: HashMap<String, StagedFileInfo> = HashMap::new();
-    for (key, value) in input_file_map.iter() {
-        let (from, crypto_info) = value;
-        let mut dest = from.clone();
-        let mut file_name = dest.file_name().unwrap().to_os_string();
-        file_name.push(".converted");
-        dest.set_file_name(file_name);
-        let input_file_info = convert_encrypted_input_file(from, *crypto_info, &dest).unwrap();
-        converted_input_file_map.insert(key.to_string(), input_file_info);
-    }
-    let input_files = StagedFiles::new(converted_input_file_map);
-
-    let mut output_file_map: HashMap<String, StagedFileInfo> = HashMap::new();
-    for (key, value) in task.output_data.iter() {
-        let mut dest = agent_dir_path.to_path_buf();
-        dest.push(&format!("{}.out", key));
-        let crypto = match value.crypto_info {
-            FileCrypto::TeaclaveFile128(crypto) => crypto,
-            _ => unimplemented!(),
-        };
-        let output_info = StagedFileInfo::new(&dest, crypto);
-        output_file_map.insert(key.to_string(), output_info);
-    }
-    let output_files = StagedFiles::new(output_file_map);
-
-    StagedFunction::new()
-        .executor(executor_name)
+    let staged_function = StagedFunction::new()
+        .executor_type(task.executor_type)
+        .executor(task.executor)
         .payload(function_payload)
-        .arguments(function_arguments)
+        .arguments(task.function_arguments.clone())
         .input_files(input_files)
         .output_files(output_files)
-        .runtime_name(runtime_name)
-        .executor_type(executor_type)
+        .runtime_name("default");
+    Ok(staged_function)
+}
+
+fn finalize_task(file_mgr: &TaskFileManager) -> Result<()> {
+    file_mgr.upload_outputs()
 }
 
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
     use std::format;
-    use teaclave_types::*;
     use url::Url;
     use uuid::Uuid;
 
@@ -265,12 +176,13 @@ pub mod tests {
             .executor(Executor::Echo)
             .function_arguments(hashmap!("message" => "Hello, Teaclave!"));
 
-        let invocation = prepare_task(&staged_task);
+        let file_mgr = TaskFileManager::new(WORKER_BASE_DIR, &staged_task).unwrap();
+        let invocation = prepare_task(&staged_task, &file_mgr).unwrap();
 
         let worker = Worker::default();
         let result = worker.invoke_function(invocation);
         if result.is_ok() {
-            finalize_task(&staged_task).unwrap();
+            finalize_task(&file_mgr).unwrap();
         }
         assert_eq!(result.unwrap(), "Hello, Teaclave!");
     }
@@ -315,12 +227,13 @@ pub mod tests {
             .input_data(input_data)
             .output_data(output_data);
 
-        let invocation = prepare_task(&staged_task);
+        let file_mgr = TaskFileManager::new(WORKER_BASE_DIR, &staged_task).unwrap();
+        let invocation = prepare_task(&staged_task, &file_mgr).unwrap();
 
         let worker = Worker::default();
         let result = worker.invoke_function(invocation);
         if result.is_ok() {
-            finalize_task(&staged_task).unwrap();
+            finalize_task(&file_mgr).unwrap();
         }
         log::debug!("summary: {:?}", result);
         assert!(result.is_ok());
