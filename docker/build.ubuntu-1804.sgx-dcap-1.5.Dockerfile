@@ -61,10 +61,13 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y   &&
 # install other dependencies for building
 
 RUN apt-get update && apt-get install -q -y \
-    git \
+    software-properties-common \
     cmake \
     pypy \
     pypy-dev
+
+RUN add-apt-repository ppa:git-core/ppa && \
+  apt-get update && apt-get install -q -y git
 
 # install dependencies for testing and coverage
 
