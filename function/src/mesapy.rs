@@ -94,6 +94,7 @@ impl TeaclaveFunction for Mesapy {
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
+    use teaclave_crypto::*;
     use teaclave_runtime::*;
     use teaclave_test_utils::*;
     use teaclave_types::*;

@@ -10,7 +10,8 @@ edition = "2018"
 default = []
 mesalock_sgx = [
     "sgx_tstd",
-    "teaclave_types/mesalock_sgx"
+    "teaclave_types/mesalock_sgx",
+    "teaclave_crypto/mesalock_sgx",
 ]
 cov = ["sgx_cov"]
 
@@ -30,3 +31,4 @@ sgx_tstd     = { version = "1.1.1", features = ["net", "backtrace"], optional = 
 sgx_types    = { version = "1.1.1" }
 teaclave_rpc = { path = "../../rpc" }
 teaclave_types = { path = "../../types" }
+teaclave_crypto = { path = "../../crypto" }

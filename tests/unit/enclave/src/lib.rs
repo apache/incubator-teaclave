@@ -42,6 +42,7 @@ fn handle_run_test(_: &RunTestInput) -> TeeServiceResult<RunTestOutput> {
         teaclave_runtime::tests::run_tests(),
         teaclave_function::tests::run_tests(),
         teaclave_types::tests::run_tests(),
+        teaclave_crypto::tests::run_tests(),
         rusty_leveldb::tests::run_tests(),
     );
 

@@ -16,6 +16,7 @@
 // under the License.
 
 use super::*;
+use teaclave_crypto::TeaclaveFile128Key;
 
 // Authenticate user before talking to frontend service
 fn authorized_frontend_client() -> TeaclaveFrontendClient {

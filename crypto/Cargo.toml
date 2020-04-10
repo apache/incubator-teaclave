@@ -1,8 +1,8 @@
 [package]
-name = "teaclave_types"
+name = "teaclave_crypto"
 version = "0.1.0"
 authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
-description = "Teaclave types"
+description = "Teaclave crypto"
 license = "Apache-2.0"
 edition = "2018"
 
@@ -12,7 +12,6 @@ default = [
 ]
 mesalock_sgx = [
     "sgx_tstd",
-    "teaclave_crypto/mesalock_sgx",
     "protected_fs_rs/mesalock_sgx",
 ]
 enclave_unit_test = ["teaclave_test_utils/mesalock_sgx"]
@@ -20,20 +19,12 @@ enclave_unit_test = ["teaclave_test_utils/mesalock_sgx"]
 [dependencies]
 protected_fs_rs  = { path = "../common/protected_fs_rs", default-features = false}
 
-log           = { version = "0.4.6" }
 anyhow       = { version = "1.0.26" }
-sgx_types    = { version = "1.1.1" }
 rand         = { version = "0.7.0" }
-hex          = { version = "0.4.0" }
 serde        = { version = "1.0.92", features = ["derive"] }
 serde_json   = { version = "1.0.39" }
-toml         = { version = "0.5.3" }
 ring         = { version = "0.16.5" }
-thiserror    = { version = "1.0.9" }
-url          = { version = "2.1.1", features = ["serde"]}
-uuid         = { version = "0.8.1", features = ["v4", "serde"] }
 
 teaclave_test_utils = { path = "../tests/utils", optional = true }
-teaclave_crypto = { path = "../crypto" }
 
 sgx_tstd = { version = "1.1.1", features = ["net", "backtrace"], optional = true }
