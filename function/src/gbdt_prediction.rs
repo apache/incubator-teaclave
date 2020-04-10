@@ -92,6 +92,7 @@ fn parse_test_data(input: impl io::Read) -> anyhow::Result<Vec<Data>> {
 pub mod tests {
     use super::*;
     use std::untrusted::fs;
+    use teaclave_crypto::*;
     use teaclave_runtime::*;
     use teaclave_test_utils::*;
     use teaclave_types::*;

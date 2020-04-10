@@ -32,6 +32,7 @@ gbdt          = { version = "0.1.0", features = ["input", "enable_training"] }
 rusty-machine = { version = "0.5.4" }
 itertools     = { version = "0.8.0", default-features = false }
 teaclave_types = { path = "../types" }
+teaclave_crypto = { path = "../crypto" }
 teaclave_runtime = { path = "../runtime", optional = true }
 teaclave_test_utils = { path = "../tests/utils", optional = true }
 

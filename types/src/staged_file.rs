@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use crate::TeaclaveFile128Key;
+use teaclave_crypto::TeaclaveFile128Key;
 
 use std::collections::HashMap;
 #[cfg(not(feature = "mesalock_sgx"))]

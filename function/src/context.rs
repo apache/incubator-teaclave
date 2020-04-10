@@ -237,12 +237,12 @@ pub mod tests {
     use super::*;
     use std::path::PathBuf;
     use std::str::FromStr;
+    use teaclave_crypto::TeaclaveFile128Key;
     use teaclave_runtime::RawIoRuntime;
     use teaclave_test_utils::*;
     use teaclave_types::hashmap;
     use teaclave_types::StagedFileInfo;
     use teaclave_types::StagedFiles;
-    use teaclave_types::TeaclaveFile128Key;
 
     pub fn run_tests() -> bool {
         run_tests!(test_file_handle_encoding, test_rtc_api,)

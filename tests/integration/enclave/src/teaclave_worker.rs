@@ -17,9 +17,10 @@
 
 use std::prelude::v1::*;
 
+use teaclave_crypto::TeaclaveFile128Key;
 use teaclave_types::{
     hashmap, read_all_bytes, Executor, ExecutorType, FunctionArguments, StagedFileInfo,
-    StagedFiles, StagedFunction, TeaclaveFile128Key,
+    StagedFiles, StagedFunction,
 };
 use teaclave_worker::Worker;
 

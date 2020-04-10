@@ -159,6 +159,7 @@ fn parse_training_data(input: impl io::Read, feature_size: usize) -> anyhow::Res
 pub mod tests {
     use super::*;
     use std::untrusted::fs;
+    use teaclave_crypto::*;
     use teaclave_runtime::*;
     use teaclave_test_utils::*;
     use teaclave_types::*;

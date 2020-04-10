@@ -20,6 +20,7 @@ mesalock_sgx = [
   "teaclave_rpc/mesalock_sgx",
   "teaclave_service_enclave_utils/mesalock_sgx",
   "teaclave_types/mesalock_sgx",
+  "teaclave_crypto/mesalock_sgx",
   "teaclave_config/mesalock_sgx",
   "teaclave_config/build_config",
   "teaclave_worker/mesalock_sgx",
@@ -44,6 +45,7 @@ teaclave_binder                = { path = "../../../binder" }
 teaclave_rpc                   = { path = "../../../rpc" }
 teaclave_service_enclave_utils = { path = "../../utils/service_enclave_utils" }
 teaclave_types                 = { path = "../../../types" }
+teaclave_crypto                = { path = "../../../crypto" }
 teaclave_worker                = { path = "../../../worker" }
 teaclave_test_utils            = { path = "../../../tests/utils", optional = true }
 

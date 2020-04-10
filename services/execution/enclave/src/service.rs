@@ -166,6 +166,7 @@ fn finalize_task(file_mgr: &TaskFileManager) -> Result<()> {
 pub mod tests {
     use super::*;
     use std::format;
+    use teaclave_crypto::*;
     use url::Url;
     use uuid::Uuid;
 

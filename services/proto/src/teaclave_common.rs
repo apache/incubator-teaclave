@@ -20,7 +20,8 @@ use std::prelude::v1::*;
 
 use crate::teaclave_common_proto as proto;
 use anyhow::{bail, Error, Result};
-use teaclave_types::{FileCrypto, TaskFailure, TaskOutputs, TaskStatus, TeaclaveFile128Key};
+use teaclave_crypto::TeaclaveFile128Key;
+use teaclave_types::{FileCrypto, TaskFailure, TaskOutputs, TaskStatus};
 
 #[derive(Debug)]
 pub struct UserCredential {
