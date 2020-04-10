@@ -30,7 +30,7 @@ pub use proto::TeaclaveSchedulerClient;
 pub use proto::TeaclaveSchedulerRequest;
 pub use proto::TeaclaveSchedulerResponse;
 use teaclave_rpc::into_request;
-use teaclave_types::{StagedTask, TaskFailure, TaskOutputs, TaskStatus};
+use teaclave_types::{StagedTask, TaskFailure, TaskOutputs, TaskResult, TaskStatus};
 use uuid::Uuid;
 
 #[into_request(TeaclaveSchedulerRequest::Subscribe)]
@@ -55,8 +55,6 @@ impl PullTaskResponse {
         Self { staged_task }
     }
 }
-
-pub type TaskResult = std::result::Result<TaskOutputs, TaskFailure>;
 
 #[into_request(TeaclaveSchedulerRequest::UpdateTaskResult)]
 pub struct UpdateTaskResultRequest {
@@ -175,24 +173,9 @@ impl std::convert::From<PullTaskResponse> for proto::PullTaskResponse {
 impl std::convert::TryFrom<proto::UpdateTaskResultRequest> for UpdateTaskResultRequest {
     type Error = Error;
     fn try_from(proto: proto::UpdateTaskResultRequest) -> Result<Self> {
-        let task_id = Uuid::parse_str(&proto.task_id)?;
-        let proto_result = proto
-            .task_result
-            .ok_or_else(|| anyhow::anyhow!("task result is empty"))?;
-        let task_result = match proto_result {
-            proto::update_task_result_request::TaskResult::Ok(task_outputs) => {
-                let outputs_info = task_outputs.try_into()?;
-                Ok(outputs_info)
-            }
-            proto::update_task_result_request::TaskResult::Err(task_failure) => {
-                let failure_info = task_failure.try_into()?;
-                Err(failure_info)
-            }
-        };
-
         let ret = Self {
-            task_id,
-            task_result,
+            task_id: Uuid::parse_str(&proto.task_id)?,
+            task_result: proto.result.try_into()?,
         };
         Ok(ret)
     }
@@ -200,18 +183,9 @@ impl std::convert::TryFrom<proto::UpdateTaskResultRequest> for UpdateTaskResultR
 
 impl std::convert::From<UpdateTaskResultRequest> for proto::UpdateTaskResultRequest {
     fn from(req: UpdateTaskResultRequest) -> Self {
-        let task_result = match req.task_result {
-            Ok(task_outputs) => {
-                proto::update_task_result_request::TaskResult::Ok(task_outputs.into())
-            }
-            Err(task_failure) => {
-                proto::update_task_result_request::TaskResult::Err(task_failure.into())
-            }
-        };
-
         proto::UpdateTaskResultRequest {
             task_id: req.task_id.to_string(),
-            task_result: Some(task_result),
+            result: Some(req.task_result.into()),
         }
     }
 }

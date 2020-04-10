@@ -60,7 +60,7 @@ fn test_execute_function() {
     let get_response = storage_client.get(get_request).unwrap();
     let updated_task = Task::from_slice(get_response.value.as_slice()).unwrap();
     assert_eq!(
-        updated_task.return_value.unwrap(),
+        updated_task.result.unwrap().return_value,
         b"Hello, Teaclave Tests!"
     );
 }

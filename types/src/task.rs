@@ -18,7 +18,7 @@
 use crate::FunctionArguments;
 use crate::Storable;
 use crate::*;
-use anyhow::{anyhow, bail, ensure, Result};
+use anyhow::{anyhow, bail, ensure, Error, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::convert::TryInto;
@@ -160,6 +160,20 @@ pub struct TaskFailure {
     pub reason: String,
 }
 
+impl TaskFailure {
+    pub fn new(reason: impl ToString) -> Self {
+        TaskFailure {
+            reason: reason.to_string(),
+        }
+    }
+}
+
+impl std::fmt::Display for TaskFailure {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "TaskFailure {}", self.reason)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Default, Deserialize, Serialize)]
 pub struct ExternalID {
     pub prefix: String,
@@ -214,6 +228,64 @@ impl std::convert::TryFrom<String> for ExternalID {
     }
 }
 
+#[derive(Debug, Deserialize, Serialize)]
+pub enum TaskResult {
+    NotReady,
+    Ok(TaskOutputs),
+    Err(TaskFailure),
+}
+
+#[cfg(test_mode)]
+impl TaskResult {
+    pub fn unwrap(self) -> TaskOutputs {
+        match self {
+            TaskResult::Ok(t) => t,
+            TaskResult::Err(e) => {
+                panic!("called `TaskResult::unwrap()` on an `Err` value: {:?}", &e)
+            }
+            TaskResult::NotReady => panic!("called `TaskResult::unwrap()` on NotReady case"),
+        }
+    }
+}
+
+impl Default for TaskResult {
+    fn default() -> Self {
+        TaskResult::NotReady
+    }
+}
+
+// This is intended for proto::TaskResult field
+// Since proto::TaskResult is a wrapper of One-Of keywords,
+// it is always converted to an Option<proto::TaskResult>
+// when referenced in a request/response structure.
+impl<T> std::convert::TryFrom<Option<T>> for TaskResult
+where
+    T: TryInto<TaskResult, Error = Error>,
+{
+    type Error = Error;
+    fn try_from(option: Option<T>) -> Result<Self> {
+        let ret = match option {
+            Some(result) => result.try_into()?,
+            None => unreachable!(),
+        };
+        Ok(ret)
+    }
+}
+
+impl<T, E> std::convert::From<TaskResult> for Option<std::result::Result<T, E>>
+where
+    T: From<TaskOutputs>,
+    E: From<TaskFailure>,
+{
+    fn from(task_result: TaskResult) -> Option<std::result::Result<T, E>> {
+        match task_result {
+            TaskResult::Ok(t) => Some(Ok(t.into())),
+            TaskResult::Err(e) => Some(Err(e.into())),
+            TaskResult::NotReady => None,
+        }
+    }
+}
+
 const TASK_PREFIX: &str = "task";
 
 #[derive(Debug, Default, Deserialize, Serialize)]
@@ -230,8 +302,7 @@ pub struct Task {
     pub approved_users: UserList,
     pub input_map: HashMap<String, ExternalID>,
     pub output_map: HashMap<String, ExternalID>,
-    pub return_value: Option<Vec<u8>>,
-    pub output_file_hash: HashMap<String, String>,
+    pub result: TaskResult,
     pub status: TaskStatus,
 }
 
