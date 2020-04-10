@@ -18,6 +18,23 @@
 use super::*;
 use teaclave_crypto::TeaclaveFile128Key;
 
+pub fn test_gbdt_training_task() {
+    let mut client = authorized_frontend_client();
+    let function_id = register_gbdt_function(&mut client);
+    let training_data_id = register_input_file(&mut client);
+
+    let crypto = TeaclaveFile128Key::random();
+    let output_model_id = register_output_file(&mut client, crypto);
+
+    let task_id = create_gbdt_training_task(&mut client, &function_id);
+    assign_data_to_task(&mut client, &task_id, training_data_id, output_model_id);
+    approve_task(&mut client, &task_id);
+    invoke_task(&mut client, &task_id);
+
+    let ret_val = get_task_until(&mut client, &task_id, TaskStatus::Finished);
+    assert_eq!(&ret_val, "Trained 120 lines of data.");
+}
+
 // Authenticate user before talking to frontend service
 fn authorized_frontend_client() -> TeaclaveFrontendClient {
     let mut api_client =
@@ -124,53 +141,4 @@ fn assign_data_to_task(
     let response = client.assign_data(request).unwrap();
 
     log::info!("Assign data: {:?}", response);
-}
-
-fn approve_task(client: &mut TeaclaveFrontendClient, task_id: &ExternalID) {
-    let request = ApproveTaskRequest::new(task_id.clone());
-    let response = client.approve_task(request).unwrap();
-    log::info!("Approve task: {:?}", response);
-}
-
-fn invoke_task(client: &mut TeaclaveFrontendClient, task_id: &ExternalID) {
-    let request = InvokeTaskRequest::new(task_id.clone());
-    let response = client.invoke_task(request).unwrap();
-    log::info!("Invoke task: {:?}", response);
-}
-
-fn get_task_until(
-    client: &mut TeaclaveFrontendClient,
-    task_id: &ExternalID,
-    status: TaskStatus,
-) -> String {
-    loop {
-        let request = GetTaskRequest::new(task_id.clone());
-        let response = client.get_task(request).unwrap();
-        log::info!("Get task: {:?}", response);
-
-        std::thread::sleep(std::time::Duration::from_secs(1));
-
-        if response.status == status {
-            let ret_val = String::from_utf8(response.return_value).unwrap();
-            log::info!("Task returns: {:?}", ret_val);
-            return ret_val;
-        }
-    }
-}
-
-pub fn test_gbdt_training_task() {
-    let mut client = authorized_frontend_client();
-    let function_id = register_gbdt_function(&mut client);
-    let training_data_id = register_input_file(&mut client);
-
-    let crypto = TeaclaveFile128Key::random();
-    let output_model_id = register_output_file(&mut client, crypto);
-
-    let task_id = create_gbdt_training_task(&mut client, &function_id);
-    assign_data_to_task(&mut client, &task_id, training_data_id, output_model_id);
-    approve_task(&mut client, &task_id);
-    invoke_task(&mut client, &task_id);
-
-    let ret_val = get_task_until(&mut client, &task_id, TaskStatus::Finished);
-    assert_eq!(&ret_val, "Trained 120 lines of data.");
 }

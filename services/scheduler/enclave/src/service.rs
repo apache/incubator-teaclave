@@ -175,13 +175,7 @@ impl TeaclaveScheduler for TeaclaveSchedulerService {
     ) -> TeaclaveServiceResponseResult<UpdateTaskResultResponse> {
         let request = request.message;
         let mut task = self.get_task(&request.task_id.to_string())?;
-        match request.task_result {
-            Ok(result) => {
-                task.return_value = Some(result.return_value);
-                task.output_file_hash = result.output_file_hash;
-            }
-            Err(failure) => unimplemented!(),
-        };
+        task.result = request.task_result;
 
         // Updating task result means we have finished execution
         task.status = TaskStatus::Finished;

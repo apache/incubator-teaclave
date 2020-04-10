@@ -95,12 +95,17 @@ impl TeaclaveExecutionService {
     }
 
     fn invoke_task(&mut self, task: &StagedTask) -> Result<TaskOutputs> {
-        self.update_task_status(&task.task_id, TaskStatus::Running, String::new())?;
         let file_mgr = TaskFileManager::new(WORKER_BASE_DIR, task)?;
+
+        self.update_task_status(&task.task_id, TaskStatus::DataPreparing, String::new())?;
         let invocation = prepare_task(&task, &file_mgr)?;
+
         log::info!("Invoke function: {:?}", invocation);
+
+        self.update_task_status(&task.task_id, TaskStatus::Running, String::new())?;
         let worker = Worker::default();
         let summary = worker.invoke_function(invocation)?;
+
         finalize_task(&file_mgr)?;
         let task_outputs = TaskOutputs::new(summary.as_bytes(), hashmap!());
         Ok(task_outputs)

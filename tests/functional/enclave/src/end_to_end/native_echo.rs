@@ -56,28 +56,12 @@ pub fn test_echo_task_success() {
     log::info!("Assign data: {:?}", response);
 
     // Approve Task
-    let request = ApproveTaskRequest::new(task_id.clone());
-    let response = client.approve_task(request).unwrap();
-
-    log::info!("Approve task: {:?}", response);
+    approve_task(&mut client, &task_id);
 
     // Invoke Task
-    let request = InvokeTaskRequest::new(task_id.clone());
-    let response = client.invoke_task(request).unwrap();
-
-    log::info!("Invoke task: {:?}", response);
+    invoke_task(&mut client, &task_id);
 
     // Get Task
-    loop {
-        let request = GetTaskRequest::new(task_id.clone());
-        let response = client.get_task(request).unwrap();
-        log::info!("Get task: {:?}", response);
-        std::thread::sleep(std::time::Duration::from_secs(1));
-        if response.status != TaskStatus::Running {
-            let ret_val = String::from_utf8(response.return_value).unwrap();
-            log::info!("Task returns: {:?}", ret_val);
-            assert_eq!(&ret_val, "Hello From Teaclave!");
-            break;
-        }
-    }
+    let ret_val = get_task_until(&mut client, &task_id, TaskStatus::Finished);
+    assert_eq!(&ret_val, "Hello From Teaclave!");
 }

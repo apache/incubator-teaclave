@@ -27,7 +27,7 @@ use std::prelude::v1::*;
 use teaclave_rpc::into_request;
 use teaclave_types::{
     Executor, ExecutorType, ExternalID, FileCrypto, Function, FunctionArguments, FunctionInput,
-    FunctionOutput, OwnerList, TaskStatus, UserID, UserList,
+    FunctionOutput, OwnerList, TaskResult, TaskStatus, UserID, UserList,
 };
 use url::Url;
 use uuid::Uuid;
@@ -428,9 +428,8 @@ pub struct GetTaskResponse {
     pub approved_users: UserList,
     pub input_map: HashMap<String, ExternalID>,
     pub output_map: HashMap<String, ExternalID>,
-    pub return_value: Vec<u8>,
-    pub output_file_hash: HashMap<String, String>,
     pub status: TaskStatus,
+    pub result: TaskResult,
 }
 
 #[into_request(TeaclaveManagementRequest::AssignData)]
@@ -1062,6 +1061,7 @@ impl std::convert::TryFrom<proto::GetTaskResponse> for GetTaskResponse {
         let status = i32_to_task_status(proto.status)?;
         let function_id = proto.function_id.try_into()?;
         let task_id = proto.task_id.try_into()?;
+        let result = proto.result.try_into()?;
 
         let ret = Self {
             task_id,
@@ -1075,9 +1075,8 @@ impl std::convert::TryFrom<proto::GetTaskResponse> for GetTaskResponse {
             approved_users: UserList::new(proto.approved_users),
             input_map,
             output_map,
-            return_value: proto.return_value,
-            output_file_hash: proto.output_file_hash,
             status,
+            result,
         };
 
         Ok(ret)
@@ -1104,9 +1103,8 @@ impl From<GetTaskResponse> for proto::GetTaskResponse {
             approved_users: response.approved_users.into(),
             input_map,
             output_map,
-            return_value: response.return_value,
-            output_file_hash: response.output_file_hash,
             status,
+            result: Some(response.result.into()),
         }
     }
 }
