@@ -22,10 +22,7 @@ message UpdateTaskStatusResponse {}
 
 message UpdateTaskResultRequest {
   string task_id = 1;
-  oneof TaskResult {
-    teaclave_common_proto.TaskOutputs Ok = 2;
-    teaclave_common_proto.TaskFailure Err = 3;
-  }
+  teaclave_common_proto.TaskResult result = 2;
 }
 message UpdateTaskResultResponse {}
 

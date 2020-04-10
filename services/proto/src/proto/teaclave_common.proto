@@ -30,3 +30,10 @@ enum TaskStatus {
   Running = 5;
   Finished = 6;
 }
+
+message TaskResult {
+  oneof result {
+    teaclave_common_proto.TaskOutputs Ok = 1;
+    teaclave_common_proto.TaskFailure Err = 2;
+  }
+}

@@ -20,8 +20,9 @@ use std::prelude::v1::*;
 
 use crate::teaclave_common_proto as proto;
 use anyhow::{bail, Error, Result};
+use std::convert::TryInto;
 use teaclave_crypto::TeaclaveFile128Key;
-use teaclave_types::{FileCrypto, TaskFailure, TaskOutputs, TaskStatus};
+use teaclave_types::{FileCrypto, TaskFailure, TaskOutputs, TaskResult, TaskStatus};
 
 #[derive(Debug)]
 pub struct UserCredential {
@@ -161,5 +162,37 @@ impl std::convert::From<TaskFailure> for proto::TaskFailure {
         proto::TaskFailure {
             reason: outputs.reason,
         }
+    }
+}
+
+impl std::convert::TryFrom<proto::TaskResult> for TaskResult {
+    type Error = Error;
+    fn try_from(proto: proto::TaskResult) -> Result<Self> {
+        let task_result = match proto.result {
+            Some(proto_result) => match proto_result {
+                proto::task_result::Result::Ok(task_outputs) => {
+                    let outputs_info = task_outputs.try_into()?;
+                    TaskResult::Ok(outputs_info)
+                }
+                proto::task_result::Result::Err(task_failure) => {
+                    let failure_info = task_failure.try_into()?;
+                    TaskResult::Err(failure_info)
+                }
+            },
+            None => TaskResult::NotReady,
+        };
+        Ok(task_result)
+    }
+}
+
+impl std::convert::From<TaskResult> for proto::TaskResult {
+    fn from(result: TaskResult) -> Self {
+        let opt_result = match result {
+            TaskResult::Ok(outputs) => Some(proto::task_result::Result::Ok(outputs.into())),
+            TaskResult::Err(failure) => Some(proto::task_result::Result::Err(failure.into())),
+            TaskResult::NotReady => None,
+        };
+
+        proto::TaskResult { result: opt_result }
     }
 }

@@ -44,3 +44,44 @@ fn setup() {
         create_authentication_api_client(shared_enclave_info(), AUTH_SERVICE_ADDR).unwrap();
     register_new_account(&mut api_client, USERNAME, PASSWORD).unwrap();
 }
+
+fn get_task_until(
+    client: &mut TeaclaveFrontendClient,
+    task_id: &ExternalID,
+    status: TaskStatus,
+) -> String {
+    loop {
+        let request = GetTaskRequest::new(task_id.clone());
+        let response = client.get_task(request).unwrap();
+        log::info!("Get task: {:?}", response);
+
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
+        if response.status == status {
+            match response.result {
+                TaskResult::Ok(outputs) => {
+                    let ret_val = String::from_utf8(outputs.return_value).unwrap();
+                    log::info!("Task returns: {:?}", ret_val);
+                    return ret_val;
+                }
+                TaskResult::Err(failure) => {
+                    log::error!("Task failed, reason: {:?}", failure);
+                    return failure.to_string();
+                }
+                TaskResult::NotReady => unreachable!(),
+            }
+        }
+    }
+}
+
+fn approve_task(client: &mut TeaclaveFrontendClient, task_id: &ExternalID) {
+    let request = ApproveTaskRequest::new(task_id.clone());
+    let response = client.approve_task(request).unwrap();
+    log::info!("Approve task: {:?}", response);
+}
+
+fn invoke_task(client: &mut TeaclaveFrontendClient, task_id: &ExternalID) {
+    let request = InvokeTaskRequest::new(task_id.clone());
+    let response = client.invoke_task(request).unwrap();
+    log::info!("Invoke task: {:?}", response);
+}

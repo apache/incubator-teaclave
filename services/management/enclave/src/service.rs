@@ -319,6 +319,8 @@ impl TeaclaveManagement for TeaclaveManagementService {
             ServiceError::PermissionDenied
         );
 
+        log::info!("GetTask: {:?}", task);
+
         let response = GetTaskResponse {
             task_id: task.external_id(),
             creator: task.creator,
@@ -331,8 +333,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
             approved_users: task.approved_users,
             input_map: task.input_map,
             output_map: task.output_map,
-            return_value: task.return_value.unwrap_or_default(),
-            output_file_hash: task.output_file_hash,
+            result: task.result,
             status: task.status,
         };
         Ok(response)
