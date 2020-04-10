@@ -8,6 +8,6 @@ edition = "2018"
 
 [dependencies]
 anyhow = { version = "1.0.26" }
-structopt = "0.2"
-protected_fs_rs = { path = "../common/protected_fs_rs" }
+structopt = "0.3"
+teaclave_crypto = { path = "../crypto" }
 hex = { version = "0.4.0" }

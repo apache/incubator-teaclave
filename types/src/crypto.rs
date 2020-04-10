@@ -35,15 +35,15 @@ pub enum FileCrypto {
 impl FileCrypto {
     pub fn new(schema: &str, key: &[u8], iv: &[u8]) -> Result<Self> {
         let info = match schema {
-            "aes_gcm_128" => {
+            AesGcm128Key::SCHEMA => {
                 let crypto = AesGcm128Key::new(key, iv)?;
                 FileCrypto::AesGcm128(crypto)
             }
-            "aes_gcm_256" => {
+            AesGcm256Key::SCHEMA => {
                 let crypto = AesGcm256Key::new(key, iv)?;
                 FileCrypto::AesGcm256(crypto)
             }
-            "teaclave_file_128" => {
+            TeaclaveFile128Key::SCHEMA => {
                 ensure!(iv.is_empty(), "IV is not empty for teaclave_file_128");
                 let crypto = TeaclaveFile128Key::new(key)?;
                 FileCrypto::TeaclaveFile128(crypto)
@@ -57,9 +57,9 @@ impl FileCrypto {
 
     pub fn schema(&self) -> &str {
         match self {
-            FileCrypto::AesGcm128(_) => "aes_gcm_128",
-            FileCrypto::AesGcm256(_) => "aes_gcm_256",
-            FileCrypto::TeaclaveFile128(_) => "teaclave_file_128",
+            FileCrypto::AesGcm128(_) => AesGcm128Key::SCHEMA,
+            FileCrypto::AesGcm256(_) => AesGcm256Key::SCHEMA,
+            FileCrypto::TeaclaveFile128(_) => TeaclaveFile128Key::SCHEMA,
             FileCrypto::Raw => "raw",
         }
     }

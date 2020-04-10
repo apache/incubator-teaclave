@@ -15,22 +15,34 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use anyhow::bail;
 use anyhow::Result;
 use std::fs;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
-use protected_fs::ProtectedFile;
+use teaclave_crypto::{AesGcm128Key, AesGcm256Key, TeaclaveFile128Key};
+
+type KeyVec = Vec<u8>; // Need define a type to use parse derive macro
+
+fn decode_hex(src: &str) -> Result<Vec<u8>, hex::FromHexError> {
+    hex::decode(src)
+}
 
 #[derive(Debug, StructOpt)]
 struct EncryptDecryptOpt {
-    /// Crypto algorithm
+    /// Crypto algorithm, supported algorithms are "aes-gcm-128", "aes-gcm-256",
+    /// "teaclave-file-128".
     #[structopt(short, long)]
     algorithm: String,
 
     /// Key in hex format
-    #[structopt(short, long)]
-    key: String,
+    #[structopt(short, long, parse(try_from_str = decode_hex))]
+    key: KeyVec,
+
+    /// IV for AES keys
+    #[structopt(long, parse(try_from_str = decode_hex))]
+    iv: Option<KeyVec>,
 
     /// Path of input file
     #[structopt(short, long = "input-file")]
@@ -60,19 +72,58 @@ struct Opt {
 }
 
 fn decrypt(opt: EncryptDecryptOpt) -> Result<()> {
-    use std::io::Read;
-
-    if opt.algorithm != "teaclave_file_128" {
-        unimplemented!()
+    let key = opt.key;
+    match opt.algorithm.as_str() {
+        AesGcm128Key::SCHEMA => {
+            let iv = opt.iv.expect("IV is required.");
+            let key = AesGcm128Key::new(&key, &iv)?;
+            let mut content = fs::read(opt.input_file)?;
+            key.decrypt(&mut content)?;
+            fs::write(opt.output_file, content)?;
+        }
+        AesGcm256Key::SCHEMA => {
+            let iv = opt.iv.expect("IV is required.");
+            let key = AesGcm256Key::new(&key, &iv)?;
+            let mut content = fs::read(opt.input_file)?;
+            key.decrypt(&mut content)?;
+            fs::write(opt.output_file, content)?;
+        }
+        TeaclaveFile128Key::SCHEMA => {
+            let key = TeaclaveFile128Key::new(&key)?;
+            let mut content = vec![];
+            key.decrypt(opt.input_file, &mut content)?;
+            fs::write(opt.output_file, content)?;
+        }
+        _ => bail!("Invalid crypto algorithm"),
     }
 
-    let key_vec = hex::decode(opt.key)?;
-    let mut key = [0u8; 16];
-    key.copy_from_slice(&key_vec[..16]);
-    let mut file = ProtectedFile::open_ex(opt.input_file, &key)?;
-    let mut content = vec![];
-    file.read_to_end(&mut content)?;
-    fs::write(opt.output_file, content)?;
+    Ok(())
+}
+
+fn encrypt(opt: EncryptDecryptOpt) -> Result<()> {
+    let key = opt.key;
+    match opt.algorithm.as_str() {
+        AesGcm128Key::SCHEMA => {
+            let iv = opt.iv.expect("IV is required.");
+            let key = AesGcm128Key::new(&key, &iv)?;
+            let mut content = fs::read(opt.input_file)?;
+            key.encrypt(&mut content)?;
+            fs::write(opt.output_file, content)?;
+        }
+        AesGcm256Key::SCHEMA => {
+            let iv = opt.iv.expect("IV is required.");
+            let key = AesGcm256Key::new(&key, &iv)?;
+            let mut content = fs::read(opt.input_file)?;
+            key.encrypt(&mut content)?;
+            fs::write(opt.output_file, content)?;
+        }
+        TeaclaveFile128Key::SCHEMA => {
+            let key = TeaclaveFile128Key::new(&key)?;
+            let content = fs::read(opt.input_file)?;
+            key.encrypt(opt.output_file, &content)?;
+        }
+        _ => bail!("Invalid crypto algorithm"),
+    }
 
     Ok(())
 }
@@ -81,7 +132,7 @@ fn main() -> Result<()> {
     let args = Opt::from_args();
     match args.command {
         Command::Decrypt(opt) => decrypt(opt)?,
-        _ => unimplemented!(),
+        Command::Encrypt(opt) => encrypt(opt)?,
     }
 
     Ok(())

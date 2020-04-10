@@ -58,7 +58,7 @@ fn test_register_input_file() {
 
 fn test_register_output_file() {
     let url = Url::parse("https://external-storage.com/filepath?presigned_token").unwrap();
-    let crypto_info = FileCrypto::new("aes_gcm_128", &[0x90u8; 16], &[0x89u8; 12]).unwrap();
+    let crypto_info = FileCrypto::new("aes-gcm-128", &[0x90u8; 16], &[0x89u8; 12]).unwrap();
 
     let request = RegisterOutputFileRequest::new(url, crypto_info);
     let response = authorized_client("mock_user").register_output_file(request);

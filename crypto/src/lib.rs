@@ -23,10 +23,12 @@ extern crate sgx_tstd as std;
 use std::prelude::v1::*;
 
 use anyhow::{anyhow, ensure, Result};
+use protected_fs::ProtectedFile;
 use rand::prelude::RngCore;
 use ring::aead;
 use serde::{Deserialize, Serialize};
 use std::format;
+use std::path::Path;
 
 const AES_GCM_128_KEY_LENGTH: usize = 16;
 const AES_GCM_128_IV_LENGTH: usize = 12;
@@ -43,6 +45,8 @@ pub struct AesGcm256Key {
 }
 
 impl AesGcm256Key {
+    pub const SCHEMA: &'static str = "aes-gcm-256";
+
     pub fn new(in_key: &[u8], in_iv: &[u8]) -> Result<Self> {
         ensure!(
             in_key.len() == AES_GCM_256_KEY_LENGTH,
@@ -60,6 +64,10 @@ impl AesGcm256Key {
         iv.copy_from_slice(in_iv);
 
         Ok(AesGcm256Key { key, iv })
+    }
+
+    pub fn random() -> Self {
+        Self::default()
     }
 
     pub fn decrypt(&self, in_out: &mut Vec<u8>) -> Result<()> {
@@ -93,6 +101,8 @@ pub struct AesGcm128Key {
 }
 
 impl AesGcm128Key {
+    pub const SCHEMA: &'static str = "aes-gcm-128";
+
     pub fn new(in_key: &[u8], in_iv: &[u8]) -> Result<Self> {
         ensure!(
             in_key.len() == AES_GCM_128_KEY_LENGTH,
@@ -112,6 +122,10 @@ impl AesGcm128Key {
         iv.copy_from_slice(in_iv);
 
         Ok(AesGcm128Key { key, iv })
+    }
+
+    pub fn random() -> Self {
+        Self::default()
     }
 
     pub fn decrypt(&self, in_out: &mut Vec<u8>) -> Result<()> {
@@ -144,6 +158,8 @@ pub struct TeaclaveFile128Key {
 }
 
 impl TeaclaveFile128Key {
+    pub const SCHEMA: &'static str = "teaclave-file-128";
+
     pub fn random() -> Self {
         Self::default()
     }
@@ -158,6 +174,20 @@ impl TeaclaveFile128Key {
         key.copy_from_slice(in_key);
 
         Ok(TeaclaveFile128Key { key })
+    }
+
+    pub fn decrypt<P: AsRef<Path>>(&self, path: P, out: &mut Vec<u8>) -> Result<()> {
+        use std::io::Read;
+        let mut file = ProtectedFile::open_ex(path.as_ref(), &self.key)?;
+        file.read_to_end(out)?;
+        Ok(())
+    }
+
+    pub fn encrypt<P: AsRef<Path>>(&self, path: P, content: &[u8]) -> Result<()> {
+        use std::io::Write;
+        let mut file = ProtectedFile::create_ex(path.as_ref(), &self.key)?;
+        file.write_all(content)?;
+        Ok(())
     }
 }
 
