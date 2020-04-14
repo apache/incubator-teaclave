@@ -17,7 +17,12 @@
 extern crate protected_fs;
 use protected_fs::{remove_protected_file, ProtectedFile};
 use rand_core::RngCore;
-use std::io::{Read, Write};
+use std::io::{Read, Result, Write};
+
+fn get_protected_file_cmac(fname: &str, key: &[u8; 16]) -> Result<[u8; 16]> {
+    let file = ProtectedFile::open_ex(fname, key)?;
+    file.current_meta_gmac()
+}
 
 #[test]
 fn test_large_file() {
@@ -25,7 +30,6 @@ fn test_large_file() {
     const NBLOCKS: usize = 0x001_0000;
 
     let key = [90u8; 16];
-    let mut auth_tag = [0u8; 16];
 
     let mut write_data = [0u8; BLOCK_SIZE];
     let mut read_data = [0u8; BLOCK_SIZE];
@@ -37,7 +41,7 @@ fn test_large_file() {
     rng.fill_bytes(&mut write_data);
     let fname = "large_file";
 
-    {
+    let auth_tag = {
         let opt = ProtectedFile::create_ex(fname, &key);
         assert_eq!(opt.is_ok(), true);
         let mut file = opt.unwrap();
@@ -52,20 +56,16 @@ fn test_large_file() {
         let result = file.flush();
         assert_eq!(result.is_ok(), true);
 
-        let result = file.get_current_meta_gmac(&mut auth_tag);
-        assert_eq!(result.is_ok(), true);
-    }
+        file.current_meta_gmac().unwrap()
+    };
 
     {
-        let mut auth_tag_in_file = [0xffu8; 16];
+        let auth_tag_in_file = get_protected_file_cmac(fname, &key).unwrap();
+        assert_eq!(auth_tag_in_file, auth_tag);
+
         let opt = ProtectedFile::open_ex(fname, &key);
         assert_eq!(opt.is_ok(), true);
         let mut file = opt.unwrap();
-
-        let result = file.get_current_meta_gmac(&mut auth_tag_in_file);
-        assert_eq!(result.is_ok(), true);
-
-        assert_eq!(auth_tag_in_file, auth_tag);
 
         for _i in 0..NBLOCKS {
             let result = file.read(&mut read_data);
@@ -74,5 +74,11 @@ fn test_large_file() {
             assert_eq!(read_size, read_data.len());
         }
     }
+
+    {
+        let auth_tag_in_file = get_protected_file_cmac(fname, &key).unwrap();
+        assert_eq!(auth_tag_in_file, auth_tag);
+    }
+
     assert_eq!(remove_protected_file(fname).is_ok(), true);
 }

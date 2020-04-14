@@ -78,9 +78,9 @@ fn register_input_file(client: &mut TeaclaveFrontendClient) -> ExternalID {
         Url::parse("http://localhost:6789/fixtures/functions/gbdt_training/train.enc").unwrap();
     let crypto = TeaclaveFile128Key::new(&[0; 16]).unwrap();
     let crypto_info = FileCrypto::TeaclaveFile128(crypto);
-    let hash = "";
+    let cmac = FileAuthTag::mock();
 
-    let request = RegisterInputFileRequest::new(url, hash, crypto_info);
+    let request = RegisterInputFileRequest::new(url, cmac, crypto_info);
     let response = client.register_input_file(request).unwrap();
     log::info!("Register input: {:?}", response);
     response.data_id

@@ -220,7 +220,8 @@ pub mod tests {
         let crypto = TeaclaveFile128Key::new(&[0; 16]).unwrap();
         let crypto_info = FileCrypto::TeaclaveFile128(crypto);
 
-        let training_input_data = FunctionInputFile::new(input_url, "", crypto_info);
+        let training_input_data =
+            FunctionInputFile::new(input_url, FileAuthTag::mock(), crypto_info);
         let model_output_data = FunctionOutputFile::new(output_url, crypto_info);
 
         let input_data = hashmap!("training_data" => training_input_data);

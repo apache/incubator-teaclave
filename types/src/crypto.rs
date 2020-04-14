@@ -18,11 +18,41 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use anyhow::{bail, ensure, Result};
+use anyhow::{bail, ensure, Context, Result};
 use serde::{Deserialize, Serialize};
+use std::convert::TryInto;
 use std::format;
 
 use teaclave_crypto::*;
+
+const TEACLAVE_FILE_AUTH_TAG_LENGTH: usize = 16;
+
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct FileAuthTag {
+    tag: [u8; TEACLAVE_FILE_AUTH_TAG_LENGTH],
+}
+
+impl FileAuthTag {
+    pub fn from_hex(input: impl AsRef<str>) -> Result<Self> {
+        let hex = hex::decode(input.as_ref()).context("Illegal AuthTag provided")?;
+        let tag = hex
+            .as_slice()
+            .try_into()
+            .context("Illegal AuthTag provided")?;
+        Ok(FileAuthTag { tag })
+    }
+
+    pub fn to_hex(&self) -> String {
+        hex::encode(&self.tag)
+    }
+
+    #[cfg(test_mode)]
+    pub fn mock() -> Self {
+        Self {
+            tag: [0; TEACLAVE_FILE_AUTH_TAG_LENGTH],
+        }
+    }
+}
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum FileCrypto {
