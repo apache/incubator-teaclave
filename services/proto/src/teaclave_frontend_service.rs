@@ -26,8 +26,8 @@ use std::collections::HashMap;
 use std::prelude::v1::*;
 use teaclave_rpc::into_request;
 use teaclave_types::{
-    Executor, ExecutorType, ExternalID, FileCrypto, Function, FunctionArguments, FunctionInput,
-    FunctionOutput, OwnerList, TaskResult, TaskStatus, UserID, UserList,
+    Executor, ExecutorType, ExternalID, FileAuthTag, FileCrypto, Function, FunctionArguments,
+    FunctionInput, FunctionOutput, OwnerList, TaskResult, TaskStatus, UserID, UserList,
 };
 use url::Url;
 use uuid::Uuid;
@@ -42,15 +42,15 @@ pub use proto::TeaclaveFrontendResponse;
 #[derive(Debug, PartialEq)]
 pub struct RegisterInputFileRequest {
     pub url: Url,
-    pub hash: String,
+    pub cmac: FileAuthTag,
     pub crypto_info: FileCrypto,
 }
 
 impl RegisterInputFileRequest {
-    pub fn new(url: Url, hash: impl Into<String>, crypto: impl Into<FileCrypto>) -> Self {
+    pub fn new(url: Url, cmac: FileAuthTag, crypto: impl Into<FileCrypto>) -> Self {
         Self {
             url,
-            hash: hash.into(),
+            cmac,
             crypto_info: crypto.into(),
         }
     }
@@ -171,15 +171,12 @@ impl GetInputFileRequest {
 #[derive(Debug)]
 pub struct GetInputFileResponse {
     pub owner: OwnerList,
-    pub hash: String,
+    pub cmac: FileAuthTag,
 }
 
 impl GetInputFileResponse {
-    pub fn new(owner: OwnerList, hash: impl Into<String>) -> Self {
-        Self {
-            owner,
-            hash: hash.into(),
-        }
+    pub fn new(owner: OwnerList, cmac: FileAuthTag) -> Self {
+        Self { owner, cmac }
     }
 }
 
@@ -201,15 +198,12 @@ impl GetOutputFileRequest {
 #[derive(Debug)]
 pub struct GetOutputFileResponse {
     pub owner: OwnerList,
-    pub hash: String,
+    pub cmac: Option<FileAuthTag>,
 }
 
 impl GetOutputFileResponse {
-    pub fn new(owner: OwnerList, hash: impl Into<String>) -> Self {
-        Self {
-            owner,
-            hash: hash.into(),
-        }
+    pub fn new(owner: OwnerList, cmac: Option<FileAuthTag>) -> Self {
+        Self { owner, cmac }
     }
 }
 
@@ -494,16 +488,18 @@ impl std::convert::TryFrom<proto::RegisterInputFileRequest> for RegisterInputFil
     type Error = Error;
 
     fn try_from(proto: proto::RegisterInputFileRequest) -> Result<Self> {
-        let ret = Self {
-            url: Url::parse(&proto.url)?,
-            hash: proto.hash,
-            crypto_info: proto
-                .crypto_info
-                .ok_or_else(|| anyhow!("missing crypto_info"))?
-                .try_into()?,
-        };
+        let url = Url::parse(&proto.url)?;
+        let cmac = FileAuthTag::from_hex(proto.cmac)?;
+        let crypto_info = proto
+            .crypto_info
+            .ok_or_else(|| anyhow!("missing crypto_info"))?
+            .try_into()?;
 
-        Ok(ret)
+        Ok(RegisterInputFileRequest {
+            url,
+            cmac,
+            crypto_info,
+        })
     }
 }
 
@@ -511,7 +507,7 @@ impl From<RegisterInputFileRequest> for proto::RegisterInputFileRequest {
     fn from(request: RegisterInputFileRequest) -> Self {
         Self {
             url: request.url.into_string(),
-            hash: request.hash,
+            cmac: request.cmac.to_hex(),
             crypto_info: Some(request.crypto_info.into()),
         }
     }
@@ -678,7 +674,7 @@ impl std::convert::TryFrom<proto::GetInputFileResponse> for GetInputFileResponse
     fn try_from(proto: proto::GetInputFileResponse) -> Result<Self> {
         Ok(Self {
             owner: OwnerList::new(proto.owner),
-            hash: proto.hash,
+            cmac: FileAuthTag::from_hex(proto.cmac)?,
         })
     }
 }
@@ -687,7 +683,7 @@ impl From<GetInputFileResponse> for proto::GetInputFileResponse {
     fn from(request: GetInputFileResponse) -> Self {
         Self {
             owner: request.owner.into(),
-            hash: request.hash,
+            cmac: request.cmac.to_hex(),
         }
     }
 }
@@ -715,9 +711,17 @@ impl std::convert::TryFrom<proto::GetOutputFileResponse> for GetOutputFileRespon
     type Error = Error;
 
     fn try_from(proto: proto::GetOutputFileResponse) -> Result<Self> {
+        let cmac = {
+            if proto.cmac.is_empty() {
+                None
+            } else {
+                Some(FileAuthTag::from_hex(&proto.cmac)?)
+            }
+        };
+
         Ok(Self {
             owner: OwnerList::new(proto.owner),
-            hash: proto.hash,
+            cmac,
         })
     }
 }
@@ -726,7 +730,7 @@ impl From<GetOutputFileResponse> for proto::GetOutputFileResponse {
     fn from(request: GetOutputFileResponse) -> Self {
         Self {
             owner: request.owner.into(),
-            hash: request.hash,
+            cmac: request.cmac.map_or_else(String::new, |cmac| cmac.to_hex()),
         }
     }
 }

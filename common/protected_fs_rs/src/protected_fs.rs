@@ -88,11 +88,10 @@ impl ProtectedFile {
         self.inner.clear_cache()
     }
 
-    pub fn get_current_meta_gmac(
-        &self,
-        meta_gmac: &mut sgx_aes_gcm_128bit_tag_t,
-    ) -> io::Result<()> {
-        self.inner.get_current_meta_gmac(meta_gmac)
+    pub fn current_meta_gmac(&self) -> io::Result<sgx_aes_gcm_128bit_tag_t> {
+        let mut meta_gmac = sgx_aes_gcm_128bit_tag_t::default();
+        self.inner.get_current_meta_gmac(&mut meta_gmac)?;
+        Ok(meta_gmac)
     }
 
     pub fn rename_meta<P: AsRef<Path>, Q: AsRef<Path>>(

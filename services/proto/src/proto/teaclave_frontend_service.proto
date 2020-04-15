@@ -6,7 +6,7 @@ import "teaclave_common.proto";
 
 message RegisterInputFileRequest {
   string url = 1;
-  string hash = 2;
+  string cmac = 2;
   teaclave_common_proto.FileCryptoInfo crypto_info = 3;
 }
 
@@ -45,7 +45,7 @@ message GetOutputFileRequest {
 
 message GetOutputFileResponse {
   repeated string owner = 1;
-  string hash = 2;
+  string cmac = 2;
 }
 
 message GetInputFileRequest {
@@ -54,7 +54,7 @@ message GetInputFileRequest {
 
 message GetInputFileResponse {
   repeated string owner = 1;
-  string hash = 2;
+  string cmac = 2;
 }
 
 message FunctionInput {

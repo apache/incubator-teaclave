@@ -49,9 +49,9 @@ fn authorized_client(user_id: &str) -> TeaclaveManagementClient {
 
 fn test_register_input_file() {
     let url = Url::parse("https://external-storage.com/filepath?presigned_token").unwrap();
-    let hash = "deadbeefdeadbeef";
+    let cmac = FileAuthTag::mock();
 
-    let request = RegisterInputFileRequest::new(url, hash, FileCrypto::default());
+    let request = RegisterInputFileRequest::new(url, cmac, FileCrypto::default());
     let response = authorized_client("mock_user").register_input_file(request);
     assert!(response.is_ok());
 }
@@ -119,11 +119,11 @@ fn test_get_output_file() {
 
 fn test_get_input_file() {
     let url = Url::parse("https://external-storage.com/filepath?presigned_token").unwrap();
-    let hash = "deadbeefdeadbeef";
+    let cmac = FileAuthTag::mock();
     let crypto_info = FileCrypto::default();
 
     let mut client = authorized_client("mock_user");
-    let request = RegisterInputFileRequest::new(url, hash, crypto_info);
+    let request = RegisterInputFileRequest::new(url, cmac, crypto_info);
     let response = client.register_input_file(request).unwrap();
     let data_id = response.data_id;
     let request = GetInputFileRequest::new(data_id.clone());
@@ -268,8 +268,8 @@ fn test_assign_data() {
 
     // !input_file.owner.contains(user_id)
     let url = Url::parse("https://path").unwrap();
-    let hash = "deadbeefdeadbeef";
-    let request = RegisterInputFileRequest::new(url, hash, FileCrypto::default());
+    let cmac = FileAuthTag::mock();
+    let request = RegisterInputFileRequest::new(url, cmac, FileCrypto::default());
     let response = client2.register_input_file(request).unwrap();
     let input_file_id_user2 = response.data_id;
 
@@ -298,10 +298,9 @@ fn test_assign_data() {
     let existing_outfile_id_user1 =
         ExternalID::try_from("output-00000000-0000-0000-0000-000000000001").unwrap();
 
-    // output_file.hash.is_some()
+    // output_file.cmac.is_some()
     let request = GetOutputFileRequest::new(existing_outfile_id_user1.clone());
-    let response = client1.get_output_file(request).unwrap();
-    assert!(!response.hash.is_empty());
+    client1.get_output_file(request).unwrap();
 
     let request = AssignDataRequest::new(
         task_id.clone(),
@@ -377,8 +376,8 @@ fn test_assign_data() {
 
     // assign all the data
     let url = Url::parse("input://path").unwrap();
-    let hash = "deadbeefdeadbeef";
-    let request = RegisterInputFileRequest::new(url, hash, FileCrypto::default());
+    let cmac = FileAuthTag::mock();
+    let request = RegisterInputFileRequest::new(url, cmac, FileCrypto::default());
     let response = client1.register_input_file(request);
     let input_file_id_user1 = response.unwrap().data_id;
 
@@ -441,8 +440,8 @@ fn test_approve_task() {
 
     // assign all the data
     let url = Url::parse("input://path").unwrap();
-    let hash = "deadbeefdeadbeef";
-    let request = RegisterInputFileRequest::new(url, hash, FileCrypto::default());
+    let cmac = FileAuthTag::mock();
+    let request = RegisterInputFileRequest::new(url, cmac, FileCrypto::default());
     let response = client1.register_input_file(request).unwrap();
 
     let input_file_id_user1 = response.data_id;
@@ -520,8 +519,8 @@ fn test_invoke_task() {
 
     // assign all the data
     let url = Url::parse("input://path").unwrap();
-    let hash = "deadbeefdeadbeef";
-    let request = RegisterInputFileRequest::new(url, hash, FileCrypto::default());
+    let cmac = FileAuthTag::mock();
+    let request = RegisterInputFileRequest::new(url, cmac, FileCrypto::default());
     let response = client1.register_input_file(request).unwrap();
 
     let input_file_id_user1 = response.data_id;

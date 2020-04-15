@@ -24,8 +24,8 @@ use url::Url;
 use uuid::Uuid;
 
 use crate::{
-    Executor, ExecutorType, FileCrypto, FunctionArguments, Storable, TeaclaveInputFile,
-    TeaclaveOutputFile,
+    Executor, ExecutorType, FileAuthTag, FileCrypto, FunctionArguments, Storable,
+    TeaclaveInputFile, TeaclaveOutputFile,
 };
 
 const STAGED_TASK_PREFIX: &str = "staged-"; // staged-task-uuid
@@ -75,15 +75,15 @@ impl std::convert::From<HashMap<String, FunctionOutputFile>> for FunctionOutputF
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct FunctionInputFile {
     pub url: Url,
-    pub hash: String,
+    pub cmac: FileAuthTag,
     pub crypto_info: FileCrypto,
 }
 
 impl FunctionInputFile {
-    pub fn new(url: Url, hash: impl ToString, crypto_info: FileCrypto) -> Self {
+    pub fn new(url: Url, cmac: FileAuthTag, crypto_info: FileCrypto) -> Self {
         Self {
             url,
-            hash: hash.to_string(),
+            cmac,
             crypto_info,
         }
     }
@@ -91,7 +91,7 @@ impl FunctionInputFile {
     pub fn from_teaclave_input_file(file: &TeaclaveInputFile) -> Self {
         Self {
             url: file.url.to_owned(),
-            hash: file.hash.to_owned(),
+            cmac: file.cmac.to_owned(),
             crypto_info: file.crypto_info,
         }
     }
