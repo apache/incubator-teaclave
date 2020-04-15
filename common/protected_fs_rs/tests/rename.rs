@@ -25,7 +25,6 @@ fn test_rename() {
     const BLOCK_SIZE: usize = 2048;
 
     let key = [90u8; 16];
-    let mut auth_tag = [0u8; 16];
 
     let mut write_data = [0u8; BLOCK_SIZE];
     let mut read_data = [0u8; BLOCK_SIZE];
@@ -43,7 +42,7 @@ fn test_rename() {
         assert_eq!(write_size, write_data.len());
     }
 
-    {
+    let auth_tag = {
         // rename_meta requires append mode
         let mut file = ProtectedFile::append_ex(&old_name, &key).unwrap();
         // rename_meta in protected file
@@ -53,17 +52,15 @@ fn test_rename() {
         file.flush().unwrap();
 
         // get the latest gmac
-        file.get_current_meta_gmac(&mut auth_tag).unwrap();
-    }
+        file.current_meta_gmac().unwrap()
+    };
 
     // rename file after close
     fs::rename(old_name, new_name).unwrap();
 
     {
-        let mut auth_tag_in_file = [0xffu8; 16];
         let mut file = ProtectedFile::open_ex(&new_name, &key).unwrap();
-
-        file.get_current_meta_gmac(&mut auth_tag_in_file).unwrap();
+        let auth_tag_in_file = file.current_meta_gmac().unwrap();
         assert_eq!(auth_tag_in_file, auth_tag);
 
         let read_size = file.read(&mut read_data).unwrap();

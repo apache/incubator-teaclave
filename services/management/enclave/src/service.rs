@@ -78,7 +78,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
         let request = request.message;
         let input_file = TeaclaveInputFile::new(
             request.url,
-            request.hash,
+            request.cmac,
             request.crypto_info,
             vec![user_id],
         );
@@ -86,10 +86,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
         self.write_to_db(&input_file)
             .map_err(|_| ServiceError::StorageError)?;
 
-        let response = RegisterInputFileResponse {
-            data_id: input_file.external_id(),
-        };
-
+        let response = RegisterInputFileResponse::new(input_file.external_id());
         Ok(response)
     }
 
@@ -105,9 +102,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
         self.write_to_db(&output_file)
             .map_err(|_| ServiceError::StorageError)?;
 
-        let response = RegisterOutputFileResponse {
-            data_id: output_file.external_id(),
-        };
+        let response = RegisterOutputFileResponse::new(output_file.external_id());
         Ok(response)
     }
 
@@ -130,15 +125,13 @@ impl TeaclaveManagement for TeaclaveManagementService {
         self.write_to_db(&output_file)
             .map_err(|_| ServiceError::StorageError)?;
 
-        let response = RegisterFusionOutputResponse {
-            data_id: output_file.external_id(),
-        };
+        let response = RegisterFusionOutputResponse::new(output_file.external_id());
         Ok(response)
     }
 
     // access control:
     // 1) user_id in output.owner
-    // 2) hash != none
+    // 2) cmac != none
     fn register_input_from_output(
         &self,
         request: Request<RegisterInputFromOutputRequest>,
@@ -160,9 +153,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
         self.write_to_db(&input)
             .map_err(|_| ServiceError::StorageError)?;
 
-        let response = RegisterInputFromOutputResponse {
-            data_id: input.external_id(),
-        };
+        let response = RegisterInputFromOutputResponse::new(input.external_id());
         Ok(response)
     }
 
@@ -182,10 +173,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
             ServiceError::PermissionDenied
         );
 
-        let response = GetOutputFileResponse {
-            owner: output_file.owner,
-            hash: output_file.hash.unwrap_or_else(|| "".to_string()),
-        };
+        let response = GetOutputFileResponse::new(output_file.owner, output_file.cmac);
         Ok(response)
     }
 
@@ -205,10 +193,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
             ServiceError::PermissionDenied
         );
 
-        let response = GetInputFileResponse {
-            owner: input_file.owner,
-            hash: input_file.hash,
-        };
+        let response = GetInputFileResponse::new(input_file.owner, input_file.cmac);
         Ok(response)
     }
 
@@ -226,9 +211,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
         self.write_to_db(&function)
             .map_err(|_| ServiceError::StorageError)?;
 
-        let response = RegisterFunctionResponse {
-            function_id: function.external_id(),
-        };
+        let response = RegisterFunctionResponse::new(function.external_id());
         Ok(response)
     }
 
@@ -298,9 +281,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
         self.write_to_db(&task)
             .map_err(|_| ServiceError::StorageError)?;
 
-        Ok(CreateTaskResponse {
-            task_id: task.external_id(),
-        })
+        Ok(CreateTaskResponse::new(task.external_id()))
     }
 
     // access control: task.participants.contains(&user_id)
@@ -344,7 +325,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
     // 2) task.status == Created
     // 3) user can use the data:
     //    * input file: user_id == input_file.owner contains user_id
-    //    * output file: output_file.owner contains user_id && output_file.hash.is_none()
+    //    * output file: output_file.owner contains user_id && output_file.cmac.is_none()
     // 4) the data can be assgined to the task:
     //    * input_owners_map or output_owners_map contains the data name
     //    * input file: OwnerList match input_file.owner
@@ -478,7 +459,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
             let output_file: TeaclaveOutputFile = self
                 .read_from_db(&data_id)
                 .map_err(|_| ServiceError::PermissionDenied)?;
-            ensure!(output_file.hash.is_none(), ServiceError::PermissionDenied);
+            ensure!(output_file.cmac.is_none(), ServiceError::PermissionDenied);
             let output_data = FunctionOutputFile::from_teaclave_output_file(&output_file);
             output_map.insert(data_name.to_string(), output_data);
         }
@@ -580,13 +561,13 @@ impl TeaclaveManagementService {
         let mut output_file =
             TeaclaveOutputFile::new_fusion_data(vec!["mock_user1", "frontend_user"])?;
         output_file.uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000001")?;
-        output_file.hash = Some("deadbeef".to_string());
+        output_file.cmac = Some(FileAuthTag::mock());
         self.write_to_db(&output_file)?;
 
         let mut output_file =
             TeaclaveOutputFile::new_fusion_data(vec!["mock_user2", "mock_user3"])?;
         output_file.uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000002")?;
-        output_file.hash = Some("deadbeef".to_string());
+        output_file.cmac = Some(FileAuthTag::mock());
         self.write_to_db(&output_file)?;
 
         let mut input_file = TeaclaveInputFile::from_output(output_file)?;
@@ -636,9 +617,9 @@ pub mod tests {
 
     pub fn handle_input_file() {
         let url = Url::parse("s3://bucket_id/path?token=mock_token").unwrap();
-        let hash = "a6d604b5987b693a19d94704532b5d928c2729f24dfd40745f8d03ac9ac75a8b".to_string();
+        let cmac = FileAuthTag::mock();
         let input_file =
-            TeaclaveInputFile::new(url, hash, FileCrypto::default(), vec!["mock_user"]);
+            TeaclaveInputFile::new(url, cmac, FileCrypto::default(), vec!["mock_user"]);
         assert!(TeaclaveInputFile::match_prefix(&input_file.key_string()));
         let value = input_file.to_vec().unwrap();
         let deserialized_file = TeaclaveInputFile::from_slice(&value).unwrap();
@@ -709,8 +690,8 @@ pub mod tests {
             .owner("mock_user");
 
         let url = Url::parse("s3://bucket_id/path?token=mock_token").unwrap();
-        let hash = "a6d604b5987b693a19d94704532b5d928c2729f24dfd40745f8d03ac9ac75a8b".to_string();
-        let input_data = FunctionInputFile::new(url.clone(), hash, FileCrypto::default());
+        let cmac = FileAuthTag::mock();
+        let input_data = FunctionInputFile::new(url.clone(), cmac, FileCrypto::default());
         let output_data = FunctionOutputFile::new(url, FileCrypto::default());
 
         let staged_task = StagedTask::new()

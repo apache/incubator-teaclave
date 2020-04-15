@@ -70,14 +70,14 @@ fn unauthorized_client() -> TeaclaveFrontendClient {
 
 fn test_register_input_file() {
     let url = Url::parse("https://external-storage.com/filepath?presigned_token").unwrap();
-    let hash = "deadbeefdeadbeef";
+    let cmac = FileAuthTag::mock();
     let crypto_info = FileCrypto::default();
 
-    let request = RegisterInputFileRequest::new(url.clone(), hash, crypto_info);
+    let request = RegisterInputFileRequest::new(url.clone(), cmac, crypto_info);
     let response = authorized_client().register_input_file(request);
     assert!(response.is_ok());
 
-    let request = RegisterInputFileRequest::new(url, hash, crypto_info);
+    let request = RegisterInputFileRequest::new(url, cmac, crypto_info);
     let response = unauthorized_client().register_input_file(request);
     assert!(response.is_err());
 }
@@ -128,8 +128,7 @@ fn test_get_output_file() {
     let data_id = response.data_id;
 
     let request = GetOutputFileRequest::new(data_id.clone());
-    let response = client.get_output_file(request).unwrap();
-    assert!(response.hash.is_empty());
+    client.get_output_file(request).unwrap();
 
     let request = GetOutputFileRequest::new(data_id);
     let response = unauthorized_client().get_output_file(request);
@@ -140,16 +139,15 @@ fn test_get_input_file() {
     let mut client = authorized_client();
 
     let url = Url::parse("https://external-storage.com/filepath?presigned_token").unwrap();
-    let hash = "deadbeefdeadbeef";
+    let cmac = FileAuthTag::mock();
     let crypto_info = FileCrypto::default();
 
-    let request = RegisterInputFileRequest::new(url, hash, crypto_info);
+    let request = RegisterInputFileRequest::new(url, cmac, crypto_info);
     let response = client.register_input_file(request).unwrap();
     let data_id = response.data_id;
 
     let request = GetInputFileRequest::new(data_id.clone());
-    let response = client.get_input_file(request).unwrap();
-    assert!(!response.hash.is_empty());
+    client.get_input_file(request).unwrap();
 
     let request = GetInputFileRequest::new(data_id);
     let response = unauthorized_client().get_input_file(request);

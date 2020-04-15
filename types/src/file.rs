@@ -16,8 +16,7 @@
 // under the License.
 
 use crate::storage::Storable;
-use crate::FileCrypto;
-use crate::OwnerList;
+use crate::{FileAuthTag, FileCrypto, OwnerList};
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::prelude::v1::*;
@@ -34,7 +33,7 @@ fn create_uuid() -> Uuid {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct TeaclaveInputFile {
     pub url: Url,
-    pub hash: String,
+    pub cmac: FileAuthTag,
     pub crypto_info: FileCrypto,
     pub owner: OwnerList,
     pub uuid: Uuid,
@@ -43,7 +42,7 @@ pub struct TeaclaveInputFile {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct TeaclaveOutputFile {
     pub url: Url,
-    pub hash: Option<String>,
+    pub cmac: Option<FileAuthTag>,
     pub crypto_info: FileCrypto,
     pub owner: OwnerList,
     pub uuid: Uuid,
@@ -52,13 +51,13 @@ pub struct TeaclaveOutputFile {
 impl TeaclaveInputFile {
     pub fn new(
         url: Url,
-        hash: String,
+        cmac: FileAuthTag,
         crypto_info: FileCrypto,
         owner: impl Into<OwnerList>,
     ) -> TeaclaveInputFile {
         TeaclaveInputFile {
             url,
-            hash,
+            cmac,
             crypto_info,
             owner: owner.into(),
             uuid: create_uuid(),
@@ -68,8 +67,8 @@ impl TeaclaveInputFile {
     pub fn from_output(output: TeaclaveOutputFile) -> Result<TeaclaveInputFile> {
         let input = TeaclaveInputFile {
             url: output.url,
-            hash: output
-                .hash
+            cmac: output
+                .cmac
                 .ok_or_else(|| anyhow!("output is not finished"))?,
             crypto_info: output.crypto_info,
             owner: output.owner,
@@ -97,7 +96,7 @@ impl TeaclaveOutputFile {
     ) -> TeaclaveOutputFile {
         TeaclaveOutputFile {
             url,
-            hash: None,
+            cmac: None,
             crypto_info,
             owner: owner.into(),
             uuid: create_uuid(),
@@ -112,7 +111,7 @@ impl TeaclaveOutputFile {
 
         Ok(TeaclaveOutputFile {
             url,
-            hash: None,
+            cmac: None,
             crypto_info,
             owner: owner.into(),
             uuid,
