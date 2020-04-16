@@ -25,30 +25,40 @@ use std::prelude::v1::*;
 #[cfg(feature = "mesalock_sgx")]
 use std::untrusted::fs::File;
 
+use crate::FileAuthTag;
+use anyhow::Context;
 use protected_fs::ProtectedFile;
 
 #[derive(Clone, Debug, Default)]
 pub struct StagedFileInfo {
     pub path: std::path::PathBuf,
     pub crypto_info: TeaclaveFile128Key,
+    pub cmac: FileAuthTag,
 }
 
 impl StagedFileInfo {
-    pub fn new(path: impl AsRef<std::path::Path>, crypto_info: TeaclaveFile128Key) -> Self {
+    pub fn new(
+        path: impl AsRef<std::path::Path>,
+        crypto_info: TeaclaveFile128Key,
+        cmac: impl Into<FileAuthTag>,
+    ) -> Self {
         StagedFileInfo {
             path: path.as_ref().into(),
             crypto_info,
+            cmac: cmac.into(),
         }
     }
 
     pub fn create_readable_io(&self) -> anyhow::Result<Box<dyn io::Read>> {
-        log::debug!("Open Protected File: {:?}", self.path);
         let f = ProtectedFile::open_ex(&self.path, &self.crypto_info.key)?;
+        let tag = f
+            .current_meta_gmac()
+            .context("Failed to get gmac from protected file")?;
+        anyhow::ensure!(self.cmac == tag, "Corrupted input file: {:?}", self.path);
         Ok(Box::new(f))
     }
 
     pub fn create_writable_io(&self) -> anyhow::Result<Box<dyn io::Write>> {
-        log::debug!("Create Protected File: {:?}", self.path);
         let f = ProtectedFile::create_ex(&self.path, &self.crypto_info.key)?;
         Ok(Box::new(f))
     }
@@ -77,7 +87,9 @@ impl StagedFileInfo {
         let crypto = TeaclaveFile128Key::random();
         let mut f = ProtectedFile::create_ex(&path, &crypto.key)?;
         f.write_all(bytes)?;
-        Ok(Self::new(path.as_ref(), crypto))
+        f.flush()?;
+        let tag = f.current_meta_gmac()?;
+        Ok(Self::new(path.as_ref(), crypto, tag))
     }
 }
 

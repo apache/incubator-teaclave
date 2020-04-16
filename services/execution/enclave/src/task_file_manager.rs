@@ -24,6 +24,7 @@ use std::prelude::v1::*;
 use std::untrusted::path::PathEx;
 use teaclave_types::*;
 use url::Url;
+use uuid::Uuid;
 
 pub(crate) struct TaskFileManager {
     cwd: PathBuf,
@@ -32,16 +33,21 @@ pub(crate) struct TaskFileManager {
 }
 
 impl TaskFileManager {
-    pub(crate) fn new(base: &str, task: &StagedTask) -> Result<Self> {
-        let cwd = Path::new(base).join(task.task_id.to_string());
+    pub(crate) fn new(
+        base: &str,
+        task_id: &Uuid,
+        inputs: &FunctionInputFiles,
+        outputs: &FunctionOutputFiles,
+    ) -> Result<Self> {
+        let cwd = Path::new(base).join(task_id.to_string());
         if !cwd.exists() {
             std::untrusted::fs::create_dir_all(&cwd)?;
         }
 
         let tfmgr = TaskFileManager {
             cwd,
-            inputs: task.input_data.clone(),
-            outputs: task.output_data.clone(),
+            inputs: inputs.clone(),
+            outputs: outputs.clone(),
         };
 
         Ok(tfmgr)
@@ -90,16 +96,40 @@ impl TaskFileManager {
         for (fkey, finfo) in self.inputs.iter() {
             let src = self.make_input_download_path(fkey, &finfo.url)?;
             let staged_file_info = match finfo.crypto_info {
-                FileCrypto::TeaclaveFile128(crypto) => StagedFileInfo::new(&src, crypto),
+                FileCrypto::TeaclaveFile128(crypto) => {
+                    StagedFileInfo::new(&src, crypto, finfo.cmac)
+                }
                 FileCrypto::AesGcm128(crypto) => {
                     let dst = self.make_local_converted_path(fkey);
                     let mut bytes = read_all_bytes(&src)?;
+                    let n = bytes.len();
+                    anyhow::ensure!(
+                        n > FILE_AUTH_TAG_LENGTH,
+                        "AesGcm128 File, invalid length: {:?}",
+                        src
+                    );
+                    anyhow::ensure!(
+                        finfo.cmac == bytes[n - FILE_AUTH_TAG_LENGTH..],
+                        "AesGcm128 File, invalid tag: {:?}",
+                        src
+                    );
                     crypto.decrypt(&mut bytes)?;
                     StagedFileInfo::create_with_bytes(&dst, &bytes)?
                 }
                 FileCrypto::AesGcm256(crypto) => {
                     let dst = self.make_local_converted_path(fkey);
                     let mut bytes = read_all_bytes(&src)?;
+                    let n = bytes.len();
+                    anyhow::ensure!(
+                        n > FILE_AUTH_TAG_LENGTH,
+                        "AesGcm256 File, invalid length: {:?}",
+                        src
+                    );
+                    anyhow::ensure!(
+                        finfo.cmac == bytes[n - FILE_AUTH_TAG_LENGTH..],
+                        "AesGcm256 File, invalid tag: {:?}",
+                        src
+                    );
                     crypto.decrypt(&mut bytes)?;
                     StagedFileInfo::create_with_bytes(&dst, &bytes)?
                 }
@@ -123,7 +153,10 @@ impl TaskFileManager {
                 FileCrypto::TeaclaveFile128(crypto) => crypto,
                 _ => anyhow::bail!("PrepareFile: unsupported output"),
             };
-            files.insert(fkey.to_string(), StagedFileInfo::new(dest, crypto));
+            files.insert(
+                fkey.to_string(),
+                StagedFileInfo::new(dest, crypto, FileAuthTag::default()),
+            );
         }
         Ok(StagedFiles::new(files))
     }
@@ -137,5 +170,32 @@ impl TaskFileManager {
         log::info!("Ocall file upload request: {:?}", request);
         handle_file_request(request)?;
         Ok(())
+    }
+}
+
+#[cfg(feature = "enclave_unit_test")]
+pub mod tests {
+    use super::*;
+    use teaclave_crypto::*;
+    use url::Url;
+
+    pub fn test_input() {
+        let key = [0; 16];
+        let iv = [1; 12];
+        let crypto = AesGcm128Key::new(&key, &iv).unwrap();
+        let input_url =
+            Url::parse("http://localhost:6789/fixtures/functions/gbdt_training/train.aes_gcm_128")
+                .unwrap();
+        let tag = FileAuthTag::from_hex("592f1e607649d89ff2aa8a2841a57cad").unwrap();
+        let input_file = FunctionInputFile::new(input_url, tag, crypto);
+        let inputs = hashmap!("training_data" => input_file);
+        let outputs = hashmap!();
+        let task_id = Uuid::new_v4();
+
+        let file_mgr =
+            TaskFileManager::new("/tmp", &task_id, &inputs.into(), &outputs.into()).unwrap();
+        file_mgr.download_inputs().unwrap();
+        file_mgr.convert_downloaded_inputs().unwrap();
+        file_mgr.prepare_staged_outputs().unwrap();
     }
 }

@@ -241,6 +241,7 @@ pub mod tests {
     use teaclave_runtime::RawIoRuntime;
     use teaclave_test_utils::*;
     use teaclave_types::hashmap;
+    use teaclave_types::FileAuthTag;
     use teaclave_types::StagedFileInfo;
     use teaclave_types::StagedFiles;
 
@@ -261,9 +262,10 @@ pub mod tests {
         let input = PathBuf::from_str("fixtures/functions/mesapy/input.txt").unwrap();
         let output = PathBuf::from_str("fixtures/functions/mesapy/output.txt.out").unwrap();
 
-        let input_info = StagedFileInfo::new(input, TeaclaveFile128Key::random());
-
-        let output_info = StagedFileInfo::new(output, TeaclaveFile128Key::random());
+        let input_info =
+            StagedFileInfo::new(input, TeaclaveFile128Key::random(), FileAuthTag::mock());
+        let output_info =
+            StagedFileInfo::new(output, TeaclaveFile128Key::random(), FileAuthTag::mock());
 
         let in_fid = "in_f1";
         let out_fid = "out_f1";

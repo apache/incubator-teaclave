@@ -80,11 +80,11 @@ pub struct FunctionInputFile {
 }
 
 impl FunctionInputFile {
-    pub fn new(url: Url, cmac: FileAuthTag, crypto_info: FileCrypto) -> Self {
+    pub fn new(url: Url, cmac: FileAuthTag, crypto: impl Into<FileCrypto>) -> Self {
         Self {
             url,
             cmac,
-            crypto_info,
+            crypto_info: crypto.into(),
         }
     }
 
@@ -104,8 +104,11 @@ pub struct FunctionOutputFile {
 }
 
 impl FunctionOutputFile {
-    pub fn new(url: Url, crypto_info: FileCrypto) -> Self {
-        Self { url, crypto_info }
+    pub fn new(url: Url, crypto: impl Into<FileCrypto>) -> Self {
+        Self {
+            url,
+            crypto_info: crypto.into(),
+        }
     }
 
     pub fn from_teaclave_output_file(file: &TeaclaveOutputFile) -> Self {

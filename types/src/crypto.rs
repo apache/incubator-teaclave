@@ -25,11 +25,11 @@ use std::format;
 
 use teaclave_crypto::*;
 
-const TEACLAVE_FILE_AUTH_TAG_LENGTH: usize = 16;
+pub const FILE_AUTH_TAG_LENGTH: usize = 16;
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Copy, Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
 pub struct FileAuthTag {
-    tag: [u8; TEACLAVE_FILE_AUTH_TAG_LENGTH],
+    tag: [u8; FILE_AUTH_TAG_LENGTH],
 }
 
 impl FileAuthTag {
@@ -49,8 +49,26 @@ impl FileAuthTag {
     #[cfg(test_mode)]
     pub fn mock() -> Self {
         Self {
-            tag: [0; TEACLAVE_FILE_AUTH_TAG_LENGTH],
+            tag: [0; FILE_AUTH_TAG_LENGTH],
         }
+    }
+}
+
+impl std::convert::From<[u8; FILE_AUTH_TAG_LENGTH]> for FileAuthTag {
+    fn from(tag: [u8; FILE_AUTH_TAG_LENGTH]) -> Self {
+        Self { tag }
+    }
+}
+
+impl std::cmp::PartialEq<[u8]> for FileAuthTag {
+    fn eq(&self, other: &[u8]) -> bool {
+        self.tag == other
+    }
+}
+
+impl std::cmp::PartialEq<[u8; FILE_AUTH_TAG_LENGTH]> for FileAuthTag {
+    fn eq(&self, other: &[u8; FILE_AUTH_TAG_LENGTH]) -> bool {
+        &self.tag[..] == other
     }
 }
 

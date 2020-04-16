@@ -123,14 +123,14 @@ pub mod tests {
 
         let input_files = StagedFiles::new(hashmap!(
             MODEL_FILE =>
-            StagedFileInfo::new(&model, TeaclaveFile128Key::random()),
+            StagedFileInfo::new(&model, TeaclaveFile128Key::random(), FileAuthTag::mock()),
             INPUT_DATA =>
-            StagedFileInfo::new(&plain_input, TeaclaveFile128Key::random()),
+            StagedFileInfo::new(&plain_input, TeaclaveFile128Key::random(), FileAuthTag::mock()),
         ));
 
         let output_files = StagedFiles::new(hashmap!(
             RESULT =>
-            StagedFileInfo::new(&plain_output, TeaclaveFile128Key::random())
+            StagedFileInfo::new(&plain_output, TeaclaveFile128Key::random(), FileAuthTag::mock())
         ));
 
         let runtime = Box::new(RawIoRuntime::new(input_files, output_files));
