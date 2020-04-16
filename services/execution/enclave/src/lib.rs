@@ -102,6 +102,7 @@ pub mod tests {
             ocall::tests::test_handle_file_request,
             service::tests::test_invoke_echo,
             service::tests::test_invoke_gbdt_training,
+            task_file_manager::tests::test_input,
         )
     }
 }

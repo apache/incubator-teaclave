@@ -155,8 +155,10 @@ def entrypoint(argv):
         let input = "fixtures/functions/mesapy/input.txt";
         let output = "fixtures/functions/mesapy/output.txt";
 
-        let input_info = StagedFileInfo::new(input, TeaclaveFile128Key::random());
-        let output_info = StagedFileInfo::new(output, TeaclaveFile128Key::random());
+        let input_info =
+            StagedFileInfo::new(input, TeaclaveFile128Key::random(), FileAuthTag::mock());
+        let output_info =
+            StagedFileInfo::new(output, TeaclaveFile128Key::random(), FileAuthTag::mock());
 
         let input_files = StagedFiles::new(hashmap!("in_f1" => input_info));
         let output_files = StagedFiles::new(hashmap!("out_f1" => output_info));

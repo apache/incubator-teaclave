@@ -14,13 +14,12 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 use std::prelude::v1::*;
 
 use teaclave_crypto::TeaclaveFile128Key;
 use teaclave_types::{
-    hashmap, read_all_bytes, Executor, ExecutorType, FunctionArguments, StagedFileInfo,
-    StagedFiles, StagedFunction,
+    hashmap, read_all_bytes, Executor, ExecutorType, FileAuthTag, FunctionArguments,
+    StagedFileInfo, StagedFiles, StagedFunction,
 };
 use teaclave_worker::Worker;
 
@@ -42,11 +41,14 @@ fn test_start_worker() {
     let expected_output = "fixtures/functions/gbdt_training/expected_model.txt";
 
     let input_info = StagedFileInfo::create_with_plaintext_file(plain_input).unwrap();
-
     let input_files = StagedFiles::new(hashmap!(
         "training_data" => input_info));
 
-    let output_info = StagedFileInfo::new(enc_output, TeaclaveFile128Key::random());
+    let output_info = StagedFileInfo::new(
+        enc_output,
+        TeaclaveFile128Key::random(),
+        FileAuthTag::mock(),
+    );
 
     let output_files = StagedFiles::new(hashmap!(
         "trained_model" => output_info.clone()));
