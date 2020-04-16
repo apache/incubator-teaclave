@@ -95,7 +95,12 @@ impl TeaclaveExecutionService {
     }
 
     fn invoke_task(&mut self, task: &StagedTask) -> Result<TaskOutputs> {
-        let file_mgr = TaskFileManager::new(WORKER_BASE_DIR, task)?;
+        let file_mgr = TaskFileManager::new(
+            WORKER_BASE_DIR,
+            &task.task_id,
+            &task.input_data,
+            &task.output_data,
+        )?;
 
         self.update_task_status(&task.task_id, TaskStatus::DataPreparing, String::new())?;
         let invocation = prepare_task(&task, &file_mgr)?;
@@ -182,7 +187,13 @@ pub mod tests {
             .executor(Executor::Echo)
             .function_arguments(hashmap!("message" => "Hello, Teaclave!"));
 
-        let file_mgr = TaskFileManager::new(WORKER_BASE_DIR, &staged_task).unwrap();
+        let file_mgr = TaskFileManager::new(
+            WORKER_BASE_DIR,
+            &staged_task.task_id,
+            &staged_task.input_data,
+            &staged_task.output_data,
+        )
+        .unwrap();
         let invocation = prepare_task(&staged_task, &file_mgr).unwrap();
 
         let worker = Worker::default();
@@ -218,11 +229,9 @@ pub mod tests {
         ))
         .unwrap();
         let crypto = TeaclaveFile128Key::new(&[0; 16]).unwrap();
-        let crypto_info = FileCrypto::TeaclaveFile128(crypto);
-
-        let training_input_data =
-            FunctionInputFile::new(input_url, FileAuthTag::mock(), crypto_info);
-        let model_output_data = FunctionOutputFile::new(output_url, crypto_info);
+        let input_cmac = FileAuthTag::from_hex("881adca6b0524472da0a9d0bb02b9af9").unwrap();
+        let training_input_data = FunctionInputFile::new(input_url, input_cmac, crypto);
+        let model_output_data = FunctionOutputFile::new(output_url, crypto);
 
         let input_data = hashmap!("training_data" => training_input_data);
         let output_data = hashmap!("trained_model" => model_output_data);
@@ -234,7 +243,13 @@ pub mod tests {
             .input_data(input_data)
             .output_data(output_data);
 
-        let file_mgr = TaskFileManager::new(WORKER_BASE_DIR, &staged_task).unwrap();
+        let file_mgr = TaskFileManager::new(
+            WORKER_BASE_DIR,
+            &staged_task.task_id,
+            &staged_task.input_data,
+            &staged_task.output_data,
+        )
+        .unwrap();
         let invocation = prepare_task(&staged_task, &file_mgr).unwrap();
 
         let worker = Worker::default();
