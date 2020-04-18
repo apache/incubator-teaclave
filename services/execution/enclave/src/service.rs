@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use std::collections::HashMap;
 use std::prelude::v1::*;
 use std::sync::{Arc, SgxMutex as Mutex};
 
@@ -105,14 +106,13 @@ impl TeaclaveExecutionService {
         self.update_task_status(&task.task_id, TaskStatus::DataPreparing, String::new())?;
         let invocation = prepare_task(&task, &file_mgr)?;
 
-        log::info!("Invoke function: {:?}", invocation);
-
         self.update_task_status(&task.task_id, TaskStatus::Running, String::new())?;
+        log::info!("Invoke function: {:?}", invocation);
         let worker = Worker::default();
         let summary = worker.invoke_function(invocation)?;
 
-        finalize_task(&file_mgr)?;
-        let task_outputs = TaskOutputs::new(summary.as_bytes(), hashmap!());
+        let outputs_tag = finalize_task(&file_mgr)?;
+        let task_outputs = TaskOutputs::new(summary.as_bytes(), outputs_tag);
         Ok(task_outputs)
     }
 
@@ -168,8 +168,10 @@ fn prepare_task(task: &StagedTask, file_mgr: &TaskFileManager) -> Result<StagedF
     Ok(staged_function)
 }
 
-fn finalize_task(file_mgr: &TaskFileManager) -> Result<()> {
-    file_mgr.upload_outputs()
+fn finalize_task(file_mgr: &TaskFileManager) -> Result<HashMap<String, FileAuthTag>> {
+    let outputs_tag = file_mgr.convert_staged_outputs()?;
+    file_mgr.upload_outputs()?;
+    Ok(outputs_tag)
 }
 
 #[cfg(feature = "enclave_unit_test")]

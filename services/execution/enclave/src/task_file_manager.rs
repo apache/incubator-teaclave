@@ -22,14 +22,17 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::prelude::v1::*;
 use std::untrusted::path::PathEx;
+use teaclave_crypto::TeaclaveFile128Key;
 use teaclave_types::*;
 use url::Url;
 use uuid::Uuid;
 
+#[derive(Default)]
 pub(crate) struct TaskFileManager {
     cwd: PathBuf,
     inputs: FunctionInputFiles,
     outputs: FunctionOutputFiles,
+    staged_outputs: StagedFiles,
 }
 
 impl TaskFileManager {
@@ -48,17 +51,35 @@ impl TaskFileManager {
             cwd,
             inputs: inputs.clone(),
             outputs: outputs.clone(),
-        };
+            ..Default::default()
+        }
+        .create_staged_outputs();
 
+        if !tfmgr.inputs_base_dir().exists() {
+            std::untrusted::fs::create_dir_all(tfmgr.inputs_base_dir())?;
+        }
+
+        if !tfmgr.outputs_base_dir().exists() {
+            std::untrusted::fs::create_dir_all(tfmgr.outputs_base_dir())?;
+        }
         Ok(tfmgr)
     }
 
+    pub(crate) fn inputs_base_dir(&self) -> PathBuf {
+        self.cwd.join("inputs")
+    }
+
+    pub(crate) fn outputs_base_dir(&self) -> PathBuf {
+        self.cwd.join("outputs")
+    }
+
+    // Original input file is downloaded to $inputs_base_dir/$funiq_key/$original_filename
     fn make_input_download_path(&self, funiq_key: &str, url: &Url) -> Result<PathBuf> {
         let url_path = url.path();
         let original_name = Path::new(url_path)
             .file_name()
             .ok_or_else(|| anyhow::anyhow!("Cannot get filename from url: {:?}", url))?;
-        let download_dir = self.cwd.join(funiq_key);
+        let download_dir = self.inputs_base_dir().join(funiq_key);
         if !download_dir.exists() {
             std::untrusted::fs::create_dir_all(&download_dir)?;
         }
@@ -66,14 +87,24 @@ impl TaskFileManager {
         Ok(local_dest)
     }
 
-    fn make_local_converted_path(&self, file_unique_key: &str) -> PathBuf {
-        let mut local_dest = self.cwd.join(file_unique_key);
-        local_dest.set_extension("converted");
+    // Staged input file is converted to $inputs_base_dir/${funiq_key}.staged_in
+    fn make_staged_input_path(&self, file_unique_key: &str) -> PathBuf {
+        let mut local_dest = self.inputs_base_dir().join(file_unique_key);
+        local_dest.set_extension("staged_in");
         local_dest
     }
 
-    fn make_local_output_path(&self, file_unique_key: &str) -> PathBuf {
-        let mut local_dest = self.cwd.join(file_unique_key);
+    // Staged output file is set to $outputs_base_dir/${funiq_key}.staged_out
+    fn make_staged_output_path(&self, file_unique_key: &str) -> PathBuf {
+        let dir = self.outputs_base_dir();
+        let mut local_dest = dir.join(file_unique_key);
+        local_dest.set_extension("staged_out");
+        local_dest
+    }
+
+    // Output file ready for upload is set to $outputs_base_dir/${funiq_key}.out
+    fn make_upload_output_path(&self, file_unique_key: &str) -> PathBuf {
+        let mut local_dest = self.outputs_base_dir().join(file_unique_key);
         local_dest.set_extension("out");
         local_dest
     }
@@ -100,7 +131,7 @@ impl TaskFileManager {
                     StagedFileInfo::new(&src, crypto, finfo.cmac)
                 }
                 FileCrypto::AesGcm128(crypto) => {
-                    let dst = self.make_local_converted_path(fkey);
+                    let dst = self.make_staged_input_path(fkey);
                     let mut bytes = read_all_bytes(&src)?;
                     let n = bytes.len();
                     anyhow::ensure!(
@@ -117,7 +148,7 @@ impl TaskFileManager {
                     StagedFileInfo::create_with_bytes(&dst, &bytes)?
                 }
                 FileCrypto::AesGcm256(crypto) => {
-                    let dst = self.make_local_converted_path(fkey);
+                    let dst = self.make_staged_input_path(fkey);
                     let mut bytes = read_all_bytes(&src)?;
                     let n = bytes.len();
                     anyhow::ensure!(
@@ -134,7 +165,7 @@ impl TaskFileManager {
                     StagedFileInfo::create_with_bytes(&dst, &bytes)?
                 }
                 FileCrypto::Raw => {
-                    let dst = self.make_local_converted_path(fkey);
+                    let dst = self.make_staged_input_path(fkey);
                     let bytes = read_all_bytes(&src)?;
                     StagedFileInfo::create_with_bytes(&dst, &bytes)?
                 }
@@ -145,27 +176,70 @@ impl TaskFileManager {
         Ok(StagedFiles::new(files))
     }
 
-    pub(crate) fn prepare_staged_outputs(&self) -> Result<StagedFiles> {
-        let mut files: HashMap<String, StagedFileInfo> = HashMap::new();
-        for (fkey, finfo) in self.outputs.iter() {
-            let dest = self.make_local_output_path(fkey);
-            let crypto = match finfo.crypto_info {
-                FileCrypto::TeaclaveFile128(crypto) => crypto,
-                _ => anyhow::bail!("PrepareFile: unsupported output"),
-            };
-            files.insert(
-                fkey.to_string(),
-                StagedFileInfo::new(dest, crypto, FileAuthTag::default()),
-            );
+    // For each output file, we create a random key for the execution.
+    // TaskFileManager will convert these output files to the user
+    // selected key during the uploading process.
+    pub fn create_staged_outputs(self) -> Self {
+        let staged_outputs: StagedFiles = self
+            .outputs
+            .iter()
+            .map(|(fkey, _)| {
+                let dest = self.make_staged_output_path(fkey);
+                let random_key = TeaclaveFile128Key::random();
+                (
+                    fkey.to_string(),
+                    StagedFileInfo::new(dest, random_key, FileAuthTag::default()),
+                )
+            })
+            .collect();
+
+        Self {
+            staged_outputs,
+            ..self
         }
-        Ok(StagedFiles::new(files))
+    }
+
+    pub(crate) fn prepare_staged_outputs(&self) -> Result<StagedFiles> {
+        anyhow::ensure!(
+            self.staged_outputs.len() == self.outputs.len(),
+            "Inconsistent between staged_outputs and outputs"
+        );
+        Ok(self.staged_outputs.clone())
+    }
+
+    pub(crate) fn convert_staged_outputs(&self) -> anyhow::Result<HashMap<String, FileAuthTag>> {
+        let mut outputs_tag: HashMap<String, FileAuthTag> = HashMap::new();
+
+        for (fkey, finfo) in self.outputs.iter() {
+            let dest = self.make_upload_output_path(fkey);
+            let staged_file = self
+                .staged_outputs
+                .get(fkey)
+                .ok_or_else(|| anyhow::anyhow!("Missing file in staged_output: {:?}", fkey))?;
+            let outfile = match finfo.crypto_info {
+                FileCrypto::TeaclaveFile128(crypto) => staged_file.convert_file(dest, crypto)?,
+
+                FileCrypto::AesGcm128(_) => {
+                    anyhow::bail!("OutputFile: unsupported type");
+                }
+                FileCrypto::AesGcm256(_) => {
+                    anyhow::bail!("OutputFile: unsupported type");
+                }
+                FileCrypto::Raw => {
+                    anyhow::bail!("OutputFile: unsupported type");
+                }
+            };
+            outputs_tag.insert(fkey.to_string(), outfile.cmac);
+        }
+        Ok(outputs_tag)
     }
 
     pub(crate) fn upload_outputs(&self) -> Result<()> {
         let req_info = self.outputs.iter().map(|(fkey, value)| {
-            let local = self.make_local_output_path(fkey);
+            let local = self.make_upload_output_path(fkey);
             HandleFileInfo::new(local, &value.url)
         });
+
         let request = FileAgentRequest::new(HandleFileCommand::Upload, req_info);
         log::info!("Ocall file upload request: {:?}", request);
         handle_file_request(request)?;

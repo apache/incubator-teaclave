@@ -20,7 +20,8 @@ use teaclave_crypto::TeaclaveFile128Key;
 use std::collections::HashMap;
 #[cfg(not(feature = "mesalock_sgx"))]
 use std::fs::File;
-use std::io::{self, Read, Write};
+use std::io::{self, BufRead, BufReader, Read, Write};
+use std::path::{Path, PathBuf};
 use std::prelude::v1::*;
 #[cfg(feature = "mesalock_sgx")]
 use std::untrusted::fs::File;
@@ -31,14 +32,14 @@ use protected_fs::ProtectedFile;
 
 #[derive(Clone, Debug, Default)]
 pub struct StagedFileInfo {
-    pub path: std::path::PathBuf,
+    pub path: PathBuf,
     pub crypto_info: TeaclaveFile128Key,
     pub cmac: FileAuthTag,
 }
 
 impl StagedFileInfo {
     pub fn new(
-        path: impl AsRef<std::path::Path>,
+        path: impl AsRef<Path>,
         crypto_info: TeaclaveFile128Key,
         cmac: impl Into<FileAuthTag>,
     ) -> Self {
@@ -63,10 +64,43 @@ impl StagedFileInfo {
         Ok(Box::new(f))
     }
 
-    #[cfg(test_mode)]
-    pub fn create_with_plaintext_file(
-        path: impl AsRef<std::path::Path>,
+    pub fn convert_file(
+        &self,
+        dst: impl AsRef<Path>,
+        crypto: TeaclaveFile128Key,
     ) -> anyhow::Result<StagedFileInfo> {
+        let src_file = ProtectedFile::open_ex(&self.path, &self.crypto_info.key)
+            .context("Convert: failed to open src file")?;
+        let mut dest_file = ProtectedFile::create_ex(dst.as_ref(), &crypto.key)
+            .context("Convert: failed to create dst file")?;
+
+        let mut reader = BufReader::with_capacity(4096, src_file);
+        loop {
+            let buffer = reader.fill_buf()?;
+            let rd_len = buffer.len();
+            if rd_len == 0 {
+                break;
+            }
+            let wt_len = dest_file.write(buffer)?;
+            anyhow::ensure!(
+                rd_len == wt_len,
+                "Cannot fully write to dest file: Rd({:?}) != Wt({:?})",
+                rd_len,
+                wt_len
+            );
+            reader.consume(rd_len);
+        }
+        dest_file
+            .flush()
+            .context("Convert: dst_file flush failed")?;
+        let tag = dest_file
+            .current_meta_gmac()
+            .context("Convert: cannot get dst_file gmac")?;
+        Ok(StagedFileInfo::new(dst, crypto, tag))
+    }
+
+    #[cfg(test_mode)]
+    pub fn create_with_plaintext_file(path: impl AsRef<Path>) -> anyhow::Result<StagedFileInfo> {
         let bytes = read_all_bytes(path.as_ref())?;
         let dst = path.as_ref().with_extension("test_enc");
         Self::create_with_bytes(dst, &bytes)
@@ -81,7 +115,7 @@ impl StagedFileInfo {
     }
 
     pub fn create_with_bytes(
-        path: impl AsRef<std::path::Path>,
+        path: impl AsRef<Path>,
         bytes: &[u8],
     ) -> anyhow::Result<StagedFileInfo> {
         let crypto = TeaclaveFile128Key::random();
@@ -93,14 +127,14 @@ impl StagedFileInfo {
     }
 }
 
-pub fn read_all_bytes(path: impl AsRef<std::path::Path>) -> anyhow::Result<Vec<u8>> {
+pub fn read_all_bytes(path: impl AsRef<Path>) -> anyhow::Result<Vec<u8>> {
     let mut content = Vec::new();
     let mut file = File::open(path)?;
     file.read_to_end(&mut content)?;
     Ok(content)
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct StagedFiles {
     entries: HashMap<String, StagedFileInfo>,
 }
@@ -112,6 +146,14 @@ impl StagedFiles {
 
     pub fn get(&self, key: &str) -> Option<&StagedFileInfo> {
         self.entries.get(key)
+    }
+
+    pub fn len(&self) -> usize {
+        self.entries.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 }
 

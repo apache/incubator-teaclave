@@ -53,7 +53,7 @@ impl TeaclaveRuntime for DefaultRuntime {
         let file_info = self
             .output_files
             .get(identifier)
-            .ok_or_else(|| anyhow::anyhow!("Invalide output file identifier"))?;
+            .ok_or_else(|| anyhow::anyhow!("Invalid output file identifier"))?;
 
         log::debug!("create_output: {:?}", file_info.path);
         let writable = file_info.create_writable_io()?;
