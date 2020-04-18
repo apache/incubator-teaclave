@@ -15,9 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use crate::FunctionArguments;
+use crate::{FunctionArguments, OutputsTags};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::collections::HashSet;
 use std::convert::TryInto;
 use std::io;
@@ -147,7 +146,7 @@ pub struct WorkerCapability {
 #[derive(Debug, Default)]
 pub struct ExecutionResult {
     pub return_value: Vec<u8>,
-    pub output_file_hash: HashMap<String, String>,
+    pub output_file_hash: OutputsTags,
 }
 
 #[cfg(feature = "enclave_unit_test")]

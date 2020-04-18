@@ -20,6 +20,7 @@ use crate::Storable;
 use crate::*;
 use anyhow::{anyhow, bail, ensure, Error, Result};
 use serde::{Deserialize, Serialize};
+use std::collections::hash_map::Iter;
 use std::collections::{HashMap, HashSet};
 use std::convert::TryInto;
 use uuid::Uuid;
@@ -140,17 +141,62 @@ impl Default for TaskStatus {
     }
 }
 
+#[derive(Debug, Default, Deserialize, Serialize)]
+pub struct OutputsTags {
+    inner: HashMap<String, FileAuthTag>,
+}
+
+impl OutputsTags {
+    pub fn new(hm: HashMap<String, FileAuthTag>) -> Self {
+        Self { inner: hm }
+    }
+
+    pub fn iter(&self) -> Iter<String, FileAuthTag> {
+        self.inner.iter()
+    }
+}
+
+impl std::convert::TryFrom<HashMap<String, String>> for OutputsTags {
+    type Error = anyhow::Error;
+    fn try_from(input: HashMap<String, String>) -> Result<Self> {
+        let mut ret = HashMap::with_capacity(input.len());
+        for (k, v) in input.iter() {
+            let tag = FileAuthTag::from_hex(v)?;
+            ret.insert(k.to_string(), tag);
+        }
+        Ok(OutputsTags::new(ret))
+    }
+}
+
+impl<S: std::default::Default + std::hash::BuildHasher> std::convert::From<OutputsTags>
+    for HashMap<String, String, S>
+{
+    fn from(tags: OutputsTags) -> HashMap<String, String, S> {
+        tags.iter()
+            .map(|(k, v)| (k.to_string(), v.to_hex()))
+            .collect()
+    }
+}
+
+impl std::iter::FromIterator<(String, FileAuthTag)> for OutputsTags {
+    fn from_iter<T: IntoIterator<Item = (String, FileAuthTag)>>(iter: T) -> Self {
+        OutputsTags {
+            inner: HashMap::from_iter(iter),
+        }
+    }
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct TaskOutputs {
     pub return_value: Vec<u8>,
-    pub output_file_hash: HashMap<String, String>,
+    pub output_file_hash: OutputsTags,
 }
 
 impl TaskOutputs {
-    pub fn new(value: impl Into<Vec<u8>>, output_file_hash: HashMap<String, String>) -> Self {
+    pub fn new(value: impl Into<Vec<u8>>, output_file_hash: HashMap<String, FileAuthTag>) -> Self {
         TaskOutputs {
             return_value: value.into(),
-            output_file_hash,
+            output_file_hash: OutputsTags::new(output_file_hash),
         }
     }
 }

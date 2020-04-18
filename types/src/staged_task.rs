@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use std::collections::hash_map::Iter;
+use std::collections::hash_map::{Iter, IterMut};
 use std::collections::HashMap;
 use std::prelude::v1::*;
 
@@ -63,6 +63,18 @@ impl FunctionOutputFiles {
 
     pub fn iter(&self) -> Iter<String, FunctionOutputFile> {
         self.inner.iter()
+    }
+
+    pub fn iter_mut(&mut self) -> IterMut<String, FunctionOutputFile> {
+        self.inner.iter_mut()
+    }
+
+    pub fn len(&self) -> usize {
+        self.inner.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 }
 
