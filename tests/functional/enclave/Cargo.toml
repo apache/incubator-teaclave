@@ -28,14 +28,15 @@ mesalock_sgx = [
 cov = ["teaclave_service_enclave_utils/cov"]
 
 [dependencies]
-log         = { version = "0.4.6" }
 anyhow      = { version = "1.0.26" }
+inventory   = { version = "0.1.6" }
+lazy_static = { version = "1.4.0" }
+log         = { version = "0.4.6" }
 serde       = { version = "1.0.92" }
 serde_json  = { version = "1.0.39" }
 thiserror   = { version = "1.0.9" }
 url         = { version = "2.1.1" }
 uuid        = { version = "0.8.1", features = ["v4"] }
-lazy_static = { version = "1.4.0" }
 
 teaclave_attestation           = { path = "../../../attestation" }
 teaclave_config                = { path = "../../../config" }

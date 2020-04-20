@@ -23,7 +23,6 @@ extern crate sgx_tstd as std;
 #[macro_use]
 extern crate log;
 
-use std::collections::HashMap;
 use std::prelude::v1::*;
 
 use teaclave_binder::proto::{
@@ -44,45 +43,16 @@ mod scheduler_service;
 mod storage_service;
 mod utils;
 
-type BoxedFnTest = Box<dyn Fn() -> bool>;
+use teaclave_test_utils::run_inventory_tests;
 
 #[handle_ecall]
 fn handle_run_test(input: &RunTestInput) -> TeeServiceResult<RunTestOutput> {
-    let test_names = &input.test_names;
-    let v: Vec<(_, BoxedFnTest)> = vec![
-        (
-            "access_control_service",
-            Box::new(access_control_service::run_tests),
-        ),
-        (
-            "authentication_service",
-            Box::new(authentication_service::run_tests),
-        ),
-        ("storage_service", Box::new(storage_service::run_tests)),
-        ("frontend_service", Box::new(frontend_service::run_tests)),
-        (
-            "management_service",
-            Box::new(management_service::run_tests),
-        ),
-        ("scheduler_service", Box::new(scheduler_service::run_tests)),
-        ("execution_service", Box::new(execution_service::run_tests)),
-        ("end_to_end", Box::new(end_to_end::run_tests)),
-    ];
-    let test_map: HashMap<_, BoxedFnTest> =
-        v.into_iter().map(|(k, v)| (k.to_string(), v)).collect();
-
-    let mut ret = true;
-
-    if test_names.is_empty() {
-        for fn_test in test_map.values() {
-            ret &= fn_test();
-        }
-    }
-
-    for name in test_names.iter() {
-        let fn_test = test_map.get(name).unwrap();
-        ret &= fn_test();
-    }
+    utils::setup();
+    let ret = if input.test_names.is_empty() {
+        run_inventory_tests!()
+    } else {
+        run_inventory_tests!(|s: &str| input.test_names.iter().any(|t| s.contains(t)))
+    };
 
     assert_eq!(ret, true);
     Ok(RunTestOutput)

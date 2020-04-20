@@ -21,40 +21,9 @@ use std::prelude::v1::*;
 use teaclave_proto::teaclave_common::*;
 use teaclave_proto::teaclave_frontend_service::*;
 use teaclave_proto::teaclave_scheduler_service::*;
+use teaclave_test_utils::test_case;
 use teaclave_types::*;
 use url::Url;
-
-pub fn run_tests() -> bool {
-    use teaclave_test_utils::*;
-
-    setup();
-
-    run_tests!(
-        test_register_input_file,
-        test_register_output_file,
-        test_register_fusion_output,
-        test_register_input_from_output,
-        test_get_output_file,
-        test_get_input_file,
-        test_register_function,
-        test_get_function,
-        test_create_task,
-        test_get_task,
-        test_assign_data,
-        test_approve_task,
-        test_invoke_task,
-    )
-}
-
-const USERNAME: &str = "frontend_user";
-const PASSWORD: &str = "test_password";
-
-fn setup() {
-    // Register user for the first time
-    let mut api_client =
-        create_authentication_api_client(shared_enclave_info(), AUTH_SERVICE_ADDR).unwrap();
-    register_new_account(&mut api_client, USERNAME, PASSWORD).unwrap();
-}
 
 fn authorized_client() -> TeaclaveFrontendClient {
     let mut api_client =
@@ -68,6 +37,7 @@ fn unauthorized_client() -> TeaclaveFrontendClient {
     create_frontend_client(shared_enclave_info(), FRONTEND_SERVICE_ADDR, cred).unwrap()
 }
 
+#[test_case]
 fn test_register_input_file() {
     let url = Url::parse("https://external-storage.com/filepath?presigned_token").unwrap();
     let cmac = FileAuthTag::mock();
@@ -82,6 +52,7 @@ fn test_register_input_file() {
     assert!(response.is_err());
 }
 
+#[test_case]
 fn test_register_output_file() {
     let url = Url::parse("https://external-storage.com/filepath?presigned_token").unwrap();
     let crypto_info = FileCrypto::default();
@@ -95,6 +66,7 @@ fn test_register_output_file() {
     assert!(response.is_err());
 }
 
+#[test_case]
 fn test_register_fusion_output() {
     let request = RegisterFusionOutputRequest::new(vec!["frontend_user", "mock_user"]);
     let response = authorized_client().register_fusion_output(request);
@@ -105,6 +77,7 @@ fn test_register_fusion_output() {
     assert!(response.is_err());
 }
 
+#[test_case]
 fn test_register_input_from_output() {
     let output_id = ExternalID::try_from("output-00000000-0000-0000-0000-000000000001").unwrap();
 
@@ -117,6 +90,7 @@ fn test_register_input_from_output() {
     assert!(response.is_err());
 }
 
+#[test_case]
 fn test_get_output_file() {
     let mut client = authorized_client();
 
@@ -135,6 +109,7 @@ fn test_get_output_file() {
     assert!(response.is_err());
 }
 
+#[test_case]
 fn test_get_input_file() {
     let mut client = authorized_client();
 
@@ -154,6 +129,7 @@ fn test_get_input_file() {
     assert!(response.is_err());
 }
 
+#[test_case]
 fn test_register_function() {
     let request = RegisterFunctionRequest::default();
     let response = authorized_client().register_function(request);
@@ -164,6 +140,7 @@ fn test_register_function() {
     assert!(response.is_err());
 }
 
+#[test_case]
 fn test_get_function() {
     let function_id =
         ExternalID::try_from("function-00000000-0000-0000-0000-000000000001").unwrap();
@@ -177,6 +154,7 @@ fn test_get_function() {
     assert!(response.is_err());
 }
 
+#[test_case]
 fn test_create_task() {
     let function_id =
         ExternalID::try_from("function-00000000-0000-0000-0000-000000000002").unwrap();
@@ -198,6 +176,7 @@ fn test_create_task() {
     assert!(response.is_err());
 }
 
+#[test_case]
 fn test_get_task() {
     let mut client = authorized_client();
     let function_id =
@@ -220,6 +199,7 @@ fn test_get_task() {
     assert!(response.is_err());
 }
 
+#[test_case]
 fn test_assign_data() {
     let mut client = authorized_client();
     let function_id =
@@ -254,6 +234,7 @@ fn test_assign_data() {
     assert!(response.is_ok());
 }
 
+#[test_case]
 fn test_approve_task() {
     let mut client = authorized_client();
     let function_id =
@@ -287,6 +268,7 @@ fn test_approve_task() {
     assert!(response.is_ok());
 }
 
+#[test_case]
 fn test_invoke_task() {
     let mut client = authorized_client();
     let function_id =

@@ -20,33 +20,15 @@ use std::convert::TryFrom;
 use std::prelude::v1::*;
 use teaclave_proto::teaclave_management_service::*;
 use teaclave_proto::teaclave_scheduler_service::*;
+use teaclave_test_utils::test_case;
 use teaclave_types::*;
 use url::Url;
-
-pub fn run_tests() -> bool {
-    use teaclave_test_utils::*;
-
-    run_tests!(
-        test_register_input_file,
-        test_register_output_file,
-        test_register_fusion_output,
-        test_register_input_from_output,
-        test_get_input_file,
-        test_get_output_file,
-        test_register_function,
-        test_get_function,
-        test_create_task,
-        test_get_task,
-        test_assign_data,
-        test_approve_task,
-        test_invoke_task,
-    )
-}
 
 fn authorized_client(user_id: &str) -> TeaclaveManagementClient {
     get_management_client(user_id)
 }
 
+#[test_case]
 fn test_register_input_file() {
     let url = Url::parse("https://external-storage.com/filepath?presigned_token").unwrap();
     let cmac = FileAuthTag::mock();
@@ -56,6 +38,7 @@ fn test_register_input_file() {
     assert!(response.is_ok());
 }
 
+#[test_case]
 fn test_register_output_file() {
     let url = Url::parse("https://external-storage.com/filepath?presigned_token").unwrap();
     let crypto_info = FileCrypto::new("aes-gcm-128", &[0x90u8; 16], &[0x89u8; 12]).unwrap();
@@ -66,6 +49,7 @@ fn test_register_output_file() {
     assert!(response.is_ok());
 }
 
+#[test_case]
 fn test_register_fusion_output() {
     let request = RegisterFusionOutputRequest::new(vec!["mock_user", "mock_user_b"]);
     let response = authorized_client("mock_user").register_fusion_output(request);
@@ -76,6 +60,7 @@ fn test_register_fusion_output() {
     assert!(response.is_err());
 }
 
+#[test_case]
 fn test_register_input_from_output() {
     let user1_output_id =
         ExternalID::try_from("output-00000000-0000-0000-0000-000000000001").unwrap();
@@ -100,6 +85,7 @@ fn test_register_input_from_output() {
     assert!(response.is_ok());
 }
 
+#[test_case]
 fn test_get_output_file() {
     let url = Url::parse("https://external-storage.com/filepath?presigned_token").unwrap();
     let crypto_info = FileCrypto::default();
@@ -117,6 +103,7 @@ fn test_get_output_file() {
     assert!(response.is_err());
 }
 
+#[test_case]
 fn test_get_input_file() {
     let url = Url::parse("https://external-storage.com/filepath?presigned_token").unwrap();
     let cmac = FileAuthTag::mock();
@@ -136,6 +123,7 @@ fn test_get_input_file() {
     assert!(response.is_err());
 }
 
+#[test_case]
 fn test_register_function() {
     let function_input = FunctionInput::new("input", "input_desc");
     let function_output = FunctionOutput::new("output", "output_desc");
@@ -154,6 +142,7 @@ fn test_register_function() {
     assert!(response.is_ok());
 }
 
+#[test_case]
 fn test_get_function() {
     let function_input = FunctionInput::new("input", "input_desc");
     let function_output = FunctionOutput::new("output", "output_desc");
@@ -206,6 +195,7 @@ fn valid_create_task_request() -> CreateTaskRequest {
         .output_owners_map(output_owners)
 }
 
+#[test_case]
 fn test_create_task() {
     let mut client = authorized_client("mock_user");
 
@@ -233,6 +223,7 @@ fn test_create_task() {
     assert!(response.is_err());
 }
 
+#[test_case]
 fn test_get_task() {
     let mut client = authorized_client("mock_user");
 
@@ -250,6 +241,7 @@ fn test_get_task() {
     }
 }
 
+#[test_case]
 fn test_assign_data() {
     let mut client = authorized_client("mock_user");
     let mut client1 = authorized_client("mock_user1");
@@ -424,6 +416,7 @@ fn test_assign_data() {
     assert!(response.is_err());
 }
 
+#[test_case]
 fn test_approve_task() {
     let mut client = authorized_client("mock_user");
     let mut client1 = authorized_client("mock_user1");
@@ -507,6 +500,7 @@ fn test_approve_task() {
     assert_eq!(response.status, TaskStatus::Approved);
 }
 
+#[test_case]
 fn test_invoke_task() {
     let mut client = authorized_client("mock_user");
     let mut client1 = authorized_client("mock_user1");

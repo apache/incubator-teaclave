@@ -16,7 +16,9 @@
 // under the License.
 
 use super::*;
+use teaclave_test_utils::test_case;
 
+#[test_case]
 pub fn test_echo_task_success() {
     // Authenticate user before talking to frontend service
     let mut api_client =

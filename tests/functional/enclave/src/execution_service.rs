@@ -18,16 +18,12 @@
 use crate::utils::*;
 use std::prelude::v1::*;
 use teaclave_proto::teaclave_storage_service::*;
+use teaclave_test_utils::test_case;
 use teaclave_types::*;
 
 use uuid::Uuid;
 
-pub fn run_tests() -> bool {
-    use teaclave_test_utils::*;
-
-    run_tests!(test_execute_function)
-}
-
+#[test_case]
 fn test_execute_function() {
     let task_id = Uuid::new_v4();
     let task = Task {

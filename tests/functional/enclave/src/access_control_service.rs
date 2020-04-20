@@ -18,23 +18,9 @@
 use crate::utils::*;
 use std::prelude::v1::*;
 use teaclave_proto::teaclave_access_control_service::*;
+use teaclave_test_utils::test_case;
 
-pub fn run_tests() -> bool {
-    use teaclave_test_utils::*;
-
-    run_tests!(
-        test_authorize_data_success,
-        test_authorize_data_fail,
-        test_authorize_function_success,
-        test_authorize_function_fail,
-        test_authorize_task_success,
-        test_authorize_task_fail,
-        test_authorize_staged_task_success,
-        test_authorize_staged_task_fail,
-        test_concurrency,
-    )
-}
-
+#[test_case]
 fn test_authorize_data_success() {
     let mut client = get_access_control_client();
 
@@ -44,6 +30,7 @@ fn test_authorize_data_success() {
     assert!(response_result.unwrap().accept);
 }
 
+#[test_case]
 fn test_authorize_data_fail() {
     let mut client = get_access_control_client();
 
@@ -58,6 +45,7 @@ fn test_authorize_data_fail() {
     assert!(!response_result.unwrap().accept);
 }
 
+#[test_case]
 fn test_authorize_function_success() {
     let mut client = get_access_control_client();
 
@@ -80,6 +68,7 @@ fn test_authorize_function_success() {
     assert!(response_result.unwrap().accept);
 }
 
+#[test_case]
 fn test_authorize_function_fail() {
     let mut client = get_access_control_client();
     let request =
@@ -89,6 +78,7 @@ fn test_authorize_function_fail() {
     assert!(!response_result.unwrap().accept);
 }
 
+#[test_case]
 fn test_authorize_task_success() {
     let mut client = get_access_control_client();
     let request = AuthorizeTaskRequest::new("mock_participant_a", "mock_task");
@@ -102,6 +92,7 @@ fn test_authorize_task_success() {
     assert!(response_result.unwrap().accept);
 }
 
+#[test_case]
 fn test_authorize_task_fail() {
     let mut client = get_access_control_client();
     let request = AuthorizeTaskRequest::new("mock_participant_c", "mock_task");
@@ -110,6 +101,7 @@ fn test_authorize_task_fail() {
     assert!(!response_result.unwrap().accept);
 }
 
+#[test_case]
 fn test_authorize_staged_task_success() {
     let mut client = get_access_control_client();
     let request = AuthorizeStagedTaskRequest {
@@ -131,6 +123,7 @@ fn test_authorize_staged_task_success() {
     assert!(response_result.unwrap().accept);
 }
 
+#[test_case]
 fn test_authorize_staged_task_fail() {
     let mut client = get_access_control_client();
     let request = AuthorizeStagedTaskRequest {
@@ -164,6 +157,7 @@ fn test_authorize_staged_task_fail() {
     assert!(!response_result.unwrap().accept);
 }
 
+#[test_case]
 fn test_concurrency() {
     let mut thread_pool = Vec::new();
     for _i in 0..10 {

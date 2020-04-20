@@ -23,6 +23,32 @@ extern crate sgx_tstd as std;
 use std::string::String;
 use std::vec::Vec;
 
+pub use teaclave_test_utils_proc_macro::test_case;
+
+pub struct TestCase(pub String, pub fn() -> ());
+
+inventory::collect!(TestCase);
+
+#[macro_export]
+macro_rules! run_inventory_tests {
+    ($predicate:expr) => {{
+        teaclave_test_utils::test_start();
+        let mut ntestcases: u64 = 0u64;
+        let mut failurecases: Vec<String> = Vec::new();
+
+        for t in inventory::iter::<teaclave_test_utils::TestCase>.into_iter() {
+            if $predicate(&t.0) {
+                teaclave_test_utils::test(&mut ntestcases, &mut failurecases, t.1, &t.0);
+            }
+        }
+
+        teaclave_test_utils::test_end(ntestcases, failurecases)
+    }};
+    () => {
+        run_inventory_tests!(|_| true);
+    };
+}
+
 #[macro_export]
 macro_rules! should_panic {
     ($fmt:expr) => {{
