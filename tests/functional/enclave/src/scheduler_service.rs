@@ -19,16 +19,12 @@ use crate::utils::*;
 use std::prelude::v1::*;
 use teaclave_proto::teaclave_scheduler_service::*;
 use teaclave_proto::teaclave_storage_service::*;
+use teaclave_test_utils::test_case;
 use teaclave_types::*;
 
 use uuid::Uuid;
 
-pub fn run_tests() -> bool {
-    use teaclave_test_utils::*;
-
-    run_tests!(test_pull_task, test_update_task_status_result)
-}
-
+#[test_case]
 fn test_pull_task() {
     let function_id = Uuid::new_v4();
     let staged_task = StagedTask::new()
@@ -51,6 +47,7 @@ fn test_pull_task() {
     assert_eq!(response.unwrap().staged_task.function_id, function_id);
 }
 
+#[test_case]
 fn test_update_task_status_result() {
     let task_id = Uuid::new_v4();
     let task = Task {

@@ -13,4 +13,6 @@ mesalock_sgx = [
 ]
 
 [dependencies]
+inventory   = { version = "0.1.6" }
+teaclave_test_utils_proc_macro = { path = "./proc_macro" }
 sgx_tstd = { version = "1.1.1", features = ["backtrace"], optional = true }

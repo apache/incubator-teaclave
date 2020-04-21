@@ -25,26 +25,6 @@ mod mesapy_echo;
 mod native_echo;
 mod native_gbdt_training;
 
-const USERNAME: &str = "alice";
-const PASSWORD: &str = "daHosldOdker0sS";
-
-pub fn run_tests() -> bool {
-    use teaclave_test_utils::*;
-    setup();
-    run_tests!(
-        native_gbdt_training::test_gbdt_training_task,
-        native_echo::test_echo_task_success,
-        mesapy_echo::test_echo_task_success,
-    )
-}
-
-fn setup() {
-    // Register user for the first time
-    let mut api_client =
-        create_authentication_api_client(shared_enclave_info(), AUTH_SERVICE_ADDR).unwrap();
-    register_new_account(&mut api_client, USERNAME, PASSWORD).unwrap();
-}
-
 fn get_task_until(
     client: &mut TeaclaveFrontendClient,
     task_id: &ExternalID,

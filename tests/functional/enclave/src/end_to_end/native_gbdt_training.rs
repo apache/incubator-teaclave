@@ -17,7 +17,9 @@
 
 use super::*;
 use teaclave_crypto::TeaclaveFile128Key;
+use teaclave_test_utils::test_case;
 
+#[test_case]
 pub fn test_gbdt_training_task() {
     let mut client = authorized_frontend_client();
     let function_id = register_gbdt_function(&mut client);

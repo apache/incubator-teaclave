@@ -23,20 +23,8 @@ use teaclave_proto::teaclave_authentication_service::*;
 use teaclave_proto::teaclave_common::*;
 use teaclave_rpc::config::SgxTrustedTlsClientConfig;
 use teaclave_rpc::endpoint::Endpoint;
+use teaclave_test_utils::test_case;
 use teaclave_types::EnclaveInfo;
-
-pub fn run_tests() -> bool {
-    use teaclave_test_utils::*;
-
-    run_tests!(
-        test_login_success,
-        test_login_fail,
-        test_authenticate_success,
-        test_authenticate_fail,
-        test_register_success,
-        test_register_fail,
-    )
-}
 
 fn get_api_client() -> TeaclaveAuthenticationApiClient {
     let runtime_config = RuntimeConfig::from_toml("runtime.config.toml").expect("runtime");
@@ -83,6 +71,7 @@ fn get_internal_client() -> TeaclaveAuthenticationInternalClient {
     TeaclaveAuthenticationInternalClient::new(channel).unwrap()
 }
 
+#[test_case]
 fn test_login_success() {
     let mut client = get_api_client();
     let request = UserRegisterRequest::new("test_login_id1", "test_password");
@@ -95,6 +84,7 @@ fn test_login_success() {
     assert!(response_result.is_ok());
 }
 
+#[test_case]
 fn test_login_fail() {
     let mut client = get_api_client();
     let request = UserRegisterRequest::new("test_login_id2", "test_password");
@@ -107,6 +97,7 @@ fn test_login_fail() {
     assert!(response_result.is_err());
 }
 
+#[test_case]
 fn test_authenticate_success() {
     let mut api_client = get_api_client();
     let mut internal_client = get_internal_client();
@@ -124,6 +115,7 @@ fn test_authenticate_success() {
     assert!(response_result.unwrap().accept);
 }
 
+#[test_case]
 fn test_authenticate_fail() {
     let mut api_client = get_api_client();
     let mut internal_client = get_internal_client();
@@ -139,6 +131,7 @@ fn test_authenticate_fail() {
     assert!(!response_result.unwrap().accept);
 }
 
+#[test_case]
 fn test_register_success() {
     let mut client = get_api_client();
     let request = UserRegisterRequest::new("test_register_id1", "test_password");
@@ -147,6 +140,7 @@ fn test_register_success() {
     assert!(response_result.is_ok());
 }
 
+#[test_case]
 fn test_register_fail() {
     let mut client = get_api_client();
     let request = UserRegisterRequest::new("test_register_id2", "test_password");

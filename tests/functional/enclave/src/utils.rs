@@ -164,3 +164,14 @@ pub fn login(
 
     Ok(UserCredential::new(username, response.token))
 }
+
+pub const USERNAME: &str = "frontend_user";
+pub const PASSWORD: &str = "test_password";
+
+pub fn setup() {
+    // Register user for the first time
+    let mut api_client =
+        create_authentication_api_client(shared_enclave_info(), AUTH_SERVICE_ADDR).unwrap();
+    // Ignore error if register failed.
+    let _ = register_new_account(&mut api_client, USERNAME, PASSWORD);
+}
