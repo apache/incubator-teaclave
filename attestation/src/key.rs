@@ -15,22 +15,29 @@
 // specific language governing permissions and limitations
 // under the License.
 
+//! This module implements ECDSA (NIST P-256 curve) keys related functions. You
+//! can export private key to a DER format or create a certificate with
+//! extension for TLS-based remote attestation.
+
+use std::prelude::v1::*;
+
 use anyhow::Result;
 use sgx_tcrypto::SgxEccHandle;
 use sgx_types::{sgx_ec256_private_t, sgx_ec256_public_t};
-use std::prelude::v1::*;
 
+/// Validation days of cert for TLS connection.
 const CERT_VALID_DAYS: i64 = 90i64;
 
 /// NistP256KeyPair stores a pair of ECDSA (private, public) key based on the
 /// NIST P-256 curve (a.k.a secp256r1).
-pub struct NistP256KeyPair {
+pub(crate) struct NistP256KeyPair {
     prv_k: sgx_ec256_private_t,
-    pub pub_k: sgx_ec256_public_t,
+    pub_k: sgx_ec256_public_t,
 }
 
 impl NistP256KeyPair {
-    pub fn new() -> Result<Self> {
+    /// Generate a ECDSA key pair.
+    pub(crate) fn new() -> Result<Self> {
         let ecc_handle = SgxEccHandle::new();
         ecc_handle.open()?;
         let (prv_k, pub_k) = ecc_handle.create_key_pair()?;
@@ -38,12 +45,17 @@ impl NistP256KeyPair {
         Ok(Self { prv_k, pub_k })
     }
 
-    pub fn private_key_into_der(&self) -> Vec<u8> {
+    pub(crate) fn pub_k(&self) -> sgx_ec256_public_t {
+        self.pub_k
+    }
+
+    pub(crate) fn private_key_into_der(&self) -> Vec<u8> {
         use bit_vec::BitVec;
         use yasna::construct_der;
         use yasna::models::ObjectIdentifier;
         use yasna::Tag;
 
+        // Construct useful OIDs.
         let ec_public_key_oid = ObjectIdentifier::from_slice(&[1, 2, 840, 10045, 2, 1]);
         let prime256v1_oid = ObjectIdentifier::from_slice(&[1, 2, 840, 10045, 3, 1, 7]);
 
@@ -78,7 +90,7 @@ impl NistP256KeyPair {
     /// Certificate Revocation List (CRL) Profile][1]
     ///
     /// [1]: https://tools.ietf.org/pdf/rfc5280.pdf
-    pub fn create_cert_with_extension(
+    pub(crate) fn create_cert_with_extension(
         &self,
         issuer: &str,
         subject: &str,
@@ -94,6 +106,7 @@ impl NistP256KeyPair {
         use yasna::construct_der;
         use yasna::models::{ObjectIdentifier, UTCTime};
 
+        // Construct useful OIDs.
         let ecdsa_with_sha256_oid = ObjectIdentifier::from_slice(&[1, 2, 840, 10045, 4, 3, 2]);
         let common_name_oid = ObjectIdentifier::from_slice(&[2, 5, 4, 3]);
         let ec_public_key_oid = ObjectIdentifier::from_slice(&[1, 2, 840, 10045, 2, 1]);

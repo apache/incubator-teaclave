@@ -1,7 +1,3 @@
-//! Types that contain information about attestation report.
-//! The implementation is based on Attestation Service API version 4.
-//! https://api.trustedservices.intel.com/documents/sgx-attestation-api-spec.pdf
-
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -18,6 +14,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
+//! Types that contain information about attestation report.
+//! The implementation is based on Attestation Service API version 4.
+//! https://api.trustedservices.intel.com/documents/sgx-attestation-api-spec.pdf
 
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
@@ -433,6 +433,9 @@ pub struct AttestationReport {
 }
 
 impl AttestationReport {
+    /// Construct a AttestationReport from a X509 certificate and verify
+    /// attestation report with the report_ca_cert which is from the attestation
+    /// service provider.
     pub fn from_cert(cert: &[u8], report_ca_cert: &[u8]) -> Result<Self> {
         // Before we reach here, Webpki already verifed the cert is properly signed.
         use crate::cert::*;
