@@ -36,6 +36,9 @@ fn main() {
     let out_dir = &PathBuf::from(out_path);
 
     println!("cargo:rustc-link-search=native={}", out_dir.display());
+    if let Ok(edl_dir) = env::var("TEACLAVE_EDL_DIR") {
+        println!("cargo:rerun-if-changed={}/Enclave_fa.edl", edl_dir);
+    }
     println!("cargo:rustc-link-lib=static=Enclave_fa_u");
 
     let is_sim = match env::var("SGX_MODE") {

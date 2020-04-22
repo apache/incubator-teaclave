@@ -29,7 +29,9 @@ fn choose_sgx_dylib(is_sim: bool) {
 
 fn main() {
     let sdk_dir = env::var("SGX_SDK").unwrap_or("/opt/intel/sgxsdk".into());
-    println!("cargo:rerun-if-changed=Enclave.edl");
+    if let Ok(edl_dir) = env::var("TEACLAVE_EDL_DIR") {
+        println!("cargo:rerun-if-changed={}/Enclave_common.edl", edl_dir);
+    }
     println!("cargo:rustc-link-search=native={}/lib64", sdk_dir);
     println!("cargo:rustc-link-lib=static=sgx_uprotected_fs");
 
