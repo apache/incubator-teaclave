@@ -1,22 +1,34 @@
 FROM ubuntu:18.04
 
-ENV SGX_DOWNLOAD_URL_BASE "https://download.01.org/intel-sgx/sgx-linux/2.7.1/distro/ubuntu18.04-server"
-ENV LIBSGX_ENCLAVE_COMMON        libsgx-enclave-common_2.7.101.3-bionic1_amd64.deb
-ENV LIBSGX_ENCLAVE_COMMON_URL    "$SGX_DOWNLOAD_URL_BASE/$LIBSGX_ENCLAVE_COMMON"
+ENV VERSION 2.9.100.2-bionic1
+ENV SGX_DOWNLOAD_URL_BASE "https://download.01.org/intel-sgx/sgx-linux/2.9/distro/ubuntu18.04-server"
+ENV SGX_LINUX_X64_SDK sgx_linux_x64_sdk_2.9.100.2.bin
+ENV SGX_LINUX_X64_SDK_URL "$SGX_DOWNLOAD_URL_BASE/$SGX_LINUX_X64_SDK"
 
 RUN apt-get update && apt-get install -q -y \
     libcurl4-openssl-dev \
     libprotobuf-dev \
     curl \
-    pkg-config
+    pkg-config \
+    wget
 
 RUN echo 'deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu bionic main' | \
   tee /etc/apt/sources.list.d/intel-sgx.list
 RUN curl -fsSL  https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key | apt-key add -
 
 RUN apt-get update && apt-get install -q -y \
-    libsgx-launch libsgx-urts libsgx-quote-ex
+    libsgx-launch=$VERSION \
+    libsgx-urts=$VERSION \
+    libsgx-quote-ex=$VERSION
 RUN mkdir /etc/init
+
+# Install Intel SGX SDK for libsgx_urts_sim.so
+RUN wget $SGX_LINUX_X64_SDK_URL               && \
+    chmod u+x $SGX_LINUX_X64_SDK              && \
+    echo -e 'no\n/opt/intel' | ./$SGX_LINUX_X64_SDK && \
+    rm $SGX_LINUX_X64_SDK                     && \
+    echo 'source /opt/sgxsdk/environment' >> /etc/environment
+ENV LD_LIBRARY_PATH=/opt/intel/sgxsdk/sdk_libs
 
 ADD release/services/teaclave_frontend_service /teaclave/
 ADD release/services/teaclave_frontend_service_enclave.signed.so /teaclave/
