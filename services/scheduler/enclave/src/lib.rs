@@ -49,8 +49,7 @@ use teaclave_types::{EnclaveInfo, TeeServiceError, TeeServiceResult};
 fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
     let listen_address = config.internal_endpoints.scheduler.listen_address;
     let attestation_config = AttestationConfig::from_teaclave_config(&config)?;
-    let attested_tls_config = RemoteAttestation::new()
-        .config(attestation_config)
+    let attested_tls_config = RemoteAttestation::new(attestation_config)
         .generate_and_endorse()
         .unwrap()
         .attested_tls_config()

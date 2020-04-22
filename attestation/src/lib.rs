@@ -15,15 +15,20 @@
 // specific language governing permissions and limitations
 // under the License.
 
+//! This crate provides TLS-based remote attestation mechanism for Teaclave,
+//! supporting both EPID and ECDSA attestation. By default, Intel Attestation
+//! Service is used for RA.
+
 #![cfg_attr(feature = "mesalock_sgx", no_std)]
 #[cfg(feature = "mesalock_sgx")]
 #[macro_use]
 extern crate sgx_tstd as std;
 
-use anyhow::{Context, Result};
-use serde::{Deserialize, Serialize};
 use std::prelude::v1::*;
 use std::sync::Arc;
+
+use anyhow::{Context, Result};
+use serde::{Deserialize, Serialize};
 
 /// Errors that can happen during attestation and verification process
 #[derive(thiserror::Error, Debug)]

@@ -1,5 +1,3 @@
-//! Types used to verify attestation reports
-
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -17,21 +15,28 @@
 // specific language governing permissions and limitations
 // under the License.
 
+//! This module provides types used to verify attestation reports.
+
 use crate::report::AttestationReport;
-use log::{debug, error};
+
 use std::vec::Vec;
+
+use log::{debug, error};
 use teaclave_types::EnclaveAttr;
 
+/// User defined verification function to further verify the attestation report.
 pub type AttestationReportVerificationFn = fn(&AttestationReport) -> bool;
 
-/// Type used to verify attestation reports (this can be set as a certificate verifier in `rustls::ClientConfig`)
+/// Type used to verify attestation reports (this can be set as a certificate
+/// verifier in `rustls::ClientConfig`).
 #[derive(Clone)]
 pub struct AttestationReportVerifier {
-    /// Valid enclave attributes (only enclaves with attributes in this vector will be accepted)
+    /// Valid enclave attributes (only enclaves with attributes in this vector
+    /// will be accepted).
     pub accepted_enclave_attrs: Vec<EnclaveAttr>,
-    /// Root certificate
+    /// Root certificate of the attestation service provider (e.g., IAS).
     pub root_ca: Vec<u8>,
-    /// Attestation report verifier function
+    /// User defined function to verify the attestation report.
     pub verifier: AttestationReportVerificationFn,
 }
 
@@ -54,6 +59,8 @@ impl AttestationReportVerifier {
         }
     }
 
+    /// Verify whether the `MR_SIGNER` and `MR_ENCLAVE` in the attestation report is
+    /// accepted by us, which are defined in `accepted_enclave_attrs`.
     fn verify_measures(&self, attestation_report: &AttestationReport) -> bool {
         debug!("verify measures");
         let this_mr_signer = attestation_report
@@ -70,6 +77,7 @@ impl AttestationReportVerifier {
         })
     }
 
+    /// Verify TLS certificate.
     fn verify_cert(&self, cert_der: &[u8]) -> bool {
         debug!("verify cert");
         if cfg!(sgx_sim) {

@@ -15,42 +15,54 @@
 // specific language governing permissions and limitations
 // under the License.
 
+//! This module provide API to communicate with attestation service (AS) to get
+//! attestation report endorsed by AS.
+
 use crate::platform;
 use crate::AttestationAlgorithm;
 use crate::AttestationServiceConfig;
 use crate::EndorsedAttestationReport;
-use anyhow::Result;
-use anyhow::{anyhow, bail};
-use log::{debug, trace};
-use serde_json::json;
-use sgx_types::*;
+
 use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::prelude::v1::*;
 use std::sync::Arc;
 
+use anyhow::{anyhow, bail, Result};
+use log::{debug, trace};
+use serde_json::json;
+use sgx_types::*;
+
+/// Root certification of the DCAP attestation service provider.
 #[cfg(dcap)]
 const DCAP_ROOT_CA_CERT: &str = include_str!("../../keys/dcap_root_ca_cert.pem");
 
-/// URL path to get the report
+/// URL path to get the report from the attestation service.
 const AS_REPORT_URL: &str = "/sgx/dev/attestation/v4/report";
 
 #[derive(thiserror::Error, Debug)]
-pub enum AttestationServiceError {
+pub(crate) enum AttestationServiceError {
     #[error("Invalid attestation service address.")]
     InvalidAddress,
     #[error("Attestation service responds an malformed response.")]
     InvalidResponse,
     #[error("{0} is missing in HTTP header.")]
     MissingHeader(String),
-    #[error("Invalid Attestation Evidence Payload. The client should not repeat the request without modifications.")]
+    #[error(
+        "Invalid Attestation Evidence Payload. The client should not repeat the
+        request without modifications."
+    )]
     BadRequest,
     #[error("Failed to authenticate or authorize request.")]
     Unauthorized,
     #[error("Internal error occurred.")]
     InternalServerError,
-    #[error("Service is currently not able to process the request (due to a temporary overloading or maintenance). This is a temporary state –the same request can be repeated after some time.")]
+    #[error(
+        "Service is currently not able to process the request (due to a
+        temporary overloading or maintenance). This is a temporary state –the
+        same request can be repeated after some time."
+    )]
     ServiceUnavailable,
     #[error("TLS connection error.")]
     TlsError,
@@ -109,6 +121,8 @@ fn new_tls_stream(url: &url::Url) -> Result<rustls::StreamOwned<rustls::ClientSe
     Ok(stream)
 }
 
+/// Get attestation report form the attestation service (e.g., Intel Attestation
+/// Service and customized DCAP attestation service).
 fn get_report(
     algo: &AttestationAlgorithm,
     url: &url::Url,
@@ -163,8 +177,8 @@ fn get_report(
         }
         Some(400) => {
             debug!(
-                "Invalid Attestation Evidence Payload. \
-                 The client should not repeat the request without modifications."
+                "Invalid Attestation Evidence Payload. The client should not
+                 repeat the request without modifications."
             );
             bail!(AttestationServiceError::BadRequest);
         }
@@ -177,8 +191,11 @@ fn get_report(
             bail!(AttestationServiceError::InternalServerError);
         }
         Some(503) => {
-            debug!("Service is currently not able to process the request (due to a temporary overloading or maintenance). \
-             This is a temporary state –the same request can be repeated after some time.");
+            debug!(
+                "Service is currently not able to process the request (due to a
+                 temporary overloading or maintenance). This is a temporary
+                 state, the same request can be repeated after some time."
+            );
             bail!(AttestationServiceError::ServiceUnavailable);
         }
         _ => {
