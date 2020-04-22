@@ -51,6 +51,7 @@ impl TeaclaveExecutionService {
             std::thread::sleep(std::time::Duration::from_secs(3));
         };
         let scheduler_client = Arc::new(Mutex::new(TeaclaveSchedulerClient::new(channel)?));
+
         Ok(TeaclaveExecutionService {
             worker: Arc::new(Worker::default()),
             scheduler_client,

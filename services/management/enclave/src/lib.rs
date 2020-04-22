@@ -93,7 +93,10 @@ fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
         verifier::universal_quote_verifier,
     );
 
-    let service = service::TeaclaveManagementService::new(storage_service_endpoint)?;
+    let service = service::TeaclaveManagementService::new(
+        storage_service_endpoint,
+        config.mount.fusion_base_dir.clone(),
+    )?;
     match server.start(service) {
         Ok(_) => (),
         Err(e) => {

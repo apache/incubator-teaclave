@@ -23,7 +23,7 @@ pub fn test_echo_task_success() {
     // Authenticate user before talking to frontend service
     let mut api_client =
         create_authentication_api_client(shared_enclave_info(), AUTH_SERVICE_ADDR).unwrap();
-    let cred = login(&mut api_client, USERNAME, PASSWORD).unwrap();
+    let cred = login(&mut api_client, USERNAME, TEST_PASSWORD).unwrap();
     let mut client =
         create_frontend_client(shared_enclave_info(), FRONTEND_SERVICE_ADDR, cred).unwrap();
 

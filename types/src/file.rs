@@ -102,21 +102,6 @@ impl TeaclaveOutputFile {
             uuid: create_uuid(),
         }
     }
-
-    pub fn new_fusion_data(owner: impl Into<OwnerList>) -> Result<TeaclaveOutputFile> {
-        let uuid = create_uuid();
-        let url = format!("fusion://path/{}?token=fusion_token", uuid.to_string());
-        let url = Url::parse(&url).map_err(|_| anyhow!("invalid url"))?;
-        let crypto_info = FileCrypto::default();
-
-        Ok(TeaclaveOutputFile {
-            url,
-            cmac: None,
-            crypto_info,
-            owner: owner.into(),
-            uuid,
-        })
-    }
 }
 
 impl Storable for TeaclaveOutputFile {

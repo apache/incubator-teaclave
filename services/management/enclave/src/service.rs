@@ -17,6 +17,7 @@
 
 use anyhow::{anyhow, Result};
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::prelude::v1::*;
 use std::sync::{Arc, SgxMutex as Mutex};
 use teaclave_proto::teaclave_frontend_service::{
@@ -40,6 +41,7 @@ use teaclave_types::Function;
 #[cfg(test_mode)]
 use teaclave_types::*;
 use thiserror::Error;
+use url::Url;
 use uuid::Uuid;
 
 #[derive(Error, Debug)]
@@ -66,6 +68,7 @@ impl From<ServiceError> for TeaclaveServiceResponseError {
 #[derive(Clone)]
 pub(crate) struct TeaclaveManagementService {
     storage_client: Arc<Mutex<TeaclaveStorageClient>>,
+    fusion_base_dir: PathBuf,
 }
 
 impl TeaclaveManagement for TeaclaveManagementService {
@@ -119,8 +122,9 @@ impl TeaclaveManagement for TeaclaveManagementService {
             ServiceError::PermissionDenied
         );
 
-        let output_file =
-            TeaclaveOutputFile::new_fusion_data(owner_list).map_err(|_| ServiceError::DataError)?;
+        let output_file = self
+            .create_fusion_data(owner_list)
+            .map_err(|_| ServiceError::DataError)?;
 
         self.write_to_db(&output_file)
             .map_err(|_| ServiceError::StorageError)?;
@@ -488,7 +492,10 @@ impl TeaclaveManagement for TeaclaveManagementService {
 }
 
 impl TeaclaveManagementService {
-    pub(crate) fn new(storage_service_endpoint: Endpoint) -> Result<Self> {
+    pub(crate) fn new(
+        storage_service_endpoint: Endpoint,
+        fusion_base_dir: PathBuf,
+    ) -> Result<Self> {
         let mut i = 0;
         let channel = loop {
             match storage_service_endpoint.connect() {
@@ -502,12 +509,33 @@ impl TeaclaveManagementService {
             std::thread::sleep(std::time::Duration::from_secs(3));
         };
         let storage_client = Arc::new(Mutex::new(TeaclaveStorageClient::new(channel)?));
-        let service = Self { storage_client };
+        let service = Self {
+            storage_client,
+            fusion_base_dir,
+        };
 
         #[cfg(test_mode)]
         service.add_mock_data()?;
 
         Ok(service)
+    }
+    pub fn create_fusion_data(&self, owner: impl Into<OwnerList>) -> Result<TeaclaveOutputFile> {
+        let uuid = Uuid::new_v4();
+        let url = format!(
+            "file://{}/{}",
+            self.fusion_base_dir.display(),
+            uuid.to_string()
+        );
+        let url = Url::parse(&url).map_err(|_| anyhow!("invalid url"))?;
+        let crypto_info = FileCrypto::default();
+
+        Ok(TeaclaveOutputFile {
+            url,
+            cmac: None,
+            crypto_info,
+            owner: owner.into(),
+            uuid,
+        })
     }
 
     fn get_request_user_id(
@@ -558,14 +586,12 @@ impl TeaclaveManagementService {
 
     #[cfg(test_mode)]
     fn add_mock_data(&self) -> Result<()> {
-        let mut output_file =
-            TeaclaveOutputFile::new_fusion_data(vec!["mock_user1", "frontend_user"])?;
+        let mut output_file = self.create_fusion_data(vec!["mock_user1", "frontend_user"])?;
         output_file.uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000001")?;
         output_file.cmac = Some(FileAuthTag::mock());
         self.write_to_db(&output_file)?;
 
-        let mut output_file =
-            TeaclaveOutputFile::new_fusion_data(vec!["mock_user2", "mock_user3"])?;
+        let mut output_file = self.create_fusion_data(vec!["mock_user2", "mock_user3"])?;
         output_file.uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000002")?;
         output_file.cmac = Some(FileAuthTag::mock());
         self.write_to_db(&output_file)?;

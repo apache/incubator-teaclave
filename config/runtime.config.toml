@@ -29,3 +29,6 @@ algorithm = "sgx_epid"
 url = "https://api.trustedservices.intel.com:443"
 key = "00000000000000000000000000000000"
 spid = "00000000000000000000000000000000"
+
+[mount]
+fusion_base_dir = "/tmp/fusion_data"

@@ -22,6 +22,7 @@ extern crate sgx_tstd as std;
 
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
+use std::untrusted::path::PathEx;
 
 use teaclave_attestation::verifier;
 use teaclave_binder::proto::{
@@ -59,6 +60,19 @@ fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
         &enclave_info,
         AS_ROOT_CA_CERT,
         verifier::universal_quote_verifier,
+    );
+
+    let fusion_base = config.mount.fusion_base_dir.clone();
+
+    // We only create this base directory in test_mode
+    // This directory should be mounted in release mode
+    #[cfg(test_mode)]
+    std::untrusted::fs::create_dir_all(&fusion_base)?;
+
+    anyhow::ensure!(
+        fusion_base.exists(),
+        "Fusion base directory is not mounted: {}",
+        fusion_base.display()
     );
 
     let mut service = service::TeaclaveExecutionService::new(scheduler_service_endpoint).unwrap();
