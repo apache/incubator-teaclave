@@ -20,7 +20,6 @@
 
 use std::prelude::v1::*;
 
-use anyhow::{ensure, Result};
 use log::debug;
 use sgx_rand::{os::SgxRng, Rng};
 use sgx_tcrypto::rsgx_sha256_slice;
@@ -29,6 +28,7 @@ use sgx_types::sgx_status_t::SGX_SUCCESS;
 use sgx_types::*;
 
 type SgxStatus = sgx_types::sgx_status_t;
+type Result<T> = std::result::Result<T, PlatformError>;
 
 #[derive(thiserror::Error, Debug)]
 pub enum PlatformError {
@@ -94,11 +94,15 @@ pub(crate) fn init_sgx_quote() -> Result<(sgx_att_key_id_t, sgx_target_info_t)> 
 
     let res = unsafe { ocall_sgx_init_quote(&mut rt as _, &mut ak_id as _, &mut ti as _) };
 
-    ensure!(
-        res == SGX_SUCCESS,
-        PlatformError::OCallError("ocall_sgx_init_quote".to_string(), res)
-    );
-    ensure!(rt == SGX_SUCCESS, PlatformError::InitQuoteError(rt));
+    if res != SGX_SUCCESS {
+        return Err(PlatformError::OCallError(
+            "ocall_sgx_init_quote".to_string(),
+            res,
+        ));
+    }
+    if rt != SGX_SUCCESS {
+        return Err(PlatformError::InitQuoteError(rt));
+    }
 
     Ok((ak_id, ti))
 }
@@ -130,11 +134,15 @@ pub(crate) fn get_sgx_quote(ak_id: &sgx_att_key_id_t, report: sgx_report_t) -> R
 
     let res = unsafe { ocall_sgx_get_quote_size(&mut rt as _, ak_id as _, &mut quote_len as _) };
 
-    ensure!(
-        res == SGX_SUCCESS,
-        PlatformError::OCallError("ocall_sgx_get_quote_size".to_string(), res)
-    );
-    ensure!(rt == SGX_SUCCESS, PlatformError::GetQuoteError(rt));
+    if res != SGX_SUCCESS {
+        return Err(PlatformError::OCallError(
+            "ocall_sgx_get_quote_size".to_string(),
+            res,
+        ));
+    }
+    if rt != SGX_SUCCESS {
+        return Err(PlatformError::GetQuoteError(rt));
+    }
 
     let mut qe_report_info = sgx_qe_report_info_t::default();
     let mut quote_nonce = sgx_quote_nonce_t::default();
@@ -148,10 +156,9 @@ pub(crate) fn get_sgx_quote(ak_id: &sgx_att_key_id_t, report: sgx_report_t) -> R
     // returned with the quote
     let res = unsafe { sgx_self_target(&mut qe_report_info.app_enclave_target_info as _) };
 
-    ensure!(
-        res == SGX_SUCCESS,
-        PlatformError::GetSelfTargetInfoError(res)
-    );
+    if res != SGX_SUCCESS {
+        return Err(PlatformError::GetSelfTargetInfoError(res));
+    }
 
     let mut quote = vec![0; quote_len as usize];
 
@@ -167,11 +174,15 @@ pub(crate) fn get_sgx_quote(ak_id: &sgx_att_key_id_t, report: sgx_report_t) -> R
         )
     };
 
-    ensure!(
-        res == SGX_SUCCESS,
-        PlatformError::OCallError("ocall_sgx_get_quote".to_string(), res)
-    );
-    ensure!(rt == SGX_SUCCESS, PlatformError::GetQuoteError(rt));
+    if res != SGX_SUCCESS {
+        return Err(PlatformError::OCallError(
+            "ocall_sgx_get_quote".to_string(),
+            res,
+        ));
+    }
+    if rt != SGX_SUCCESS {
+        return Err(PlatformError::GetQuoteError(rt));
+    }
 
     debug!("rsgx_verify_report");
     let qe_report = qe_report_info.qe_report;
@@ -191,10 +202,12 @@ pub(crate) fn get_sgx_quote(ak_id: &sgx_att_key_id_t, report: sgx_report_t) -> R
     debug!("rsgx_sha256_slice");
     let rhs_hash = rsgx_sha256_slice(&rhs_vec).map_err(PlatformError::Others)?;
     let lhs_hash = &qe_report.body.report_data.d[..32];
-    ensure!(
-        rhs_hash == lhs_hash,
-        PlatformError::ReportReplay(rhs_hash.to_vec(), lhs_hash.to_vec())
-    );
+    if rhs_hash != lhs_hash {
+        return Err(PlatformError::ReportReplay(
+            rhs_hash.to_vec(),
+            lhs_hash.to_vec(),
+        ));
+    }
 
     Ok(quote)
 }
