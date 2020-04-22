@@ -51,8 +51,8 @@ before start the services. You can use env vars or set them in the
 Here is an example to start all services.
 
 ```
-$ export AS_SPID="xxx"
-$ export AS_KEY="xxx"
+$ export AS_SPID="00000000000000000000000000000000"
+$ export AS_KEY="00000000000000000000000000000000"
 $ export AS_ALGO="sgx_epid"
 $ export AS_URL="https://api.trustedservices.intel.com:443"
 

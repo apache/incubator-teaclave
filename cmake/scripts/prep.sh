@@ -78,7 +78,7 @@ function build_edl() {
     done
 }
 
-# check 
+# check
 for edl in ${TEACLAVE_EDL_DIR}/*.edl
 do
     fname=$(basename "${edl}" .edl)

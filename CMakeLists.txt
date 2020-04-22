@@ -6,7 +6,6 @@ include(TeaclaveUtils)
 include(ExternalProject)
 find_package(Git)
 find_package(OpenSSL)
-init_submodules()
 check_exe_dependencies(rustup pypy)
 
 # ====== VARIABLES FOR CMAKE -D{VAR}=VAL CONFIGURATION BEGIN ======
@@ -22,6 +21,7 @@ option(TEST_MODE "Turn on/off test mode" OFF)
 option(SGX_SIM_MODE "Turn on/off sgx simulation mode" OFF)
 option(DCAP "Turn on/off DCAP attestation" OFF)
 option(GIT_SUBMODULE "Check submodules during build" ON)
+init_submodules()
 
 if(DCAP)
   set(RUSTFLAGS "${RUSTFLAGS} --cfg dcap")
