@@ -28,6 +28,12 @@ platform, making computation on privacy-sensitive data safe and simple.
   Components in Teaclave are designed in modular, and can be easily embedded in
   other projects.
 
+## Getting Started
+
+### Try Teaclave
+
+- [My First Function](docs/my-first-function.md)
+
 ## Contributing
 
 Teaclave is open source in [The Apache Way](https://www.apache.org/theapacheway/),
