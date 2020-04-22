@@ -211,10 +211,6 @@ licenses/ for text of these licenses.
 Apache License, Version 2.0
 ---------------------------
 
-mesatee_services/fns/sgx_trusted_lib/src/trusted_worker/wasm/sgxwasm.rs
-mesatee_services/fns/sgx_trusted_lib/src/trusted_worker/wasm/sgxwasm_compute.rs
-tests/integration_test/src/wasm/wasmi_basic.rs
-tests/integration_test/src/wasm/wasmi_faas.rs
 third-party/crates-io
 third-party/crates-sgx
 
@@ -222,11 +218,11 @@ third-party/crates-sgx
 BSD 3-Clause License
 --------------------
 
-teaclave_common/protected_fs_rs/protected_fs_c
+common/protected_fs_rs/protected_fs_c
 
 
 MIT License
 -----------
 
 third_party/mesapy
-teaclave_common/rusty_leveldb_sgx
+common/rusty_leveldb_sgx
