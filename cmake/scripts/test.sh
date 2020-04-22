@@ -94,6 +94,20 @@ run_functional_tests() {
     scheduler_service \
     storage_service
 
+  ${TEACLAVE_CLI_INSTALL_DIR}/teaclave_cli encrypt \
+           --algorithm aes-gcm-128 \
+           --input-file ./fixtures/fusion/input1.txt \
+           --key 00000000000000000000000000000001 \
+           --iv 123456781234567812345678 \
+           --output-file ./fixtures/fusion/input1.enc
+
+  ${TEACLAVE_CLI_INSTALL_DIR}/teaclave_cli encrypt \
+           --algorithm aes-gcm-256 \
+           --input-file ./fixtures/fusion/input2.txt \
+           --key 0000000000000000000000000000000000000000000000000000000000000002 \
+           --iv 012345670123456701234567 \
+           --output-file ./fixtures/fusion/input2.enc
+
   start_storage_server
 
   # Run tests of execution service separately

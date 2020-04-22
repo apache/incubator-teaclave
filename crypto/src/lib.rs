@@ -22,7 +22,7 @@ extern crate sgx_tstd as std;
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-use anyhow::{anyhow, ensure, Result};
+use anyhow::{anyhow, ensure, Context, Result};
 use protected_fs::ProtectedFile;
 use rand::prelude::RngCore;
 use ring::aead;
@@ -35,7 +35,6 @@ const AES_GCM_128_IV_LENGTH: usize = 12;
 
 const AES_GCM_256_KEY_LENGTH: usize = 32;
 const AES_GCM_256_IV_LENGTH: usize = 12;
-
 const TEACLAVE_FILE_128_ROOT_KEY_LENGTH: usize = 16;
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -66,6 +65,12 @@ impl AesGcm256Key {
         Ok(AesGcm256Key { key, iv })
     }
 
+    pub fn from_hex(in_key: impl AsRef<str>, in_iv: impl AsRef<str>) -> Result<Self> {
+        let key = hex::decode(in_key.as_ref()).context("Illegal AesGcm256 key provided")?;
+        let iv = hex::decode(in_iv.as_ref()).context("Illegal AesGcm256 iv provided")?;
+        Self::new(&key, &iv)
+    }
+
     pub fn random() -> Self {
         Self::default()
     }
@@ -78,7 +83,7 @@ impl AesGcm256Key {
     }
 
     pub fn encrypt(&self, in_out: &mut Vec<u8>) -> Result<()> {
-        aead_encrypt(&aead::AES_128_GCM, in_out, &self.key, &self.iv)
+        aead_encrypt(&aead::AES_256_GCM, in_out, &self.key, &self.iv)
     }
 }
 
@@ -122,6 +127,12 @@ impl AesGcm128Key {
         iv.copy_from_slice(in_iv);
 
         Ok(AesGcm128Key { key, iv })
+    }
+
+    pub fn from_hex(in_key: impl AsRef<str>, in_iv: impl AsRef<str>) -> Result<Self> {
+        let key = hex::decode(in_key.as_ref()).context("Illegal AesGcm128 key provided")?;
+        let iv = hex::decode(in_iv.as_ref()).context("Illegal AesGcm128 iv provided")?;
+        Self::new(&key, &iv)
     }
 
     pub fn random() -> Self {

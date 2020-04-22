@@ -41,7 +41,7 @@ pub fn test_gbdt_training_task() {
 fn authorized_frontend_client() -> TeaclaveFrontendClient {
     let mut api_client =
         create_authentication_api_client(shared_enclave_info(), AUTH_SERVICE_ADDR).unwrap();
-    let cred = login(&mut api_client, USERNAME, PASSWORD).unwrap();
+    let cred = login(&mut api_client, USERNAME, TEST_PASSWORD).unwrap();
     create_frontend_client(shared_enclave_info(), FRONTEND_SERVICE_ADDR, cred).unwrap()
 }
 

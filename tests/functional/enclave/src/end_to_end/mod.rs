@@ -21,6 +21,7 @@ use teaclave_proto::teaclave_frontend_service::*;
 use teaclave_types::*;
 use url::Url;
 
+mod mesapy_data_fusion;
 mod mesapy_echo;
 mod native_echo;
 mod native_gbdt_training;

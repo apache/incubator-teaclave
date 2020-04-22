@@ -24,6 +24,7 @@ rand         = { version = "0.7.0" }
 serde        = { version = "1.0.92", features = ["derive"] }
 serde_json   = { version = "1.0.39" }
 ring         = { version = "0.16.5" }
+hex          = { version = "0.4.0" }
 
 teaclave_test_utils = { path = "../tests/utils", optional = true }
 

@@ -166,12 +166,19 @@ pub fn login(
 }
 
 pub const USERNAME: &str = "frontend_user";
-pub const PASSWORD: &str = "test_password";
+pub const USERNAME1: &str = "frontend_user1";
+pub const USERNAME2: &str = "frontend_user2";
+pub const USERNAME3: &str = "frontend_user3";
+
+pub const TEST_PASSWORD: &str = "test_password";
 
 pub fn setup() {
     // Register user for the first time
     let mut api_client =
         create_authentication_api_client(shared_enclave_info(), AUTH_SERVICE_ADDR).unwrap();
+
     // Ignore error if register failed.
-    let _ = register_new_account(&mut api_client, USERNAME, PASSWORD);
+    for uname in vec![USERNAME, USERNAME1, USERNAME2, USERNAME3].iter() {
+        let _ = register_new_account(&mut api_client, uname, TEST_PASSWORD);
+    }
 }

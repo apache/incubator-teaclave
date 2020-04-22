@@ -27,7 +27,7 @@ use anyhow::{bail, Context, Result};
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::net;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::string::String;
 use std::vec::Vec;
 
@@ -37,6 +37,7 @@ pub struct RuntimeConfig {
     pub internal_endpoints: InternalEndpointsConfig,
     pub audit: AuditConfig,
     pub attestation: AttestationServiceConfig,
+    pub mount: MountConfig,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -82,6 +83,11 @@ pub struct AttestationServiceConfig {
     pub url: String,
     pub key: String,
     pub spid: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MountConfig {
+    pub fusion_base_dir: PathBuf,
 }
 
 impl RuntimeConfig {
