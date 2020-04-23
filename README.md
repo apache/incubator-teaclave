@@ -34,6 +34,11 @@ platform, making computation on privacy-sensitive data safe and simple.
 
 - [My First Function](docs/my-first-function.md)
 
+### Design
+
+- [Threat Model](docs/threat_model.md)
+- [Mutual Attestation: Why and How](docs/mutual-attestation.md)
+
 ## Contributing
 
 Teaclave is open source in [The Apache Way](https://www.apache.org/theapacheway/),
