@@ -40,7 +40,9 @@ runtime panic. Therefore, properly using the error handling mechanism provided
 by Rust can make the system robust and clean. In some cases, optional value can
 never be `None` internally, `unwrap` can be used with a comment explaining the
 assumptions and reasons. The same rule also applies to `panic` and similar
-functions which may cause runtime panic.
+functions which may cause runtime panic. One exception is to use `unwrap` and
+`expect` in tests, while `expect` is better because it will show a message to
+help debugging.
 
 ## Third-Party Crates
 
