@@ -36,7 +36,7 @@ platform, making computation on privacy-sensitive data safe and simple.
 
 ### Design
 
-- [Threat Model](docs/threat_model.md)
+- [Threat Model](docs/threat-model.md)
 - [Mutual Attestation: Why and How](docs/mutual-attestation.md)
 
 ## Contributing
