@@ -1,10 +1,22 @@
 # Tests in Teaclave
 
+This directory contains all tests in Teaclave including unit tests, integration
+tests, functional tests and some test fixtures.
+
+## Run Tests
+
+To run all tests with our build system:
+
 ```
-make run-tests
-make run-unit-tests
-make run-integration-tests
-make run-functional-tests
+$ make run-tests
+```
+
+You can also run tests separately:
+
+```
+$ make run-unit-tests
+$ make run-integration-tests
+$ make run-functional-tests    # this will start all services in the background automatically
 ```
 
 ## Directory Structure
