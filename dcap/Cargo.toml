@@ -22,5 +22,5 @@ lazy_static      = { version = "1.4.0" }
 percent-encoding = { version = "2.1.0" }
 pem              = { version = "0.7.0" }
 
-sgx_types        = { version = "1.1.1" }
-sgx_ucrypto      = { version = "1.1.1" }
+sgx_types        = { version = "1.1.2" }
+sgx_ucrypto      = { version = "1.1.2" }
