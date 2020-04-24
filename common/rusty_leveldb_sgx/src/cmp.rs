@@ -1,3 +1,5 @@
+#![allow(clippy::many_single_char_names)]
+
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 

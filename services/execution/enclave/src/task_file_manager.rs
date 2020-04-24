@@ -62,7 +62,7 @@ impl TaskFileManager {
         outputs: &FunctionOutputFiles,
     ) -> Result<Self> {
         let cwd = Path::new(base).join(task_id.to_string());
-        let inputs_base = cwd.clone().join("inputs");
+        let inputs_base = cwd.join("inputs");
         let outputs_base = cwd.join("outputs");
 
         let inter_inputs = InterInputs::new(&inputs_base, inputs.clone())?;

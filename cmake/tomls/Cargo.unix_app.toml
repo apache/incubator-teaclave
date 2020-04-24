@@ -13,6 +13,6 @@ exclude = [
 
 [patch.crates-io]
 
-# sgx_urts = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.1" }
-sgx_types = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.1" }
-sgx_ucrypto = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.1" }
+# sgx_urts = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.2" }
+sgx_types = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.2" }
+sgx_ucrypto = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.2" }

@@ -61,13 +61,7 @@ macro_rules! should_panic {
                     "\x1B[1;32mok\x1B[0m"
                 );
             }
-            false => {
-                ::std::rt::begin_panic($fmt, {
-                    // static requires less code at runtime, more constant data
-                    static _FILE_LINE_COL: (&'static str, u32, u32) = (file!(), line!(), column!());
-                    &_FILE_LINE_COL
-                })
-            }
+            false => ::std::rt::begin_panic($fmt),
         }
     }};
 }

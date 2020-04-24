@@ -14,7 +14,7 @@ set_strvar_from_env_or(RUSTFLAGS "" "Rust flags")
 set_strvar_from_env_or(TEACLAVE_CMAKE_DBG ""
                        "set to turn on debug message for cmake")
 set(MESAPY_VERSION eb769f13d6f9947b62aa04c2fb34496082bdadeb)
-set(RUSTUP_TOOLCHAIN "nightly-2020-03-12")
+set(RUSTUP_TOOLCHAIN "nightly-2020-04-07")
 option(COV "Turn on/off coverage" OFF)
 option(OFFLINE "Turn on/off cargo offline" ON)
 option(TEST_MODE "Turn on/off test mode" OFF)
