@@ -36,16 +36,19 @@ fn main() {
     println!("cargo:rerun-if-changed=build.rs");
     let target_dir = Path::new(&env::var("TEACLAVE_SYMLINKS").expect("TEACLAVE_SYMLINKS"))
         .join("teaclave_build/target/config_gen");
+    let unix_toml_dir = env::var("MT_SGXAPP_TOML_DIR").expect("MT_SGXAPP_TOML_DIR");
     let c = Command::new("cargo")
+        .current_dir(&unix_toml_dir)
         .args(&[
             "run",
             "--target-dir",
             &target_dir.to_string_lossy(),
             "--manifest-path",
-            "config_gen/Cargo.toml",
+            "config/config_gen/Cargo.toml",
+            "--offline",
             "--",
             "-t",
-            "build.config.toml",
+            "config/build.config.toml",
             "-o",
             &dest_file.to_string_lossy(),
         ])
