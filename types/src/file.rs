@@ -102,6 +102,12 @@ impl TeaclaveOutputFile {
             uuid: create_uuid(),
         }
     }
+
+    pub fn assign_cmac(&mut self, cmac: &FileAuthTag) -> Result<()> {
+        anyhow::ensure!(self.cmac.is_none(), "Cannot overwrite output file cmac");
+        self.cmac = Some(cmac.to_owned());
+        Ok(())
+    }
 }
 
 impl Storable for TeaclaveOutputFile {

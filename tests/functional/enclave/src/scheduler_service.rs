@@ -79,11 +79,11 @@ fn test_update_task_status_result() {
     log::debug!("response: {:?}", response);
     let task_id = response.staged_task.task_id;
 
-    let request = UpdateTaskStatusRequest::new(task_id, TaskStatus::Finished, String::new());
+    let request = UpdateTaskStatusRequest::new(task_id, TaskStatus::Running, String::new());
     let response = client.update_task_status(request);
     assert!(response.is_ok());
 
-    let task_outputs = TaskOutputs::new("return", hashmap!());
+    let task_outputs = TaskOutputs::new("return value", hashmap!());
     let request = UpdateTaskResultRequest::new(task_id, Ok(task_outputs));
     let response = client.update_task_result(request);
 

@@ -26,6 +26,13 @@ mod mesapy_echo;
 mod native_echo;
 mod native_gbdt_training;
 
+fn get_task(client: &mut TeaclaveFrontendClient, task_id: &ExternalID) -> GetTaskResponse {
+    let request = GetTaskRequest::new(task_id.clone());
+    let response = client.get_task(request).unwrap();
+    log::info!("Get task: {:?}", response);
+    response
+}
+
 fn get_task_until(
     client: &mut TeaclaveFrontendClient,
     task_id: &ExternalID,
@@ -55,14 +62,16 @@ fn get_task_until(
     }
 }
 
-fn approve_task(client: &mut TeaclaveFrontendClient, task_id: &ExternalID) {
+fn approve_task(client: &mut TeaclaveFrontendClient, task_id: &ExternalID) -> anyhow::Result<()> {
     let request = ApproveTaskRequest::new(task_id.clone());
-    let response = client.approve_task(request).unwrap();
+    let response = client.approve_task(request)?;
     log::info!("Approve task: {:?}", response);
+    Ok(())
 }
 
-fn invoke_task(client: &mut TeaclaveFrontendClient, task_id: &ExternalID) {
+fn invoke_task(client: &mut TeaclaveFrontendClient, task_id: &ExternalID) -> anyhow::Result<()> {
     let request = InvokeTaskRequest::new(task_id.clone());
-    let response = client.invoke_task(request).unwrap();
+    let response = client.invoke_task(request)?;
     log::info!("Invoke task: {:?}", response);
+    Ok(())
 }

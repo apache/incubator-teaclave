@@ -23,15 +23,17 @@ use std::collections::VecDeque;
 use std::prelude::v1::*;
 use std::sync::{Arc, SgxMutex as Mutex};
 
+use std::collections::HashMap;
 use teaclave_proto::teaclave_scheduler_service::*;
 use teaclave_proto::teaclave_storage_service::*;
 use teaclave_rpc::endpoint::Endpoint;
 use teaclave_rpc::Request;
 use teaclave_service_enclave_utils::teaclave_service;
 use teaclave_types::{
-    StagedTask, Storable, Task, TaskStatus, TeaclaveServiceResponseError,
-    TeaclaveServiceResponseResult,
+    ExternalID, OutputsTags, StagedTask, Storable, Task, TaskResult, TaskStatus,
+    TeaclaveOutputFile, TeaclaveServiceResponseError, TeaclaveServiceResponseResult,
 };
+use uuid::Uuid;
 
 use anyhow::anyhow;
 use anyhow::Result;
@@ -96,19 +98,24 @@ impl TeaclaveSchedulerService {
             .map_err(|_| TeaclaveSchedulerError::DataError.into())
     }
 
-    fn get_task(&self, key: &str) -> Result<Task> {
-        let key = format!("{}-{}", Task::key_prefix(), key);
-        let get_request = GetRequest::new(key.into_bytes());
-        let get_response = self
+    fn get_task(&self, task_id: &Uuid) -> Result<Task> {
+        let key = ExternalID::new(Task::key_prefix(), task_id.to_owned());
+        self.get_from_db(&key)
+    }
+
+    fn get_from_db<T: Storable>(&self, key: &ExternalID) -> Result<T> {
+        anyhow::ensure!(T::match_prefix(&key.prefix), "Key prefix doesn't match.");
+        let get_request = GetRequest::new(key.to_bytes());
+        let response = self
             .storage_client
             .clone()
             .lock()
             .map_err(|_| anyhow!("Cannot lock storage client"))?
             .get(get_request)?;
-        Task::from_slice(get_response.value.as_slice())
+        T::from_slice(response.value.as_slice())
     }
 
-    fn put_task(&self, item: &impl Storable) -> Result<()> {
+    fn put_into_db(&self, item: &impl Storable) -> Result<()> {
         let k = item.key();
         let v = item.to_vec()?;
         let put_request = PutRequest::new(k.as_slice(), v.as_slice());
@@ -118,6 +125,26 @@ impl TeaclaveSchedulerService {
             .lock()
             .map_err(|_| anyhow!("Cannot lock storage client"))?
             .put(put_request)?;
+        Ok(())
+    }
+
+    fn update_outputs_cmac(
+        &self,
+        task_output_map: &HashMap<String, ExternalID>,
+        tags_map: &OutputsTags,
+    ) -> Result<()> {
+        anyhow::ensure!(
+            task_output_map.len() == tags_map.len(),
+            "Error: task result output tags count"
+        );
+        for (key, id) in task_output_map.iter() {
+            let mut outfile: TeaclaveOutputFile = self.get_from_db(id)?;
+            let auth_tag = tags_map
+                .get(key)
+                .ok_or_else(|| anyhow::anyhow!("Missing result in task result outpt tags"))?;
+            outfile.assign_cmac(auth_tag)?;
+            self.put_into_db(&outfile)?;
+        }
         Ok(())
     }
 }
@@ -162,10 +189,10 @@ impl TeaclaveScheduler for TeaclaveSchedulerService {
         request: Request<UpdateTaskStatusRequest>,
     ) -> TeaclaveServiceResponseResult<UpdateTaskStatusResponse> {
         let request = request.message;
-        let mut task = self.get_task(&request.task_id.to_string())?;
+        let mut task = self.get_task(&request.task_id)?;
         task.status = request.task_status;
         log::info!("UpdateTaskStatus: Task {:?}", task);
-        self.put_task(&task)?;
+        self.put_into_db(&task)?;
         Ok(UpdateTaskStatusResponse {})
     }
 
@@ -174,13 +201,18 @@ impl TeaclaveScheduler for TeaclaveSchedulerService {
         request: Request<UpdateTaskResultRequest>,
     ) -> TeaclaveServiceResponseResult<UpdateTaskResultResponse> {
         let request = request.message;
-        let mut task = self.get_task(&request.task_id.to_string())?;
+        let mut task = self.get_task(&request.task_id)?;
+
+        if let TaskResult::Ok(outputs) = &request.task_result {
+            self.update_outputs_cmac(&task.output_map, &outputs.tags_map)?;
+        };
+
         task.result = request.task_result;
 
         // Updating task result means we have finished execution
         task.status = TaskStatus::Finished;
+        self.put_into_db(&task)?;
 
-        self.put_task(&task)?;
         Ok(UpdateTaskResultResponse {})
     }
 }

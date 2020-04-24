@@ -27,12 +27,31 @@ use teaclave_types::*;
 use url::Url;
 use uuid::Uuid;
 
-#[derive(Default)]
 pub(crate) struct TaskFileManager {
-    cwd: PathBuf,
-    inputs: FunctionInputFiles,
-    outputs: FunctionOutputFiles,
-    staged_outputs: StagedFiles,
+    inter_inputs: InterInputs,
+    inter_outputs: InterOutputs,
+}
+
+struct InterInputs {
+    inner: Vec<InterInput>,
+}
+
+struct InterOutputs {
+    inner: Vec<InterOutput>,
+}
+
+pub(self) struct InterInput {
+    pub(self) funiq_key: String,
+    pub(self) file: FunctionInputFile,
+    pub(self) download_path: PathBuf,
+    pub(self) staged_path: PathBuf,
+}
+
+pub(self) struct InterOutput {
+    pub(self) funiq_key: String,
+    pub(self) file: FunctionOutputFile,
+    pub(self) upload_path: PathBuf,
+    pub(self) staged_info: StagedFileInfo,
 }
 
 impl TaskFileManager {
@@ -43,208 +62,256 @@ impl TaskFileManager {
         outputs: &FunctionOutputFiles,
     ) -> Result<Self> {
         let cwd = Path::new(base).join(task_id.to_string());
-        if !cwd.exists() {
-            std::untrusted::fs::create_dir_all(&cwd)?;
-        }
+        let inputs_base = cwd.clone().join("inputs");
+        let outputs_base = cwd.join("outputs");
+
+        let inter_inputs = InterInputs::new(&inputs_base, inputs.clone())?;
+        let inter_outputs = InterOutputs::new(&outputs_base, outputs.clone())?;
 
         let tfmgr = TaskFileManager {
-            cwd,
-            inputs: inputs.clone(),
-            outputs: outputs.clone(),
-            ..Default::default()
-        }
-        .create_staged_outputs();
+            inter_inputs,
+            inter_outputs,
+        };
 
-        if !tfmgr.inputs_base_dir().exists() {
-            std::untrusted::fs::create_dir_all(tfmgr.inputs_base_dir())?;
-        }
-
-        if !tfmgr.outputs_base_dir().exists() {
-            std::untrusted::fs::create_dir_all(tfmgr.outputs_base_dir())?;
-        }
         Ok(tfmgr)
     }
 
-    pub(crate) fn inputs_base_dir(&self) -> PathBuf {
-        self.cwd.join("inputs")
+    pub(crate) fn prepare_staged_inputs(&self) -> Result<StagedFiles> {
+        self.inter_inputs.download()?;
+        self.inter_inputs.convert_to_staged_files()
     }
 
-    pub(crate) fn outputs_base_dir(&self) -> PathBuf {
-        self.cwd.join("outputs")
+    pub(crate) fn prepare_staged_outputs(&self) -> Result<StagedFiles> {
+        let staged_outputs = self.inter_outputs.generate_staged_files();
+        Ok(staged_outputs)
     }
 
-    // Original input file is downloaded to $inputs_base_dir/$funiq_key/$original_filename
-    fn make_input_download_path(&self, funiq_key: &str, url: &Url) -> Result<PathBuf> {
-        let url_path = url.path();
-        let original_name = Path::new(url_path)
-            .file_name()
-            .ok_or_else(|| anyhow::anyhow!("Cannot get filename from url: {:?}", url))?;
-        let download_dir = self.inputs_base_dir().join(funiq_key);
-        if !download_dir.exists() {
-            std::untrusted::fs::create_dir_all(&download_dir)?;
+    pub(crate) fn upload_outputs(&self) -> Result<HashMap<String, FileAuthTag>> {
+        let auth_tags = self.inter_outputs.convert_staged_files_for_upload()?;
+        self.inter_outputs.upload()?;
+        Ok(auth_tags)
+    }
+}
+
+impl InterInput {
+    fn new(
+        base: impl AsRef<Path>,
+        funiq_key: String,
+        file: FunctionInputFile,
+    ) -> Result<InterInput> {
+        let download_path = make_intermediate_path(base.as_ref(), &funiq_key, &file.url)?;
+        let staged_path = make_staged_path(base.as_ref(), &funiq_key, &file.url)?;
+
+        Ok(InterInput {
+            funiq_key,
+            file,
+            download_path,
+            staged_path,
+        })
+    }
+
+    fn to_staged_file_entry(&self) -> Result<(String, StagedFileInfo)> {
+        let src = &self.download_path;
+        let dst = &self.staged_path;
+        let staged_file_info = match self.file.crypto_info {
+            FileCrypto::TeaclaveFile128(crypto) => {
+                std::untrusted::fs::soft_link(src, dst)?;
+                StagedFileInfo::new(&src, crypto, self.file.cmac)
+            }
+            FileCrypto::AesGcm128(crypto) => {
+                let mut bytes = read_all_bytes(src)?;
+                let n = bytes.len();
+                anyhow::ensure!(
+                    n > FILE_AUTH_TAG_LENGTH,
+                    "AesGcm128 File, invalid length: {:?}",
+                    src
+                );
+                anyhow::ensure!(
+                    self.file.cmac == bytes[n - FILE_AUTH_TAG_LENGTH..],
+                    "AesGcm128 File, invalid tag: {:?}",
+                    src
+                );
+                crypto.decrypt(&mut bytes)?;
+                StagedFileInfo::create_with_bytes(dst, &bytes)?
+            }
+            FileCrypto::AesGcm256(crypto) => {
+                let mut bytes = read_all_bytes(src)?;
+                let n = bytes.len();
+                anyhow::ensure!(
+                    n > FILE_AUTH_TAG_LENGTH,
+                    "AesGcm256 File, invalid length: {:?}",
+                    src
+                );
+                anyhow::ensure!(
+                    self.file.cmac == bytes[n - FILE_AUTH_TAG_LENGTH..],
+                    "AesGcm256 File, invalid tag: {:?}",
+                    src
+                );
+                crypto.decrypt(&mut bytes)?;
+                StagedFileInfo::create_with_bytes(dst, &bytes)?
+            }
+            FileCrypto::Raw => {
+                let bytes = read_all_bytes(src)?;
+                StagedFileInfo::create_with_bytes(dst, &bytes)?
+            }
+        };
+        Ok((self.funiq_key.clone(), staged_file_info))
+    }
+}
+
+impl std::iter::FromIterator<InterInput> for InterInputs {
+    fn from_iter<T: IntoIterator<Item = InterInput>>(iter: T) -> Self {
+        InterInputs {
+            inner: Vec::from_iter(iter),
         }
-        let local_dest = download_dir.join(original_name);
-        Ok(local_dest)
+    }
+}
+
+impl InterInputs {
+    pub fn new(base: impl AsRef<Path>, inputs: FunctionInputFiles) -> Result<InterInputs> {
+        inputs
+            .into_iter()
+            .map(|(funiq_key, file)| InterInput::new(base.as_ref(), funiq_key, file))
+            .collect()
     }
 
-    // Staged input file is converted to $inputs_base_dir/${funiq_key}.staged_in
-    fn make_staged_input_path(&self, file_unique_key: &str) -> PathBuf {
-        let mut local_dest = self.inputs_base_dir().join(file_unique_key);
-        local_dest.set_extension("staged_in");
-        local_dest
-    }
-
-    // Staged output file is set to $outputs_base_dir/${funiq_key}.staged_out
-    fn make_staged_output_path(&self, file_unique_key: &str) -> PathBuf {
-        let dir = self.outputs_base_dir();
-        let mut local_dest = dir.join(file_unique_key);
-        local_dest.set_extension("staged_out");
-        local_dest
-    }
-
-    // Output file ready for upload is set to $outputs_base_dir/${funiq_key}.out
-    fn make_upload_output_path(&self, file_unique_key: &str) -> PathBuf {
-        let mut local_dest = self.outputs_base_dir().join(file_unique_key);
-        local_dest.set_extension("out");
-        local_dest
-    }
-
-    pub(crate) fn download_inputs(&self) -> Result<()> {
-        let mut req_info = Vec::new();
-        for (fname, finfo) in self.inputs.iter() {
-            let local_dest = self.make_input_download_path(fname, &finfo.url)?;
-            req_info.push(HandleFileInfo::new(local_dest, &finfo.url));
-        }
-
+    pub(crate) fn download(&self) -> Result<()> {
+        let req_info = self.inner.iter().map(|inter_input| {
+            HandleFileInfo::new(&inter_input.download_path, &inter_input.file.url)
+        });
         let request = FileAgentRequest::new(HandleFileCommand::Download, req_info);
         log::info!("Ocall file download request: {:?}", request);
         handle_file_request(request)?;
         Ok(())
     }
 
-    pub(crate) fn convert_downloaded_inputs(&self) -> Result<StagedFiles> {
-        let mut files: HashMap<String, StagedFileInfo> = HashMap::new();
-        for (fkey, finfo) in self.inputs.iter() {
-            let src = self.make_input_download_path(fkey, &finfo.url)?;
-            let staged_file_info = match finfo.crypto_info {
-                FileCrypto::TeaclaveFile128(crypto) => {
-                    StagedFileInfo::new(&src, crypto, finfo.cmac)
-                }
-                FileCrypto::AesGcm128(crypto) => {
-                    let dst = self.make_staged_input_path(fkey);
-                    let mut bytes = read_all_bytes(&src)?;
-                    let n = bytes.len();
-                    anyhow::ensure!(
-                        n > FILE_AUTH_TAG_LENGTH,
-                        "AesGcm128 File, invalid length: {:?}",
-                        src
-                    );
-                    anyhow::ensure!(
-                        finfo.cmac == bytes[n - FILE_AUTH_TAG_LENGTH..],
-                        "AesGcm128 File, invalid tag: {:?}",
-                        src
-                    );
-                    crypto.decrypt(&mut bytes)?;
-                    StagedFileInfo::create_with_bytes(&dst, &bytes)?
-                }
-                FileCrypto::AesGcm256(crypto) => {
-                    let dst = self.make_staged_input_path(fkey);
-                    let mut bytes = read_all_bytes(&src)?;
-                    let n = bytes.len();
-                    anyhow::ensure!(
-                        n > FILE_AUTH_TAG_LENGTH,
-                        "AesGcm256 File, invalid length: {:?}",
-                        src
-                    );
-                    anyhow::ensure!(
-                        finfo.cmac == bytes[n - FILE_AUTH_TAG_LENGTH..],
-                        "AesGcm256 File, invalid tag: {:?}",
-                        src
-                    );
-                    crypto.decrypt(&mut bytes)?;
-                    StagedFileInfo::create_with_bytes(&dst, &bytes)?
-                }
-                FileCrypto::Raw => {
-                    let dst = self.make_staged_input_path(fkey);
-                    let bytes = read_all_bytes(&src)?;
-                    StagedFileInfo::create_with_bytes(&dst, &bytes)?
-                }
-            };
+    pub(crate) fn convert_to_staged_files(&self) -> Result<StagedFiles> {
+        self.inner
+            .iter()
+            .map(|inter_file| inter_file.to_staged_file_entry())
+            .collect()
+    }
+}
 
-            files.insert(fkey.to_string(), staged_file_info);
+impl std::iter::FromIterator<InterOutput> for InterOutputs {
+    fn from_iter<T: IntoIterator<Item = InterOutput>>(iter: T) -> Self {
+        InterOutputs {
+            inner: Vec::from_iter(iter),
         }
-        Ok(StagedFiles::new(files))
+    }
+}
+
+impl InterOutput {
+    pub fn new(
+        base: impl AsRef<Path>,
+        funiq_key: String,
+        file: FunctionOutputFile,
+    ) -> Result<InterOutput> {
+        let upload_path = make_intermediate_path(base.as_ref(), &funiq_key, &file.url)?;
+        let staged_path = make_staged_path(base.as_ref(), &funiq_key, &file.url)?;
+        let random_key = TeaclaveFile128Key::random();
+        let staged_info = StagedFileInfo::new(&staged_path, random_key, FileAuthTag::default());
+
+        Ok(InterOutput {
+            funiq_key,
+            file,
+            upload_path,
+            staged_info,
+        })
     }
 
-    // For each output file, we create a random key for the execution.
-    // TaskFileManager will convert these output files to the user
-    // selected key during the uploading process.
-    pub fn create_staged_outputs(self) -> Self {
-        let staged_outputs: StagedFiles = self
-            .outputs
+    fn convert_to_upload_file(&self) -> Result<FileAuthTag> {
+        let dest = &self.upload_path;
+        let outfile = match self.file.crypto_info {
+            FileCrypto::TeaclaveFile128(crypto) => {
+                self.staged_info.convert_file(dest, crypto.to_owned())?
+            }
+
+            FileCrypto::AesGcm128(_) => {
+                anyhow::bail!("OutputFile: unsupported type");
+            }
+            FileCrypto::AesGcm256(_) => {
+                anyhow::bail!("OutputFile: unsupported type");
+            }
+            FileCrypto::Raw => {
+                anyhow::bail!("OutputFile: unsupported type");
+            }
+        };
+        Ok(outfile.cmac)
+    }
+}
+
+impl InterOutputs {
+    pub fn new(base: impl AsRef<Path>, outputs: FunctionOutputFiles) -> Result<InterOutputs> {
+        outputs
+            .into_iter()
+            .map(|(funiq_key, file)| InterOutput::new(base.as_ref(), funiq_key, file))
+            .collect()
+    }
+
+    pub fn generate_staged_files(&self) -> StagedFiles {
+        self.inner
             .iter()
-            .map(|(fkey, _)| {
-                let dest = self.make_staged_output_path(fkey);
-                let random_key = TeaclaveFile128Key::random();
+            .map(|inter_output| {
                 (
-                    fkey.to_string(),
-                    StagedFileInfo::new(dest, random_key, FileAuthTag::default()),
+                    inter_output.funiq_key.clone(),
+                    inter_output.staged_info.clone(),
                 )
             })
-            .collect();
-
-        Self {
-            staged_outputs,
-            ..self
-        }
+            .collect()
     }
 
-    pub(crate) fn prepare_staged_outputs(&self) -> Result<StagedFiles> {
-        anyhow::ensure!(
-            self.staged_outputs.len() == self.outputs.len(),
-            "Inconsistent between staged_outputs and outputs"
-        );
-        Ok(self.staged_outputs.clone())
+    pub fn convert_staged_files_for_upload(&self) -> Result<HashMap<String, FileAuthTag>> {
+        self.inner
+            .iter()
+            .map(|inter_output| {
+                inter_output
+                    .convert_to_upload_file()
+                    .map(|cmac| (inter_output.funiq_key.clone(), cmac))
+            })
+            .collect()
     }
 
-    pub(crate) fn convert_staged_outputs(&self) -> anyhow::Result<HashMap<String, FileAuthTag>> {
-        let mut outputs_tag: HashMap<String, FileAuthTag> = HashMap::new();
-
-        for (fkey, finfo) in self.outputs.iter() {
-            let dest = self.make_upload_output_path(fkey);
-            let staged_file = self
-                .staged_outputs
-                .get(fkey)
-                .ok_or_else(|| anyhow::anyhow!("Missing file in staged_output: {:?}", fkey))?;
-            let outfile = match finfo.crypto_info {
-                FileCrypto::TeaclaveFile128(crypto) => staged_file.convert_file(dest, crypto)?,
-
-                FileCrypto::AesGcm128(_) => {
-                    anyhow::bail!("OutputFile: unsupported type");
-                }
-                FileCrypto::AesGcm256(_) => {
-                    anyhow::bail!("OutputFile: unsupported type");
-                }
-                FileCrypto::Raw => {
-                    anyhow::bail!("OutputFile: unsupported type");
-                }
-            };
-            outputs_tag.insert(fkey.to_string(), outfile.cmac);
-        }
-        Ok(outputs_tag)
-    }
-
-    pub(crate) fn upload_outputs(&self) -> Result<()> {
-        let req_info = self.outputs.iter().map(|(fkey, value)| {
-            let local = self.make_upload_output_path(fkey);
-            HandleFileInfo::new(local, &value.url)
+    pub(crate) fn upload(&self) -> Result<()> {
+        let req_info = self.inner.iter().map(|inter_output| {
+            HandleFileInfo::new(&inter_output.upload_path, &inter_output.file.url)
         });
-
         let request = FileAgentRequest::new(HandleFileCommand::Upload, req_info);
-        log::info!("Ocall file upload request: {:?}", request);
+        log::info!("Ocall file download request: {:?}", request);
         handle_file_request(request)?;
         Ok(())
     }
+}
+
+// Staged file is put in $base_dir/${funiq_key}-staged/$original_name
+fn make_staged_path(base: impl AsRef<Path>, funiq_key: &str, url: &Url) -> Result<PathBuf> {
+    let url_path = url.path();
+    let original_name = Path::new(url_path)
+        .file_name()
+        .ok_or_else(|| anyhow::anyhow!("Cannot get filename from url: {:?}", url))?;
+
+    let staged_dir = format!("{}-{}", funiq_key, "staged");
+    let file_dir = base.as_ref().to_owned().join(&staged_dir);
+    if !file_dir.exists() {
+        std::untrusted::fs::create_dir_all(&file_dir)?;
+    }
+    let local_dest = file_dir.join(original_name);
+    Ok(local_dest)
+}
+
+// Intermediate file is converted to $base_dir/${funiq_key}/$original_name
+fn make_intermediate_path(base: impl AsRef<Path>, funiq_key: &str, url: &Url) -> Result<PathBuf> {
+    let url_path = url.path();
+    let original_name = Path::new(url_path)
+        .file_name()
+        .ok_or_else(|| anyhow::anyhow!("Cannot get filename from url: {:?}", url))?;
+
+    let file_dir = base.as_ref().to_owned().join(funiq_key);
+    if !file_dir.exists() {
+        std::untrusted::fs::create_dir_all(&file_dir)?;
+    }
+    let local_dest = file_dir.join(original_name);
+    Ok(local_dest)
 }
 
 #[cfg(feature = "enclave_unit_test")]
@@ -268,8 +335,7 @@ pub mod tests {
 
         let file_mgr =
             TaskFileManager::new("/tmp", &task_id, &inputs.into(), &outputs.into()).unwrap();
-        file_mgr.download_inputs().unwrap();
-        file_mgr.convert_downloaded_inputs().unwrap();
+        file_mgr.prepare_staged_inputs().unwrap();
         file_mgr.prepare_staged_outputs().unwrap();
     }
 }

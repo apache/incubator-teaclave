@@ -58,10 +58,10 @@ pub fn test_echo_task_success() {
     log::info!("Assign data: {:?}", response);
 
     // Approve Task
-    approve_task(&mut client, &task_id);
+    approve_task(&mut client, &task_id).unwrap();
 
     // Invoke Task
-    invoke_task(&mut client, &task_id);
+    invoke_task(&mut client, &task_id).unwrap();
 
     // Get Task
     let ret_val = get_task_until(&mut client, &task_id, TaskStatus::Finished);

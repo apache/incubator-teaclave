@@ -153,8 +153,7 @@ impl TeaclaveExecutionService {
 }
 
 fn prepare_task(task: &StagedTask, file_mgr: &TaskFileManager) -> Result<StagedFunction> {
-    file_mgr.download_inputs()?;
-    let input_files = file_mgr.convert_downloaded_inputs()?;
+    let input_files = file_mgr.prepare_staged_inputs()?;
     let output_files = file_mgr.prepare_staged_outputs()?;
     let function_payload = String::from_utf8_lossy(&task.function_payload).to_string();
 
@@ -170,9 +169,7 @@ fn prepare_task(task: &StagedTask, file_mgr: &TaskFileManager) -> Result<StagedF
 }
 
 fn finalize_task(file_mgr: &TaskFileManager) -> Result<HashMap<String, FileAuthTag>> {
-    let outputs_tag = file_mgr.convert_staged_outputs()?;
-    file_mgr.upload_outputs()?;
-    Ok(outputs_tag)
+    file_mgr.upload_outputs()
 }
 
 #[cfg(feature = "enclave_unit_test")]

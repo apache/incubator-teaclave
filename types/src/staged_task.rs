@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use std::collections::hash_map::{Iter, IterMut};
+use std::collections::hash_map::{IntoIter, Iter, IterMut};
 use std::collections::HashMap;
 use std::prelude::v1::*;
 
@@ -45,6 +45,15 @@ impl FunctionInputFiles {
     }
 }
 
+impl IntoIterator for FunctionInputFiles {
+    type Item = (String, FunctionInputFile);
+    type IntoIter = IntoIter<String, FunctionInputFile>;
+
+    fn into_iter(self) -> IntoIter<String, FunctionInputFile> {
+        self.inner.into_iter()
+    }
+}
+
 impl std::convert::From<HashMap<String, FunctionInputFile>> for FunctionInputFiles {
     fn from(entries: HashMap<String, FunctionInputFile>) -> FunctionInputFiles {
         FunctionInputFiles { inner: entries }
@@ -54,6 +63,15 @@ impl std::convert::From<HashMap<String, FunctionInputFile>> for FunctionInputFil
 #[derive(Debug, Deserialize, Serialize, Clone, Default)]
 pub struct FunctionOutputFiles {
     inner: HashMap<String, FunctionOutputFile>,
+}
+
+impl IntoIterator for FunctionOutputFiles {
+    type Item = (String, FunctionOutputFile);
+    type IntoIter = IntoIter<String, FunctionOutputFile>;
+
+    fn into_iter(self) -> IntoIter<String, FunctionOutputFile> {
+        self.inner.into_iter()
+    }
 }
 
 impl FunctionOutputFiles {

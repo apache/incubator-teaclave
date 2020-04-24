@@ -30,8 +30,8 @@ pub fn test_gbdt_training_task() {
 
     let task_id = create_gbdt_training_task(&mut client, &function_id);
     assign_data_to_task(&mut client, &task_id, training_data_id, output_model_id);
-    approve_task(&mut client, &task_id);
-    invoke_task(&mut client, &task_id);
+    approve_task(&mut client, &task_id).unwrap();
+    invoke_task(&mut client, &task_id).unwrap();
 
     let ret_val = get_task_until(&mut client, &task_id, TaskStatus::Finished);
     assert_eq!(&ret_val, "Trained 120 lines of data.");
