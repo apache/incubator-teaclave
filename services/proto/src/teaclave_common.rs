@@ -134,7 +134,7 @@ impl std::convert::TryFrom<proto::TaskOutputs> for TaskOutputs {
     fn try_from(proto: proto::TaskOutputs) -> Result<Self> {
         let ret = TaskOutputs {
             return_value: proto.return_value,
-            output_file_hash: proto.output_file_hash.try_into()?,
+            tags_map: proto.tags_map.try_into()?,
         };
         Ok(ret)
     }
@@ -143,7 +143,7 @@ impl std::convert::From<TaskOutputs> for proto::TaskOutputs {
     fn from(outputs: TaskOutputs) -> Self {
         proto::TaskOutputs {
             return_value: outputs.return_value,
-            output_file_hash: outputs.output_file_hash.into(),
+            tags_map: outputs.tags_map.into(),
         }
     }
 }

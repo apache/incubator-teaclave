@@ -146,7 +146,7 @@ pub struct WorkerCapability {
 #[derive(Debug, Default)]
 pub struct ExecutionResult {
     pub return_value: Vec<u8>,
-    pub output_file_hash: OutputsTags,
+    pub tags_map: OutputsTags,
 }
 
 #[cfg(feature = "enclave_unit_test")]

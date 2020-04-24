@@ -154,6 +154,18 @@ impl OutputsTags {
     pub fn iter(&self) -> Iter<String, FileAuthTag> {
         self.inner.iter()
     }
+
+    pub fn get(&self, key: &str) -> Option<&FileAuthTag> {
+        self.inner.get(key)
+    }
+
+    pub fn len(&self) -> usize {
+        self.inner.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 impl std::convert::TryFrom<HashMap<String, String>> for OutputsTags {
@@ -189,14 +201,14 @@ impl std::iter::FromIterator<(String, FileAuthTag)> for OutputsTags {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct TaskOutputs {
     pub return_value: Vec<u8>,
-    pub output_file_hash: OutputsTags,
+    pub tags_map: OutputsTags,
 }
 
 impl TaskOutputs {
-    pub fn new(value: impl Into<Vec<u8>>, output_file_hash: HashMap<String, FileAuthTag>) -> Self {
+    pub fn new(value: impl Into<Vec<u8>>, tags_map: HashMap<String, FileAuthTag>) -> Self {
         TaskOutputs {
             return_value: value.into(),
-            output_file_hash: OutputsTags::new(output_file_hash),
+            tags_map: OutputsTags::new(tags_map),
         }
     }
 }
@@ -281,8 +293,15 @@ pub enum TaskResult {
     Err(TaskFailure),
 }
 
-#[cfg(test_mode)]
 impl TaskResult {
+    pub fn is_ok(&self) -> bool {
+        match self {
+            TaskResult::Ok(_) => true,
+            _ => false,
+        }
+    }
+
+    #[cfg(test_mode)]
     pub fn unwrap(self) -> TaskOutputs {
         match self {
             TaskResult::Ok(t) => t,

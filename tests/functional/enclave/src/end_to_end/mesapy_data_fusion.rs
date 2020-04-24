@@ -31,7 +31,7 @@ fn setup_client() -> anyhow::Result<(TeaclaveFrontendClient, TeaclaveFrontendCli
     Ok((client1, client2))
 }
 
-fn register_function(client: &mut TeaclaveFrontendClient) -> ExternalID {
+fn register_data_fusion_function(client: &mut TeaclaveFrontendClient) -> ExternalID {
     let script = r#"
 def readlines(fid):
     lines = None
@@ -91,7 +91,10 @@ fn register_fusion_output(
     response.data_id
 }
 
-fn create_task(client: &mut TeaclaveFrontendClient, function_id: &ExternalID) -> ExternalID {
+fn create_data_fusion_task(
+    client: &mut TeaclaveFrontendClient,
+    function_id: &ExternalID,
+) -> ExternalID {
     let request = CreateTaskRequest::new()
         .function_id(function_id.to_owned())
         .input_owners_map(hashmap!(
@@ -120,10 +123,10 @@ fn assign_data_for_task(
 pub fn test_data_fusion_success() {
     let (mut c1, mut c2) = setup_client().unwrap();
 
-    let function_id = register_function(&mut c1);
+    let function_id = register_data_fusion_function(&mut c1);
 
     // Create Task
-    let task_id = create_task(&mut c1, &function_id);
+    let task_id = create_data_fusion_task(&mut c1, &function_id);
 
     // Register Data and Assign Data To Task
     // input1 is owned by user1
@@ -159,13 +162,100 @@ pub fn test_data_fusion_success() {
     );
 
     // Approve Task
-    approve_task(&mut c1, &task_id);
-    approve_task(&mut c2, &task_id);
+    approve_task(&mut c1, &task_id).unwrap();
+    approve_task(&mut c2, &task_id).unwrap();
 
     // Invoke Task by the creator
-    invoke_task(&mut c1, &task_id);
+    invoke_task(&mut c1, &task_id).unwrap();
 
     // Get Task
     let ret_val = get_task_until(&mut c1, &task_id, TaskStatus::Finished);
     assert_eq!(&ret_val, "Mixed 5 lines of data");
+
+    let task = get_task(&mut c2, &task_id);
+    assert!(task.status == TaskStatus::Finished);
+
+    let fusion_id = task.output_map.get("OutFusionData").unwrap();
+    let fusion_owners = task.output_owners_map.get("OutFusionData").unwrap();
+
+    let fusion_input = register_fusion_input_from_output(&mut c2, &fusion_id);
+    let function_id = register_word_count_function(&mut c2);
+
+    let task_id = create_wlc_task(&mut c2, &function_id, &fusion_owners);
+    assign_data_for_task(
+        &mut c2,
+        &task_id,
+        hashmap!("InputData" => fusion_input),
+        hashmap!(),
+    );
+
+    approve_task(&mut c2, &task_id).unwrap();
+
+    // Invoke Task by the creator
+    assert!(invoke_task(&mut c2, &task_id).is_err());
+
+    approve_task(&mut c1, &task_id).unwrap();
+    invoke_task(&mut c2, &task_id).unwrap();
+    let ret_val = get_task_until(&mut c2, &task_id, TaskStatus::Finished);
+    assert_eq!(&ret_val, "2");
+}
+
+fn register_fusion_input_from_output(
+    client: &mut TeaclaveFrontendClient,
+    fusion_id: &ExternalID,
+) -> ExternalID {
+    let request = RegisterInputFromOutputRequest::new(fusion_id.clone());
+    let response = client.register_input_from_output(request).unwrap();
+    response.data_id
+}
+
+fn register_word_count_function(client: &mut TeaclaveFrontendClient) -> ExternalID {
+    let script = r#"
+def readlines(fid):
+    lines = None
+    with teaclave_open(fid, "rb") as f:
+        lines = f.readlines()
+    return lines
+
+def entrypoint(argv):
+    fid = "InputData"
+    assert len(argv) == 2
+    assert argv[0] == "query"
+    word = argv[1]
+    cnt = 0
+    for line in readlines(fid):
+        if word in line:
+            cnt += 1
+    return "%s" % cnt
+"#;
+
+    let input_spec = FunctionInput::new("InputData", "Lines of Data");
+    let request = RegisterFunctionRequest::new()
+        .name("wlc")
+        .description("Mesapy Word Line Count Function")
+        .arguments(vec!["query"])
+        .payload(script.into())
+        .executor_type(ExecutorType::Python)
+        .public(true)
+        .inputs(vec![input_spec]);
+    let response = client.register_function(request).unwrap();
+    log::info!("Resgister function: {:?}", response);
+    response.function_id
+}
+
+fn create_wlc_task(
+    client: &mut TeaclaveFrontendClient,
+    function_id: &ExternalID,
+    owners: &OwnerList,
+) -> ExternalID {
+    let request = CreateTaskRequest::new()
+        .function_id(function_id.to_owned())
+        .function_arguments(hashmap!("query" => "teaclave"))
+        .input_owners_map(hashmap!(
+            "InputData" => owners.to_owned()
+        ))
+        .executor(Executor::MesaPy);
+    let response = client.create_task(request).unwrap();
+    log::info!("Create task: {:?}", response);
+    response.task_id
 }

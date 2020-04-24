@@ -522,7 +522,7 @@ impl TeaclaveManagementService {
     pub fn create_fusion_data(&self, owner: impl Into<OwnerList>) -> Result<TeaclaveOutputFile> {
         let uuid = Uuid::new_v4();
         let url = format!(
-            "file://{}/{}",
+            "file://{}/{}.fusion",
             self.fusion_base_dir.display(),
             uuid.to_string()
         );
