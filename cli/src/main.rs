@@ -40,7 +40,7 @@ struct EncryptDecryptOpt {
     #[structopt(short, long, parse(try_from_str = decode_hex))]
     key: KeyVec,
 
-    /// IV for AES keys
+    /// IV for AES keys in hex format
     #[structopt(long, parse(try_from_str = decode_hex))]
     iv: Option<KeyVec>,
 

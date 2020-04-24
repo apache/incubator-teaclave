@@ -18,7 +18,8 @@ following mentors.
 ## Committers
 
 Committers are people who have made substantial contribution to the project and
-being active.
+being active. Podling Project Management Committee (PPMC) helps to govern the
+project and is directly responsible for the oversight of Teaclave.
 
 - [Mingshen Sun](https://github.com/mssun) (PPMC)
 - [Pei Wang](https://github.com/uraj) (PPMC)
@@ -37,5 +38,6 @@ being active.
 - [Meng Yang](https://github.com/m3ngyang)
 - [Sammy](https://github.com/sammyne)
 - [T0day](https://github.com/hi-T0day)
+- [devashishdxt](https://github.com/devashishdxt)
 - [luoyanhua2011](https://github.com/luoyanhua2011)
 - [zEqueue](https://github.com/z1queue)
