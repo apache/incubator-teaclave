@@ -1,5 +1,5 @@
 import SimpleHTTPServer
-import BaseHTTPServer
+
 
 class HTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
     def do_PUT(self):

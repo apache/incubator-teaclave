@@ -20,15 +20,15 @@ if __name__ == '__main__':
     IRRELEVANT_TASK           = "task_irrelevant"
     IRRELEVANT_PARTY          = "usr_irrelevant"
     IRRELEVANT_DATA           = "data_irrelevant"
-    
+
     acs_announce_fact('task_creator', repr([FUSION_TASK, FUSION_TASK_PARTY_1]))
     acs_announce_fact('task_participant', repr([FUSION_TASK, FUSION_TASK_PARTY_1]))
     acs_announce_fact('task_participant', repr([FUSION_TASK, FUSION_TASK_PARTY_2]))
-    
+
     acs_announce_fact('data_owner', repr([FUSION_TASK_DATA_1, FUSION_TASK_PARTY_1]))
     acs_announce_fact('data_owner', repr([FUSION_TASK_DATA_2, FUSION_TASK_PARTY_2]))
     acs_announce_fact('data_owner', repr([IRRELEVANT_DATA, IRRELEVANT_PARTY]))
-    
+
     acs_announce_fact('script_owner', repr([FUSION_TASK_SCRIPT, FUSION_TASK_SCRIPT_WRITER]))
 
     acs_announce_fact('script_owner', repr([PUBLIC_SCRIPT, PUBLIC_SCRIPT_WRITER]))
@@ -39,14 +39,14 @@ if __name__ == '__main__':
     assert not acs_enforce_request('launch_task', repr([FUSION_TASK, set()]))
     assert not acs_enforce_request('launch_task', repr([FUSION_TASK, set([FUSION_TASK_PARTY_1])]))
     assert not acs_enforce_request('launch_task', repr([FUSION_TASK, set([FUSION_TASK_PARTY_2])]))
-    
+
     assert acs_enforce_request('access_data', repr([FUSION_TASK, FUSION_TASK_DATA_1]))
     assert acs_enforce_request('access_data', repr([FUSION_TASK, FUSION_TASK_DATA_2]))
     assert not acs_enforce_request('access_data', repr([FUSION_TASK, IRRELEVANT_DATA]))
 
     assert acs_enforce_request('access_script', repr([FUSION_TASK, PUBLIC_SCRIPT]))
     assert not acs_enforce_request('access_script', repr([FUSION_TASK, FUSION_TASK_SCRIPT]))
-    
+
     acs_announce_fact('task_participant', repr([FUSION_TASK, FUSION_TASK_SCRIPT_WRITER]))
     assert acs_enforce_request('access_script', repr([FUSION_TASK, FUSION_TASK_SCRIPT]))
 
@@ -56,7 +56,7 @@ if __name__ == '__main__':
     acs_announce_fact('task_creator', repr([IRRELEVANT_TASK, IRRELEVANT_PARTY]))
     acs_announce_fact('task_participant', repr([IRRELEVANT_TASK, IRRELEVANT_PARTY]))
     acs_announce_fact('task_participant', repr([IRRELEVANT_TASK, FUSION_TASK_PARTY_2]))
-    
+
     assert acs_enforce_request('launch_task', repr([IRRELEVANT_TASK, set([IRRELEVANT_PARTY, FUSION_TASK_PARTY_2])]))
     assert not acs_enforce_request('access_data', repr([IRRELEVANT_TASK, FUSION_TASK_DATA_1]))
     assert acs_enforce_request('access_data', repr([IRRELEVANT_TASK, FUSION_TASK_DATA_2]))
