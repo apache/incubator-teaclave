@@ -32,7 +32,7 @@ with everyone's privacy respected.
 In the settings above, the root of trust converges to the enclave manufactures
 (i.e., Intel) and its SGX-enabled CPU chips. Before the computation starts,
 Teaclave is booted as a secure SGX enclave on one of these CPUs owned by the
-cloud service provider. After that, each party can **remotely** attest the
+cloud service provider. After that, each party can *remotely* attest the
 authenticity of the hardware and the integrity of Teaclave platform through
 attestation service (e.g., Intel Attestation Service). Private data are securely
 provisioned to the Teaclave enclave only if the attestation passes. After the

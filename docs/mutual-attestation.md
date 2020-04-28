@@ -2,7 +2,7 @@
 
 The standard procedure to establish a secure and trusted communication channel
 from a client to an enclave is through remote attestation. However, when the
-client itself is also an enclave and **mutual** trust between two enclaves is
+client itself is also an enclave and *mutual* trust between two enclaves is
 required, we need additional design and implementation effort. The Teaclave
 platform consists of multiple enclave services and most of the
 enclave-to-enclave RPC communications need bidirectional authentication. This
@@ -32,7 +32,7 @@ that there will be several parties trusted by all participants of Teaclave's
 computation tasks (could platforms, data providers, and customers, etc). The
 source code and binaries of Teaclave are audited by these trusted parties. Once
 the auditors decided that Teaclave is secure, they sign and publish the
-identities of audited enclaves. The **public keys** of the auditors are
+identities of audited enclaves. The *public keys* of the auditors are
 hard-coded in Teaclave enclave source via build time configuration, while the
 enclave measures and their signatures are loaded from outside at runtime. Each
 enclave will verify that the enclave measures are indeed signed by the auditors

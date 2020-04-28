@@ -43,7 +43,7 @@ $ docker run --rm -v $(pwd):/teaclave -w /teaclave \
 
 To build in simulation mode, you can add `-DSGX_SIM_MODE=ON` to `cmake`.
 
-### Launch Teaclave
+## Launch The Teaclave Services
 
 Teaclave contains multiple services. To ease the deployment, you can use
 [docker-compose](https://docs.docker.com/compose/) to manage all services in a

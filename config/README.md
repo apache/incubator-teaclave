@@ -2,7 +2,7 @@
 
 This Teaclave Config describes all sorts of configurations in the platform. All
 configurations are defined in the TOML file format. Basically, there are two types
-of configurations in Teaclave: build config and runtime config.
+of configurations in Teaclave: *build config* and *runtime config*.
 
 ## Build Config
 
