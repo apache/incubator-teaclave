@@ -1,13 +1,13 @@
 [package]
-name = "teaclave_function"
+name = "teaclave_executor"
 version = "0.1.0"
 authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
-description = "Teaclave built-in functions."
+description = "Teaclave executor"
 license = "Apache-2.0"
 edition = "2018"
 
 [lib]
-name = "teaclave_function"
+name = "teaclave_executor"
 crate-type = ["staticlib", "rlib"]
 
 [features]
@@ -15,6 +15,7 @@ default = []
 mesalock_sgx = [
   "sgx_tstd",
   "teaclave_types/mesalock_sgx",
+  "teaclave_function/mesalock_sgx",
 ]
 cov = ["sgx_cov"]
 enclave_unit_test = [
@@ -35,6 +36,7 @@ teaclave_types = { path = "../types" }
 teaclave_crypto = { path = "../crypto" }
 teaclave_runtime = { path = "../runtime", optional = true }
 teaclave_test_utils = { path = "../tests/utils", optional = true }
+teaclave_function = { path = "../function" }
 
 sgx_cov       = { version = "1.1.2", optional = true }
 sgx_tstd      = { version = "1.1.2", features = ["net", "thread", "backtrace"], optional = true }

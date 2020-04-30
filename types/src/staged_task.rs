@@ -155,8 +155,9 @@ pub struct StagedTask {
     pub function_id: Uuid,
     pub executor: Executor,
     pub executor_type: ExecutorType,
-    pub function_payload: Vec<u8>,
+    pub function_name: String,
     pub function_arguments: FunctionArguments,
+    pub function_payload: Vec<u8>,
     pub input_data: FunctionInputFiles,
     pub output_data: FunctionOutputFiles,
 }
@@ -191,9 +192,9 @@ impl StagedTask {
         Self { executor, ..self }
     }
 
-    pub fn function_payload(self, function_payload: Vec<u8>) -> Self {
+    pub fn function_name(self, name: impl ToString) -> Self {
         Self {
-            function_payload,
+            function_name: name.to_string(),
             ..self
         }
     }
@@ -201,6 +202,13 @@ impl StagedTask {
     pub fn function_arguments(self, function_arguments: impl Into<FunctionArguments>) -> Self {
         Self {
             function_arguments: function_arguments.into(),
+            ..self
+        }
+    }
+
+    pub fn function_payload(self, function_payload: Vec<u8>) -> Self {
+        Self {
+            function_payload,
             ..self
         }
     }

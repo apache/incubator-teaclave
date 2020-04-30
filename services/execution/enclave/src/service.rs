@@ -64,7 +64,7 @@ impl TeaclaveExecutionService {
             let staged_task = match self.pull_task() {
                 Ok(staged_task) => staged_task,
                 Err(e) => {
-                    log::error!("PullTask Error: {:?}", e);
+                    log::warn!("PullTask Error: {:?}", e);
                     continue;
                 }
             };
@@ -154,8 +154,9 @@ fn prepare_task(task: &StagedTask, file_mgr: &TaskFileManager) -> Result<StagedF
     let staged_function = StagedFunction::new()
         .executor_type(task.executor_type)
         .executor(task.executor)
-        .payload(function_payload)
+        .name(&task.function_name)
         .arguments(task.function_arguments.clone())
+        .payload(function_payload)
         .input_files(input_files)
         .output_files(output_files)
         .runtime_name("default");
@@ -178,7 +179,8 @@ pub mod tests {
         let task_id = Uuid::new_v4();
         let staged_task = StagedTask::new()
             .task_id(task_id)
-            .executor(Executor::Echo)
+            .executor(Executor::Builtin)
+            .function_name("builtin-echo")
             .function_arguments(hashmap!("message" => "Hello, Teaclave!"));
 
         let file_mgr = TaskFileManager::new(
@@ -198,7 +200,7 @@ pub mod tests {
         assert_eq!(result.unwrap(), "Hello, Teaclave!");
     }
 
-    pub fn test_invoke_gbdt_training() {
+    pub fn test_invoke_gbdt_train() {
         let task_id = Uuid::new_v4();
         let function_arguments = FunctionArguments::new(hashmap!(
             "feature_size"                => "4",
@@ -232,7 +234,8 @@ pub mod tests {
 
         let staged_task = StagedTask::new()
             .task_id(task_id)
-            .executor(Executor::GbdtTraining)
+            .executor(Executor::Builtin)
+            .function_name("builtin-gbdt-train")
             .function_arguments(function_arguments)
             .input_data(input_data)
             .output_data(output_data);

@@ -22,17 +22,15 @@ extern crate sgx_tstd as std;
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
-mod echo;
-mod gbdt_predict;
-mod gbdt_train;
-mod logistic_regression_predict;
-mod logistic_regression_train;
+#[macro_use]
+extern crate log;
 
-pub use echo::Echo;
-pub use gbdt_predict::GbdtPredict;
-pub use gbdt_train::GbdtTrain;
-pub use logistic_regression_predict::LogisticRegressionPredict;
-pub use logistic_regression_train::LogisticRegressionTrain;
+mod builtin;
+mod context;
+mod mesapy;
+
+pub use builtin::BuiltinFunctionExecutor;
+pub use mesapy::MesaPy;
 
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
@@ -41,11 +39,9 @@ pub mod tests {
 
     pub fn run_tests() -> bool {
         check_all_passed!(
-            echo::tests::run_tests(),
-            gbdt_train::tests::run_tests(),
-            gbdt_predict::tests::run_tests(),
-            logistic_regression_train::tests::run_tests(),
-            logistic_regression_predict::tests::run_tests(),
+            context::tests::run_tests(),
+            mesapy::tests::run_tests(),
+            builtin::tests::run_tests(),
         )
     }
 }

@@ -21,74 +21,72 @@ use std::prelude::v1::*;
 use std::collections::HashMap;
 use std::format;
 
-use teaclave_types::{
-    hashmap, Executor, ExecutorType, FunctionArguments, StagedFiles, StagedFunction,
-    WorkerCapability,
-};
+use teaclave_types::{Executor, ExecutorType, StagedFiles, StagedFunction};
 
-use teaclave_function as function;
-use teaclave_runtime as runtime;
-use teaclave_types::{TeaclaveFunction, TeaclaveRuntime};
+use teaclave_executor::{BuiltinFunctionExecutor, MesaPy};
+use teaclave_runtime::{DefaultRuntime, RawIoRuntime};
+use teaclave_types::{TeaclaveExecutor, TeaclaveRuntime};
 
-macro_rules! register_functions{
-    ($(($executor_type: expr, $executor_name: expr) => $fn_type: ty,)*) => {{
-        let mut functions: HashMap<(ExecutorType, Executor), FunctionBuilder> = HashMap::new();
-        $(
-            functions.insert(
-                ($executor_type, $executor_name),
-                Box::new(|| Box::new(<$fn_type>::default())),
-            );
-        )*
-        functions
-    }}
-}
+type BoxedTeaclaveExecutor = Box<dyn TeaclaveExecutor + Send + Sync>;
+type BoxedTeaclaveRuntime = Box<dyn TeaclaveRuntime + Send + Sync>;
+type ExecutorBuilder = fn() -> BoxedTeaclaveExecutor;
+type RuntimeBuilder = fn(StagedFiles, StagedFiles) -> BoxedTeaclaveRuntime;
 
 pub struct Worker {
     runtimes: HashMap<String, RuntimeBuilder>,
-    functions: HashMap<(ExecutorType, Executor), FunctionBuilder>,
+    executors: HashMap<(ExecutorType, Executor), ExecutorBuilder>,
+}
+
+impl Default for Worker {
+    fn default() -> Self {
+        let mut worker = Worker::new();
+
+        // Register supported runtimes
+        worker.register_runtime("default", |input, output| {
+            Box::new(DefaultRuntime::new(input, output))
+        });
+
+        #[cfg(test_mode)]
+        worker.register_runtime("raw-io", |input, output| {
+            Box::new(RawIoRuntime::new(input, output))
+        });
+
+        // Register supported executors
+        worker.register_executor((ExecutorType::Python, Executor::MesaPy), || {
+            Box::new(MesaPy::default())
+        });
+        worker.register_executor((ExecutorType::Builtin, Executor::Builtin), || {
+            Box::new(BuiltinFunctionExecutor::default())
+        });
+
+        worker
+    }
 }
 
 impl Worker {
-    pub fn default() -> Worker {
-        Worker {
-            functions: register_functions!(
-                (ExecutorType::Python, Executor::MesaPy) => function::Mesapy,
-                (ExecutorType::Native, Executor::Echo) => function::Echo,
-                (ExecutorType::Native, Executor::GbdtTraining) => function::GbdtTraining,
-                (ExecutorType::Native, Executor::GbdtPrediction) => function::GbdtPrediction,
-                (ExecutorType::Native, Executor::LogitRegTraining) => function::LogitRegTraining,
-                (ExecutorType::Native, Executor::LogitRegPrediction) => function::LogitRegPrediction,
-            ),
-            runtimes: setup_runtimes(),
+    pub fn new() -> Self {
+        Self {
+            runtimes: HashMap::new(),
+            executors: HashMap::new(),
         }
     }
 
-    pub fn invoke_function(&self, staged_function: StagedFunction) -> anyhow::Result<String> {
-        let function =
-            self.get_function(staged_function.executor_type, staged_function.executor)?;
+    pub fn register_runtime(&mut self, name: impl ToString, builder: RuntimeBuilder) {
+        self.runtimes.insert(name.to_string(), builder);
+    }
+
+    pub fn register_executor(&mut self, key: (ExecutorType, Executor), builder: ExecutorBuilder) {
+        self.executors.insert(key, builder);
+    }
+
+    pub fn invoke_function(&self, function: StagedFunction) -> anyhow::Result<String> {
+        let executor = self.get_executor(function.executor_type, function.executor)?;
         let runtime = self.get_runtime(
-            &staged_function.runtime_name,
-            staged_function.input_files,
-            staged_function.output_files,
+            &function.runtime_name,
+            function.input_files,
+            function.output_files,
         )?;
-        let unified_args = prepare_arguments(
-            staged_function.executor_type,
-            staged_function.arguments,
-            staged_function.payload,
-        )?;
-        function.execute(runtime, unified_args)
-    }
-
-    pub fn get_capability(&self) -> WorkerCapability {
-        WorkerCapability {
-            runtimes: self.runtimes.keys().cloned().collect(),
-            functions: self
-                .functions
-                .keys()
-                .cloned()
-                .map(|(exec_type, exec_name)| make_function_identifier(exec_type, exec_name))
-                .collect(),
-        }
+        executor.execute(function.name, function.arguments, function.payload, runtime)
     }
 
     fn get_runtime(
@@ -96,7 +94,7 @@ impl Worker {
         name: &str,
         input_files: StagedFiles,
         output_files: StagedFiles,
-    ) -> anyhow::Result<Box<dyn TeaclaveRuntime + Send + Sync>> {
+    ) -> anyhow::Result<BoxedTeaclaveRuntime> {
         let build_runtime = self
             .runtimes
             .get(name)
@@ -106,79 +104,19 @@ impl Worker {
         Ok(runtime)
     }
 
-    fn get_function(
+    fn get_executor(
         &self,
         exec_type: ExecutorType,
         exec_name: Executor,
-    ) -> anyhow::Result<Box<dyn TeaclaveFunction + Send + Sync>> {
+    ) -> anyhow::Result<BoxedTeaclaveExecutor> {
         let identifier = (exec_type, exec_name);
-        let build_function = self
-            .functions
+        let build_executor = self
+            .executors
             .get(&identifier)
             .ok_or_else(|| anyhow::anyhow!(format!("function not available: {:?}", identifier)))?;
 
-        let function = build_function();
-        Ok(function)
+        let executor = build_executor();
+
+        Ok(executor)
     }
 }
-
-fn make_function_identifier(exec_type: ExecutorType, exec_name: Executor) -> String {
-    format!("{}-{}", exec_type, exec_name)
-}
-
-fn setup_runtimes() -> HashMap<String, RuntimeBuilder> {
-    let mut runtimes: HashMap<String, RuntimeBuilder> = HashMap::new();
-    runtimes.insert(
-        "default".to_string(),
-        Box::new(|input_files, output_files| {
-            Box::new(runtime::DefaultRuntime::new(input_files, output_files))
-        }),
-    );
-    #[cfg(test_mode)]
-    runtimes.insert(
-        "raw-io".to_string(),
-        Box::new(|input_files, output_files| {
-            Box::new(runtime::RawIoRuntime::new(input_files, output_files))
-        }),
-    );
-
-    runtimes
-}
-
-// Native functions (ExecutorType::Native) are not allowed to have function payload.
-// Script engines like Mesapy (ExecutorType::Python) must have script payload.
-// We assume that the script engines would take the script payload and
-// script arguments from the wrapped argument.
-fn prepare_arguments(
-    executor_type: ExecutorType,
-    function_arguments: FunctionArguments,
-    function_payload: String,
-) -> anyhow::Result<FunctionArguments> {
-    let unified_args = match executor_type {
-        ExecutorType::Native => {
-            anyhow::ensure!(
-                function_payload.is_empty(),
-                "Native function payload should be empty!"
-            );
-            function_arguments
-        }
-        ExecutorType::Python => {
-            anyhow::ensure!(
-                !function_payload.is_empty(),
-                "Python function payload must not be empty!"
-            );
-            let req_args = serde_json::to_string(&function_arguments)?;
-            let wrap_args = hashmap!(
-                "py_payload" => function_payload,
-                "py_args" => req_args,
-            );
-            FunctionArguments::new(wrap_args)
-        }
-    };
-
-    Ok(unified_args)
-}
-
-type FunctionBuilder = Box<dyn Fn() -> Box<dyn TeaclaveFunction + Send + Sync> + Send + Sync>;
-type RuntimeBuilder =
-    Box<dyn Fn(StagedFiles, StagedFiles) -> Box<dyn TeaclaveRuntime + Send + Sync> + Send + Sync>;

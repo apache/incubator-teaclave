@@ -14,6 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 use std::prelude::v1::*;
 
 use teaclave_crypto::TeaclaveFile128Key;
@@ -54,18 +55,15 @@ fn test_start_worker() {
         "trained_model" => output_info.clone()));
 
     let staged_function = StagedFunction::new()
-        .executor_type(ExecutorType::Native)
-        .executor(Executor::GbdtTraining)
+        .executor_type(ExecutorType::Builtin)
+        .executor(Executor::Builtin)
+        .name("builtin-gbdt-train")
         .arguments(arguments)
         .input_files(input_files)
         .output_files(output_files)
         .runtime_name("default");
 
     let worker = Worker::default();
-
-    let capability = worker.get_capability();
-    assert!(capability.runtimes.contains("default"));
-    assert!(capability.functions.contains("native-gbdt_training"));
 
     let summary = worker.invoke_function(staged_function).unwrap();
     assert_eq!(summary, "Trained 120 lines of data.");

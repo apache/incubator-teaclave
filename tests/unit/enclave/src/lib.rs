@@ -40,6 +40,7 @@ fn handle_run_test(_: &RunTestInput) -> TeeServiceResult<RunTestOutput> {
         teaclave_authentication_service_enclave::tests::run_tests(),
         teaclave_worker::tests::run_tests(),
         teaclave_runtime::tests::run_tests(),
+        teaclave_executor::tests::run_tests(),
         teaclave_function::tests::run_tests(),
         teaclave_types::tests::run_tests(),
         teaclave_crypto::tests::run_tests(),

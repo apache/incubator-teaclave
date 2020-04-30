@@ -15,16 +15,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
-
-use std::ffi::CString;
 
 use crate::context::reset_thread_context;
 use crate::context::set_thread_context;
 use crate::context::Context;
 
-use teaclave_types::{FunctionArguments, FunctionRuntime, TeaclaveFunction};
+use std::ffi::CString;
+
+use teaclave_types::{FunctionArguments, FunctionRuntime, TeaclaveExecutor};
 
 const MAXPYBUFLEN: usize = 20480;
 const MESAPY_ERROR_BUFFER_TOO_SHORT: i64 = -1i64;
@@ -41,20 +40,23 @@ extern "C" {
 }
 
 #[derive(Default)]
-pub struct Mesapy;
+pub struct MesaPy;
 
-impl TeaclaveFunction for Mesapy {
-    fn execute(&self, runtime: FunctionRuntime, args: FunctionArguments) -> anyhow::Result<String> {
-        let script = args.get("py_payload")?.as_str();
-        let py_args = args.get("py_args")?.as_str();
-        let py_args: FunctionArguments = serde_json::from_str(py_args)?;
-        let py_argv = py_args.into_vec();
+impl TeaclaveExecutor for MesaPy {
+    fn execute(
+        &self,
+        _name: String,
+        arguments: FunctionArguments,
+        payload: String,
+        runtime: FunctionRuntime,
+    ) -> anyhow::Result<String> {
+        let py_argv = arguments.into_vec();
         let cstr_argv: Vec<_> = py_argv
             .iter()
             .map(|arg| CString::new(arg.as_str()).unwrap())
             .collect();
 
-        let mut script_bytes = script.to_owned().into_bytes();
+        let mut script_bytes = payload.into_bytes();
         script_bytes.push(0u8);
 
         let mut p_argv: Vec<_> = cstr_argv
@@ -104,7 +106,7 @@ pub mod tests {
     }
 
     fn test_mesapy() {
-        let py_args = FunctionArguments::new(hashmap!("--name" => "Teaclave"));
+        let py_args = FunctionArguments::default();
         let py_payload = r#"
 def entrypoint(argv):
     in_file_id = "in_f1"
@@ -165,13 +167,10 @@ def entrypoint(argv):
 
         let runtime = Box::new(RawIoRuntime::new(input_files, output_files));
 
-        let func_args = FunctionArguments::new(hashmap!(
-                "py_payload" => py_payload,
-                "py_args" => serde_json::to_string(&py_args).unwrap()
-        ));
-
-        let function = Mesapy;
-        let summary = function.execute(runtime, func_args).unwrap();
+        let function = MesaPy::default();
+        let summary = function
+            .execute("".to_string(), py_args, py_payload.to_string(), runtime)
+            .unwrap();
         assert_eq!(summary, "");
     }
 }

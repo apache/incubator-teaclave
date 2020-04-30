@@ -290,6 +290,7 @@ pub mod tests {
 
         assert!(rtc_close_handle(f).is_ok());
         assert!(rtc_close_handle(f).is_err());
+        reset_thread_context().unwrap();
     }
 }
 

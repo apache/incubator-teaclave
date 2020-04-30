@@ -15,7 +15,7 @@ default = []
 mesalock_sgx = [
   "sgx_tstd",
   "teaclave_types/mesalock_sgx",
-  "teaclave_function/mesalock_sgx",
+  "teaclave_executor/mesalock_sgx",
   "teaclave_runtime/mesalock_sgx"
 ]
 cov = ["sgx_cov"]
@@ -27,7 +27,7 @@ anyhow        = { version = "1.0.26" }
 serde_json    = { version = "1.0.39" }
 thiserror     = { version = "1.0.9" }
 teaclave_types = { path = "../types" }
-teaclave_function = { path = "../function" }
+teaclave_executor = { path = "../executor" }
 teaclave_runtime = { path = "../runtime" }
 teaclave_test_utils = { path = "../tests/utils", optional = true }
 

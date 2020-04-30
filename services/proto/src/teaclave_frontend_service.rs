@@ -223,7 +223,11 @@ pub struct RegisterFunctionRequest {
 
 impl RegisterFunctionRequest {
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            executor_type: ExecutorType::Builtin,
+            public: true,
+            ..Default::default()
+        }
     }
 
     pub fn name(self, name: impl ToString) -> Self {

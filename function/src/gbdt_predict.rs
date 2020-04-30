@@ -21,7 +21,7 @@ use std::prelude::v1::*;
 use std::format;
 use std::io::{self, BufRead, BufReader, Write};
 
-use teaclave_types::{FunctionArguments, FunctionRuntime, TeaclaveFunction};
+use teaclave_types::{FunctionArguments, FunctionRuntime};
 
 use gbdt::decision_tree::Data;
 use gbdt::gradient_boost::GBDT;
@@ -31,13 +31,19 @@ const IN_DATA: &str = "data_file";
 const OUT_RESULT: &str = "result_file";
 
 #[derive(Default)]
-pub struct GbdtPrediction;
+pub struct GbdtPredict;
 
-impl TeaclaveFunction for GbdtPrediction {
-    fn execute(
+impl GbdtPredict {
+    pub const NAME: &'static str = "builtin-gbdt-predict";
+
+    pub fn new() -> Self {
+        Default::default()
+    }
+
+    pub fn run(
         &self,
-        runtime: FunctionRuntime,
         _arguments: FunctionArguments,
+        runtime: FunctionRuntime,
     ) -> anyhow::Result<String> {
         let mut json_model = String::new();
         let mut f = runtime.open_input(IN_MODEL)?;
@@ -102,7 +108,7 @@ pub mod tests {
     }
 
     fn test_gbdt_prediction() {
-        let func_args = FunctionArguments::default();
+        let arguments = FunctionArguments::default();
 
         let plain_model = "fixtures/functions/gbdt_prediction/model.txt";
         let plain_data = "fixtures/functions/gbdt_prediction/test_data.txt";
@@ -123,8 +129,7 @@ pub mod tests {
 
         let runtime = Box::new(RawIoRuntime::new(input_files, output_files));
 
-        let function = GbdtPrediction;
-        let summary = function.execute(runtime, func_args).unwrap();
+        let summary = GbdtPredict::new().run(arguments, runtime).unwrap();
         assert_eq!(summary, "Predict result has 30 lines of data.");
 
         let result = fs::read_to_string(&plain_output).unwrap();

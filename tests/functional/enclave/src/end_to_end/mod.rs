@@ -21,10 +21,10 @@ use teaclave_proto::teaclave_frontend_service::*;
 use teaclave_types::*;
 use url::Url;
 
+mod builtin_echo;
+mod builtin_gbdt_train;
 mod mesapy_data_fusion;
 mod mesapy_echo;
-mod native_echo;
-mod native_gbdt_training;
 
 fn get_task(client: &mut TeaclaveFrontendClient, task_id: &ExternalID) -> GetTaskResponse {
     let request = GetTaskRequest::new(task_id.clone());

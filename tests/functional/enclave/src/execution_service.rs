@@ -37,7 +37,8 @@ fn test_execute_function() {
     let staged_task = StagedTask::new()
         .task_id(task_id)
         .function_id(function_id.clone())
-        .executor(Executor::Echo)
+        .function_name("builtin-echo")
+        .executor(Executor::Builtin)
         .function_arguments(hashmap!(
             "message" => "Hello, Teaclave Tests!"
         ));

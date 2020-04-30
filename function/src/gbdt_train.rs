@@ -22,7 +22,7 @@ use std::format;
 use std::io::{self, BufRead, BufReader, Write};
 
 use std::convert::TryFrom;
-use teaclave_types::{FunctionArguments, FunctionRuntime, TeaclaveFunction};
+use teaclave_types::{FunctionArguments, FunctionRuntime};
 
 use gbdt::config::Config;
 use gbdt::decision_tree::Data;
@@ -32,9 +32,9 @@ const IN_DATA: &str = "training_data";
 const OUT_MODEL: &str = "trained_model";
 
 #[derive(Default)]
-pub struct GbdtTraining;
+pub struct GbdtTrain;
 
-struct GbdtTrainingArguments {
+struct GbdtTrainArguments {
     feature_size: usize,
     max_depth: u32,
     iterations: usize,
@@ -46,7 +46,7 @@ struct GbdtTrainingArguments {
     training_optimization_level: u8,
 }
 
-impl TryFrom<FunctionArguments> for GbdtTrainingArguments {
+impl TryFrom<FunctionArguments> for GbdtTrainArguments {
     type Error = anyhow::Error;
 
     fn try_from(arguments: FunctionArguments) -> Result<Self, Self::Error> {
@@ -74,14 +74,20 @@ impl TryFrom<FunctionArguments> for GbdtTrainingArguments {
     }
 }
 
-impl TeaclaveFunction for GbdtTraining {
-    fn execute(
+impl GbdtTrain {
+    pub const NAME: &'static str = "builtin-gbdt-train";
+
+    pub fn new() -> Self {
+        Default::default()
+    }
+
+    pub fn run(
         &self,
-        runtime: FunctionRuntime,
         arguments: FunctionArguments,
+        runtime: FunctionRuntime,
     ) -> anyhow::Result<String> {
         log::debug!("start traning...");
-        let args = GbdtTrainingArguments::try_from(arguments)?;
+        let args = GbdtTrainArguments::try_from(arguments)?;
 
         log::debug!("open input...");
         // read input
@@ -165,11 +171,11 @@ pub mod tests {
     use teaclave_types::*;
 
     pub fn run_tests() -> bool {
-        run_tests!(test_gbdt_training, test_gbdt_parse_training_data,)
+        run_tests!(test_gbdt_train, test_gbdt_parse_training_data,)
     }
 
-    fn test_gbdt_training() {
-        let func_arguments = FunctionArguments::new(hashmap!(
+    fn test_gbdt_train() {
+        let arguments = FunctionArguments::new(hashmap!(
             "feature_size"  => "4",
             "max_depth"     => "4",
             "iterations"    => "100",
@@ -197,8 +203,7 @@ pub mod tests {
 
         let runtime = Box::new(RawIoRuntime::new(input_files, output_files));
 
-        let function = GbdtTraining;
-        let summary = function.execute(runtime, func_arguments).unwrap();
+        let summary = GbdtTrain::new().run(arguments, runtime).unwrap();
         assert_eq!(summary, "Trained 120 lines of data.");
 
         let result = fs::read_to_string(&plain_output).unwrap();

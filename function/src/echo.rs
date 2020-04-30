@@ -19,7 +19,7 @@
 use std::prelude::v1::*;
 
 use std::convert::TryFrom;
-use teaclave_types::{FunctionArguments, FunctionRuntime, TeaclaveFunction};
+use teaclave_types::{FunctionArguments, FunctionRuntime};
 
 #[derive(Default)]
 pub struct Echo;
@@ -37,11 +37,17 @@ impl TryFrom<FunctionArguments> for EchoArguments {
     }
 }
 
-impl TeaclaveFunction for Echo {
-    fn execute(
+impl Echo {
+    pub const NAME: &'static str = "builtin-echo";
+
+    pub fn new() -> Self {
+        Default::default()
+    }
+
+    pub fn run(
         &self,
-        _runtime: FunctionRuntime,
         arguments: FunctionArguments,
+        _runtime: FunctionRuntime,
     ) -> anyhow::Result<String> {
         let message = EchoArguments::try_from(arguments)?.message;
         Ok(message)
@@ -60,7 +66,7 @@ pub mod tests {
     }
 
     fn test_echo() {
-        let func_args = FunctionArguments::new(hashmap!(
+        let args = FunctionArguments::new(hashmap!(
             "message"  => "Hello Teaclave!"
         ));
 
@@ -70,7 +76,7 @@ pub mod tests {
         let runtime = Box::new(RawIoRuntime::new(input_files, output_files));
         let function = Echo;
 
-        let summary = function.execute(runtime, func_args).unwrap();
+        let summary = function.run(args, runtime).unwrap();
         assert_eq!(summary, "Hello Teaclave!");
     }
 }
