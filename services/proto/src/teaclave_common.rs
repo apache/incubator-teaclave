@@ -109,7 +109,6 @@ pub fn i32_to_task_status(status: i32) -> Result<TaskStatus> {
         Some(proto::TaskStatus::DataAssigned) => TaskStatus::DataAssigned,
         Some(proto::TaskStatus::Approved) => TaskStatus::Approved,
         Some(proto::TaskStatus::Staged) => TaskStatus::Staged,
-        Some(proto::TaskStatus::DataPreparing) => TaskStatus::DataPreparing,
         Some(proto::TaskStatus::Running) => TaskStatus::Running,
         Some(proto::TaskStatus::Finished) => TaskStatus::Finished,
         None => bail!("invalid task status"),
@@ -123,7 +122,6 @@ pub fn i32_from_task_status(status: TaskStatus) -> i32 {
         TaskStatus::DataAssigned => proto::TaskStatus::DataAssigned as i32,
         TaskStatus::Approved => proto::TaskStatus::Approved as i32,
         TaskStatus::Staged => proto::TaskStatus::Staged as i32,
-        TaskStatus::DataPreparing => proto::TaskStatus::DataPreparing as i32,
         TaskStatus::Running => proto::TaskStatus::Running as i32,
         TaskStatus::Finished => proto::TaskStatus::Finished as i32,
     }

@@ -26,9 +26,8 @@ enum TaskStatus {
   DataAssigned = 1;
   Approved = 2;
   Staged = 3;
-  DataPreparing = 4;
-  Running = 5;
-  Finished = 6;
+  Running = 4;
+  Finished = 10;
 }
 
 message TaskResult {

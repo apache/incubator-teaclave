@@ -190,7 +190,10 @@ impl TeaclaveScheduler for TeaclaveSchedulerService {
     ) -> TeaclaveServiceResponseResult<UpdateTaskStatusResponse> {
         let request = request.message;
         let mut task = self.get_task(&request.task_id)?;
-        task.status = request.task_status;
+
+        // Only TaskStatus::Running is allowed here so far.
+        task.invoking_by_executor()?;
+
         log::info!("UpdateTaskStatus: Task {:?}", task);
         self.put_into_db(&task)?;
         Ok(UpdateTaskStatusResponse {})
@@ -207,12 +210,10 @@ impl TeaclaveScheduler for TeaclaveSchedulerService {
             self.update_outputs_cmac(&task.output_map, &outputs.tags_map)?;
         };
 
-        task.result = request.task_result;
-
         // Updating task result means we have finished execution
-        task.status = TaskStatus::Finished;
-        self.put_into_db(&task)?;
+        task.finish(request.task_result)?;
 
+        self.put_into_db(&task)?;
         Ok(UpdateTaskResultResponse {})
     }
 }

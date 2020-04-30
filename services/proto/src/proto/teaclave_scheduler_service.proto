@@ -16,7 +16,6 @@ message PullTaskResponse {
 message UpdateTaskStatusRequest {
   string task_id = 1;
   teaclave_common_proto.TaskStatus task_status = 2;
-  string status_info = 3;
 }
 message UpdateTaskStatusResponse {}
 
