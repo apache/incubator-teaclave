@@ -24,7 +24,7 @@ use std::format;
 use teaclave_types::{Executor, ExecutorType, StagedFiles, StagedFunction};
 
 use teaclave_executor::{BuiltinFunctionExecutor, MesaPy};
-use teaclave_runtime::{DefaultRuntime, RawIoRuntime};
+use teaclave_runtime::DefaultRuntime;
 use teaclave_types::{TeaclaveExecutor, TeaclaveRuntime};
 
 type BoxedTeaclaveExecutor = Box<dyn TeaclaveExecutor + Send + Sync>;
@@ -48,7 +48,7 @@ impl Default for Worker {
 
         #[cfg(test_mode)]
         worker.register_runtime("raw-io", |input, output| {
-            Box::new(RawIoRuntime::new(input, output))
+            Box::new(teaclave_runtime::RawIoRuntime::new(input, output))
         });
 
         // Register supported executors

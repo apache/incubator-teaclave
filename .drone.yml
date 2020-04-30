@@ -135,7 +135,12 @@ steps:
   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9.1:0.1.0
   commands:
   - . /root/.cargo/env
-  - cd build && make VERBOSE=1 -j2
+  - cd build && cmake -DTEST_MODE=OFF .. && make VERBOSE=1 -j2
+- name: compile-test-mode
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9.1:0.1.0
+  commands:
+  - . /root/.cargo/env
+  - cd build && cmake -DTEST_MODE=ON .. && make VERBOSE=1 -j2
 - name: test
   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9.1:0.1.0
   privileged: true
