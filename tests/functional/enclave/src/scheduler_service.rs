@@ -52,7 +52,7 @@ fn test_update_task_status_result() {
     let task_id = Uuid::new_v4();
     let task = Task {
         task_id,
-        status: TaskStatus::Running,
+        status: TaskStatus::Staged,
         ..Default::default()
     };
 
@@ -79,7 +79,7 @@ fn test_update_task_status_result() {
     log::debug!("response: {:?}", response);
     let task_id = response.staged_task.task_id;
 
-    let request = UpdateTaskStatusRequest::new(task_id, TaskStatus::Running, String::new());
+    let request = UpdateTaskStatusRequest::new(task_id, TaskStatus::Running);
     let response = client.update_task_status(request);
     assert!(response.is_ok());
 

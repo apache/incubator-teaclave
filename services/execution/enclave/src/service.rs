@@ -97,17 +97,16 @@ impl TeaclaveExecutionService {
     }
 
     fn invoke_task(&mut self, task: &StagedTask) -> Result<TaskOutputs> {
+        self.update_task_status(&task.task_id, TaskStatus::Running)?;
+
         let file_mgr = TaskFileManager::new(
             WORKER_BASE_DIR,
             &task.task_id,
             &task.input_data,
             &task.output_data,
         )?;
-
-        self.update_task_status(&task.task_id, TaskStatus::DataPreparing, String::new())?;
         let invocation = prepare_task(&task, &file_mgr)?;
 
-        self.update_task_status(&task.task_id, TaskStatus::Running, String::new())?;
         log::info!("Invoke function: {:?}", invocation);
         let worker = Worker::default();
         let summary = worker.invoke_function(invocation)?;
@@ -134,13 +133,8 @@ impl TeaclaveExecutionService {
         Ok(())
     }
 
-    fn update_task_status(
-        &mut self,
-        task_id: &Uuid,
-        task_status: TaskStatus,
-        status_info: String,
-    ) -> Result<()> {
-        let request = UpdateTaskStatusRequest::new(task_id.to_owned(), task_status, status_info);
+    fn update_task_status(&mut self, task_id: &Uuid, task_status: TaskStatus) -> Result<()> {
+        let request = UpdateTaskStatusRequest::new(task_id.to_owned(), task_status);
         let _response = self
             .scheduler_client
             .clone()

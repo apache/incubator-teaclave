@@ -28,6 +28,7 @@ fn test_execute_function() {
     let task_id = Uuid::new_v4();
     let task = Task {
         task_id,
+        status: TaskStatus::Staged,
         ..Default::default()
     };
 

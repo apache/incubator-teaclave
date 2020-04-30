@@ -130,7 +130,6 @@ pub enum TaskStatus {
     DataAssigned,
     Approved,
     Staged,
-    DataPreparing,
     Running,
     Finished,
 }
@@ -384,79 +383,133 @@ impl Storable for Task {
 impl Task {
     pub fn new(
         requester: UserID,
-        executor: Executor,
-        function: &Function,
-        function_arguments: FunctionArguments,
-        input_owners_map: HashMap<String, OwnerList>,
-        output_owners_map: HashMap<String, OwnerList>,
-    ) -> Self {
-        let input_owners = UserList::unions(input_owners_map.values().cloned());
-        let output_owners = UserList::unions(output_owners_map.values().cloned());
+        req_executor: Executor,
+        req_func_args: FunctionArguments,
+        req_input_owners: HashMap<String, OwnerList>,
+        req_output_owners: HashMap<String, OwnerList>,
+        function: Function,
+    ) -> Result<Self> {
+        // gather all participants
+        let input_owners = UserList::unions(req_input_owners.values().cloned());
+        let output_owners = UserList::unions(req_output_owners.values().cloned());
         let mut participants = UserList::unions(vec![input_owners, output_owners]);
         participants.insert(requester.clone());
         if !function.public {
             participants.insert(function.owner.clone());
         }
 
-        Task {
+        //check function compatibility
+        let fn_args_spec: HashSet<&String> = function.arguments.iter().collect();
+        let req_args: HashSet<&String> = req_func_args.inner().keys().collect();
+        ensure!(fn_args_spec == req_args, "function_arguments mismatch");
+
+        // check input fkeys
+        let inputs_spec: HashSet<&String> = function.inputs.iter().map(|f| &f.name).collect();
+        let req_input_fkeys: HashSet<&String> = req_input_owners.keys().collect();
+        ensure!(inputs_spec == req_input_fkeys, "input keys mismatch");
+
+        // check output fkeys
+        let outputs_spec: HashSet<&String> = function.outputs.iter().map(|f| &f.name).collect();
+        let req_output_fkeys: HashSet<&String> = req_output_owners.keys().collect();
+        ensure!(outputs_spec == req_output_fkeys, "output keys mismatch");
+
+        // Skip the assignment if no file is required
+        let status = if req_input_owners.is_empty() && req_output_owners.is_empty() {
+            TaskStatus::DataAssigned
+        } else {
+            TaskStatus::Created
+        };
+
+        let task = Task {
             task_id: Uuid::new_v4(),
             creator: requester,
-            executor,
+            executor: req_executor,
             function_id: function.external_id(),
             function_owner: function.owner.clone(),
-            function_arguments,
-            input_owners_map,
-            output_owners_map,
+            function_arguments: req_func_args,
+            input_owners_map: req_input_owners,
+            output_owners_map: req_output_owners,
             participants,
+            status,
             ..Default::default()
-        }
+        };
+
+        Ok(task)
     }
 
-    pub fn update_status(&mut self, status: TaskStatus) {
-        self.status = status;
-    }
-
-    pub fn check_function_compatibility(&self, function: &Function) -> Result<()> {
-        // check arguments
-        let function_arguments: HashSet<&String> = function.arguments.iter().collect();
-        let provide_args: HashSet<&String> = self.function_arguments.inner().keys().collect();
+    pub fn approve(&mut self, requester: &UserID) -> Result<()> {
         ensure!(
-            function_arguments == provide_args,
-            "function_arguments mismatch"
+            self.status == TaskStatus::DataAssigned,
+            "Unexpected task status when approving: {:?}",
+            self.status
         );
 
-        // check input
-        let input_args: HashSet<String> = function.inputs.iter().map(|f| f.name.clone()).collect();
-        let provide_args: HashSet<String> = self.input_owners_map.keys().cloned().collect();
-        ensure!(input_args == provide_args, "input keys mismatch");
+        ensure!(
+            self.participants.contains(requester),
+            "Unexpected user trying to approve a task: {:?}",
+            requester
+        );
 
-        // check output
-        let output_args: HashSet<String> =
-            function.outputs.iter().map(|f| f.name.clone()).collect();
-        let provide_args: HashSet<String> = self.output_owners_map.keys().cloned().collect();
-        ensure!(output_args == provide_args, "output keys mismatch");
+        self.approved_users.insert(requester.clone());
+        if self.participants == self.approved_users {
+            self.update_status(TaskStatus::Approved);
+        }
 
         Ok(())
     }
 
-    pub fn all_data_assigned(&self) -> bool {
-        let input_args: HashSet<String> = self.input_owners_map.keys().cloned().collect();
-        let assiged_inputs: HashSet<String> = self.input_map.keys().cloned().collect();
-        if input_args != assiged_inputs {
-            return false;
-        }
-
-        let output_args: HashSet<String> = self.output_owners_map.keys().cloned().collect();
-        let assiged_outputs: HashSet<String> = self.output_map.keys().cloned().collect();
-        if output_args != assiged_outputs {
-            return false;
-        }
-
-        true
+    pub fn invoking_by_executor(&mut self) -> Result<()> {
+        ensure!(
+            self.status == TaskStatus::Staged,
+            "Unexpected task status when invoked: {:?}",
+            self.status
+        );
+        self.status = TaskStatus::Running;
+        Ok(())
     }
 
-    pub fn all_approved(&self) -> bool {
-        self.participants == self.approved_users
+    pub fn finish(&mut self, result: TaskResult) -> Result<()> {
+        ensure!(
+            self.status == TaskStatus::Running,
+            "Unexpected task status when invoked: {:?}",
+            self.status
+        );
+        self.result = result;
+        self.status = TaskStatus::Finished;
+        Ok(())
+    }
+
+    pub fn stage_for_running(
+        &mut self,
+        requester: &UserID,
+        function: Function,
+        input_map: HashMap<String, FunctionInputFile>,
+        output_map: HashMap<String, FunctionOutputFile>,
+    ) -> Result<StagedTask> {
+        ensure!(
+            &self.creator == requester,
+            "Unexpected user trying to invoke a task: {:?}",
+            requester
+        );
+        ensure!(
+            self.status == TaskStatus::Approved,
+            "Unexpected task status when invoked: {:?}",
+            self.status
+        );
+        let function_arguments = self.function_arguments.clone();
+        let staged_task = StagedTask {
+            task_id: self.task_id,
+            executor: self.executor,
+            executor_type: function.executor_type,
+            function_id: function.id,
+            function_payload: function.payload,
+            function_arguments,
+            input_data: input_map.into(),
+            output_data: output_map.into(),
+        };
+
+        self.update_status(TaskStatus::Staged);
+        Ok(staged_task)
     }
 
     pub fn assign_input(
@@ -465,6 +518,12 @@ impl Task {
         fname: &str,
         file: &TeaclaveInputFile,
     ) -> Result<()> {
+        ensure!(
+            self.status == TaskStatus::Created,
+            "Unexpected task status during input assignment: {:?}",
+            self.status
+        );
+
         ensure!(
             file.owner.contains(requester),
             "Assign: requester is not in the owner list. {:?}.",
@@ -490,7 +549,12 @@ impl Task {
             "Assign: file already assigned. {:?}",
             fname
         );
+
         self.input_map.insert(fname.to_owned(), file.external_id());
+
+        if self.all_data_assigned() {
+            self.update_status(TaskStatus::DataAssigned);
+        }
         Ok(())
     }
 
@@ -500,6 +564,12 @@ impl Task {
         fname: &str,
         file: &TeaclaveOutputFile,
     ) -> Result<()> {
+        ensure!(
+            self.status == TaskStatus::Created,
+            "Unexpected task status during output assignment: {:?}",
+            self.status
+        );
+
         ensure!(
             file.owner.contains(requester),
             "Assign: requester is not in the owner list. {:?}.",
@@ -525,7 +595,32 @@ impl Task {
             "Assign: file already assigned. {:?}",
             fname
         );
+
         self.output_map.insert(fname.to_owned(), file.external_id());
+
+        if self.all_data_assigned() {
+            self.update_status(TaskStatus::DataAssigned);
+        }
         Ok(())
+    }
+
+    fn update_status(&mut self, status: TaskStatus) {
+        self.status = status;
+    }
+
+    fn all_data_assigned(&self) -> bool {
+        let input_args: HashSet<&String> = self.input_owners_map.keys().collect();
+        let assiged_inputs: HashSet<&String> = self.input_map.keys().collect();
+        if input_args != assiged_inputs {
+            return false;
+        }
+
+        let output_args: HashSet<&String> = self.output_owners_map.keys().collect();
+        let assiged_outputs: HashSet<&String> = self.output_map.keys().collect();
+        if output_args != assiged_outputs {
+            return false;
+        }
+
+        true
     }
 }

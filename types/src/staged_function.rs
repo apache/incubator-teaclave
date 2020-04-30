@@ -98,7 +98,7 @@ impl std::fmt::Display for ArgumentValue {
 #[derive(Clone, Serialize, Deserialize, Debug, Default)]
 pub struct FunctionArguments {
     #[serde(flatten)]
-    pub inner: HashMap<String, ArgumentValue>,
+    inner: HashMap<String, ArgumentValue>,
 }
 
 impl<S: core::default::Default + std::hash::BuildHasher> From<FunctionArguments>

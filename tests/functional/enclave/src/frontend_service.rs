@@ -306,7 +306,7 @@ fn test_invoke_task() {
 
     let request = GetTaskRequest::new(task_id);
     let response = client.get_task(request).unwrap();
-    assert_eq!(response.status, TaskStatus::Running);
+    assert_eq!(response.status, TaskStatus::Staged);
 
     let request = PullTaskRequest {};
     let mut scheduler_client = get_scheduler_client();

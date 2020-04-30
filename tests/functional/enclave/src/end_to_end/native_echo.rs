@@ -50,12 +50,10 @@ pub fn test_echo_task_success() {
 
     log::info!("Create task: {:?}", response);
 
-    // Assign Data To Task
     let task_id = response.task_id;
-    let request = AssignDataRequest::new(task_id.clone(), hashmap!(), hashmap!());
-    let response = client.assign_data(request).unwrap();
 
-    log::info!("Assign data: {:?}", response);
+    // Assign Data To Task
+    // This task does not have any input/output files, we can skip the assignment process.
 
     // Approve Task
     approve_task(&mut client, &task_id).unwrap();
