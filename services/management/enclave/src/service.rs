@@ -37,9 +37,11 @@ use teaclave_proto::teaclave_storage_service::{
 use teaclave_rpc::endpoint::Endpoint;
 use teaclave_rpc::Request;
 use teaclave_service_enclave_utils::{ensure, teaclave_service};
-use teaclave_types::Function;
-#[cfg(test_mode)]
-use teaclave_types::*;
+use teaclave_types::{
+    ExternalID, FileCrypto, Function, FunctionInputFile, FunctionOutputFile, OwnerList, StagedTask,
+    Storable, Task, TaskStatus, TeaclaveInputFile, TeaclaveOutputFile,
+    TeaclaveServiceResponseError, TeaclaveServiceResponseResult, UserID,
+};
 use thiserror::Error;
 use url::Url;
 use uuid::Uuid;
@@ -545,6 +547,7 @@ impl TeaclaveManagementService {
 
     #[cfg(test_mode)]
     fn add_mock_data(&self) -> Result<()> {
+        use teaclave_types::{FileAuthTag, FunctionInput, FunctionOutput};
         let mut output_file = self.create_fusion_data(vec!["mock_user1", "frontend_user"])?;
         output_file.uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000001")?;
         output_file.cmac = Some(FileAuthTag::mock());
@@ -597,7 +600,10 @@ impl TeaclaveManagementService {
 pub mod tests {
     use super::*;
     use std::collections::HashMap;
-    use teaclave_types::{hashmap, FileCrypto, FunctionArguments, FunctionInput, FunctionOutput};
+    use teaclave_types::{
+        hashmap, Executor, FileAuthTag, FileCrypto, FunctionArguments, FunctionInput,
+        FunctionOutput,
+    };
     use url::Url;
 
     pub fn handle_input_file() {
