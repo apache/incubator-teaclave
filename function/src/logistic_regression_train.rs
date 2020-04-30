@@ -22,7 +22,7 @@ use std::convert::TryFrom;
 use std::format;
 use std::io::{self, BufRead, BufReader, Write};
 
-use teaclave_types::{FunctionArguments, FunctionRuntime, TeaclaveFunction};
+use teaclave_types::{FunctionArguments, FunctionRuntime};
 
 use rusty_machine::learning::logistic_reg::LogisticRegressor;
 use rusty_machine::learning::optim::grad_desc::GradientDesc;
@@ -33,15 +33,15 @@ const TRAINING_DATA: &str = "training_data";
 const OUT_MODEL_FILE: &str = "model_file";
 
 #[derive(Default)]
-pub struct LogitRegTraining;
+pub struct LogisticRegressionTrain;
 
-struct LogitRegTrainingArguments {
+struct LogisticRegressionTrainArguments {
     alg_alpha: f64,
     alg_iters: usize,
     feature_size: usize,
 }
 
-impl TryFrom<FunctionArguments> for LogitRegTrainingArguments {
+impl TryFrom<FunctionArguments> for LogisticRegressionTrainArguments {
     type Error = anyhow::Error;
 
     fn try_from(arguments: FunctionArguments) -> Result<Self, Self::Error> {
@@ -57,13 +57,19 @@ impl TryFrom<FunctionArguments> for LogitRegTrainingArguments {
     }
 }
 
-impl TeaclaveFunction for LogitRegTraining {
-    fn execute(
+impl LogisticRegressionTrain {
+    pub const NAME: &'static str = "builtin-logistic-regression-train";
+
+    pub fn new() -> Self {
+        Default::default()
+    }
+
+    pub fn run(
         &self,
-        runtime: FunctionRuntime,
         arguments: FunctionArguments,
+        runtime: FunctionRuntime,
     ) -> anyhow::Result<String> {
-        let args = LogitRegTrainingArguments::try_from(arguments)?;
+        let args = LogisticRegressionTrainArguments::try_from(arguments)?;
 
         let input = runtime.open_input(TRAINING_DATA)?;
         let (flattend_features, targets) = parse_training_data(input, args.feature_size)?;
@@ -127,11 +133,11 @@ pub mod tests {
     use teaclave_types::*;
 
     pub fn run_tests() -> bool {
-        run_tests!(test_logistic_regression_training)
+        run_tests!(test_logistic_regression_train)
     }
 
-    fn test_logistic_regression_training() {
-        let func_args = FunctionArguments::new(hashmap! {
+    fn test_logistic_regression_train() {
+        let arguments = FunctionArguments::new(hashmap! {
             "alg_alpha" => "0.3",
             "alg_iters" => "100",
             "feature_size" => "30"
@@ -154,8 +160,9 @@ pub mod tests {
 
         let runtime = Box::new(RawIoRuntime::new(input_files, output_files));
 
-        let function = LogitRegTraining;
-        let summary = function.execute(runtime, func_args).unwrap();
+        let summary = LogisticRegressionTrain::new()
+            .run(arguments, runtime)
+            .unwrap();
         assert_eq!(summary, "Trained 100 lines of data.");
 
         let _result = fs::read_to_string(&plain_output).unwrap();

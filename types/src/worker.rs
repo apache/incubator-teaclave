@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use crate::{FunctionArguments, OutputsTags};
+use crate::{FunctionArguments, FunctionRuntime, OutputsTags};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::convert::TryInto;
@@ -27,23 +27,25 @@ pub trait TeaclaveRuntime {
     fn create_output(&self, identifier: &str) -> anyhow::Result<Box<dyn io::Write>>;
 }
 
-pub trait TeaclaveFunction {
+pub trait TeaclaveExecutor {
     fn execute(
         &self,
-        runtime: Box<dyn TeaclaveRuntime + Send + Sync>,
-        args: FunctionArguments,
+        name: String,
+        arguments: FunctionArguments,
+        payload: String,
+        runtime: FunctionRuntime,
     ) -> anyhow::Result<String>;
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
 pub enum ExecutorType {
-    Native,
+    Builtin,
     Python,
 }
 
 impl std::default::Default for ExecutorType {
     fn default() -> Self {
-        ExecutorType::Native
+        ExecutorType::Builtin
     }
 }
 
@@ -53,7 +55,7 @@ impl std::convert::TryFrom<&str> for ExecutorType {
     fn try_from(selector: &str) -> anyhow::Result<Self> {
         let executor_type = match selector {
             "python" => ExecutorType::Python,
-            "native" | "platform" => ExecutorType::Native,
+            "builtin" => ExecutorType::Builtin,
             _ => anyhow::bail!("Invalid executor type: {}", selector),
         };
         Ok(executor_type)
@@ -77,7 +79,7 @@ impl std::convert::From<ExecutorType> for String {
 impl std::fmt::Display for ExecutorType {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            ExecutorType::Native => write!(f, "native"),
+            ExecutorType::Builtin => write!(f, "builtin"),
             ExecutorType::Python => write!(f, "python"),
         }
     }
@@ -86,11 +88,7 @@ impl std::fmt::Display for ExecutorType {
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
 pub enum Executor {
     MesaPy,
-    GbdtTraining,
-    GbdtPrediction,
-    LogitRegTraining,
-    LogitRegPrediction,
-    Echo,
+    Builtin,
 }
 
 impl std::default::Default for Executor {
@@ -105,11 +103,7 @@ impl std::convert::TryFrom<&str> for Executor {
     fn try_from(selector: &str) -> anyhow::Result<Self> {
         let executor = match selector {
             "mesapy" => Executor::MesaPy,
-            "echo" => Executor::Echo,
-            "gbdt_training" => Executor::GbdtTraining,
-            "gbdt_prediction" => Executor::GbdtPrediction,
-            "logistic_regression_training" => Executor::LogitRegTraining,
-            "logistic_regression_prediction" => Executor::LogitRegPrediction,
+            "builtin" => Executor::Builtin,
             _ => anyhow::bail!("Unsupported executor: {}", selector),
         };
         Ok(executor)
@@ -128,11 +122,7 @@ impl std::fmt::Display for Executor {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             Executor::MesaPy => write!(f, "mesapy"),
-            Executor::Echo => write!(f, "echo"),
-            Executor::GbdtTraining => write!(f, "gbdt_training"),
-            Executor::GbdtPrediction => write!(f, "gbdt_prediction"),
-            Executor::LogitRegTraining => write!(f, "logistic_regression_training"),
-            Executor::LogitRegPrediction => write!(f, "logistic_regression_prediction"),
+            Executor::Builtin => write!(f, "builtin"),
         }
     }
 }
@@ -140,7 +130,7 @@ impl std::fmt::Display for Executor {
 #[derive(Debug)]
 pub struct WorkerCapability {
     pub runtimes: HashSet<String>,
-    pub functions: HashSet<String>,
+    pub executors: HashSet<String>,
 }
 
 #[derive(Debug, Default)]
@@ -152,11 +142,8 @@ pub struct ExecutionResult {
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
-    //use crate::unit_tests;
-    //use crate::unittest::*;
 
     pub fn run_tests() -> bool {
-        //unit_tests!()
         true
     }
 }

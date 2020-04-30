@@ -502,6 +502,7 @@ impl Task {
             executor: self.executor,
             executor_type: function.executor_type,
             function_id: function.id,
+            function_name: function.name,
             function_payload: function.payload,
             function_arguments,
             input_data: input_map.into(),

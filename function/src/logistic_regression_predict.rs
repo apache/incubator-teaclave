@@ -21,7 +21,7 @@ use std::prelude::v1::*;
 use std::format;
 use std::io::{self, BufRead, BufReader, Write};
 
-use teaclave_types::{FunctionArguments, FunctionRuntime, TeaclaveFunction};
+use teaclave_types::{FunctionArguments, FunctionRuntime};
 
 use rusty_machine::learning::logistic_reg::LogisticRegressor;
 use rusty_machine::learning::optim::grad_desc::GradientDesc;
@@ -33,13 +33,19 @@ const INPUT_DATA: &str = "data_file";
 const RESULT: &str = "result_file";
 
 #[derive(Default)]
-pub struct LogitRegPrediction;
+pub struct LogisticRegressionPredict;
 
-impl TeaclaveFunction for LogitRegPrediction {
-    fn execute(
+impl LogisticRegressionPredict {
+    pub const NAME: &'static str = "builtin-logistic-regression-predict";
+
+    pub fn new() -> Self {
+        Default::default()
+    }
+
+    pub fn run(
         &self,
-        runtime: FunctionRuntime,
         _arguments: FunctionArguments,
+        runtime: FunctionRuntime,
     ) -> anyhow::Result<String> {
         let mut model_json = String::new();
         let mut f = runtime.open_input(MODEL_FILE)?;
@@ -109,11 +115,11 @@ pub mod tests {
     use teaclave_types::*;
 
     pub fn run_tests() -> bool {
-        run_tests!(test_logistic_regression_prediction)
+        run_tests!(test_logistic_regression_predict)
     }
 
-    fn test_logistic_regression_prediction() {
-        let func_args = FunctionArguments::default();
+    fn test_logistic_regression_predict() {
+        let arguments = FunctionArguments::default();
 
         let base = Path::new("fixtures/functions/logistic_regression_prediction");
         let model = base.join("model.txt");
@@ -135,8 +141,9 @@ pub mod tests {
 
         let runtime = Box::new(RawIoRuntime::new(input_files, output_files));
 
-        let function = LogitRegPrediction;
-        let summary = function.execute(runtime, func_args).unwrap();
+        let summary = LogisticRegressionPredict::new()
+            .run(arguments, runtime)
+            .unwrap();
         assert_eq!(summary, "Predicted 5 lines of data.");
 
         let result = fs::read_to_string(&plain_output).unwrap();
