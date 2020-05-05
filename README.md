@@ -39,6 +39,14 @@ platform, making computation on privacy-sensitive data safe and simple.
 - [Threat Model](docs/threat-model.md)
 - [Mutual Attestation: Why and How](docs/mutual-attestation.md)
 
+### Codebase
+
+- [Teaclave Services](services)
+- [Configurations in Teaclave](config)
+- [Data Center Attestation Service](dcap)
+- [Keys and Certificates](keys)
+- [Dockerfile and Compose File](docker)
+
 ## Contributing
 
 Teaclave is open source in [The Apache Way](https://www.apache.org/theapacheway/),

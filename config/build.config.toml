@@ -21,14 +21,14 @@ attestation_validity_secs = 3600
 # Specify accepted inbound services to enforce incoming connections via mutual
 # attestation. Below figure illustrates current topology of Teaclave services.
 #
-# client => authentication <-+       +----> storage <----+
-#                            |       |                   |
-# client => frontend ----------> management            scheduler <-- execution
-#                                    |
-#                                    +--> access_control
+# clients => authentication <-+       +----> storage <----+
+#                             |       |                   |
+# clients => frontend ----------> management            scheduler <-- execution
+#                                     |
+#                                     +--> access_control
 #
-#                                                  =>      api endpoint connections
-#                                                  -> internal endpoint connections
+#                                                   =>      api endpoint connections
+#                                                   -> internal endpoint connections
 [inbound]
 access_control = ["teaclave_management_service"]
 authentication = ["teaclave_frontend_service"]
