@@ -49,6 +49,8 @@ mod storage;
 pub use storage::Storable;
 mod task;
 pub use task::*;
+mod task_state;
+pub use task_state::*;
 mod file_agent;
 pub use file_agent::*;
 mod macros;

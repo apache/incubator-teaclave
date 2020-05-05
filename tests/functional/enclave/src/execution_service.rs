@@ -26,7 +26,7 @@ use uuid::Uuid;
 #[test_case]
 fn test_execute_function() {
     let task_id = Uuid::new_v4();
-    let task = Task {
+    let ts = TaskState {
         task_id,
         status: TaskStatus::Staged,
         ..Default::default()
@@ -49,14 +49,14 @@ fn test_execute_function() {
         staged_task.to_vec().unwrap(),
     );
     let _enqueue_response = storage_client.enqueue(enqueue_request).unwrap();
-    let put_request = PutRequest::new(task.key().as_slice(), task.to_vec().unwrap().as_slice());
+    let put_request = PutRequest::new(ts.key().as_slice(), ts.to_vec().unwrap().as_slice());
     let _put_response = storage_client.put(put_request).unwrap();
 
     std::thread::sleep(std::time::Duration::from_secs(5));
 
-    let get_request = GetRequest::new(task.key().as_slice());
+    let get_request = GetRequest::new(ts.key().as_slice());
     let get_response = storage_client.get(get_request).unwrap();
-    let updated_task = Task::from_slice(get_response.value.as_slice()).unwrap();
+    let updated_task = TaskState::from_slice(get_response.value.as_slice()).unwrap();
     assert_eq!(
         updated_task.result.unwrap().return_value,
         b"Hello, Teaclave Tests!"
