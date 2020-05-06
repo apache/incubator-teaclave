@@ -43,20 +43,39 @@ $ docker run --rm -v $(pwd):/teaclave -w /teaclave \
 
 To build in simulation mode, you can add `-DSGX_SIM_MODE=ON` to `cmake`.
 
+## Setup Attestation Service
+
+For simplicity, we use Intel Attestation Service (IAS) in this tutorial. To get
+started, you need to enroll in Intel SGX Attestation Service in
+Intel's [attestation service portal](https://api.portal.trustedservices.intel.com/EPID-attestation)
+by subscribing the attestation service for development (linkable is preferred).
+Then, you can find "SPID" and "Primary key" in the subscription details for
+later usage.
+
+There is one more setup if you are using linkable attestation service subscription.
+Edit the `/etc/aesmd.conf` file and uncomment
+the `default quoting type = epid_linkable` line to enable linkable quotes for EPID-based attestation service
+(i.e., Intel Attestation Service). At last, the AESM service need to be restarted by
+`sudo systemctl restart aesmd`.
+
 ## Launch Teaclave Services
 
 Teaclave contains multiple services. To ease the deployment, you can use
 [docker-compose](https://docs.docker.com/compose/) to manage all services in a
 containerized environment.
 
+Setup environment variables:
+
+```
+$ export AS_SPID="00000000000000000000000000000000"  # SPID from IAS subscription
+$ export AS_KEY="00000000000000000000000000000000"   # Primary key/Secondary key from IAS subscription
+$ export AS_ALGO="sgx_epid"                          # Attestation algorithm, sgx_epid for IAS
+$ export AS_URL="https://api.trustedservices.intel.com:443"    # IAS URL
+```
+
 Launch all services with `docker-compose`:
 
 ```
-$ export AS_SPID="00000000000000000000000000000000"
-$ export AS_KEY="00000000000000000000000000000000"
-$ export AS_ALGO="sgx_epid"
-$ export AS_URL="https://api.trustedservices.intel.com:443"
-
 $ (cd docker && docker-compose -f docker-compose-ubuntu-1804.yml up --build)
 Starting teaclave-authentication-service ... done
 Starting teaclave-access-control-service ... done
