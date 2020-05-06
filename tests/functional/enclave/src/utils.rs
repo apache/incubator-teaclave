@@ -83,13 +83,7 @@ pub const FRONTEND_SERVICE_ADDR: &str = "localhost:7777";
 lazy_static! {
     static ref ENCLAVE_INFO: EnclaveInfo = {
         let runtime_config = RuntimeConfig::from_toml(CONFIG_FILE).expect("runtime config");
-        EnclaveInfo::from_bytes(
-            &runtime_config
-                .audit
-                .enclave_info_bytes
-                .as_ref()
-                .expect("encalve info"),
-        )
+        EnclaveInfo::from_bytes(&runtime_config.audit.enclave_info_bytes)
     };
 }
 

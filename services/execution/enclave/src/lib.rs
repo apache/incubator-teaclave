@@ -24,6 +24,8 @@ extern crate sgx_tstd as std;
 use std::prelude::v1::*;
 use std::untrusted::path::PathEx;
 
+use anyhow::{ensure, Result};
+
 use teaclave_attestation::verifier;
 use teaclave_binder::proto::{
     ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
@@ -40,19 +42,11 @@ mod ocall;
 mod service;
 mod task_file_manager;
 
-fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
+fn start_service(config: &RuntimeConfig) -> Result<()> {
     let enclave_info = EnclaveInfo::verify_and_new(
-        config
-            .audit
-            .enclave_info_bytes
-            .as_ref()
-            .expect("enclave_info"),
+        &config.audit.enclave_info_bytes,
         AUDITOR_PUBLIC_KEYS,
-        config
-            .audit
-            .auditor_signatures_bytes
-            .as_ref()
-            .expect("auditor signatures"),
+        &config.audit.auditor_signatures_bytes,
     )?;
     let scheduler_service_address = &config.internal_endpoints.scheduler.advertised_address;
     let scheduler_service_endpoint = create_trusted_scheduler_endpoint(
@@ -69,13 +63,13 @@ fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
     #[cfg(test_mode)]
     std::untrusted::fs::create_dir_all(&fusion_base)?;
 
-    anyhow::ensure!(
+    ensure!(
         fusion_base.exists(),
         "Fusion base directory is not mounted: {}",
         fusion_base.display()
     );
 
-    let mut service = service::TeaclaveExecutionService::new(scheduler_service_endpoint).unwrap();
+    let mut service = service::TeaclaveExecutionService::new(scheduler_service_endpoint)?;
     let _ = service.start();
 
     Ok(())
@@ -83,8 +77,13 @@ fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
 
 #[handle_ecall]
 fn handle_start_service(input: &StartServiceInput) -> TeeServiceResult<StartServiceOutput> {
-    start_service(&input.config).map_err(|_| TeeServiceError::ServiceError)?;
-    Ok(StartServiceOutput)
+    match start_service(&input.config) {
+        Ok(_) => Ok(StartServiceOutput),
+        Err(e) => {
+            log::error!("Failed to start the service: {}", e);
+            Err(TeeServiceError::ServiceError)
+        }
+    }
 }
 
 #[handle_ecall]

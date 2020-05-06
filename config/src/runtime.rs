@@ -73,8 +73,10 @@ pub struct AuditConfig {
     enclave_info_source: ConfigSource,
     #[serde(rename(serialize = "auditor_signatures", deserialize = "auditor_signatures"))]
     auditor_signatures_source: Vec<ConfigSource>,
-    pub enclave_info_bytes: Option<Vec<u8>>,
-    pub auditor_signatures_bytes: Option<Vec<Vec<u8>>>,
+    #[serde(default = "Default::default")]
+    pub enclave_info_bytes: Vec<u8>,
+    #[serde(default = "Default::default")]
+    pub auditor_signatures_bytes: Vec<Vec<u8>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -99,10 +101,9 @@ impl RuntimeConfig {
 
         config.audit.enclave_info_bytes = match &config.audit.enclave_info_source {
             ConfigSource::Path(ref enclave_info_path) => {
-                let content = fs::read(enclave_info_path).with_context(|| {
+                fs::read(enclave_info_path).with_context(|| {
                     format!("Cannot read enclave_info from {:?}", enclave_info_path)
-                })?;
-                Some(content)
+                })?
             }
         };
 
@@ -114,7 +115,7 @@ impl RuntimeConfig {
             };
             signatures.push(signature);
         }
-        config.audit.auditor_signatures_bytes = Some(signatures);
+        config.audit.auditor_signatures_bytes = signatures;
 
         if env::var("AS_ALGO").is_ok()
             && env::var("AS_URL").is_ok()
