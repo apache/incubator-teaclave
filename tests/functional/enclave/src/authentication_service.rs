@@ -28,8 +28,7 @@ use teaclave_types::EnclaveInfo;
 
 fn get_api_client() -> TeaclaveAuthenticationApiClient {
     let runtime_config = RuntimeConfig::from_toml("runtime.config.toml").expect("runtime");
-    let enclave_info =
-        EnclaveInfo::from_bytes(&runtime_config.audit.enclave_info_bytes.as_ref().unwrap());
+    let enclave_info = EnclaveInfo::from_bytes(&runtime_config.audit.enclave_info_bytes);
     let enclave_attr = enclave_info
         .get_enclave_attr("teaclave_authentication_service")
         .expect("authentication");
@@ -48,8 +47,7 @@ fn get_api_client() -> TeaclaveAuthenticationApiClient {
 
 fn get_internal_client() -> TeaclaveAuthenticationInternalClient {
     let runtime_config = RuntimeConfig::from_toml("runtime.config.toml").expect("runtime");
-    let enclave_info =
-        EnclaveInfo::from_bytes(&runtime_config.audit.enclave_info_bytes.as_ref().unwrap());
+    let enclave_info = EnclaveInfo::from_bytes(&runtime_config.audit.enclave_info_bytes);
     let enclave_attr = enclave_info
         .get_enclave_attr("teaclave_authentication_service")
         .expect("authentication");

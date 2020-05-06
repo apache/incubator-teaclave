@@ -22,6 +22,7 @@ extern crate sgx_tstd as std;
 
 #[macro_use]
 extern crate log;
+use anyhow::{anyhow, Result};
 
 use std::prelude::v1::*;
 use teaclave_attestation::verifier;
@@ -45,24 +46,21 @@ use teaclave_types::{TeeServiceError, TeeServiceResult};
 
 mod service;
 
-fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
+fn start_service(config: &RuntimeConfig) -> Result<()> {
     let listen_address = config.api_endpoints.frontend.listen_address;
     let attestation_config = AttestationConfig::from_teaclave_config(&config)?;
     let attested_tls_config = RemoteAttestation::new(attestation_config)
-        .generate_and_endorse()
-        .unwrap()
+        .generate_and_endorse()?
         .attested_tls_config()
-        .unwrap();
-    let server_config =
-        SgxTrustedTlsServerConfig::from_attested_tls_config(attested_tls_config).unwrap();
+        .ok_or_else(|| anyhow!("cannot get attested TLS config"))?;
+    let server_config = SgxTrustedTlsServerConfig::from_attested_tls_config(attested_tls_config)?;
 
     let mut server = SgxTrustedTlsServer::<TeaclaveFrontendResponse, TeaclaveFrontendRequest>::new(
         listen_address,
         server_config,
     );
 
-    let enclave_info =
-        teaclave_types::EnclaveInfo::from_bytes(&config.audit.enclave_info_bytes.as_ref().unwrap());
+    let enclave_info = teaclave_types::EnclaveInfo::from_bytes(&config.audit.enclave_info_bytes);
     let authentication_service_endpoint = create_trusted_authentication_endpoint(
         &config.internal_endpoints.authentication.advertised_address,
         &enclave_info,
@@ -92,8 +90,13 @@ fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
 
 #[handle_ecall]
 fn handle_start_service(input: &StartServiceInput) -> TeeServiceResult<StartServiceOutput> {
-    start_service(&input.config).map_err(|_| TeeServiceError::ServiceError)?;
-    Ok(StartServiceOutput)
+    match start_service(&input.config) {
+        Ok(_) => Ok(StartServiceOutput),
+        Err(e) => {
+            log::error!("Failed to start the service: {}", e);
+            Err(TeeServiceError::ServiceError)
+        }
+    }
 }
 
 #[handle_ecall]

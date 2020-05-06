@@ -23,10 +23,12 @@ extern crate sgx_tstd as std;
 extern crate log;
 
 use std::cell::RefCell;
+use std::format;
 use std::prelude::v1::*;
 use std::sync::mpsc::channel;
 use std::thread;
 
+use anyhow::{anyhow, Result};
 use rusty_leveldb::DB;
 
 use teaclave_attestation::{verifier, AttestationConfig, RemoteAttestation};
@@ -46,48 +48,36 @@ use teaclave_types::{EnclaveInfo, TeeServiceError, TeeServiceResult};
 mod proxy;
 mod service;
 
-fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
+fn start_service(config: &RuntimeConfig) -> Result<()> {
     let listen_address = config.internal_endpoints.storage.listen_address;
     let attestation_config = AttestationConfig::from_teaclave_config(&config)?;
     let attested_tls_config = RemoteAttestation::new(attestation_config)
-        .generate_and_endorse()
-        .unwrap()
+        .generate_and_endorse()?
         .attested_tls_config()
-        .unwrap();
+        .ok_or_else(|| anyhow!("cannot get attested TLS config"))?;
     let enclave_info = EnclaveInfo::verify_and_new(
-        config
-            .audit
-            .enclave_info_bytes
-            .as_ref()
-            .expect("enclave_info"),
+        &config.audit.enclave_info_bytes,
         AUDITOR_PUBLIC_KEYS,
-        config
-            .audit
-            .auditor_signatures_bytes
-            .as_ref()
-            .expect("auditor signatures"),
+        &config.audit.auditor_signatures_bytes,
     )?;
     let accepted_enclave_attrs: Vec<teaclave_types::EnclaveAttr> = STORAGE_INBOUND_SERVICES
         .iter()
-        .map(|service| {
-            enclave_info
-                .get_enclave_attr(service)
-                .expect("enclave_info")
+        .map(|service| match enclave_info.get_enclave_attr(service) {
+            Some(attr) => Ok(attr),
+            None => Err(anyhow!("cannot get enclave attribute of {}", service)),
         })
-        .collect();
-    let server_config = SgxTrustedTlsServerConfig::from_attested_tls_config(attested_tls_config)
-        .unwrap()
+        .collect::<Result<_>>()?;
+    let server_config = SgxTrustedTlsServerConfig::from_attested_tls_config(attested_tls_config)?
         .attestation_report_verifier(
-            accepted_enclave_attrs,
-            AS_ROOT_CA_CERT,
-            verifier::universal_quote_verifier,
-        )
-        .unwrap();
+        accepted_enclave_attrs,
+        AS_ROOT_CA_CERT,
+        verifier::universal_quote_verifier,
+    )?;
 
     let (sender, receiver) = channel();
     thread::spawn(move || {
         let opt = rusty_leveldb::in_memory();
-        let storage = DB::open("teaclave_db", opt).unwrap();
+        let storage = DB::open("teaclave_db", opt).expect("cannot open teaclave_db");
         let mut storage_service =
             service::TeaclaveStorageService::new(RefCell::new(storage), receiver);
         storage_service.start();
@@ -111,8 +101,13 @@ fn start_service(config: &RuntimeConfig) -> anyhow::Result<()> {
 
 #[handle_ecall]
 fn handle_start_service(input: &StartServiceInput) -> TeeServiceResult<StartServiceOutput> {
-    start_service(&input.config).map_err(|_| TeeServiceError::ServiceError)?;
-    Ok(StartServiceOutput)
+    match start_service(&input.config) {
+        Ok(_) => Ok(StartServiceOutput),
+        Err(e) => {
+            log::error!("Failed to start the service: {}", e);
+            Err(TeeServiceError::ServiceError)
+        }
+    }
 }
 
 #[handle_ecall]
