@@ -6,6 +6,7 @@ steps:
   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9.1:0.1.0
   commands:
   - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
   - mkdir -p build
   - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DTEST_MODE=ON ..
 - name: check
@@ -58,6 +59,7 @@ steps:
   image: teaclave/teaclave-build-ubuntu-1804-sgx-dcap-1.6:0.1.0
   commands:
   - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
   - mkdir -p build
   - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DTEST_MODE=ON -DDCAP=ON ..
 - name: check
@@ -124,6 +126,7 @@ steps:
   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9.1:0.1.0
   commands:
   - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
   - mkdir -p build
   - cd build && cmake -DTEST_MODE=ON ..
 - name: check
@@ -181,6 +184,7 @@ steps:
   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9.1:0.1.0
   commands:
   - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
   - mkdir -p build
   - cd build && cmake -DTEST_MODE=ON ..
 - name: check
@@ -212,6 +216,7 @@ steps:
   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9.1:0.1.0
   commands:
   - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
   - mkdir -p build
   - cd build && cmake -DTEST_MODE=YES ..
 - name: check
@@ -409,6 +414,7 @@ steps:
   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.9.1:0.1.0
   commands:
   - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
   - mkdir -p build
   - cd build && cmake -DRUSTFLAGS="-D warnings" -DTEST_MODE=ON ..
 - name: check
