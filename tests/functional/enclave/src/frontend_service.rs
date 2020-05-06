@@ -163,7 +163,7 @@ fn test_create_task() {
         .function_id(function_id.clone())
         .function_arguments(hashmap!("arg1" => "arg1_value"))
         .executor(Executor::MesaPy)
-        .output_owners_map(hashmap!("output" =>  vec!["frontend_user", "mock_user"]));
+        .outputs_ownership(hashmap!("output" =>  vec!["frontend_user", "mock_user"]));
     let response = authorized_client().create_task(request);
     assert!(response.is_ok());
 
@@ -171,7 +171,7 @@ fn test_create_task() {
         .function_id(function_id)
         .function_arguments(hashmap!("arg1" => "arg1_value"))
         .executor(Executor::MesaPy)
-        .output_owners_map(hashmap!("output" => vec!["frontend_user", "mock_user"]));
+        .outputs_ownership(hashmap!("output" => vec!["frontend_user", "mock_user"]));
     let response = unauthorized_client().create_task(request);
     assert!(response.is_err());
 }
@@ -186,7 +186,7 @@ fn test_get_task() {
         .function_id(function_id)
         .function_arguments(hashmap!("arg1" => "arg1_value"))
         .executor(Executor::MesaPy)
-        .output_owners_map(hashmap!("output" => vec!["frontend_user", "mock_user"]));
+        .outputs_ownership(hashmap!("output" => vec!["frontend_user", "mock_user"]));
     let response = client.create_task(request).unwrap();
     let task_id = response.task_id;
 
@@ -212,7 +212,7 @@ fn test_assign_data() {
         .function_id(function_id)
         .function_arguments(hashmap!("arg1" => "arg1_value"))
         .executor(Executor::MesaPy)
-        .output_owners_map(hashmap!("output" => vec!["frontend_user"]));
+        .outputs_ownership(hashmap!("output" => vec!["frontend_user"]));
 
     let response = client.create_task(request).unwrap();
     let task_id = response.task_id;
@@ -247,7 +247,7 @@ fn test_approve_task() {
         .function_id(function_id)
         .function_arguments(hashmap!("arg1" => "arg1_value"))
         .executor(Executor::MesaPy)
-        .output_owners_map(hashmap!("output" => vec!["frontend_user"]));
+        .outputs_ownership(hashmap!("output" => vec!["frontend_user"]));
     let response = client.create_task(request).unwrap();
     let task_id = response.task_id;
 
@@ -281,7 +281,7 @@ fn test_invoke_task() {
         .function_id(function_id)
         .function_arguments(hashmap!("arg1" => "arg1_value"))
         .executor(Executor::MesaPy)
-        .output_owners_map(hashmap!("output" => vec!["frontend_user"]));
+        .outputs_ownership(hashmap!("output" => vec!["frontend_user"]));
     let response = client.create_task(request).unwrap();
     let task_id = response.task_id;
 

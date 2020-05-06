@@ -117,8 +117,8 @@ fn create_gbdt_training_task(
             "loss"                  => "LAD",
             "training_optimization_level" => "2"
         ))
-        .input_owners_map(hashmap!("training_data" => vec![USERNAME]))
-        .output_owners_map(hashmap!("trained_model" => vec![USERNAME]));
+        .inputs_ownership(hashmap!("training_data" => vec![USERNAME]))
+        .outputs_ownership(hashmap!("trained_model" => vec![USERNAME]));
 
     let response = client.create_task(request).unwrap();
     log::info!("Create task: {:?}", response);

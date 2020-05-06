@@ -30,7 +30,7 @@ fn create_uuid() -> Uuid {
     Uuid::new_v4()
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct TeaclaveInputFile {
     pub url: Url,
     pub cmac: FileAuthTag,
@@ -39,7 +39,7 @@ pub struct TeaclaveInputFile {
     pub uuid: Uuid,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct TeaclaveOutputFile {
     pub url: Url,
     pub cmac: Option<FileAuthTag>,

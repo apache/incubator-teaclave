@@ -30,7 +30,7 @@ use teaclave_rpc::endpoint::Endpoint;
 use teaclave_rpc::Request;
 use teaclave_service_enclave_utils::teaclave_service;
 use teaclave_types::{
-    ExternalID, OutputsTags, StagedTask, Storable, Task, TaskResult, TaskStatus,
+    ExternalID, OutputsTags, StagedTask, Storable, Task, TaskFiles, TaskResult, TaskStatus,
     TeaclaveOutputFile, TeaclaveServiceResponseError, TeaclaveServiceResponseResult,
 };
 use uuid::Uuid;
@@ -127,26 +127,6 @@ impl TeaclaveSchedulerService {
             .put(put_request)?;
         Ok(())
     }
-
-    fn update_outputs_cmac(
-        &self,
-        task_output_map: &HashMap<String, ExternalID>,
-        tags_map: &OutputsTags,
-    ) -> Result<()> {
-        anyhow::ensure!(
-            task_output_map.len() == tags_map.len(),
-            "Error: task result output tags count"
-        );
-        for (key, id) in task_output_map.iter() {
-            let mut outfile: TeaclaveOutputFile = self.get_from_db(id)?;
-            let auth_tag = tags_map
-                .get(key)
-                .ok_or_else(|| anyhow::anyhow!("Missing result in task result outpt tags"))?;
-            outfile.assign_cmac(auth_tag)?;
-            self.put_into_db(&outfile)?;
-        }
-        Ok(())
-    }
 }
 
 impl TeaclaveScheduler for TeaclaveSchedulerService {
@@ -207,7 +187,10 @@ impl TeaclaveScheduler for TeaclaveSchedulerService {
         let mut task = self.get_task(&request.task_id)?;
 
         if let TaskResult::Ok(outputs) = &request.task_result {
-            self.update_outputs_cmac(&task.output_map, &outputs.tags_map)?;
+            for (key, auth_tag) in outputs.tags_map.iter() {
+                let outfile = task.assigned_outputs.update_cmac(key, auth_tag)?;
+                self.put_into_db(outfile)?;
+            }
         };
 
         // Updating task result means we have finished execution

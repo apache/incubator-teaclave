@@ -175,7 +175,7 @@ fn test_get_function() {
     assert!(response.is_ok());
 }
 
-fn valid_create_task_request() -> CreateTaskRequest {
+fn create_valid_task_request() -> CreateTaskRequest {
     let function_id =
         ExternalID::try_from("function-00000000-0000-0000-0000-000000000001").unwrap();
     let input_owners = hashmap!(
@@ -191,8 +191,8 @@ fn valid_create_task_request() -> CreateTaskRequest {
         .function_id(function_id)
         .function_arguments(hashmap!("arg1" => "data1", "arg2" => "data2"))
         .executor(Executor::MesaPy)
-        .input_owners_map(input_owners)
-        .output_owners_map(output_owners)
+        .inputs_ownership(input_owners)
+        .outputs_ownership(output_owners)
 }
 
 #[test_case]
@@ -203,22 +203,26 @@ fn test_create_task() {
     let response = client.create_task(request);
     assert!(response.is_err());
 
-    let request = valid_create_task_request();
+    let request = create_valid_task_request();
     let response = client.create_task(request);
     assert!(response.is_ok());
 
-    let mut request = valid_create_task_request();
+    let mut request = create_valid_task_request();
     request.function_arguments.inner_mut().remove("arg1");
     let response = client.create_task(request);
     assert!(response.is_err());
 
-    let mut request = valid_create_task_request();
-    request.input_owners_map.remove("input");
+    let mut request = create_valid_task_request();
+    request = request.inputs_ownership(hashmap!(
+        "input2" => vec!["mock_user2", "mock_user3"]
+    ));
     let response = client.create_task(request);
     assert!(response.is_err());
 
-    let mut request = valid_create_task_request();
-    request.output_owners_map.remove("output");
+    let mut request = create_valid_task_request();
+    request = request.outputs_ownership(hashmap!(
+            "output2" => vec!["mock_user2", "mock_user3"]
+    ));
     let response = client.create_task(request);
     assert!(response.is_err());
 }
@@ -227,7 +231,7 @@ fn test_create_task() {
 fn test_get_task() {
     let mut client = authorized_client("mock_user");
 
-    let request = valid_create_task_request();
+    let request = create_valid_task_request();
     let response = client.create_task(request).unwrap();
     let task_id = response.task_id;
 
@@ -247,7 +251,7 @@ fn test_assign_data() {
     let mut client1 = authorized_client("mock_user1");
     let mut client2 = authorized_client("mock_user2");
     let mut client3 = authorized_client("mock_user3");
-    let request = valid_create_task_request();
+    let request = create_valid_task_request();
     let response = client.create_task(request).unwrap();
     let task_id = response.task_id;
 
@@ -312,7 +316,7 @@ fn test_assign_data() {
     let response = client1.assign_data(request);
     assert!(response.is_err());
 
-    // input_owners_map doesn't contain the name
+    // inputs_ownership doesn't contain the name
     let request = AssignDataRequest::new(
         task_id.clone(),
         hashmap!("none" => input_file_id_user2.clone()),
@@ -321,7 +325,7 @@ fn test_assign_data() {
     let response = client2.assign_data(request);
     assert!(response.is_err());
 
-    // output_owners_map doesn't contain the name
+    // outputs_ownership doesn't contain the name
     let request = AssignDataRequest::new(
         task_id.clone(),
         hashmap!(),
@@ -422,7 +426,7 @@ fn test_approve_task() {
     let mut client1 = authorized_client("mock_user1");
     let mut client2 = authorized_client("mock_user2");
     let mut client3 = authorized_client("mock_user3");
-    let request = valid_create_task_request();
+    let request = create_valid_task_request();
     let response = client.create_task(request).unwrap();
     let task_id = response.task_id;
 
@@ -506,7 +510,7 @@ fn test_invoke_task() {
     let mut client1 = authorized_client("mock_user1");
     let mut client2 = authorized_client("mock_user2");
     let mut client3 = authorized_client("mock_user3");
-    let request = valid_create_task_request();
+    let request = create_valid_task_request();
     let response = client.create_task(request);
     assert!(response.is_ok());
     let task_id = response.unwrap().task_id;
