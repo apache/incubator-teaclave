@@ -350,6 +350,153 @@ where
     }
 }
 
+#[derive(Debug, Default, Deserialize, Serialize)]
+pub struct TaskFileOwners {
+    inner: HashMap<String, OwnerList>,
+}
+
+impl TaskFileOwners {
+    pub fn all_owners(&self) -> OwnerList {
+        OwnerList::unions(self.inner.values().cloned())
+    }
+
+    pub fn keys(&self) -> std::collections::hash_map::Keys<String, OwnerList> {
+        self.inner.keys()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.inner.is_empty()
+    }
+
+    pub fn get(&self, key: &str) -> Option<&OwnerList> {
+        self.inner.get(key)
+    }
+
+    pub fn check(&self, fkey: &str, fowners: &OwnerList) -> Result<()> {
+        match self.inner.get(fkey) {
+            Some(owner_list) => {
+                ensure!(
+                    owner_list == fowners,
+                    "Assign: file ownership mismatch. {:?}",
+                    fkey
+                );
+            }
+            None => bail!("Assign: file name not exist in ownership spec. {:?}", fkey),
+        };
+        Ok(())
+    }
+}
+
+impl<V> std::iter::FromIterator<(String, V)> for TaskFileOwners
+where
+    V: Into<OwnerList>,
+{
+    fn from_iter<T: IntoIterator<Item = (String, V)>>(iter: T) -> Self {
+        TaskFileOwners {
+            inner: HashMap::from_iter(iter.into_iter().map(|(k, v)| (k, v.into()))),
+        }
+    }
+}
+
+impl IntoIterator for TaskFileOwners {
+    type Item = (String, OwnerList);
+    type IntoIter = std::collections::hash_map::IntoIter<String, OwnerList>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.inner.into_iter()
+    }
+}
+
+impl std::convert::From<HashMap<String, OwnerList>> for TaskFileOwners {
+    fn from(input: HashMap<String, OwnerList>) -> Self {
+        input.into_iter().collect()
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct TaskFiles<T: Clone> {
+    inner: HashMap<String, T>,
+}
+
+impl<T> Default for TaskFiles<T>
+where
+    T: Clone,
+{
+    fn default() -> TaskFiles<T> {
+        TaskFiles::<T> {
+            inner: HashMap::new(),
+        }
+    }
+}
+
+impl<T> TaskFiles<T>
+where
+    T: Clone + Storable,
+{
+    pub fn assign(&mut self, fname: &str, file: T) -> Result<()> {
+        ensure!(
+            self.inner.get(fname).is_none(),
+            "Assign: file already assigned. {:?}",
+            fname
+        );
+        self.inner.insert(fname.to_owned(), file);
+        Ok(())
+    }
+
+    pub fn keys(&self) -> std::collections::hash_map::Keys<String, T> {
+        self.inner.keys()
+    }
+
+    pub fn external_ids(&self) -> HashMap<String, ExternalID> {
+        self.inner
+            .iter()
+            .map(|(fname, file)| (fname.to_string(), file.external_id()))
+            .collect()
+    }
+}
+
+impl TaskFiles<TeaclaveOutputFile> {
+    pub fn update_cmac(
+        &mut self,
+        fname: &str,
+        auth_tag: &FileAuthTag,
+    ) -> Result<&TeaclaveOutputFile> {
+        let file = match self.inner.get_mut(fname) {
+            Some(file) => {
+                file.assign_cmac(auth_tag)?;
+                file
+            }
+            _ => bail!("Upadate_cmac: file not found. {:?}", fname),
+        };
+
+        Ok(file)
+    }
+}
+
+impl<T> IntoIterator for TaskFiles<T>
+where
+    T: Clone,
+{
+    type Item = (String, T);
+    type IntoIter = std::collections::hash_map::IntoIter<String, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.inner.into_iter()
+    }
+}
+
+impl std::convert::From<TaskFiles<TeaclaveInputFile>> for FunctionInputFiles {
+    fn from(files: TaskFiles<TeaclaveInputFile>) -> Self {
+        files.into_iter().collect()
+    }
+}
+
+impl std::convert::From<TaskFiles<TeaclaveOutputFile>> for FunctionOutputFiles {
+    fn from(files: TaskFiles<TeaclaveOutputFile>) -> Self {
+        files.into_iter().collect()
+    }
+}
+
 const TASK_PREFIX: &str = "task";
 
 #[derive(Debug, Default, Deserialize, Serialize)]
@@ -359,13 +506,13 @@ pub struct Task {
     pub function_id: ExternalID,
     pub function_arguments: FunctionArguments,
     pub executor: Executor,
-    pub input_owners_map: HashMap<String, OwnerList>,
-    pub output_owners_map: HashMap<String, OwnerList>,
+    pub inputs_ownership: TaskFileOwners,
+    pub outputs_ownership: TaskFileOwners,
     pub function_owner: UserID,
     pub participants: UserList,
     pub approved_users: UserList,
-    pub input_map: HashMap<String, ExternalID>,
-    pub output_map: HashMap<String, ExternalID>,
+    pub assigned_inputs: TaskFiles<TeaclaveInputFile>,
+    pub assigned_outputs: TaskFiles<TeaclaveOutputFile>,
     pub result: TaskResult,
     pub status: TaskStatus,
 }
@@ -385,13 +532,16 @@ impl Task {
         requester: UserID,
         req_executor: Executor,
         req_func_args: FunctionArguments,
-        req_input_owners: HashMap<String, OwnerList>,
-        req_output_owners: HashMap<String, OwnerList>,
+        req_input_owners: impl Into<TaskFileOwners>,
+        req_output_owners: impl Into<TaskFileOwners>,
         function: Function,
     ) -> Result<Self> {
+        let req_input_owners = req_input_owners.into();
+        let req_output_owners = req_output_owners.into();
+
         // gather all participants
-        let input_owners = UserList::unions(req_input_owners.values().cloned());
-        let output_owners = UserList::unions(req_output_owners.values().cloned());
+        let input_owners = req_input_owners.all_owners();
+        let output_owners = req_output_owners.all_owners();
         let mut participants = UserList::unions(vec![input_owners, output_owners]);
         participants.insert(requester.clone());
         if !function.public {
@@ -427,8 +577,8 @@ impl Task {
             function_id: function.external_id(),
             function_owner: function.owner.clone(),
             function_arguments: req_func_args,
-            input_owners_map: req_input_owners,
-            output_owners_map: req_output_owners,
+            inputs_ownership: req_input_owners,
+            outputs_ownership: req_output_owners,
             participants,
             status,
             ..Default::default()
@@ -483,8 +633,6 @@ impl Task {
         &mut self,
         requester: &UserID,
         function: Function,
-        input_map: HashMap<String, FunctionInputFile>,
-        output_map: HashMap<String, FunctionOutputFile>,
     ) -> Result<StagedTask> {
         ensure!(
             &self.creator == requester,
@@ -505,8 +653,8 @@ impl Task {
             function_name: function.name,
             function_payload: function.payload,
             function_arguments,
-            input_data: input_map.into(),
-            output_data: output_map.into(),
+            input_data: self.assigned_inputs.clone().into(),
+            output_data: self.assigned_outputs.clone().into(),
         };
 
         self.update_status(TaskStatus::Staged);
@@ -517,7 +665,7 @@ impl Task {
         &mut self,
         requester: &UserID,
         fname: &str,
-        file: &TeaclaveInputFile,
+        file: TeaclaveInputFile,
     ) -> Result<()> {
         ensure!(
             self.status == TaskStatus::Created,
@@ -531,27 +679,9 @@ impl Task {
             file.external_id()
         );
 
-        match self.input_owners_map.get(fname) {
-            Some(owner_list) => {
-                ensure!(
-                    owner_list == &file.owner,
-                    "Assign: file ownership mismatch. {:?}",
-                    file.external_id()
-                );
-            }
-            None => bail!(
-                "Assign: file name not exist in input_owners_map. {:?}",
-                fname
-            ),
-        };
+        self.inputs_ownership.check(fname, &file.owner)?;
 
-        ensure!(
-            self.input_map.get(fname).is_none(),
-            "Assign: file already assigned. {:?}",
-            fname
-        );
-
-        self.input_map.insert(fname.to_owned(), file.external_id());
+        self.assigned_inputs.assign(fname, file)?;
 
         if self.all_data_assigned() {
             self.update_status(TaskStatus::DataAssigned);
@@ -563,7 +693,7 @@ impl Task {
         &mut self,
         requester: &UserID,
         fname: &str,
-        file: &TeaclaveOutputFile,
+        file: TeaclaveOutputFile,
     ) -> Result<()> {
         ensure!(
             self.status == TaskStatus::Created,
@@ -577,27 +707,9 @@ impl Task {
             file.external_id()
         );
 
-        match self.output_owners_map.get(fname) {
-            Some(owner_list) => {
-                ensure!(
-                    owner_list == &file.owner,
-                    "Assign: file ownership mismatch. {:?}",
-                    file.external_id()
-                );
-            }
-            None => bail!(
-                "Assign: file name not exist in output_owners_map. {:?}",
-                fname
-            ),
-        };
+        self.outputs_ownership.check(fname, &file.owner)?;
 
-        ensure!(
-            self.output_map.get(fname).is_none(),
-            "Assign: file already assigned. {:?}",
-            fname
-        );
-
-        self.output_map.insert(fname.to_owned(), file.external_id());
+        self.assigned_outputs.assign(fname, file)?;
 
         if self.all_data_assigned() {
             self.update_status(TaskStatus::DataAssigned);
@@ -610,14 +722,14 @@ impl Task {
     }
 
     fn all_data_assigned(&self) -> bool {
-        let input_args: HashSet<&String> = self.input_owners_map.keys().collect();
-        let assiged_inputs: HashSet<&String> = self.input_map.keys().collect();
+        let input_args: HashSet<&String> = self.inputs_ownership.keys().collect();
+        let assiged_inputs: HashSet<&String> = self.assigned_inputs.keys().collect();
         if input_args != assiged_inputs {
             return false;
         }
 
-        let output_args: HashSet<&String> = self.output_owners_map.keys().collect();
-        let assiged_outputs: HashSet<&String> = self.output_map.keys().collect();
+        let output_args: HashSet<&String> = self.outputs_ownership.keys().collect();
+        let assiged_outputs: HashSet<&String> = self.assigned_outputs.keys().collect();
         if output_args != assiged_outputs {
             return false;
         }

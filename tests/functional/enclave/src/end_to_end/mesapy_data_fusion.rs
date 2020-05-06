@@ -97,11 +97,11 @@ fn create_data_fusion_task(
 ) -> ExternalID {
     let request = CreateTaskRequest::new()
         .function_id(function_id.to_owned())
-        .input_owners_map(hashmap!(
+        .inputs_ownership(hashmap!(
             "InPartyA" => vec![USERNAME1],
             "InPartyB" => vec![USERNAME2]
         ))
-        .output_owners_map(hashmap!("OutFusionData" => vec![USERNAME1, USERNAME2]))
+        .outputs_ownership(hashmap!("OutFusionData" => vec![USERNAME1, USERNAME2]))
         .executor(Executor::MesaPy);
     let response = client.create_task(request).unwrap();
     log::info!("Create task: {:?}", response);
@@ -175,8 +175,8 @@ pub fn test_data_fusion_success() {
     let task = get_task(&mut c2, &task_id);
     assert!(task.status == TaskStatus::Finished);
 
-    let fusion_id = task.output_map.get("OutFusionData").unwrap();
-    let fusion_owners = task.output_owners_map.get("OutFusionData").unwrap();
+    let fusion_id = task.assigned_outputs.get("OutFusionData").unwrap();
+    let fusion_owners = task.outputs_ownership.get("OutFusionData").unwrap();
 
     let fusion_input = register_fusion_input_from_output(&mut c2, &fusion_id);
     let function_id = register_word_count_function(&mut c2);
@@ -251,7 +251,7 @@ fn create_wlc_task(
     let request = CreateTaskRequest::new()
         .function_id(function_id.to_owned())
         .function_arguments(hashmap!("query" => "teaclave"))
-        .input_owners_map(hashmap!(
+        .inputs_ownership(hashmap!(
             "InputData" => owners.to_owned()
         ))
         .executor(Executor::MesaPy);

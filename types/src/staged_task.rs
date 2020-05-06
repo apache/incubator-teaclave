@@ -54,9 +54,20 @@ impl IntoIterator for FunctionInputFiles {
     }
 }
 
+impl<V> std::iter::FromIterator<(String, V)> for FunctionInputFiles
+where
+    V: Into<FunctionInputFile>,
+{
+    fn from_iter<T: IntoIterator<Item = (String, V)>>(iter: T) -> Self {
+        FunctionInputFiles {
+            inner: iter.into_iter().map(|(k, v)| (k, v.into())).collect(),
+        }
+    }
+}
+
 impl std::convert::From<HashMap<String, FunctionInputFile>> for FunctionInputFiles {
     fn from(entries: HashMap<String, FunctionInputFile>) -> FunctionInputFiles {
-        FunctionInputFiles { inner: entries }
+        entries.into_iter().collect()
     }
 }
 
@@ -71,6 +82,23 @@ impl IntoIterator for FunctionOutputFiles {
 
     fn into_iter(self) -> IntoIter<String, FunctionOutputFile> {
         self.inner.into_iter()
+    }
+}
+
+impl<V> std::iter::FromIterator<(String, V)> for FunctionOutputFiles
+where
+    V: Into<FunctionOutputFile>,
+{
+    fn from_iter<T: IntoIterator<Item = (String, V)>>(iter: T) -> Self {
+        FunctionOutputFiles {
+            inner: iter.into_iter().map(|(k, v)| (k, v.into())).collect(),
+        }
+    }
+}
+
+impl std::convert::From<HashMap<String, FunctionOutputFile>> for FunctionOutputFiles {
+    fn from(entries: HashMap<String, FunctionOutputFile>) -> FunctionOutputFiles {
+        entries.into_iter().collect()
     }
 }
 
@@ -96,12 +124,6 @@ impl FunctionOutputFiles {
     }
 }
 
-impl std::convert::From<HashMap<String, FunctionOutputFile>> for FunctionOutputFiles {
-    fn from(entries: HashMap<String, FunctionOutputFile>) -> FunctionOutputFiles {
-        FunctionOutputFiles { inner: entries }
-    }
-}
-
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct FunctionInputFile {
     pub url: Url,
@@ -117,11 +139,13 @@ impl FunctionInputFile {
             crypto_info: crypto.into(),
         }
     }
+}
 
-    pub fn from_teaclave_input_file(file: &TeaclaveInputFile) -> Self {
+impl From<TeaclaveInputFile> for FunctionInputFile {
+    fn from(file: TeaclaveInputFile) -> Self {
         Self {
-            url: file.url.to_owned(),
-            cmac: file.cmac.to_owned(),
+            url: file.url,
+            cmac: file.cmac,
             crypto_info: file.crypto_info,
         }
     }
@@ -140,10 +164,12 @@ impl FunctionOutputFile {
             crypto_info: crypto.into(),
         }
     }
+}
 
-    pub fn from_teaclave_output_file(file: &TeaclaveOutputFile) -> Self {
+impl From<TeaclaveOutputFile> for FunctionOutputFile {
+    fn from(file: TeaclaveOutputFile) -> Self {
         Self {
-            url: file.url.to_owned(),
+            url: file.url,
             crypto_info: file.crypto_info,
         }
     }

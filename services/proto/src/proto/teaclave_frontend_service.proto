@@ -112,8 +112,8 @@ message CreateTaskRequest {
   string function_id = 1;
   map<string, string> function_arguments = 2;
   string executor = 3;
-  repeated OwnerList input_owners_map = 10;
-  repeated OwnerList output_owners_map = 11;
+  repeated OwnerList inputs_ownership = 10;
+  repeated OwnerList outputs_ownership= 11;
 }
 
 message CreateTaskResponse {
@@ -130,20 +130,20 @@ message GetTaskResponse {
   string function_id = 3;
   string function_owner = 4;
   map<string, string> function_arguments = 5;
-  repeated OwnerList input_owners_map = 6;
-  repeated OwnerList output_owners_map = 7;
+  repeated OwnerList inputs_ownership = 6;
+  repeated OwnerList outputs_ownership = 7;
   repeated string participants = 8;
   repeated string approved_users = 9;
-  repeated DataMap input_map = 10;
-  repeated DataMap output_map = 11;
+  repeated DataMap assigned_inputs = 10;
+  repeated DataMap assigned_outputs = 11;
   teaclave_common_proto.TaskStatus status = 20;
   teaclave_common_proto.TaskResult result = 21;
 }
 
 message AssignDataRequest {
   string task_id = 1;
-  repeated DataMap input_map = 2;
-  repeated DataMap output_map = 3;
+  repeated DataMap inputs = 2;
+  repeated DataMap outputs = 3;
 }
 
 message AssignDataResponse { }
