@@ -7,6 +7,10 @@ include(ExternalProject)
 find_package(Git)
 find_package(OpenSSL)
 check_exe_dependencies(rustup pypy)
+pkg_check_modules(INTEL_SGX_SDK QUIET libsgx_urts=2.9.101.2)
+if(NOT INTEL_SGX_SDK_FOUND)
+  message(FATAL_ERROR "Intel SGX SDK (version 2.9.1) is not found or version not matched.")
+endif()
 
 # ====== VARIABLES FOR CMAKE -D{VAR}=VAL CONFIGURATION BEGIN ======
 set_strvar_from_env_or(SGX_SDK "/opt/sgxsdk" "Path of SGX SDK")
