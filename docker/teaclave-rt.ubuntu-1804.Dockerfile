@@ -30,6 +30,10 @@ RUN wget $SGX_LINUX_X64_SDK_URL               && \
     echo 'source /opt/sgxsdk/environment' >> /etc/environment
 ENV LD_LIBRARY_PATH=/opt/intel/sgxsdk/sdk_libs
 
+# Make a directory for fusion data. Since we are in the single machine mode,
+# there is no need to mount a network file system.
+RUN mkdir -p /tmp/fusion_data
+
 ADD release/services/teaclave_frontend_service /teaclave/
 ADD release/services/teaclave_frontend_service_enclave.signed.so /teaclave/
 
