@@ -18,72 +18,35 @@
 use anyhow::{Context, Result};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use teaclave_binder::proto::{ECallCommand, StartServiceInput, StartServiceOutput};
-use teaclave_binder::TeeBinder;
-use teaclave_config::RuntimeConfig;
-use teaclave_types::TeeServiceResult;
+use std::thread;
+use teaclave_service_app_utils::{register_signals, TeaclaveServiceLauncher};
 
-const PACKAGE_NAME: &str = env!("CARGO_PKG_NAME");
-
+// Use to import ocall
 pub use teaclave_file_agent::ocall_handle_file_request;
 
-fn register_signals(term: Arc<AtomicBool>) -> Result<()> {
-    for signal in &[
-        signal_hook::SIGTERM,
-        signal_hook::SIGINT,
-        signal_hook::SIGHUP,
-    ] {
-        let term_ref = term.clone();
-        let thread = std::thread::current();
-        unsafe {
-            signal_hook::register(*signal, move || {
-                term_ref.store(true, Ordering::Relaxed);
-                thread.unpark();
-            })?;
-        }
-    }
-
-    Ok(())
-}
-
-fn start_enclave_service(tee: Arc<TeeBinder>, config: RuntimeConfig) {
-    let input = StartServiceInput::new(config);
-    let command = ECallCommand::StartService;
-    match tee.invoke::<StartServiceInput, TeeServiceResult<StartServiceOutput>>(command, input) {
-        Err(e) => {
-            eprintln!("TEE invocation error: {:?}", e);
-        }
-        Ok(Err(e)) => {
-            eprintln!("Service exit with error: {:?}", e);
-        }
-        _ => {
-            println!("Service successfully exit");
-        }
-    }
-
-    unsafe { libc::raise(signal_hook::SIGTERM) };
-}
+const PACKAGE_NAME: &str = env!("CARGO_PKG_NAME");
 
 fn main() -> Result<()> {
     env_logger::init();
 
-    let tee = Arc::new(TeeBinder::new(PACKAGE_NAME).context("Failed to new the enclave.")?);
-    let config = teaclave_config::RuntimeConfig::from_toml("runtime.config.toml")
-        .context("Failed to load config file.")?;
-
-    let tee_ref = tee.clone();
-    std::thread::spawn(move || {
-        start_enclave_service(tee_ref, config);
+    let launcher = Arc::new(TeaclaveServiceLauncher::new(
+        PACKAGE_NAME,
+        "runtime.config.toml",
+    )?);
+    let launcher_ref = launcher.clone();
+    thread::spawn(move || {
+        let _ = launcher_ref.start();
+        unsafe { libc::raise(signal_hook::SIGTERM) }
     });
 
     let term = Arc::new(AtomicBool::new(false));
     register_signals(term.clone()).context("Failed to register signal handler")?;
 
     while !term.load(Ordering::Relaxed) {
-        std::thread::park();
+        thread::park();
     }
 
-    tee.finalize();
+    launcher.finalize();
 
     Ok(())
 }

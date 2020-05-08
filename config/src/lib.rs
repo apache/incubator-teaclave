@@ -23,7 +23,7 @@ extern crate sgx_tstd as std;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "snake_case")]
 pub(crate) enum ConfigSource {
     Path(PathBuf),

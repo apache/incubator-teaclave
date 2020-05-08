@@ -15,17 +15,61 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use anyhow::Result;
-use log::{error, info};
+use anyhow::{bail, Context, Result};
+use std::path::Path;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use teaclave_binder::proto::{ECallCommand, StartServiceInput, StartServiceOutput};
 use teaclave_binder::TeeBinder;
+use teaclave_config::RuntimeConfig;
+use teaclave_types::TeeServiceResult;
 
-pub struct ServiceEnclaveBuilder;
+pub struct TeaclaveServiceLauncher {
+    tee: TeeBinder,
+    config: RuntimeConfig,
+}
 
-impl ServiceEnclaveBuilder {
-    pub fn init_tee_binder(enclave_name: &str) -> Result<TeeBinder> {
-        env_logger::init();
-
-        TeeBinder::new(enclave_name, 1)
+impl TeaclaveServiceLauncher {
+    pub fn new<P: AsRef<Path>>(package_name: &str, config_path: P) -> Result<Self> {
+        let config = RuntimeConfig::from_toml(config_path.as_ref())
+            .context("Failed to load config file.")?;
+        let tee = TeeBinder::new(package_name).context("Failed to new the enclave.")?;
+        Ok(Self { tee, config })
     }
+
+    pub fn start(&self) -> Result<String> {
+        let input = StartServiceInput::new(self.config.clone());
+        let command = ECallCommand::StartService;
+        match self
+            .tee
+            .invoke::<StartServiceInput, TeeServiceResult<StartServiceOutput>>(command, input)
+        {
+            Err(e) => bail!("TEE invocation error: {:?}", e),
+            Ok(Err(e)) => bail!("Service exit with error: {:?}", e),
+            _ => Ok(String::from("Service successfully exit")),
+        }
+    }
+
+    pub fn finalize(&self) {
+        self.tee.finalize();
+    }
+}
+
+pub fn register_signals(term: Arc<AtomicBool>) -> Result<()> {
+    for signal in &[
+        signal_hook::SIGTERM,
+        signal_hook::SIGINT,
+        signal_hook::SIGHUP,
+    ] {
+        let term_ref = term.clone();
+        let thread = std::thread::current();
+        unsafe {
+            signal_hook::register(*signal, move || {
+                term_ref.store(true, Ordering::Relaxed);
+                thread.unpark();
+            })?;
+        }
+    }
+
+    Ok(())
 }

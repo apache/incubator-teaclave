@@ -31,7 +31,7 @@ use std::path::{Path, PathBuf};
 use std::string::String;
 use std::vec::Vec;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RuntimeConfig {
     pub api_endpoints: ApiEndpointsConfig,
     pub internal_endpoints: InternalEndpointsConfig,
@@ -40,13 +40,13 @@ pub struct RuntimeConfig {
     pub mount: MountConfig,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ApiEndpointsConfig {
     pub frontend: ApiEndpoint,
     pub authentication: ApiEndpoint,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct InternalEndpointsConfig {
     pub access_control: InternalEndpoint,
     pub authentication: InternalEndpoint,
@@ -56,18 +56,18 @@ pub struct InternalEndpointsConfig {
     pub scheduler: InternalEndpoint,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ApiEndpoint {
     pub listen_address: net::SocketAddr,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct InternalEndpoint {
     pub listen_address: net::SocketAddr,
     pub advertised_address: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AuditConfig {
     #[serde(rename(serialize = "enclave_info", deserialize = "enclave_info"))]
     enclave_info_source: ConfigSource,
@@ -79,7 +79,7 @@ pub struct AuditConfig {
     pub auditor_signatures_bytes: Vec<Vec<u8>>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AttestationServiceConfig {
     pub algorithm: String,
     pub url: String,
@@ -87,7 +87,7 @@ pub struct AttestationServiceConfig {
     pub spid: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct MountConfig {
     pub fusion_base_dir: PathBuf,
 }
