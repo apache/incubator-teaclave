@@ -14,7 +14,8 @@ can found in
 
 If you don't have an SGX supported hardware at hand, Teaclave can also run in
 simulation mode. However some functions like remote attestation will be disable
-at this mode.
+at this mode. Please start from [here](#simulation-mode) if you plan to try in
+simulation mode.
 
 ## Clone and Build Teaclave
 
@@ -40,8 +41,6 @@ $ docker run --rm -v $(pwd):/teaclave -w /teaclave \
      cmake -DTEST_MODE=ON .. && \
      make"
 ```
-
-To build in simulation mode, you can add `-DSGX_SIM_MODE=ON` to `cmake`.
 
 ## Setup Attestation Service
 
@@ -84,4 +83,38 @@ Starting teaclave-management-service     ... done
 Starting teaclave-execution-service      ... done
 Starting teaclave-frontend-service       ... done
 Attaching to ...
+```
+
+## Simulation Mode
+
+To try Teaclave in SGX simulation mode, please install Intel SGX SDK first with instructions in
+[Intel SGX Installation Guide](https://download.01.org/intel-sgx/sgx-linux/2.9/docs/Intel_SGX_Installation_Guide_Linux_2.9_Open_Source.pdf).
+
+Then clone and build Teaclave (with the `-DSGX_SIM_MODE=ON` option in `cmake`).
+
+```
+$ git clone https://github.com/apache/incubator-teaclave.git
+$ cd incubator-teaclave
+$ docker run --rm -v $(pwd):/teaclave -w /teaclave \
+  -it teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest \
+   bash -c ". /root/.cargo/env && \
+     mkdir -p build && cd build && \
+     cmake -DTEST_MODE=ON -DSGX_SIM_MODE=ON .. && \
+     make"
+```
+
+Since the attestation is disabled in the simulation mode, related environment
+variables can be set to any values.
+
+```
+$ export AS_SPID="00000000000000000000000000000000"
+$ export AS_KEY="00000000000000000000000000000000"
+$ export AS_ALGO="sgx_epid"
+$ export AS_URL="https://api.trustedservices.intel.com:443"
+```
+
+At last, launch all services with `docker-compose`:
+
+```
+$ (cd docker && docker-compose -f docker-compose-ubuntu-1804.yml up --build)
 ```
