@@ -12,5 +12,9 @@ ctrlc      = { version = "3.1.2" }
 env_logger = { version = "0.7.1" }
 anyhow     = { version = "1.0.26" }
 log        = { version = "0.4.6" }
+libc        = { version = "0.2.66" }
+signal-hook = { version = "0.1.13" }
 
-teaclave_binder = { path = "../../../binder" }
+teaclave_binder = { path = "../../../binder", features = ["app"] }
+teaclave_config = { path = "../../../config" }
+teaclave_types = { path = "../../../types" }
