@@ -21,6 +21,7 @@ use tokio::io::AsyncWriteExt;
 use tokio_util::codec;
 use url::Url;
 
+use std::path::{Component, Path, PathBuf};
 use teaclave_types::{FileAgentRequest, HandleFileCommand, HandleFileInfo};
 
 async fn download_remote_input_to_file(
@@ -79,23 +80,48 @@ async fn upload_output_file_to_remote(
     }
 }
 
-async fn handle_download(info: HandleFileInfo) -> anyhow::Result<()> {
+async fn handle_download(
+    info: HandleFileInfo,
+    fusion_base: impl AsRef<Path>,
+) -> anyhow::Result<()> {
     anyhow::ensure!(
         !info.local.exists(),
         "[Download] Dest local file: {:?} already exists.",
         info.local
     );
     let dst = info.local;
+    let remote = info.remote;
 
-    match info.remote.scheme() {
+    match remote.scheme() {
         "https" | "http" => {
-            download_remote_input_to_file(info.remote, dst).await?;
+            download_remote_input_to_file(remote, dst).await?;
         }
         "file" => {
-            let src = info
-                .remote
+            let src = remote
                 .to_file_path()
-                .map_err(|e| anyhow::anyhow!("Cannot convert to path: {:?}", e))?;
+                .map_err(|e| anyhow::anyhow!("Cannot convert file:// to path: {:?}", e))?;
+            anyhow::ensure!(
+                src.exists(),
+                "[Download] Src local file: {:?} doesn't exist.",
+                src
+            );
+            copy_file(src, dst).await?;
+        }
+        "fusion" => {
+            let path = remote
+                .to_file_path()
+                .map_err(|e| anyhow::anyhow!("Cannot convert fusion:// to path: {:?}", e))?;
+            let components = path.components().collect::<Vec<_>>();
+            anyhow::ensure!(
+                (components[0] == Component::RootDir)
+                    && (components[1] == Component::Normal("TEACLAVE_FUSION_BASE".as_ref())),
+                "[Download] Fusion data format error: {:?}",
+                components
+            );
+
+            let relative_path: PathBuf = components[2..].iter().collect();
+            let src: PathBuf = fusion_base.as_ref().join(relative_path);
+
             anyhow::ensure!(
                 src.exists(),
                 "[Download] Src local file: {:?} doesn't exist.",
@@ -108,7 +134,7 @@ async fn handle_download(info: HandleFileInfo) -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn handle_upload(info: HandleFileInfo) -> anyhow::Result<()> {
+async fn handle_upload(info: HandleFileInfo, fusion_base: impl AsRef<Path>) -> anyhow::Result<()> {
     anyhow::ensure!(
         info.local.exists(),
         "[Upload] Src local file: {:?} doesn't exist.",
@@ -125,9 +151,28 @@ async fn handle_upload(info: HandleFileInfo) -> anyhow::Result<()> {
                 .remote
                 .to_file_path()
                 .map_err(|e| anyhow::anyhow!("Cannot convert to path: {:?}", e))?;
+            anyhow::ensure!(!dst.exists(), "[Upload] Dest local file: {:?} exist.", dst);
+            copy_file(src, dst).await?;
+        }
+        "fusion" => {
+            let path = info
+                .remote
+                .to_file_path()
+                .map_err(|e| anyhow::anyhow!("Cannot convert fusion:// to path: {:?}", e))?;
+            let components = path.components().collect::<Vec<_>>();
+            anyhow::ensure!(
+                (components[0] == Component::RootDir)
+                    && (components[1] == Component::Normal("TEACLAVE_FUSION_BASE".as_ref())),
+                "[Upload] Fusion data format error: {:?}",
+                components
+            );
+
+            let relative_path: PathBuf = components[2..].iter().collect();
+            let dst: PathBuf = fusion_base.as_ref().join(relative_path);
+
             anyhow::ensure!(
                 !dst.exists(),
-                "[Download] Dest local file: {:?} already exist.",
+                "[Upload] Dest fusion file: {:?} exists.",
                 dst
             );
             copy_file(src, dst).await?;
@@ -144,12 +189,16 @@ fn handle_file_request(bytes: &[u8]) -> anyhow::Result<()> {
         .enable_all()
         .build()?
         .block_on(async {
+            let fusion_base = req.fusion_base.clone();
             match req.cmd {
                 HandleFileCommand::Download => {
                     let futures: Vec<_> = req
                         .info
                         .into_iter()
-                        .map(|info| tokio::spawn(async { handle_download(info).await }))
+                        .map(|info| {
+                            let fusion_base = fusion_base.clone();
+                            tokio::spawn(async { handle_download(info, fusion_base).await })
+                        })
                         .collect();
                     join_all(futures).await
                 }
@@ -157,7 +206,10 @@ fn handle_file_request(bytes: &[u8]) -> anyhow::Result<()> {
                     let futures: Vec<_> = req
                         .info
                         .into_iter()
-                        .map(|info| tokio::spawn(async { handle_upload(info).await }))
+                        .map(|info| {
+                            let fusion_base = fusion_base.clone();
+                            tokio::spawn(async { handle_upload(info, fusion_base).await })
+                        })
                         .collect();
                     join_all(futures).await
                 }
@@ -214,7 +266,7 @@ mod tests {
         let dest = PathBuf::from("/tmp/input_test.txt");
 
         let info = HandleFileInfo::new(&dest, &url);
-        let req = FileAgentRequest::new(HandleFileCommand::Download, vec![info]);
+        let req = FileAgentRequest::new(HandleFileCommand::Download, vec![info], "");
 
         let bytes = serde_json::to_vec(&req).unwrap();
         handle_file_request(&bytes).unwrap();
@@ -234,7 +286,7 @@ mod tests {
         let url = Url::parse(s).unwrap();
 
         let info = HandleFileInfo::new(&src, &url);
-        let req = FileAgentRequest::new(HandleFileCommand::Upload, vec![info]);
+        let req = FileAgentRequest::new(HandleFileCommand::Upload, vec![info], "");
 
         let bytes = serde_json::to_vec(&req).unwrap();
         handle_file_request(&bytes).unwrap();
@@ -255,7 +307,7 @@ mod tests {
             .iter()
             .map(|fname| HandleFileInfo::new(base.join(fname), &url))
             .collect();
-        let req = FileAgentRequest::new(HandleFileCommand::Download, info_list);
+        let req = FileAgentRequest::new(HandleFileCommand::Download, info_list, "");
 
         let bytes = serde_json::to_vec(&req).unwrap();
         handle_file_request(&bytes).unwrap();
@@ -284,7 +336,7 @@ mod tests {
             })
             .collect();
 
-        let req = FileAgentRequest::new(HandleFileCommand::Upload, info_list);
+        let req = FileAgentRequest::new(HandleFileCommand::Upload, info_list, "");
 
         let bytes = serde_json::to_vec(&req).unwrap();
         handle_file_request(&bytes).unwrap();
@@ -309,7 +361,7 @@ mod tests {
         let url = Url::parse(&s).unwrap();
 
         let info = HandleFileInfo::new(&src, &url);
-        let req = FileAgentRequest::new(HandleFileCommand::Upload, vec![info]);
+        let req = FileAgentRequest::new(HandleFileCommand::Upload, vec![info], "");
 
         let bytes = serde_json::to_vec(&req).unwrap();
         handle_file_request(&bytes).unwrap();
@@ -317,7 +369,7 @@ mod tests {
         // test local download
         let dest = base.join("d2.txt");
         let info = HandleFileInfo::new(&dest, &url);
-        let req = FileAgentRequest::new(HandleFileCommand::Download, vec![info]);
+        let req = FileAgentRequest::new(HandleFileCommand::Download, vec![info], "");
 
         let bytes = serde_json::to_vec(&req).unwrap();
         handle_file_request(&bytes).unwrap();

@@ -16,6 +16,7 @@
 // under the License.
 
 use std::collections::HashMap;
+use std::path::{Path, PathBuf};
 use std::prelude::v1::*;
 use std::sync::{Arc, SgxMutex as Mutex};
 
@@ -34,10 +35,14 @@ static WORKER_BASE_DIR: &str = "/tmp/teaclave_agent/";
 pub(crate) struct TeaclaveExecutionService {
     worker: Arc<Worker>,
     scheduler_client: Arc<Mutex<TeaclaveSchedulerClient>>,
+    fusion_base: PathBuf,
 }
 
 impl TeaclaveExecutionService {
-    pub(crate) fn new(scheduler_service_endpoint: Endpoint) -> Result<Self> {
+    pub(crate) fn new(
+        scheduler_service_endpoint: Endpoint,
+        fusion_base: impl AsRef<Path>,
+    ) -> Result<Self> {
         let mut i = 0;
         let channel = loop {
             match scheduler_service_endpoint.connect() {
@@ -55,6 +60,7 @@ impl TeaclaveExecutionService {
         Ok(TeaclaveExecutionService {
             worker: Arc::new(Worker::default()),
             scheduler_client,
+            fusion_base: fusion_base.as_ref().to_owned(),
         })
     }
 
@@ -101,6 +107,7 @@ impl TeaclaveExecutionService {
 
         let file_mgr = TaskFileManager::new(
             WORKER_BASE_DIR,
+            &self.fusion_base,
             &task.task_id,
             &task.input_data,
             &task.output_data,
@@ -185,6 +192,7 @@ pub mod tests {
 
         let file_mgr = TaskFileManager::new(
             WORKER_BASE_DIR,
+            "/tmp/fusion_base",
             &staged_task.task_id,
             &staged_task.input_data,
             &staged_task.output_data,
@@ -242,6 +250,7 @@ pub mod tests {
 
         let file_mgr = TaskFileManager::new(
             WORKER_BASE_DIR,
+            "/tmp/fusion_base",
             &staged_task.task_id,
             &staged_task.input_data,
             &staged_task.output_data,
