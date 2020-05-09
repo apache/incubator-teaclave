@@ -17,7 +17,6 @@
 
 use anyhow::{anyhow, Result};
 use std::collections::HashMap;
-use std::path::PathBuf;
 use std::prelude::v1::*;
 use std::sync::{Arc, SgxMutex as Mutex};
 use teaclave_proto::teaclave_frontend_service::{
@@ -70,7 +69,6 @@ impl From<ServiceError> for TeaclaveServiceResponseError {
 #[derive(Clone)]
 pub(crate) struct TeaclaveManagementService {
     storage_client: Arc<Mutex<TeaclaveStorageClient>>,
-    fusion_base_dir: PathBuf,
 }
 
 impl TeaclaveManagement for TeaclaveManagementService {
@@ -439,10 +437,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
 }
 
 impl TeaclaveManagementService {
-    pub(crate) fn new(
-        storage_service_endpoint: Endpoint,
-        fusion_base_dir: PathBuf,
-    ) -> Result<Self> {
+    pub(crate) fn new(storage_service_endpoint: Endpoint) -> Result<Self> {
         let mut i = 0;
         let channel = loop {
             match storage_service_endpoint.connect() {
@@ -456,10 +451,7 @@ impl TeaclaveManagementService {
             std::thread::sleep(std::time::Duration::from_secs(3));
         };
         let storage_client = Arc::new(Mutex::new(TeaclaveStorageClient::new(channel)?));
-        let service = Self {
-            storage_client,
-            fusion_base_dir,
-        };
+        let service = Self { storage_client };
 
         #[cfg(test_mode)]
         service.add_mock_data()?;
@@ -469,11 +461,7 @@ impl TeaclaveManagementService {
 
     pub fn create_fusion_data(&self, owners: impl Into<OwnerList>) -> Result<TeaclaveOutputFile> {
         let uuid = Uuid::new_v4();
-        let url = format!(
-            "file://{}/{}.fusion",
-            self.fusion_base_dir.display(),
-            uuid.to_string()
-        );
+        let url = format!("fusion:///TEACLAVE_FUSION_BASE/{}.fusion", uuid.to_string());
         let url = Url::parse(&url).map_err(|_| anyhow!("invalid url"))?;
         let crypto_info = FileCrypto::default();
 

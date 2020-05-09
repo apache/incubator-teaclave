@@ -69,7 +69,8 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
         fusion_base.display()
     );
 
-    let mut service = service::TeaclaveExecutionService::new(scheduler_service_endpoint)?;
+    let mut service =
+        service::TeaclaveExecutionService::new(scheduler_service_endpoint, fusion_base)?;
     let _ = service.start();
 
     Ok(())

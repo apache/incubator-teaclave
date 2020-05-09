@@ -30,6 +30,7 @@ use uuid::Uuid;
 pub(crate) struct TaskFileManager {
     inter_inputs: InterInputs,
     inter_outputs: InterOutputs,
+    fusion_base: PathBuf,
 }
 
 struct InterInputs {
@@ -56,12 +57,13 @@ pub(self) struct InterOutput {
 
 impl TaskFileManager {
     pub(crate) fn new(
-        base: &str,
+        inter_base: impl AsRef<Path>,
+        fusion_base: impl AsRef<Path>,
         task_id: &Uuid,
         inputs: &FunctionInputFiles,
         outputs: &FunctionOutputFiles,
     ) -> Result<Self> {
-        let cwd = Path::new(base).join(task_id.to_string());
+        let cwd = Path::new(inter_base.as_ref()).join(task_id.to_string());
         let inputs_base = cwd.join("inputs");
         let outputs_base = cwd.join("outputs");
 
@@ -71,13 +73,14 @@ impl TaskFileManager {
         let tfmgr = TaskFileManager {
             inter_inputs,
             inter_outputs,
+            fusion_base: fusion_base.as_ref().to_owned(),
         };
 
         Ok(tfmgr)
     }
 
     pub(crate) fn prepare_staged_inputs(&self) -> Result<StagedFiles> {
-        self.inter_inputs.download()?;
+        self.inter_inputs.download(&self.fusion_base)?;
         self.inter_inputs.convert_to_staged_files()
     }
 
@@ -88,19 +91,19 @@ impl TaskFileManager {
 
     pub(crate) fn upload_outputs(&self) -> Result<HashMap<String, FileAuthTag>> {
         let auth_tags = self.inter_outputs.convert_staged_files_for_upload()?;
-        self.inter_outputs.upload()?;
+        self.inter_outputs.upload(&self.fusion_base)?;
         Ok(auth_tags)
     }
 }
 
 impl InterInput {
     fn new(
-        base: impl AsRef<Path>,
+        inter_base: impl AsRef<Path>,
         funiq_key: String,
         file: FunctionInputFile,
     ) -> Result<InterInput> {
-        let download_path = make_intermediate_path(base.as_ref(), &funiq_key, &file.url)?;
-        let staged_path = make_staged_path(base.as_ref(), &funiq_key, &file.url)?;
+        let download_path = make_intermediate_path(inter_base.as_ref(), &funiq_key, &file.url)?;
+        let staged_path = make_staged_path(inter_base.as_ref(), &funiq_key, &file.url)?;
 
         Ok(InterInput {
             funiq_key,
@@ -168,18 +171,19 @@ impl std::iter::FromIterator<InterInput> for InterInputs {
 }
 
 impl InterInputs {
-    pub fn new(base: impl AsRef<Path>, inputs: FunctionInputFiles) -> Result<InterInputs> {
+    pub fn new(input_base: impl AsRef<Path>, inputs: FunctionInputFiles) -> Result<InterInputs> {
         inputs
             .into_iter()
-            .map(|(funiq_key, file)| InterInput::new(base.as_ref(), funiq_key, file))
+            .map(|(funiq_key, file)| InterInput::new(input_base.as_ref(), funiq_key, file))
             .collect()
     }
 
-    pub(crate) fn download(&self) -> Result<()> {
+    pub(crate) fn download(&self, fusion_base: impl AsRef<Path>) -> Result<()> {
         let req_info = self.inner.iter().map(|inter_input| {
             HandleFileInfo::new(&inter_input.download_path, &inter_input.file.url)
         });
-        let request = FileAgentRequest::new(HandleFileCommand::Download, req_info);
+        let request =
+            FileAgentRequest::new(HandleFileCommand::Download, req_info, fusion_base.as_ref());
         log::info!("Ocall file download request: {:?}", request);
         handle_file_request(request)?;
         Ok(())
@@ -203,12 +207,12 @@ impl std::iter::FromIterator<InterOutput> for InterOutputs {
 
 impl InterOutput {
     pub fn new(
-        base: impl AsRef<Path>,
+        inter_base: impl AsRef<Path>,
         funiq_key: String,
         file: FunctionOutputFile,
     ) -> Result<InterOutput> {
-        let upload_path = make_intermediate_path(base.as_ref(), &funiq_key, &file.url)?;
-        let staged_path = make_staged_path(base.as_ref(), &funiq_key, &file.url)?;
+        let upload_path = make_intermediate_path(inter_base.as_ref(), &funiq_key, &file.url)?;
+        let staged_path = make_staged_path(inter_base.as_ref(), &funiq_key, &file.url)?;
         let random_key = TeaclaveFile128Key::random();
         let staged_info = StagedFileInfo::new(&staged_path, random_key, FileAuthTag::default());
 
@@ -242,10 +246,13 @@ impl InterOutput {
 }
 
 impl InterOutputs {
-    pub fn new(base: impl AsRef<Path>, outputs: FunctionOutputFiles) -> Result<InterOutputs> {
+    pub fn new(
+        output_base: impl AsRef<Path>,
+        outputs: FunctionOutputFiles,
+    ) -> Result<InterOutputs> {
         outputs
             .into_iter()
-            .map(|(funiq_key, file)| InterOutput::new(base.as_ref(), funiq_key, file))
+            .map(|(funiq_key, file)| InterOutput::new(output_base.as_ref(), funiq_key, file))
             .collect()
     }
 
@@ -272,12 +279,13 @@ impl InterOutputs {
             .collect()
     }
 
-    pub(crate) fn upload(&self) -> Result<()> {
+    pub(crate) fn upload(&self, fusion_base: impl AsRef<Path>) -> Result<()> {
         let req_info = self.inner.iter().map(|inter_output| {
             HandleFileInfo::new(&inter_output.upload_path, &inter_output.file.url)
         });
-        let request = FileAgentRequest::new(HandleFileCommand::Upload, req_info);
-        log::info!("Ocall file download request: {:?}", request);
+        let request =
+            FileAgentRequest::new(HandleFileCommand::Upload, req_info, fusion_base.as_ref());
+        log::info!("Ocall file upload request: {:?}", request);
         handle_file_request(request)?;
         Ok(())
     }
@@ -333,8 +341,14 @@ pub mod tests {
         let outputs = hashmap!();
         let task_id = Uuid::new_v4();
 
-        let file_mgr =
-            TaskFileManager::new("/tmp", &task_id, &inputs.into(), &outputs.into()).unwrap();
+        let file_mgr = TaskFileManager::new(
+            "/tmp",
+            "/tmp/fusion_base",
+            &task_id,
+            &inputs.into(),
+            &outputs.into(),
+        )
+        .unwrap();
         file_mgr.prepare_staged_inputs().unwrap();
         file_mgr.prepare_staged_outputs().unwrap();
     }

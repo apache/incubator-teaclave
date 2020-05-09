@@ -64,7 +64,8 @@ pub mod tests {
         let dest = PathBuf::from("/tmp/execution_input_test.txt");
 
         let info = HandleFileInfo::new(&dest, &url);
-        let request = FileAgentRequest::new(HandleFileCommand::Download, vec![info]);
+        let request =
+            FileAgentRequest::new(HandleFileCommand::Download, vec![info], "/tmp/fusion_data");
 
         handle_file_request(request).unwrap();
         std::untrusted::fs::remove_file(&dest).unwrap();
