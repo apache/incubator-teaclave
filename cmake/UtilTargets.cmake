@@ -38,9 +38,11 @@ if(TEST_MODE)
   add_custom_target(
     run-functional-tests COMMAND ${TEACLAVE_COMMON_ENVS}
                                  ${MT_SCRIPT_DIR}/test.sh functional)
+  add_custom_target(run-examples COMMAND ${TEACLAVE_COMMON_ENVS}
+                                 ${MT_SCRIPT_DIR}/test.sh example)
 else()
   add_custom_target(
-    run-test
+    run-tests
     COMMAND
       echo
       "Note: Testing is not enabled in this build. Run cmake again with -DTEST_MODE=ON"

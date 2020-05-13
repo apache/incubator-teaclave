@@ -23,7 +23,7 @@ echo_title() {
 }
 
 start_storage_server() {
-  python ${TEACLAVE_PROJECT_ROOT}/tests/scripts/simple_http_server.py 6789 &
+  python3 ${TEACLAVE_PROJECT_ROOT}/tests/scripts/simple_http_server.py 6789 &
 }
 
 run_unit_tests() {
@@ -133,6 +133,34 @@ run_functional_tests() {
   cleanup
 }
 
+run_examples() {
+  trap cleanup INT TERM ERR
+
+  echo_title "examples"
+  pushd ${TEACLAVE_SERVICE_INSTALL_DIR}
+  ./teaclave_authentication_service &
+  ./teaclave_storage_service &
+  sleep 3    # wait for authentication and storage service
+  ./teaclave_management_service &
+  ./teaclave_scheduler_service &
+  sleep 3    # wait for management service and scheduler_service
+  ./teaclave_access_control_service &
+  ./teaclave_frontend_service &
+  sleep 3    # wait for other services
+
+  start_storage_server
+
+  # Run tests of execution service separately
+  ./teaclave_execution_service &
+  sleep 3    # wait for execution services
+  popd
+
+  python3 ${TEACLAVE_PROJECT_ROOT}/examples/python/builtin_echo.py
+
+  # kill all background services
+  cleanup
+}
+
 case "$1" in
     "unit")
         run_unit_tests
@@ -143,9 +171,13 @@ case "$1" in
     "functional")
         run_functional_tests
         ;;
+    "example")
+        run_examples
+        ;;
     *)
         run_unit_tests
         run_integration_tests
         run_functional_tests
+        run_examples
         ;;
 esac
