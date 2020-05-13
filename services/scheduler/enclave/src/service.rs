@@ -19,6 +19,7 @@
 #![allow(unused_variables)]
 
 use std::collections::VecDeque;
+use std::convert::TryInto;
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 use std::sync::{Arc, SgxMutex as Mutex};
@@ -29,10 +30,7 @@ use teaclave_proto::teaclave_storage_service::*;
 use teaclave_rpc::endpoint::Endpoint;
 use teaclave_rpc::Request;
 use teaclave_service_enclave_utils::teaclave_service;
-use teaclave_types::{
-    ExternalID, OutputsTags, StagedTask, Storable, Task, TaskFiles, TaskResult, TaskStatus,
-    TeaclaveOutputFile, TeaclaveServiceResponseError, TeaclaveServiceResponseResult,
-};
+use teaclave_types::*;
 use uuid::Uuid;
 
 use anyhow::anyhow;
@@ -98,8 +96,8 @@ impl TeaclaveSchedulerService {
             .map_err(|_| TeaclaveSchedulerError::DataError.into())
     }
 
-    fn get_task(&self, task_id: &Uuid) -> Result<Task> {
-        let key = ExternalID::new(Task::key_prefix(), task_id.to_owned());
+    fn get_task_state(&self, task_id: &Uuid) -> Result<TaskState> {
+        let key = ExternalID::new(TaskState::key_prefix(), task_id.to_owned());
         self.get_from_db(&key)
     }
 
@@ -169,13 +167,14 @@ impl TeaclaveScheduler for TeaclaveSchedulerService {
         request: Request<UpdateTaskStatusRequest>,
     ) -> TeaclaveServiceResponseResult<UpdateTaskStatusResponse> {
         let request = request.message;
-        let mut task = self.get_task(&request.task_id)?;
-
-        // Only TaskStatus::Running is allowed here so far.
-        task.invoking_by_executor()?;
+        let ts = self.get_task_state(&request.task_id)?;
+        let task: Task<Run> = ts.try_into()?;
 
         log::info!("UpdateTaskStatus: Task {:?}", task);
-        self.put_into_db(&task)?;
+        // Only TaskStatus::Running is implicitly allowed here.
+
+        let ts = TaskState::from(task);
+        self.put_into_db(&ts)?;
         Ok(UpdateTaskStatusResponse {})
     }
 
@@ -184,19 +183,22 @@ impl TeaclaveScheduler for TeaclaveSchedulerService {
         request: Request<UpdateTaskResultRequest>,
     ) -> TeaclaveServiceResponseResult<UpdateTaskResultResponse> {
         let request = request.message;
-        let mut task = self.get_task(&request.task_id)?;
+        let ts = self.get_task_state(&request.task_id)?;
+        let mut task: Task<Finish> = ts.try_into()?;
 
         if let TaskResult::Ok(outputs) = &request.task_result {
             for (key, auth_tag) in outputs.tags_map.iter() {
-                let outfile = task.assigned_outputs.update_cmac(key, auth_tag)?;
+                let outfile = task.update_output_cmac(key, auth_tag)?;
                 self.put_into_db(outfile)?;
             }
         };
 
         // Updating task result means we have finished execution
-        task.finish(request.task_result)?;
+        task.update_result(request.task_result)?;
+        log::info!("UpdateTaskResult: Task {:?}", task);
 
-        self.put_into_db(&task)?;
+        let ts = TaskState::from(task);
+        self.put_into_db(&ts)?;
         Ok(UpdateTaskResultResponse {})
     }
 }

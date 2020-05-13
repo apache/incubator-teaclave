@@ -51,10 +51,11 @@ pub fn test_echo_task_success() {
     let task_id = response.task_id;
 
     // Assign Data To Task
-    // This task does not have any input/output files, we can skip the assignment process.
+    // This task does not have any input/output files, we can opt to skip the assignment process.
 
     // Approve Task
-    approve_task(&mut client, &task_id).unwrap();
+    // This task is a single user task, we can opt to skip the approvement process.
+    // approve_task(&mut client, &task_id).unwrap();
 
     // Invoke Task
     invoke_task(&mut client, &task_id).unwrap();

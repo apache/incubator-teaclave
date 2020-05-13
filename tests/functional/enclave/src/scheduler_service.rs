@@ -51,12 +51,6 @@ fn test_pull_task() {
 #[test_case]
 fn test_update_task_status_result() {
     let task_id = Uuid::new_v4();
-    let task = Task {
-        task_id,
-        status: TaskStatus::Staged,
-        ..Default::default()
-    };
-
     let function_id = Uuid::new_v4();
 
     let staged_task = StagedTask::new()
@@ -72,7 +66,12 @@ fn test_update_task_status_result() {
     );
     let _enqueue_response = storage_client.enqueue(enqueue_request).unwrap();
 
-    let put_request = PutRequest::new(task.key().as_slice(), task.to_vec().unwrap().as_slice());
+    let ts = TaskState {
+        task_id,
+        status: TaskStatus::Staged,
+        ..Default::default()
+    };
+    let put_request = PutRequest::new(ts.key().as_slice(), ts.to_vec().unwrap().as_slice());
     let _put_response = storage_client.put(put_request).unwrap();
 
     let mut client = get_scheduler_client();

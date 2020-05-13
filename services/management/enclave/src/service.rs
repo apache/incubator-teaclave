@@ -17,6 +17,7 @@
 
 use anyhow::{anyhow, Result};
 use std::collections::HashMap;
+use std::convert::TryInto;
 use std::prelude::v1::*;
 use std::sync::{Arc, SgxMutex as Mutex};
 use teaclave_proto::teaclave_frontend_service::{
@@ -36,11 +37,7 @@ use teaclave_proto::teaclave_storage_service::{
 use teaclave_rpc::endpoint::Endpoint;
 use teaclave_rpc::Request;
 use teaclave_service_enclave_utils::{ensure, teaclave_service};
-use teaclave_types::{
-    ExternalID, FileCrypto, Function, OwnerList, StagedTask, Storable, Task, TaskStatus,
-    TeaclaveInputFile, TeaclaveOutputFile, TeaclaveServiceResponseError,
-    TeaclaveServiceResponseResult, UserID,
-};
+use teaclave_types::*;
 use thiserror::Error;
 use url::Url;
 use uuid::Uuid;
@@ -266,7 +263,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
             .read_from_db(&request.function_id)
             .map_err(|_| ServiceError::PermissionDenied)?;
 
-        let task = Task::new(
+        let task = Task::<Create>::new(
             user_id,
             request.executor,
             request.function_arguments,
@@ -278,10 +275,12 @@ impl TeaclaveManagement for TeaclaveManagementService {
 
         log::info!("CreateTask: {:?}", task);
 
-        self.write_to_db(&task)
+        let ts: TaskState = task.into();
+        self.write_to_db(&ts)
             .map_err(|_| ServiceError::StorageError)?;
 
-        Ok(CreateTaskResponse::new(task.external_id()))
+        let response = CreateTaskResponse::new(ts.external_id());
+        Ok(response)
     }
 
     // access control: task.participants.contains(&user_id)
@@ -291,31 +290,28 @@ impl TeaclaveManagement for TeaclaveManagementService {
     ) -> TeaclaveServiceResponseResult<GetTaskResponse> {
         let user_id = self.get_request_user_id(request.metadata())?;
 
-        let task: Task = self
+        let ts: TaskState = self
             .read_from_db(&request.message.task_id)
             .map_err(|_| ServiceError::PermissionDenied)?;
 
-        ensure!(
-            task.participants.contains(&user_id),
-            ServiceError::PermissionDenied
-        );
+        ensure!(ts.has_participant(&user_id), ServiceError::PermissionDenied);
 
-        log::info!("GetTask: {:?}", task);
+        log::info!("GetTask: {:?}", ts);
 
         let response = GetTaskResponse {
-            task_id: task.external_id(),
-            creator: task.creator,
-            function_id: task.function_id,
-            function_owner: task.function_owner,
-            function_arguments: task.function_arguments,
-            inputs_ownership: task.inputs_ownership,
-            outputs_ownership: task.outputs_ownership,
-            participants: task.participants,
-            approved_users: task.approved_users,
-            assigned_inputs: task.assigned_inputs.external_ids(),
-            assigned_outputs: task.assigned_outputs.external_ids(),
-            result: task.result,
-            status: task.status,
+            task_id: ts.external_id(),
+            creator: ts.creator,
+            function_id: ts.function_id,
+            function_owner: ts.function_owner,
+            function_arguments: ts.function_arguments,
+            inputs_ownership: ts.inputs_ownership,
+            outputs_ownership: ts.outputs_ownership,
+            participants: ts.participants,
+            approved_users: ts.approved_users,
+            assigned_inputs: ts.assigned_inputs.external_ids(),
+            assigned_outputs: ts.assigned_outputs.external_ids(),
+            result: ts.result,
+            status: ts.status,
         };
         Ok(response)
     }
@@ -338,14 +334,16 @@ impl TeaclaveManagement for TeaclaveManagementService {
 
         let request = request.message;
 
-        let mut task: Task = self
+        let ts: TaskState = self
             .read_from_db(&request.task_id)
             .map_err(|_| ServiceError::PermissionDenied)?;
 
-        ensure!(
-            task.participants.contains(&user_id),
+        ensure!(ts.has_participant(&user_id), ServiceError::PermissionDenied);
+
+        let mut task: Task<Assign> = ts.try_into().map_err(|e| {
+            log::warn!("Assign state error: {:?}", e);
             ServiceError::PermissionDenied
-        );
+        })?;
 
         for (data_name, data_id) in request.inputs.iter() {
             let file: TeaclaveInputFile = self
@@ -365,7 +363,8 @@ impl TeaclaveManagement for TeaclaveManagementService {
 
         log::info!("AssignData: {:?}", task);
 
-        self.write_to_db(&task)
+        let ts: TaskState = task.into();
+        self.write_to_db(&ts)
             .map_err(|_| ServiceError::StorageError)?;
 
         Ok(AssignDataResponse)
@@ -381,16 +380,22 @@ impl TeaclaveManagement for TeaclaveManagementService {
         let user_id = self.get_request_user_id(request.metadata())?;
 
         let request = request.message;
-        let mut task: Task = self
+        let ts: TaskState = self
             .read_from_db(&request.task_id)
             .map_err(|_| ServiceError::PermissionDenied)?;
+
+        let mut task: Task<Approve> = ts.try_into().map_err(|e| {
+            log::warn!("Approve state error: {:?}", e);
+            ServiceError::PermissionDenied
+        })?;
 
         task.approve(&user_id)
             .map_err(|_| ServiceError::PermissionDenied)?;
 
         log::info!("ApproveTask: approve:{:?}", task);
 
-        self.write_to_db(&task)
+        let ts: TaskState = task.into();
+        self.write_to_db(&ts)
             .map_err(|_| ServiceError::StorageError)?;
 
         Ok(ApproveTaskResponse)
@@ -406,32 +411,36 @@ impl TeaclaveManagement for TeaclaveManagementService {
         let user_id = self.get_request_user_id(request.metadata())?;
         let request = request.message;
 
-        let mut task: Task = self
+        let ts: TaskState = self
             .read_from_db(&request.task_id)
             .map_err(|_| ServiceError::PermissionDenied)?;
 
-        log::info!("InvokeTask: get task: {:?}", task);
-
         // Early validation
-        ensure!(task.creator == user_id, ServiceError::PermissionDenied);
-        ensure!(
-            task.status == TaskStatus::Approved,
-            ServiceError::PermissionDenied
-        );
+        ensure!(ts.has_creator(&user_id), ServiceError::PermissionDenied);
 
         let function: Function = self
-            .read_from_db(&task.function_id)
+            .read_from_db(&ts.function_id)
             .map_err(|_| ServiceError::PermissionDenied)?;
 
         log::info!("InvokeTask: get function: {:?}", function);
+
+        let mut task: Task<Stage> = ts.try_into().map_err(|e| {
+            log::warn!("Stage state error: {:?}", e);
+            ServiceError::PermissionDenied
+        })?;
+
+        log::info!("InvokeTask: get task: {:?}", task);
 
         let staged_task = task.stage_for_running(&user_id, function)?;
 
         log::info!("InvokeTask: staged task: {:?}", staged_task);
 
         self.enqueue_to_db(StagedTask::get_queue_key().as_bytes(), &staged_task)?;
-        self.write_to_db(&task)
+
+        let ts: TaskState = task.into();
+        self.write_to_db(&ts)
             .map_err(|_| ServiceError::StorageError)?;
+
         Ok(InvokeTaskResponse)
     }
 }
@@ -516,7 +525,6 @@ impl TeaclaveManagementService {
 
     #[cfg(test_mode)]
     fn add_mock_data(&self) -> Result<()> {
-        use teaclave_types::{FileAuthTag, FunctionInput, FunctionOutput};
         let mut output_file = self.create_fusion_data(vec!["mock_user1", "frontend_user"])?;
         output_file.uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000001")?;
         output_file.cmac = Some(FileAuthTag::mock());
@@ -625,7 +633,7 @@ pub mod tests {
             .owner("mock_user");
         let function_arguments = FunctionArguments::new(hashmap!("arg" => "data"));
 
-        let task = Task::new(
+        let task = Task::<Create>::new(
             UserID::from("mock_user"),
             Executor::MesaPy,
             function_arguments,
@@ -635,9 +643,9 @@ pub mod tests {
         )
         .unwrap();
 
-        assert!(Task::match_prefix(&task.key_string()));
-        let value = task.to_vec().unwrap();
-        let deserialized_task = Task::from_slice(&value).unwrap();
+        let ts: TaskState = task.try_into().unwrap();
+        let value = ts.to_vec().unwrap();
+        let deserialized_task = TaskState::from_slice(&value).unwrap();
         info!("task: {:?}", deserialized_task);
     }
 
