@@ -85,8 +85,39 @@ Starting teaclave-frontend-service       ... done
 Attaching to ...
 ```
 
-## Simulation Mode
+## Invoke Function
 
+We provide several examples to demonstrating the platform. Let's get started
+with invoking a built-in function: echo, which is a simple function takes one
+input message and return it.
+
+This example is written in Python, and some dependencies are needed for the
+remote attestation. They can be installed with `pip`:
+
+```
+$ pip3 install pyopenssl toml cryptography
+```
+
+Then, run the echo example:
+
+```
+$ cd examples/python
+$ python3 builtin_echo.py 'Hello, Teaclave!'
+[+] registering user
+[+] login
+[+] registering function
+[+] creating task
+[+] approving task
+[+] invoking task
+[+] getting result
+[+] done
+[+] function return:  b'Hello, Teaclave!'
+```
+
+If you see above log, this means that the function is successfully invoked in
+Teaclave.
+
+## Simulation Mode
 To try Teaclave in SGX simulation mode, please install Intel SGX SDK first with instructions in
 [Intel SGX Installation Guide](https://download.01.org/intel-sgx/sgx-linux/2.9/docs/Intel_SGX_Installation_Guide_Linux_2.9_Open_Source.pdf).
 
