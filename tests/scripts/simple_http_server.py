@@ -1,7 +1,11 @@
-import SimpleHTTPServer
+#!/usr/bin/env python3
+
+from http.server import SimpleHTTPRequestHandler
+import socketserver
+import sys
 
 
-class HTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+class HTTPRequestHandler(SimpleHTTPRequestHandler):
     def do_PUT(self):
         length = int(self.headers["Content-Length"])
 
@@ -14,4 +18,11 @@ class HTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
 
 if __name__ == '__main__':
-    SimpleHTTPServer.test(HandlerClass=HTTPRequestHandler)
+    if len(sys.argv) > 1:
+        port = int(sys.argv[1])
+    else:
+        port = 6789
+    socketserver.TCPServer.allow_reuse_address = True
+    with socketserver.TCPServer(("localhost", port), HTTPRequestHandler) as httpd:
+        print("serving at port", port)
+        httpd.serve_forever()
