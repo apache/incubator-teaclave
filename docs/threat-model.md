@@ -1,3 +1,7 @@
+---
+permalink: /docs/threat-model
+---
+
 # Threat Model
 
 With its strongest security setting applied, Teaclave guarantees data

@@ -1,3 +1,7 @@
+---
+permalink: /dcap
+---
+
 # Data Center Attestation Service
 
 This directory includes a reference implementation of data center attestation

@@ -1,3 +1,7 @@
+---
+permalink: /docs/rust-guildeline
+---
+
 # Rust Development Guideline
 
 This doc defines some guidelines for developing Teaclave in Rust.

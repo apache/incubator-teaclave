@@ -1,3 +1,7 @@
+---
+permalink: /services
+---
+
 # Teaclave Services
 
 This directory contains protocol definitions and implementations of services in

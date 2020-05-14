@@ -1,3 +1,7 @@
+---
+permalink: /docs/
+---
+
 # Teaclave Documentation
 
 - [My First Function](my-first-function.md)

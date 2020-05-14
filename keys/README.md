@@ -1,3 +1,7 @@
+---
+permalink: /keys
+---
+
 # Keys and Certificates in Teaclave
 
 This directory contains keys and certificates used in the Teaclave platform.
