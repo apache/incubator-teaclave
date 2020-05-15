@@ -1,3 +1,7 @@
+---
+permalink: /config
+---
+
 # Configurations in Teaclave
 
 This Teaclave Config describes all sorts of configurations in the platform. All

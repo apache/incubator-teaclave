@@ -1,3 +1,7 @@
+---
+permalink: /docs/mutual-attestation
+---
+
 # Mutual Attestation: Why and How
 
 The standard procedure to establish a secure and trusted communication channel

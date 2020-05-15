@@ -1,3 +1,7 @@
+---
+permalink: /docker
+---
+
 # Teaclave Docker
 
 This directory contains the docker infrastructure for build and runtime

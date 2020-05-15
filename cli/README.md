@@ -1,3 +1,7 @@
+---
+permalink: /cli
+---
+
 # Teaclave Command Line Tool
 
 The Teaclave command line tool (`teaclave_cli`) provides utilities to

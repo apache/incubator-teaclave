@@ -1,3 +1,7 @@
+---
+permalink: /docs/my-first-function
+---
+
 # My First Function
 
 This documentation will guide you through executing your first function on the
