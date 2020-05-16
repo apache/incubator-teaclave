@@ -1,4 +1,9 @@
-# Contributors of Apache Teaclave (incubating)
+---
+permalink: /contributors
+sidebar: false
+---
+
+# Contributors
 
 Teaclave adopts [The Apache Way](https://www.apache.org/theapacheway/).
 Everyone is more than welcome to contribute and make the project better.
