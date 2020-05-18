@@ -55,17 +55,23 @@ def user_login(channel, user_id, user_password):
 
 
 def register_function(channel, user_id, token):
+    payload = b"""
+def entrypoint(argv):
+    assert argv[0] == 'message'
+    assert argv[1] is not None
+    return argv[1]
+"""
     message = {
         "metadata": {
             "id": user_id,
             "token": token
         },
         "request": "register_function",
-        "name": "builtin-echo",
-        "description": "Native Echo Function",
-        "executor_type": "builtin",
+        "name": "mesapy-echo",
+        "description": "An echo function implemented in Python",
+        "executor_type": "python",
         "public": True,
-        "payload": [],
+        "payload": list(payload),
         "arguments": ["message"],
         "inputs": [],
         "outputs": [],
@@ -87,7 +93,7 @@ def create_task(channel, user_id, token, function_id, message):
         "function_arguments": {
             "message": message,
         },
-        "executor": "builtin",
+        "executor": "mesapy",
         "inputs_ownership": [],
         "outputs_ownership": [],
     }
@@ -146,7 +152,7 @@ def get_task_result(channel, user_id, token, task_id):
     return response["content"]["result"]["result"]["Ok"]["return_value"]
 
 
-class BuiltinEchoExample:
+class MesaPyEchoExample:
     def __init__(self, user_id, user_password):
         self.user_id = user_id
         self.user_password = user_password
@@ -188,7 +194,7 @@ class BuiltinEchoExample:
 
 
 def main():
-    example = BuiltinEchoExample(USER_ID, USER_PASSWORD)
+    example = MesaPyEchoExample(USER_ID, USER_PASSWORD)
     if len(sys.argv) > 1:
         message = sys.argv[1]
         rt = example.echo(message)
