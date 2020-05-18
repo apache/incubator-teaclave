@@ -39,8 +39,9 @@ Build the Teaclave platform using docker:
 ```
 $ cd incubator-teaclave
 $ docker run --rm -v $(pwd):/teaclave -w /teaclave \
-  -it teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest \
+  -it teaclave/teaclave-build-ubuntu-1804-sgx-2.9.1:latest \
    bash -c ". /root/.cargo/env && \
+     . /opt/sgxsdk/environment && \
      mkdir -p build && cd build && \
      cmake -DTEST_MODE=ON .. && \
      make"
