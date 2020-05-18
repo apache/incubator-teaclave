@@ -174,9 +174,6 @@ class BuiltinEchoExample:
         print("[+] creating task")
         task_id = create_task(channel, self.user_id,
                               token, function_id, message)
-        print("[+] approving task")
-        approve_task(channel, self.user_id, token, task_id)
-
         print("[+] invoking task")
         invoke_task(channel, self.user_id, token, task_id)
 
