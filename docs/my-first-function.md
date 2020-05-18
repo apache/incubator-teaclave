@@ -150,6 +150,19 @@ $ export AS_ALGO="sgx_epid"
 $ export AS_URL="https://api.trustedservices.intel.com:443"
 ```
 
+Under the simulation mode, you also need to change the
+`docker-compose-ubuntu-1804.yml` file accordingly to remove useless
+device/volume mappings which may not exist. That is, comment out these lines for
+all services in the `docker-compose` config file:
+
+```
+#      - type: bind
+#        source: /var/run/aesmd/aesm.socket
+#        target: /var/run/aesmd/aesm.socket
+#    devices:
+#      - /dev/isgx
+```
+
 At last, launch all services with `docker-compose`:
 
 ```
