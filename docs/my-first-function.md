@@ -107,7 +107,7 @@ Then, run the echo example:
 
 ```
 $ cd examples/python
-$ python3 builtin_echo.py 'Hello, Teaclave!'
+$ PYTHONPATH=../../sdk/python python3 builtin_echo.py 'Hello, Teaclave!'
 [+] registering user
 [+] login
 [+] registering function
