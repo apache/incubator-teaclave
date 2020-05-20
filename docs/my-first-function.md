@@ -168,3 +168,10 @@ At last, launch all services with `docker-compose`:
 ```
 $ (cd docker && docker-compose -f docker-compose-ubuntu-1804.yml up --build)
 ```
+
+In simulation mode, run examples with `SGX_MODE=SW` environment variable.
+
+```
+$ cd examples/python
+$ SGX_MODE=SW PYTHONPATH=../../sdk/python python3 builtin_echo.py 'Hello, Teaclave!'
+```
