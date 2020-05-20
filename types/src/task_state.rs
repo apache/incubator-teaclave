@@ -218,6 +218,7 @@ impl Task<Approve> {
         Ok(())
     }
 }
+
 impl Task<Stage> {
     pub fn new(ts: TaskState) -> Result<Self> {
         let task = Task::<Stage> {
@@ -296,46 +297,55 @@ impl Task<Done> {
     }
 }
 
-impl std::convert::TryFrom<Task<Assign>> for Task<Approve> {
-    type Error = Error;
-    fn try_from(task: Task<Assign>) -> Result<Task<Approve>> {
-        ensure!(
-            task.state.all_data_assigned(),
-            "Not ready: Assign -> Approve"
-        );
-        Task::<Approve>::new(task.state)
+trait TryTransitionTo<T>: Sized {
+    type Error;
+    fn try_transition_to(self) -> std::result::Result<T, Error>;
+    fn ready_for_transition(&self) -> bool {
+        true
     }
 }
 
-impl std::convert::TryFrom<Task<Approve>> for Task<Stage> {
+impl TryTransitionTo<Task<Approve>> for Task<Assign> {
     type Error = Error;
-    fn try_from(task: Task<Approve>) -> Result<Task<Stage>> {
-        ensure!(
-            task.state.everyone_approved(),
-            "Not ready: Apporve -> Stage"
-        );
-        Task::<Stage>::new(task.state)
+    fn try_transition_to(self) -> Result<Task<Approve>> {
+        ensure!(self.ready_for_transition(), "Not ready: Assign -> Approve");
+        Task::<Approve>::new(self.state)
+    }
+
+    fn ready_for_transition(&self) -> bool {
+        self.state.all_data_assigned()
     }
 }
 
-impl std::convert::TryFrom<Task<Stage>> for Task<Run> {
+impl TryTransitionTo<Task<Stage>> for Task<Approve> {
     type Error = Error;
-    fn try_from(task: Task<Stage>) -> Result<Task<Run>> {
-        Task::<Run>::new(task.state)
+    fn try_transition_to(self) -> Result<Task<Stage>> {
+        ensure!(self.ready_for_transition(), "Not ready: Apporve -> Stage");
+        Task::<Stage>::new(self.state)
+    }
+    fn ready_for_transition(&self) -> bool {
+        self.state.everyone_approved()
     }
 }
 
-impl std::convert::TryFrom<Task<Run>> for Task<Finish> {
+impl TryTransitionTo<Task<Run>> for Task<Stage> {
     type Error = Error;
-    fn try_from(task: Task<Run>) -> Result<Task<Finish>> {
-        Task::<Finish>::new(task.state)
+    fn try_transition_to(self) -> Result<Task<Run>> {
+        Task::<Run>::new(self.state)
     }
 }
 
-impl std::convert::TryFrom<Task<Finish>> for Task<Done> {
+impl TryTransitionTo<Task<Finish>> for Task<Run> {
     type Error = Error;
-    fn try_from(task: Task<Finish>) -> Result<Task<Done>> {
-        Task::<Done>::new(task.state)
+    fn try_transition_to(self) -> Result<Task<Finish>> {
+        Task::<Finish>::new(self.state)
+    }
+}
+
+impl TryTransitionTo<Task<Done>> for Task<Finish> {
+    type Error = Error;
+    fn try_transition_to(self) -> Result<Task<Done>> {
+        Task::<Done>::new(self.state)
     }
 }
 
@@ -358,7 +368,7 @@ impl std::convert::TryFrom<TaskState> for Task<Approve> {
         let task = match ts.status {
             TaskStatus::Created => {
                 let task: Task<Assign> = ts.try_into()?;
-                task.try_into()?
+                task.try_transition_to()?
             }
             TaskStatus::DataAssigned => Task::<Approve>::new(ts)?,
             _ => bail!("Cannot restore to Approve from saved state"),
@@ -374,7 +384,7 @@ impl std::convert::TryFrom<TaskState> for Task<Stage> {
         let task = match ts.status {
             TaskStatus::Created | TaskStatus::DataAssigned => {
                 let task: Task<Approve> = ts.try_into()?;
-                task.try_into()?
+                task.try_transition_to()?
             }
             TaskStatus::Approved => Task::<Stage>::new(ts)?,
             _ => bail!("Cannot restore to Stage from saved state"),
@@ -425,17 +435,14 @@ macro_rules! impl_transit_and_into_task_state {
     ( $cur:ty => $next:ty ) => {
         impl std::convert::From<Task<$cur>> for TaskState {
             fn from(mut task: Task<$cur>) -> TaskState {
-                let nt: Result<Task<$next>> = task.clone().try_into();
-                match nt {
-                    Ok(mut t) => {
-                        t.state.status = t.extra.into();
-                        t.state
-                    }
-                    Err(_) => {
-                        task.state.status = task.extra.into();
-                        task.state
-                    }
+                if <Task<$cur> as TryTransitionTo<Task<$next>>>::ready_for_transition(&task) {
+                    // We assume that if it's ready for transistion, the result is always Ok.
+                    let mut nt: Task<$next> = task.try_transition_to().unwrap();
+                    nt.state.status = nt.extra.into();
+                    return nt.state;
                 }
+                task.state.status = task.extra.into();
+                task.state
             }
         }
     };
