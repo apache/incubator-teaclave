@@ -177,6 +177,7 @@ fn finalize_task(file_mgr: &TaskFileManager) -> Result<HashMap<String, FileAuthT
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
+    use serde_json::json;
     use std::format;
     use teaclave_crypto::*;
     use url::Url;
@@ -184,11 +185,13 @@ pub mod tests {
 
     pub fn test_invoke_echo() {
         let task_id = Uuid::new_v4();
+        let function_arguments =
+            FunctionArguments::from_json(json!({"message": "Hello, Teaclave!"})).unwrap();
         let staged_task = StagedTask::new()
             .task_id(task_id)
             .executor(Executor::Builtin)
             .function_name("builtin-echo")
-            .function_arguments(hashmap!("message" => "Hello, Teaclave!"));
+            .function_arguments(function_arguments);
 
         let file_mgr = TaskFileManager::new(
             WORKER_BASE_DIR,
@@ -210,17 +213,18 @@ pub mod tests {
 
     pub fn test_invoke_gbdt_train() {
         let task_id = Uuid::new_v4();
-        let function_arguments = FunctionArguments::new(hashmap!(
-            "feature_size"                => "4",
-            "max_depth"                   => "4",
-            "iterations"                  => "100",
-            "shrinkage"                   => "0.1",
-            "feature_sample_ratio"        => "1.0",
-            "data_sample_ratio"           => "1.0",
-            "min_leaf_size"               => "1",
-            "loss"                        => "LAD",
-            "training_optimization_level" => "2",
-        ));
+        let function_arguments = FunctionArguments::from_json(json!({
+            "feature_size": 4,
+            "max_depth": 4,
+            "iterations": 100,
+            "shrinkage": 0.1,
+            "feature_sample_ratio": 1.0,
+            "data_sample_ratio": 1.0,
+            "min_leaf_size": 1,
+            "loss": "LAD",
+            "training_optimization_level": 2,
+        }))
+        .unwrap();
         let fixture_dir = format!(
             "file:///{}/fixtures/functions/gbdt_training",
             env!("TEACLAVE_TEST_INSTALL_DIR")

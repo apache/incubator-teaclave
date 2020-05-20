@@ -103,20 +103,22 @@ fn create_gbdt_training_task(
     client: &mut TeaclaveFrontendClient,
     function_id: &ExternalID,
 ) -> ExternalID {
+    let arguments = FunctionArguments::from_json(serde_json::json!({
+        "feature_size": 4,
+        "max_depth": 4,
+        "iterations": 100,
+        "shrinkage": 0.1,
+        "feature_sample_ratio": 1.0,
+        "data_sample_ratio": 1.0,
+        "min_leaf_size": 1,
+        "loss": "LAD",
+        "training_optimization_level": 2
+    }))
+    .unwrap();
     let request = CreateTaskRequest::new()
         .executor(Executor::Builtin)
         .function_id(function_id.clone())
-        .function_arguments(hashmap!(
-            "feature_size"          => "4",
-            "max_depth"             => "4",
-            "iterations"            => "100",
-            "shrinkage"             => "0.1",
-            "feature_sample_ratio"  => "1.0",
-            "data_sample_ratio"     => "1.0",
-            "min_leaf_size"         => "1",
-            "loss"                  => "LAD",
-            "training_optimization_level" => "2"
-        ))
+        .function_arguments(arguments)
         .inputs_ownership(hashmap!("training_data" => vec![USERNAME]))
         .outputs_ownership(hashmap!("trained_model" => vec![USERNAME]));
 

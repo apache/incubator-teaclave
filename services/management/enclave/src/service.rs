@@ -576,6 +576,7 @@ impl TeaclaveManagementService {
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
+    use serde_json::json;
     use std::collections::HashMap;
     use teaclave_types::{
         hashmap, Executor, FileAuthTag, FileCrypto, FunctionArguments, FunctionInput,
@@ -631,7 +632,7 @@ pub mod tests {
             .arguments(vec!["arg".to_string()])
             .public(true)
             .owner("mock_user");
-        let function_arguments = FunctionArguments::new(hashmap!("arg" => "data"));
+        let function_arguments = FunctionArguments::from_json(json!({"arg": "data"})).unwrap();
 
         let task = Task::<Create>::new(
             UserID::from("mock_user"),

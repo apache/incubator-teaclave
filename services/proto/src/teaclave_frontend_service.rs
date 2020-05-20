@@ -958,7 +958,7 @@ impl std::convert::TryFrom<proto::CreateTaskRequest> for CreateTaskRequest {
     type Error = Error;
 
     fn try_from(proto: proto::CreateTaskRequest) -> Result<Self> {
-        let function_arguments = proto.function_arguments.into();
+        let function_arguments: FunctionArguments = proto.function_arguments.try_into()?;
         let inputs_ownership = from_proto_ownership(proto.inputs_ownership);
         let outputs_ownership = from_proto_ownership(proto.outputs_ownership);
         let function_id = proto.function_id.try_into()?;
@@ -977,7 +977,7 @@ impl std::convert::TryFrom<proto::CreateTaskRequest> for CreateTaskRequest {
 
 impl From<CreateTaskRequest> for proto::CreateTaskRequest {
     fn from(request: CreateTaskRequest) -> Self {
-        let function_arguments = request.function_arguments.into();
+        let function_arguments = request.function_arguments.into_string();
         let inputs_ownership = to_proto_ownership(request.inputs_ownership);
         let outputs_ownership = to_proto_ownership(request.outputs_ownership);
 
@@ -1054,7 +1054,7 @@ impl std::convert::TryFrom<proto::GetTaskResponse> for GetTaskResponse {
     type Error = Error;
 
     fn try_from(proto: proto::GetTaskResponse) -> Result<Self> {
-        let function_arguments = proto.function_arguments.into();
+        let function_arguments: FunctionArguments = proto.function_arguments.try_into()?;
         let inputs_ownership = from_proto_ownership(proto.inputs_ownership);
         let outputs_ownership = from_proto_ownership(proto.outputs_ownership);
         let assigned_inputs = from_proto_file_ids(proto.assigned_inputs)?;
@@ -1086,7 +1086,7 @@ impl std::convert::TryFrom<proto::GetTaskResponse> for GetTaskResponse {
 
 impl From<GetTaskResponse> for proto::GetTaskResponse {
     fn from(response: GetTaskResponse) -> Self {
-        let function_arguments = response.function_arguments.into();
+        let function_arguments = response.function_arguments.into_string();
         let inputs_ownership = to_proto_ownership(response.inputs_ownership);
         let outputs_ownership = to_proto_ownership(response.outputs_ownership);
         let assigned_inputs = to_proto_file_ids(response.assigned_inputs);

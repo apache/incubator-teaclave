@@ -24,6 +24,7 @@ use teaclave_types::{FunctionArguments, FunctionRuntime};
 #[derive(Default)]
 pub struct Echo;
 
+#[derive(serde::Deserialize)]
 struct EchoArguments {
     message: String,
 }
@@ -32,8 +33,8 @@ impl TryFrom<FunctionArguments> for EchoArguments {
     type Error = anyhow::Error;
 
     fn try_from(arguments: FunctionArguments) -> Result<Self, Self::Error> {
-        let message = arguments.get("message")?.to_string();
-        Ok(Self { message })
+        use anyhow::Context;
+        serde_json::from_str(&arguments.into_string()).context("Cannot deserialize arguments")
     }
 }
 
@@ -57,6 +58,7 @@ impl Echo {
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
+    use serde_json::json;
     use teaclave_runtime::*;
     use teaclave_test_utils::*;
     use teaclave_types::*;
@@ -66,9 +68,10 @@ pub mod tests {
     }
 
     fn test_echo() {
-        let args = FunctionArguments::new(hashmap!(
-            "message"  => "Hello Teaclave!"
-        ));
+        let args = FunctionArguments::from_json(json!({
+            "message": "Hello Teaclave!"
+        }))
+        .unwrap();
 
         let input_files = StagedFiles::default();
         let output_files = StagedFiles::default();

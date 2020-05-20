@@ -34,6 +34,7 @@ const OUT_MODEL: &str = "trained_model";
 #[derive(Default)]
 pub struct GbdtTrain;
 
+#[derive(serde::Deserialize)]
 struct GbdtTrainArguments {
     feature_size: usize,
     max_depth: u32,
@@ -50,27 +51,8 @@ impl TryFrom<FunctionArguments> for GbdtTrainArguments {
     type Error = anyhow::Error;
 
     fn try_from(arguments: FunctionArguments) -> Result<Self, Self::Error> {
-        let feature_size = arguments.get("feature_size")?.as_usize()?;
-        let max_depth = arguments.get("max_depth")?.as_u32()?;
-        let iterations = arguments.get("iterations")?.as_usize()?;
-        let shrinkage = arguments.get("shrinkage")?.as_f32()?;
-        let feature_sample_ratio = arguments.get("feature_sample_ratio")?.as_f64()?;
-        let data_sample_ratio = arguments.get("data_sample_ratio")?.as_f64()?;
-        let min_leaf_size = arguments.get("min_leaf_size")?.as_usize()?;
-        let loss = arguments.get("loss")?.as_str().to_owned();
-        let training_optimization_level = arguments.get("training_optimization_level")?.as_u8()?;
-
-        Ok(Self {
-            feature_size,
-            max_depth,
-            iterations,
-            shrinkage,
-            feature_sample_ratio,
-            data_sample_ratio,
-            min_leaf_size,
-            loss,
-            training_optimization_level,
-        })
+        use anyhow::Context;
+        serde_json::from_str(&arguments.into_string()).context("Cannot deserialize arguments")
     }
 }
 
@@ -164,6 +146,7 @@ fn parse_training_data(input: impl io::Read, feature_size: usize) -> anyhow::Res
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
+    use serde_json::json;
     use std::untrusted::fs;
     use teaclave_crypto::*;
     use teaclave_runtime::*;
@@ -175,17 +158,18 @@ pub mod tests {
     }
 
     fn test_gbdt_train() {
-        let arguments = FunctionArguments::new(hashmap!(
-            "feature_size"  => "4",
-            "max_depth"     => "4",
-            "iterations"    => "100",
-            "shrinkage"     => "0.1",
-            "feature_sample_ratio" => "1.0",
-            "data_sample_ratio" => "1.0",
-            "min_leaf_size" => "1",
-            "loss"          => "LAD",
-            "training_optimization_level" => "2"
-        ));
+        let arguments = FunctionArguments::from_json(json!({
+            "feature_size"                : 4,
+            "max_depth"                   : 4,
+            "iterations"                  : 100,
+            "shrinkage"                   : 0.1,
+            "feature_sample_ratio"        : 1.0,
+            "data_sample_ratio"           : 1.0,
+            "min_leaf_size"               : 1,
+            "loss"                        : "LAD",
+            "training_optimization_level" : 2
+        }))
+        .unwrap();
 
         let plain_input = "fixtures/functions/gbdt_training/train.txt";
         let plain_output = "fixtures/functions/gbdt_training/training_model.txt.out";

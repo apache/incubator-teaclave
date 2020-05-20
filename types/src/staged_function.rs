@@ -20,103 +20,22 @@ use crate::{Executor, ExecutorType, StagedFiles, TeaclaveRuntime};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::prelude::v1::*;
-use std::str::FromStr;
 
 use anyhow::{Context, Result};
 
 pub type FunctionRuntime = Box<dyn TeaclaveRuntime + Send + Sync>;
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct ArgumentValue {
-    inner: String,
-}
-
-impl From<String> for ArgumentValue {
-    fn from(value: String) -> Self {
-        ArgumentValue::new(value)
-    }
-}
-
-impl From<&str> for ArgumentValue {
-    fn from(value: &str) -> Self {
-        ArgumentValue::new(value.into())
-    }
-}
-
-impl From<&String> for ArgumentValue {
-    fn from(value: &String) -> Self {
-        ArgumentValue::new(value.into())
-    }
-}
-
-impl From<ArgumentValue> for String {
-    fn from(value: ArgumentValue) -> Self {
-        value.as_str().to_owned()
-    }
-}
-
-impl ArgumentValue {
-    pub fn new(value: String) -> Self {
-        Self { inner: value }
-    }
-
-    pub fn inner(&self) -> &String {
-        &self.inner
-    }
-
-    pub fn as_str(&self) -> &str {
-        &self.inner
-    }
-
-    pub fn as_usize(&self) -> Result<usize> {
-        usize::from_str(&self.inner).with_context(|| format!("cannot parse {}", self.inner))
-    }
-
-    pub fn as_u32(&self) -> Result<u32> {
-        u32::from_str(&self.inner).with_context(|| format!("cannot parse {}", self.inner))
-    }
-
-    pub fn as_f32(&self) -> Result<f32> {
-        f32::from_str(&self.inner).with_context(|| format!("cannot parse {}", self.inner))
-    }
-
-    pub fn as_f64(&self) -> Result<f64> {
-        f64::from_str(&self.inner).with_context(|| format!("cannot parse {}", self.inner))
-    }
-
-    pub fn as_u8(&self) -> Result<u8> {
-        u8::from_str(&self.inner).with_context(|| format!("cannot parse {}", self.inner))
-    }
-}
-
-impl std::fmt::Display for ArgumentValue {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.inner)
-    }
-}
+type ArgumentValue = serde_json::Value;
 
 #[derive(Clone, Serialize, Deserialize, Debug, Default)]
 pub struct FunctionArguments {
     #[serde(flatten)]
-    inner: HashMap<String, ArgumentValue>,
-}
-
-impl<S: core::default::Default + std::hash::BuildHasher> From<FunctionArguments>
-    for HashMap<String, String, S>
-{
-    fn from(arguments: FunctionArguments) -> Self {
-        arguments
-            .inner()
-            .iter()
-            .map(|(k, v)| (k.to_owned(), v.as_str().to_owned()))
-            .collect()
-    }
+    inner: serde_json::Map<String, ArgumentValue>,
 }
 
 impl From<HashMap<String, String>> for FunctionArguments {
     fn from(map: HashMap<String, String>) -> Self {
-        let inner = map.iter().fold(HashMap::new(), |mut acc, (k, v)| {
-            acc.insert(k.into(), v.into());
+        let inner = map.iter().fold(serde_json::Map::new(), |mut acc, (k, v)| {
+            acc.insert(k.to_owned(), v.to_owned().into());
             acc
         });
 
@@ -124,16 +43,39 @@ impl From<HashMap<String, String>> for FunctionArguments {
     }
 }
 
+impl std::convert::TryFrom<String> for FunctionArguments {
+    type Error = anyhow::Error;
+
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        let v: ArgumentValue = serde_json::from_str(&s)?;
+        let inner = match v {
+            ArgumentValue::Object(o) => o,
+            _ => anyhow::bail!("Cannot convert to function arguments"),
+        };
+
+        Ok(Self { inner })
+    }
+}
+
 impl FunctionArguments {
-    pub fn new(map: HashMap<String, ArgumentValue>) -> Self {
-        Self { inner: map }
+    pub fn from_json(json: ArgumentValue) -> Result<Self> {
+        let inner = match json {
+            ArgumentValue::Object(o) => o,
+            _ => anyhow::bail!("Not an json object"),
+        };
+
+        Ok(Self { inner })
     }
 
-    pub fn inner(&self) -> &HashMap<String, ArgumentValue> {
+    pub fn from_map(map: HashMap<String, String>) -> Self {
+        map.into()
+    }
+
+    pub fn inner(&self) -> &serde_json::Map<String, ArgumentValue> {
         &self.inner
     }
 
-    pub fn inner_mut(&mut self) -> &mut HashMap<String, ArgumentValue> {
+    pub fn inner_mut(&mut self) -> &mut serde_json::Map<String, ArgumentValue> {
         &mut self.inner
     }
 
@@ -148,10 +90,17 @@ impl FunctionArguments {
 
         self.inner.into_iter().for_each(|(k, v)| {
             vector.push(k);
-            vector.push(v.to_string());
+            match v {
+                ArgumentValue::String(s) => vector.push(s),
+                _ => vector.push(v.to_string()),
+            }
         });
 
         vector
+    }
+
+    pub fn into_string(self) -> String {
+        ArgumentValue::Object(self.inner).to_string()
     }
 }
 
