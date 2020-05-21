@@ -159,15 +159,15 @@ pub mod tests {
 
     fn test_gbdt_train() {
         let arguments = FunctionArguments::from_json(json!({
-            "feature_size"                : 4,
-            "max_depth"                   : 4,
-            "iterations"                  : 100,
-            "shrinkage"                   : 0.1,
-            "feature_sample_ratio"        : 1.0,
-            "data_sample_ratio"           : 1.0,
-            "min_leaf_size"               : 1,
-            "loss"                        : "LAD",
-            "training_optimization_level" : 2
+            "feature_size": 4,
+            "max_depth": 4,
+            "iterations": 100,
+            "shrinkage": 0.1,
+            "feature_sample_ratio": 1.0,
+            "data_sample_ratio": 1.0,
+            "min_leaf_size": 1,
+            "loss": "LAD",
+            "training_optimization_level": 2
         }))
         .unwrap();
 
