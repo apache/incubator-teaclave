@@ -35,6 +35,7 @@ const OUT_MODEL_FILE: &str = "model_file";
 #[derive(Default)]
 pub struct LogisticRegressionTrain;
 
+#[derive(serde::Deserialize)]
 struct LogisticRegressionTrainArguments {
     alg_alpha: f64,
     alg_iters: usize,
@@ -45,15 +46,8 @@ impl TryFrom<FunctionArguments> for LogisticRegressionTrainArguments {
     type Error = anyhow::Error;
 
     fn try_from(arguments: FunctionArguments) -> Result<Self, Self::Error> {
-        let alg_alpha = arguments.get("alg_alpha")?.as_f64()?;
-        let alg_iters = arguments.get("alg_iters")?.as_usize()?;
-        let feature_size = arguments.get("feature_size")?.as_usize()?;
-
-        Ok(Self {
-            alg_alpha,
-            alg_iters,
-            feature_size,
-        })
+        use anyhow::Context;
+        serde_json::from_str(&arguments.into_string()).context("Cannot deserialize arguments")
     }
 }
 
@@ -125,6 +119,7 @@ fn parse_training_data(
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
+    use serde_json::json;
     use std::path::Path;
     use std::untrusted::fs;
     use teaclave_crypto::*;
@@ -137,11 +132,12 @@ pub mod tests {
     }
 
     fn test_logistic_regression_train() {
-        let arguments = FunctionArguments::new(hashmap! {
-            "alg_alpha" => "0.3",
-            "alg_iters" => "100",
-            "feature_size" => "30"
-        });
+        let arguments = FunctionArguments::from_json(json!({
+            "alg_alpha": 0.3,
+            "alg_iters": 100,
+            "feature_size": 30
+        }))
+        .unwrap();
 
         let base = Path::new("fixtures/functions/logistic_regression_training");
         let training_data = base.join("train.txt");

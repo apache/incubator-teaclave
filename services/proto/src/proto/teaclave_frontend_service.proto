@@ -110,7 +110,7 @@ message DataMap {
 
 message CreateTaskRequest {
   string function_id = 1;
-  map<string, string> function_arguments = 2;
+  string function_arguments = 2;
   string executor = 3;
   repeated OwnerList inputs_ownership = 10;
   repeated OwnerList outputs_ownership= 11;
@@ -129,7 +129,7 @@ message GetTaskResponse {
   string creator = 2;
   string function_id = 3;
   string function_owner = 4;
-  map<string, string> function_arguments = 5;
+  string function_arguments = 5;
   repeated OwnerList inputs_ownership = 6;
   repeated OwnerList outputs_ownership = 7;
   repeated string participants = 8;

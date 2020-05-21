@@ -158,6 +158,7 @@ class FrontendClient:
                     executor,
                     inputs_ownership=[],
                     outputs_ownership=[]):
+        function_arguments = json.dumps(function_arguments)
         request = CreateTaskRequest(self.metadata, function_id,
                                     function_arguments, executor,
                                     inputs_ownership, outputs_ownership)

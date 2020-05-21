@@ -17,6 +17,7 @@
 
 use std::prelude::v1::*;
 
+use serde_json::json;
 use teaclave_crypto::TeaclaveFile128Key;
 use teaclave_types::{
     hashmap, read_all_bytes, Executor, ExecutorType, FileAuthTag, FunctionArguments,
@@ -25,17 +26,18 @@ use teaclave_types::{
 use teaclave_worker::Worker;
 
 fn test_start_worker() {
-    let arguments = FunctionArguments::new(hashmap!(
-        "feature_size"  => "4",
-        "max_depth"     => "4",
-        "iterations"    => "100",
-        "shrinkage"     => "0.1",
-        "feature_sample_ratio" => "1.0",
-        "data_sample_ratio" => "1.0",
-        "min_leaf_size" => "1",
-        "loss"          => "LAD",
-        "training_optimization_level" => "2"
-    ));
+    let arguments = FunctionArguments::from_json(json!({
+        "feature_size": 4,
+        "max_depth": 4,
+        "iterations": 100,
+        "shrinkage": 0.1,
+        "feature_sample_ratio": 1.0,
+        "data_sample_ratio": 1.0,
+        "min_leaf_size": 1,
+        "loss": "LAD",
+        "training_optimization_level": 2
+    }))
+    .unwrap();
 
     let plain_input = "fixtures/functions/gbdt_training/train.txt";
     let enc_output = "fixtures/functions/gbdt_training/model.enc.out";
