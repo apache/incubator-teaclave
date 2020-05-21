@@ -23,6 +23,21 @@ enclave_unit_test = [
   "teaclave_runtime/mesalock_sgx"
 ]
 
+# Enable builtin functions for the builtin executor
+
+full_builtin_function = [
+  "builtin_echo",
+  "builtin_gbdt_predict",
+  "builtin_gbdt_train",
+  "builtin_logistic_regression_predict",
+  "builtin_logistic_regression_train"
+]
+builtin_echo = []
+builtin_gbdt_predict = []
+builtin_gbdt_train = []
+builtin_logistic_regression_predict = []
+builtin_logistic_regression_train = []
+
 [dependencies]
 log           = { version = "0.4.6" }
 anyhow        = { version = "1.0.26" }

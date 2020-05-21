@@ -37,10 +37,15 @@ impl TeaclaveExecutor for BuiltinFunctionExecutor {
         runtime: FunctionRuntime,
     ) -> Result<String> {
         match name.as_str() {
+            #[cfg(feature = "builtin_echo")]
             Echo::NAME => Echo::new().run(arguments, runtime),
+            #[cfg(feature = "builtin_gbdt_predict")]
             GbdtPredict::NAME => GbdtPredict::new().run(arguments, runtime),
+            #[cfg(feature = "builtin_gbdt_train")]
             GbdtTrain::NAME => GbdtTrain::new().run(arguments, runtime),
+            #[cfg(feature = "builtin_logistic_regression_train")]
             LogisticRegressionTrain::NAME => LogisticRegressionTrain::new().run(arguments, runtime),
+            #[cfg(feature = "builtin_logistic_regression_predict")]
             LogisticRegressionPredict::NAME => {
                 LogisticRegressionPredict::new().run(arguments, runtime)
             }
