@@ -44,6 +44,7 @@ platform, making computation on privacy-sensitive data safe and simple.
 ### Codebase
 
 - [Teaclave Services](services)
+- [Teaclave Worker](worker)
 - [Function Executors](executor)
 - [Configurations in Teaclave](config)
 - [Data Center Attestation Service](dcap)
