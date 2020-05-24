@@ -47,6 +47,7 @@ platform, making computation on privacy-sensitive data safe and simple.
 - [Teaclave Services](services)
 - [Teaclave Worker](worker)
 - [Function Executors](executor)
+- [Built-in Functions](function)
 - [Configurations in Teaclave](config)
 - [Data Center Attestation Service](dcap)
 - [Keys and Certificates](keys)
