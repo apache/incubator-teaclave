@@ -1,4 +1,8 @@
-# Tests in Teaclave
+---
+permalink: /tests
+---
+
+# Test Harness and Test Cases
 
 This directory contains all tests in Teaclave including unit tests, integration
 tests, functional tests and some test fixtures.
