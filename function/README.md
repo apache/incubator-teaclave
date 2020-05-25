@@ -9,7 +9,8 @@ functions (e.g., written in Python). To make data computation more easier and
 faster (in native speed), the platform also provide some commonly used functions
 written in Rust. We call them built-in functions. These functions can be
 selectively compiled in the *built-in executor* with a "builtin" prefix in the
-function names.
+function names. Users can selectively invoke these build-in functions by their
+names.
 
 Currently, we have these built-in functions:
   - `builtin-echo`: Return the original input message.
