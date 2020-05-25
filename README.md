@@ -54,6 +54,7 @@ platform, making computation on privacy-sensitive data safe and simple.
 - [Keys and Certificates](keys)
 - [Dockerfile and Compose File](docker)
 - [Test Harness and Test Cases](tests)
+- [Third-Party Dependency Vendoring](third_party)
 
 ## Contributing
 
