@@ -50,6 +50,7 @@ platform, making computation on privacy-sensitive data safe and simple.
 - [Built-in Functions](function)
 - [Configurations in Teaclave](config)
 - [Data Center Attestation Service](dcap)
+- [Command Line Tool](cli)
 - [Keys and Certificates](keys)
 - [Dockerfile and Compose File](docker)
 - [Test Harness and Test Cases](tests)
