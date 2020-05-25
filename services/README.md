@@ -28,8 +28,10 @@ a safe and secure FaaS platform.
   function, execution data, and task information in the platform. Here, we
   deploy a key-value database (an implementation of LevelDB) in TEE and use
   protected file system (secured by the enclave) for data persistence.
-- **Access Control Service**: Provides a flexible access control configurations
-  to support access control rules for multi-party secure computation.
+- **Access Control Service**: Provides a flexible access control domain specific
+  language to support access control rules for multi-party secure computation.
+  The access control engine is written in Python and evaluated in SGX. Please
+  read [this document](/docs/access-control.md) to learn more about the design of it.
 - **Scheduler Service**: Schedules staged task ready for execution to a proper
   execution node with desirable capabilities.
 - **Execution Service**: A host of different executors interacting with the
@@ -37,12 +39,13 @@ a safe and secure FaaS platform.
   instances (or nodes) with different capabilities deployed in a cloud
   infrastructure.
   
-## Protocols
+## RPC and Protocols
 
 We use ProtoBuf to define messages and RPC interfaces of the Teaclave services.
-Utility functions, traits, and structures will be automatically generated to
-help implementing services to handle requests and send responses. You can find
-detailed protocol definitions in the [`proto` files](./proto/src/proto).
+You can find detailed protocol definitions in the [`proto` files](./proto/src/proto).
+In addition, utility functions, traits, and structures will be automatically
+generated to help implementing services to handle requests and send responses.
+This is done by a build time tool called [`proto_gen`](./proto/proto_gen).
 
 ## Topology
 

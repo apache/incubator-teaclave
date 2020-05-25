@@ -20,3 +20,8 @@ In Teaclave, there are two executors to native and Python functions.
 - **MesaPy Executor**: The MesaPy executor provides a Python interpreter in SGX.
   User-defined Python functions can be executed in the MesaPy executor. The
   executor also provides interfaces to fetch and store data through the runtime.
+
+To add a new executor, you can implement the `TeaclaveExecutor` trait (basically
+implement the `execute` function). Then, register the executor in the Teaclave
+worker. At last, the execution service will dispatch functions to the specific
+executor.

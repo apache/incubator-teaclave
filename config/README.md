@@ -17,7 +17,9 @@ certificate of attestation service used for verifying attestation report,
 auditors' public keys for verification of enclave information, and topological
 graph of connections between services for mutual attestation. More detailed
 explanation of configurations can be seen in the
-[`build.config.toml`](build.config.toml) file.
+[`build.config.toml`](build.config.toml) file. We also implement a
+[`config_gen`](config_gen) tool to generate hard-coded configurations in Rust
+from the user-defined config in TOML at compilation time.
 
 Note that it is very *important* to define these configurations in build time,
 because they are part of Teaclave's *trusted computing base* (TCB) and will be
