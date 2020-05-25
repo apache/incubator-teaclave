@@ -47,17 +47,23 @@ platform, making computation on privacy-sensitive data safe and simple.
 - [Teaclave Services](services)
 - [Teaclave Worker](worker)
 - [Function Executors](executor)
+- [Built-in Functions](function)
 - [Configurations in Teaclave](config)
 - [Data Center Attestation Service](dcap)
+- [Command Line Tool](cli)
 - [Keys and Certificates](keys)
 - [Dockerfile and Compose File](docker)
+- [Test Harness and Test Cases](tests)
+- [Third-Party Dependency Vendoring](third_party)
 
 ## Contributing
 
 Teaclave is open source in [The Apache Way](https://www.apache.org/theapacheway/),
 we aim to create a project that is maintained and owned by the community. All
-kinds of contributions are welcome.
+kinds of contributions are welcome. Thanks to our [contributors](CONTRIBUTORS.md).
 
 ## Community
 
 - Join us on our [mailing list](https://lists.apache.org/list.html?dev@teaclave.apache.org).
+- Follow us at [@ApacheTeaclave](https://twitter.com/ApacheTeaclave).
+- See [more](COMMUNITY.md).
