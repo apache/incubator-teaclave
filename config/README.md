@@ -17,8 +17,10 @@ certificate of attestation service used for verifying attestation report,
 auditors' public keys for verification of enclave information, and topological
 graph of connections between services for mutual attestation. More detailed
 explanation of configurations can be seen in the
-[`build.config.toml`](build.config.toml) file. We also implement a
-[`config_gen`](config_gen) tool to generate hard-coded configurations in Rust
+[`build.config.toml`](https://github.com/apache/incubator-teaclave/blob/master/config/build.config.toml)
+file. We also implement a
+[`config_gen`](https://github.com/apache/incubator-teaclave/tree/master/config/config_gen)
+tool to generate hard-coded configurations in Rust
 from the user-defined config in TOML at compilation time.
 
 Note that it is very *important* to define these configurations in build time,
@@ -36,7 +38,7 @@ Teaclave, the enclave information and auditor's signatures files loaded at
 runtime, algorithm/id/key used for connecting attestation services, etc.
 Some configurations can be overridden by environment variables. Detailed
 explanation of configurations can be found in the
-[`runtime.config.toml`](runtime.config.toml) file.
+[`runtime.config.toml`](https://github.com/apache/incubator-teaclave/blob/master/config/runtime.config.toml) file.
 
 
 Note that the runtime config will be loaded when launching the services. We
