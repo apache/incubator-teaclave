@@ -48,7 +48,7 @@ the method described by a [white paper](https://arxiv.org/abs/1801.05863). In a
 nutshell, enclaves in Teaclave will establish trusted channel on attested TLS
 for communication. The complicated structure of Teaclave requires additional
 work for remote attestation, which is explained in details via a separate
-[documentation](mutual_attestation.md).
+[documentation](mutual-attestation.md).
 
 Side channels are out of scope for current Teaclave's implementation. While we
 acknowledge that existing enclaves may be vulnerable to various kinds of side
