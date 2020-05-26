@@ -16,15 +16,15 @@ invented our own access control model and mechanism.
 
 ## Model
 The access control model of Teaclave is configured through the file
-[model.conf](../../services/access_control/model.conf).  The file has three
-sections:
+[model.conf](https://github.com/apache/incubator-teaclave/blob/master/services/access_control/model.conf).
+The file has three sections:
   - requests
   - terms
   - matchers
 
 Before diving into the details about how our access control model works, we
-recommend readers learn about [logic
-programming](https://en.wikipedia.org/wiki/Logic_programming) first, because
+recommend readers learn about [logic programming](https://en.wikipedia.org/wiki/Logic_programming)
+first, because
 our model configuration language is actually a home-baked tiny logic
 programming language.
 
