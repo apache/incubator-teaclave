@@ -155,9 +155,12 @@ run_examples() {
   sleep 3    # wait for execution services
   popd
 
+  pushd ${TEACLAVE_PROJECT_ROOT}/examples/python
   export PYTHONPATH=${TEACLAVE_PROJECT_ROOT}/sdk/python
-  python3 ${TEACLAVE_PROJECT_ROOT}/examples/python/builtin_echo.py
-  python3 ${TEACLAVE_PROJECT_ROOT}/examples/python/mesapy_echo.py
+  python3 builtin_echo.py
+  python3 mesapy_echo.py
+  python3 builtin_gbdt_train.py
+  popd
 
   # kill all background services
   cleanup
