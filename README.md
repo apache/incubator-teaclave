@@ -41,6 +41,7 @@ platform, making computation on privacy-sensitive data safe and simple.
 - [Threat Model](docs/threat-model.md)
 - [Mutual Attestation: Why and How](docs/mutual-attestation.md)
 - [Access Control](docs/access-control.md)
+- [Build System](docs/build-system.md)
 
 ### Codebase
 
