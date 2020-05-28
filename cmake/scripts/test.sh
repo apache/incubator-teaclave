@@ -158,6 +158,7 @@ run_examples() {
   export PYTHONPATH=${TEACLAVE_PROJECT_ROOT}/sdk/python
   python3 ${TEACLAVE_PROJECT_ROOT}/examples/python/builtin_echo.py
   python3 ${TEACLAVE_PROJECT_ROOT}/examples/python/mesapy_echo.py
+  python3 ${TEACLAVE_PROJECT_ROOT}/examples/python/builtin_gbdt_train.py
 
   # kill all background services
   cleanup

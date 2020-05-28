@@ -38,7 +38,7 @@ class BuiltinGbdtExample:
         self.user_id = user_id
         self.user_password = user_password
 
-    def gbdt(self, message="Hello, Teaclave!"):
+    def gbdt(self):
         channel = AuthenticationService(AUTHENTICATION_SERVICE_ADDRESS,
                                         AS_ROOT_CA_CERT_PATH,
                                         ENCLAVE_INFO_PATH).connect()
@@ -128,11 +128,7 @@ class BuiltinGbdtExample:
 
 def main():
     example = BuiltinGbdtExample(USER_ID, USER_PASSWORD)
-    if len(sys.argv) > 1:
-        message = sys.argv[1]
-        rt = example.gbdt(message)
-    else:
-        rt = example.gbdt()
+    rt = example.gbdt() 
 
     print("[+] function return: ", rt)
 
