@@ -45,6 +45,7 @@ platform, making computation on privacy-sensitive data safe and simple.
 
 ### Codebase
 
+- [Attestation](attestation)
 - [Teaclave Services](services)
 - [Teaclave Worker](worker)
 - [Function Executors](executor)
