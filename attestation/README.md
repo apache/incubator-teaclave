@@ -40,15 +40,20 @@ attestation. Under the circumstances, only the server needs to run inside TEEs.
 
 ## Attestation Report
 
-## Verification
+After one party obtains an attestation report from the received certificate. 
+Teaclave first verifies the attestation report with the `report_ca_cert` from the 
+attestation service provider (e.g., IAS report root CA certificate for EPID, 
+or DCAP attestation server end-entity certificate for DCAP).
 
-There are many information included in an attestation report such as CPU
+### Verification
+
+There is much information included in an attestation report such as CPU
 version, ISV version, product ID, etc. By default, Teaclave will check
-`MR_ENCLAVE` and other basic information. Users can also define a customized
+`MR_ENCLAVE` and `MR_SIGNER`. Users can also define a customized
 verification function to check more information in attestation reports by
 implementing the `AttestationReportVerificationFn` function.
 
-## Freshness
+### Freshness
 
 To make sure the platform is always up-to-date and trusted, Teaclave will update
 attestation report periodically. By default, the validity time of an attestation
