@@ -103,6 +103,8 @@ remote attestation. They can be installed with `pip`:
 $ pip3 install pyopenssl toml cryptography
 ```
 
+### Built-in function
+
 Then, run the echo example:
 
 ```
@@ -119,8 +121,35 @@ $ PYTHONPATH=../../sdk/python python3 builtin_echo.py 'Hello, Teaclave!'
 [+] function return:  b'Hello, Teaclave!'
 ```
 
-If you see above log, this means that the function is successfully invoked in
-Teaclave.
+If you see above log, this means that the function is successfully invoked in Teaclave.
+
+### Define my own function
+
+The previous example is to demonstrate invoking the built-in echo function. In
+Teaclave, you can also register and invoke a function written by yourself.
+For example, we can implement a echo function in Python like this:
+
+```
+$ cat mesapy_echo_payload.py
+def entrypoint(argv):
+    assert argv[0] == 'message'
+    assert argv[1] is not None
+    return argv[1]
+```
+
+Then run the mesapy echo example:
+```
+$ PYTHONPATH=../../sdk/python python3 mesapy_echo.py mesapy_echo_payload.py 'Hello, Teaclave!'
+[+] registering user
+[+] login
+[+] registering function
+[+] creating task
+[+] approving task
+[+] invoking task
+[+] getting result
+[+] done
+[+] function return:  b'Hello, Teaclave!'
+```
 
 ## Simulation Mode
 To try Teaclave in SGX simulation mode, please install Intel SGX SDK first with instructions in

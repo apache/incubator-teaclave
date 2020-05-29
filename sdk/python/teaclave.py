@@ -105,6 +105,23 @@ class RegisterFunctionRequest:
         self.outputs = outputs
 
 
+class RegisterInputFileRequest:
+    def __init__(self, metadata, url, cmac, crypto_info):
+        self.request = "register_input_file"
+        self.metadata = metadata
+        self.url = url
+        self.cmac = cmac
+        self.crypto_info = crypto_info
+
+
+class RegisterOutputFileRequest:
+    def __init__(self, metadata, url, crypto_info):
+        self.request = "register_output_file"
+        self.metadata = metadata
+        self.url = url
+        self.crypto_info = crypto_info
+
+
 class CreateTaskRequest:
     def __init__(self, metadata, function_id, function_arguments, executor,
                  inputs_ownership, outputs_ownership):
@@ -115,6 +132,22 @@ class CreateTaskRequest:
         self.executor = executor
         self.inputs_ownership = inputs_ownership
         self.outputs_ownership = outputs_ownership
+
+
+class AssignDataRequest:
+    def __init__(self, metadata, task_id, inputs, outputs):
+        self.request = "assign_data"
+        self.metadata = metadata
+        self.task_id = task_id
+        self.inputs = inputs
+        self.outputs = outputs
+
+
+class ApproveTaskRequest:
+    def __init__(self, metadata, task_id):
+        self.request = "approve_task"
+        self.metadata = metadata
+        self.task_id = task_id
 
 
 class InvokeTaskRequest:
@@ -129,6 +162,13 @@ class GetTaskRequest:
         self.request = "get_task"
         self.metadata = metadata
         self.task_id = task_id
+
+
+class TeaclaveFile128Key:
+    def __init__(self, schema, key, iv):
+        self.schema = schema
+        self.key = key
+        self.iv = iv
 
 
 class FrontendClient:
@@ -152,6 +192,20 @@ class FrontendClient:
         response = read_message(self.channel)
         return response["content"]["function_id"]
 
+    def register_input_file(self, url, schema, key, iv, cmac):
+        request = RegisterInputFileRequest(self.metadata, url, cmac,
+                                           TeaclaveFile128Key(schema, key, iv))
+        write_message(self.channel, request)
+        response = read_message(self.channel)
+        return response["content"]["data_id"]
+
+    def register_output_file(self, url, schema, key, iv):
+        request = RegisterOutputFileRequest(
+            self.metadata, url, TeaclaveFile128Key(schema, key, iv))
+        write_message(self.channel, request)
+        response = read_message(self.channel)
+        return response["content"]["data_id"]
+
     def create_task(self,
                     function_id,
                     function_arguments,
@@ -165,6 +219,18 @@ class FrontendClient:
         write_message(self.channel, request)
         response = read_message(self.channel)
         return response["content"]["task_id"]
+
+    def assign_data_to_task(self, task_id, inputs, outputs):
+        request = AssignDataRequest(self.metadata, task_id, inputs, outputs)
+        write_message(self.channel, request)
+        response = read_message(self.channel)
+        return
+
+    def approve_task(self, task_id):
+        request = ApproveTaskRequest(self.metadata, task_id)
+        write_message(self.channel, request)
+        response = read_message(self.channel)
+        return
 
     def invoke_task(self, task_id):
         request = InvokeTaskRequest(self.metadata, task_id)

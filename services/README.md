@@ -31,7 +31,7 @@ a safe and secure FaaS platform.
 - **Access Control Service**: Provides a flexible access control domain specific
   language to support access control rules for multi-party secure computation.
   The access control engine is written in Python and evaluated in SGX. Please
-  read [this document](/docs/access-control.md) to learn more about the design of it.
+  read [this document](../docs/access-control.md) to learn more about the design of it.
 - **Scheduler Service**: Schedules staged task ready for execution to a proper
   execution node with desirable capabilities.
 - **Execution Service**: A host of different executors interacting with the
@@ -42,10 +42,12 @@ a safe and secure FaaS platform.
 ## RPC and Protocols
 
 We use ProtoBuf to define messages and RPC interfaces of the Teaclave services.
-You can find detailed protocol definitions in the [`proto` files](./proto/src/proto).
+You can find detailed protocol definitions in the
+[`proto` directory](https://github.com/apache/incubator-teaclave/tree/master/services/proto/src/proto).
 In addition, utility functions, traits, and structures will be automatically
 generated to help implementing services to handle requests and send responses.
-This is done by a build time tool called [`proto_gen`](./proto/proto_gen).
+This is done by a build time tool called
+[`proto_gen`](https://github.com/apache/incubator-teaclave/tree/master/services/proto/proto_gen).
 
 ## Topology
 

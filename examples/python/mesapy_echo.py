@@ -23,7 +23,7 @@ class MesaPyEchoExample:
         self.user_id = user_id
         self.user_password = user_password
 
-    def echo(self, message="Hello, Teaclave!"):
+    def echo(self, payload_file="mesapy_echo_payload.py", message="Hello, Teaclave!"):
         channel = AuthenticationService(AUTHENTICATION_SERVICE_ADDRESS,
                                         AS_ROOT_CA_CERT_PATH,
                                         ENCLAVE_INFO_PATH).connect()
@@ -43,12 +43,8 @@ class MesaPyEchoExample:
 
         print("[+] registering function")
 
-        payload = b"""
-def entrypoint(argv):
-    assert argv[0] == 'message'
-    assert argv[1] is not None
-    return argv[1]
-        """
+        with open(payload_file, "rb") as f:
+            payload = f.read()
         function_id = client.register_function(
             name="mesapy-echo",
             description="An echo function implemented in Python",
@@ -73,9 +69,13 @@ def entrypoint(argv):
 
 def main():
     example = MesaPyEchoExample(USER_ID, USER_PASSWORD)
-    if len(sys.argv) > 1:
+    if len(sys.argv) == 2:
         message = sys.argv[1]
         rt = example.echo(message)
+    elif len(sys.argv) == 3:
+        payload = sys.argv[1]
+        message = sys.argv[2]
+        rt = example.echo(payload, message)
     else:
         rt = example.echo()
 

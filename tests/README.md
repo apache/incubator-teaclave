@@ -23,6 +23,12 @@ $ make run-integration-tests
 $ make run-functional-tests    # this will start all services in the background automatically
 ```
 
+## Test Coverage
+
+To generate a coverage report for tests, you can configure cmake with
+`-DCOV=ON`. Then build the platform and run all tests. At last, you need to run
+`make cov` to aggregate coverage results.
+
 ## Directory Structure
 
 - `unit`:
