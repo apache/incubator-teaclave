@@ -14,7 +14,7 @@ The platform includes several services, and each service is running inside an en
 
 ## How it works
 
-The attested-TLS handshake is similar to a normal TLS handshake, except the extension of the certificate includes an SGX attestation report. We make the certificate cryptographically bound a specific enclave instance by adding the public key of the certificate in the attestation report.  
+The attested-TLS handshake is similar to a normal TLS handshake, except the extension of the certificate includes an SGX attestation report. We make the certificate cryptographically bound to a specific enclave instance by adding the public key of the certificate in the attestation report.  
 
 During the build time, the public keys of the auditor enclaves are hard-coded in Teaclave services enclave, and enclave measurements and signatures are loaded from outside during the runtime. Auditor enclaves verify and sign the identity of each service enclave. After each service receives the attestation report, it will verify whether the `MR_SIGNER` and `MR_ENCLAVE` from the attestation report match the identity information signed by auditor enclaves. After that, it will verify the
 TLS certificate. If all the verifications pass, a secure attested channel is established between two enclaves.
