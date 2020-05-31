@@ -27,12 +27,14 @@ mod gbdt_predict;
 mod gbdt_train;
 mod logistic_regression_predict;
 mod logistic_regression_train;
+mod rsa;
 
 pub use echo::Echo;
 pub use gbdt_predict::GbdtPredict;
 pub use gbdt_train::GbdtTrain;
 pub use logistic_regression_predict::LogisticRegressionPredict;
 pub use logistic_regression_train::LogisticRegressionTrain;
+pub use rsa::RSA;
 
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
@@ -46,6 +48,7 @@ pub mod tests {
             gbdt_predict::tests::run_tests(),
             logistic_regression_train::tests::run_tests(),
             logistic_regression_predict::tests::run_tests(),
+            rsa::tests::run_tests(),
         )
     }
 }
