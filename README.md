@@ -46,15 +46,16 @@ platform, making computation on privacy-sensitive data safe and simple.
 ### Codebase
 
 - [Attestation](attestation)
-- [Teaclave Services](services)
-- [Teaclave Worker](worker)
-- [Function Executors](executor)
 - [Built-in Functions](function)
+- [Command Line Tool](cli)
 - [Configurations in Teaclave](config)
 - [Data Center Attestation Service](dcap)
-- [Command Line Tool](cli)
-- [Keys and Certificates](keys)
 - [Dockerfile and Compose File](docker)
+- [Function Executors](executor)
+- [Keys and Certificates](keys)
+- [RPC](rpc)
+- [Teaclave Services](services)
+- [Teaclave Worker](worker)
 - [Test Harness and Test Cases](tests)
 - [Third-Party Dependency Vendoring](third_party)
 
