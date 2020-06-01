@@ -19,7 +19,7 @@
 use std::prelude::v1::*;
 
 use teaclave_function::{
-    Echo, GbdtPredict, GbdtTrain, LogisticRegressionPredict, LogisticRegressionTrain, RSA
+    Echo, GbdtPredict, GbdtTrain, LogisticRegressionPredict, LogisticRegressionTrain, OnlineDecrypt,
 };
 use teaclave_types::{FunctionArguments, FunctionRuntime, TeaclaveExecutor};
 
@@ -49,8 +49,8 @@ impl TeaclaveExecutor for BuiltinFunctionExecutor {
             LogisticRegressionPredict::NAME => {
                 LogisticRegressionPredict::new().run(arguments, runtime)
             }
-            #[cfg(feature = "builtin_rsa")]
-            RSA::NAME => RSA::new().run(arguments, runtime),
+            #[cfg(feature = "builtin-online-decrypt")]
+            OnlineDecrypt::NAME => OnlineDecrypt::new().run(arguments, runtime),
             _ => bail!("Function not found."),
         }
     }

@@ -17,20 +17,23 @@
 
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
-
+extern crate base64;
+use ring::{aead::*,}; 
+use std::str;
 use std::convert::TryFrom;
 use teaclave_types::{FunctionArguments, FunctionRuntime};
 
 #[derive(Default)]
-pub struct RSA;
+pub struct OnlineDecrypt;
 
 #[derive(serde::Deserialize)]
-struct RsaArguments {
-    key_file_id: String,
-    content: u32,
+struct OnlineDecryptArguments {
+    key: String,
+    nonce: String,
+    encrypted_data: String,
 }
 
-impl TryFrom<FunctionArguments> for RsaArguments {
+impl TryFrom<FunctionArguments> for OnlineDecryptArguments {
     type Error = anyhow::Error;
 
     fn try_from(arguments: FunctionArguments) -> Result<Self, Self::Error> {
@@ -39,8 +42,32 @@ impl TryFrom<FunctionArguments> for RsaArguments {
     }
 }
 
-impl RSA {
-    pub const NAME: &'static str = "builtin-rsa";
+fn decrypt(key: &[u8], nonce_data: &[u8], data: &mut Vec<u8>) {
+    let key = LessSafeKey::new(UnboundKey::new(&AES_256_GCM, &key).unwrap());
+    let nonce = Nonce::try_assume_unique_for_key(&nonce_data[0..12]).unwrap();
+    key.open_in_place(nonce, Aad::empty(), data)
+        .unwrap();
+    data.truncate(data.len() - AES_256_GCM.tag_len());
+}
+
+fn decrypt_string_base64(key: &str, nonce_str: &str, encrypted: &str) -> String {
+    let decoded_key = base64::decode(&key).unwrap();
+    let nonce = base64::decode(&nonce_str).unwrap();
+    let mut data_vec = base64::decode(&encrypted).unwrap();
+
+    decrypt(&decoded_key, &nonce, &mut data_vec);
+
+    let string = match str::from_utf8(&data_vec) {
+        Ok(v) => v,
+        Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
+    };
+
+    string.to_string()
+
+}
+
+impl OnlineDecrypt {
+    pub const NAME: &'static str = "builtin-online-decrypt";
 
     pub fn new() -> Self {
         Default::default()
@@ -51,13 +78,11 @@ impl RSA {
         arguments: FunctionArguments,
         _runtime: FunctionRuntime,
     ) -> anyhow::Result<String> {
-        let args = RsaArguments::try_from(arguments)?;
-        let message = args.key_file_id;
-        let content = args.content;
-        let content_str = content.to_string();
-
-        let result = [content_str, message].join("\n");
-
+        let args = OnlineDecryptArguments::try_from(arguments)?;
+        let key = args.key;
+        let nonce = args.nonce;
+        let encrypted_data = args.encrypted_data;
+        let result = decrypt_string_base64(&key, &nonce, &encrypted_data);
         Ok(result)
     }
 }
@@ -71,13 +96,14 @@ pub mod tests {
     use teaclave_types::*;
 
     pub fn run_tests() -> bool {
-        run_tests!(test_echo)
+        run_tests!(test_online_decrypt)
     }
 
-    fn test_echo() {
+    fn test_online_decrypt() {
         let args = FunctionArguments::from_json(json!({
-            "key_file_id": "Hello Teaclave!",
-            "content": 12,
+            "key": "aqUdgZ0lJnuz9yiPkoDxM6ZcTcVVpd4KKLqzbHD88Lg=",
+            "nonce": "AAECAwQFBgcICQoL",
+            "encrypted_data": "CaZd8qSMMlBp8SjSXj2I4dQIuC9KkZ5DI/ATo1sWJw=="
         }))
         .unwrap();
 
@@ -85,9 +111,9 @@ pub mod tests {
         let output_files = StagedFiles::default();
 
         let runtime = Box::new(RawIoRuntime::new(input_files, output_files));
-        let function = RSA;
+        let function = OnlineDecrypt;
 
         let summary = function.run(args, runtime).unwrap();
-        assert_eq!(summary, "12\nHello Teaclave!");
+        assert_eq!(summary, "Hello Teaclave!");
     }
 }

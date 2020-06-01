@@ -31,6 +31,8 @@ thiserror     = { version = "1.0.9" }
 gbdt          = { version = "0.1.0", features = ["input", "enable_training"] }
 rusty-machine = { version = "0.5.4" }
 itertools     = { version = "0.8.0", default-features = false }
+ring          = { version = "0.16.5" }
+base64        = { version = "0.10.1" }
 teaclave_types = { path = "../types" }
 teaclave_crypto = { path = "../crypto" }
 teaclave_runtime = { path = "../runtime", optional = true }

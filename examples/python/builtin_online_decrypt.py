@@ -43,15 +43,16 @@ class BuiltinEchoExample:
 
         print("[+] registering function")
         function_id = client.register_function(
-            name="builtin-rsa",
+            name="builtin-online-decrypt",
             description="Native Echo Function",
             executor_type="builtin",
-            arguments=["key_file_id", "content"])
+            arguments=["key", "nonce", "encrypted_data"])
 
         print("[+] creating task")
         task_id = client.create_task(function_id=function_id,
-                                     function_arguments={"key_file_id": key_file_id,
-                                                         "content": 12},
+                                     function_arguments={"key": "aqUdgZ0lJnuz9yiPkoDxM6ZcTcVVpd4KKLqzbHD88Lg=",
+                                                         "nonce": "AAECAwQFBgcICQoL",
+                                                         "encrypted_data": "CaZd8qSMMlBp8SjSXj2I4dQIuC9KkZ5DI/ATo1sWJw=="},
                                      executor="builtin")
 
         print("[+] invoking task")
