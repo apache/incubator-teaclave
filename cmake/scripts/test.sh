@@ -160,6 +160,7 @@ run_examples() {
   python3 builtin_echo.py
   python3 mesapy_echo.py
   python3 builtin_gbdt_train.py
+  python3 builtin_online_decrypt.py
   popd
 
   # kill all background services
