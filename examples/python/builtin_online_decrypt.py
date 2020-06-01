@@ -3,20 +3,11 @@
 import sys
 import base64
 
-from teaclave import (
-    AuthenticationService,
-    FrontendService,
-    AuthenticationClient,
-    FrontendClient
-)
-from utils import (
-    AUTHENTICATION_SERVICE_ADDRESS,
-    FRONTEND_SERVICE_ADDRESS,
-    AS_ROOT_CA_CERT_PATH,
-    ENCLAVE_INFO_PATH,
-    USER_ID,
-    USER_PASSWORD
-)
+from teaclave import (AuthenticationService, FrontendService,
+                      AuthenticationClient, FrontendClient)
+from utils import (AUTHENTICATION_SERVICE_ADDRESS, FRONTEND_SERVICE_ADDRESS,
+                   AS_ROOT_CA_CERT_PATH, ENCLAVE_INFO_PATH, USER_ID,
+                   USER_PASSWORD)
 
 
 class BuiltinOnlineDecryptExample:
@@ -50,11 +41,15 @@ class BuiltinOnlineDecryptExample:
             arguments=["key", "nonce", "encrypted_data"])
 
         print("[+] creating task")
-        task_id = client.create_task(function_id=function_id,
-                                     function_arguments={"key": DataToBase64(key),
-                                                         "nonce": DataToBase64(nonce),
-                                                         "encrypted_data": "CaZd8qSMMlBp8SjSXj2I4dQIuC9KkZ5DI/ATo1sWJw=="},
-                                     executor="builtin")
+        task_id = client.create_task(
+            function_id=function_id,
+            function_arguments={
+                "key": DataToBase64(key),
+                "nonce": DataToBase64(nonce),
+                "encrypted_data":
+                "CaZd8qSMMlBp8SjSXj2I4dQIuC9KkZ5DI/ATo1sWJw=="
+            },
+            executor="builtin")
 
         print("[+] invoking task")
         client.invoke_task(task_id)
@@ -65,12 +60,18 @@ class BuiltinOnlineDecryptExample:
 
         return bytes(result)
 
+
 def DataToBase64(data):
     return base64.standard_b64encode(bytes(data)).decode("utf-8")
 
+
 def main():
     example = BuiltinOnlineDecryptExample(USER_ID, USER_PASSWORD)
-    key = [106, 165, 29, 129, 157, 37, 38, 123, 179, 247, 40, 143, 146, 128, 241, 51, 166, 92, 77, 197, 85, 165, 222, 10, 40, 186, 179, 108, 112, 252, 240, 184]
+    key = [
+        106, 165, 29, 129, 157, 37, 38, 123, 179, 247, 40, 143, 146, 128, 241,
+        51, 166, 92, 77, 197, 85, 165, 222, 10, 40, 186, 179, 108, 112, 252,
+        240, 184
+    ]
     nonce = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
     encrypted_data = "CaZd8qSMMlBp8SjSXj2I4dQIuC9KkZ5DI/ATo1sWJw=="
     rt = example.decrypt(key, nonce, encrypted_data)
@@ -79,3 +80,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    
