@@ -18,9 +18,9 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 extern crate base64;
-use ring::{aead::*,}; 
-use std::str;
+use ring::aead::*;
 use std::convert::TryFrom;
+use std::str;
 use teaclave_types::{FunctionArguments, FunctionRuntime};
 
 #[derive(Default)]
@@ -45,8 +45,7 @@ impl TryFrom<FunctionArguments> for OnlineDecryptArguments {
 fn decrypt(key: &[u8], nonce_data: &[u8], data: &mut Vec<u8>) {
     let key = LessSafeKey::new(UnboundKey::new(&AES_256_GCM, &key).unwrap());
     let nonce = Nonce::try_assume_unique_for_key(&nonce_data[0..12]).unwrap();
-    key.open_in_place(nonce, Aad::empty(), data)
-        .unwrap();
+    key.open_in_place(nonce, Aad::empty(), data).unwrap();
     data.truncate(data.len() - AES_256_GCM.tag_len());
 }
 
@@ -63,7 +62,6 @@ fn decrypt_string_base64(key: &str, nonce_str: &str, encrypted: &str) -> String 
     };
 
     string.to_string()
-
 }
 
 impl OnlineDecrypt {
