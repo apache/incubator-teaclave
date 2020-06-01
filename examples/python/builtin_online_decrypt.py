@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
+import base64
 
 from teaclave import (
     AuthenticationService,
@@ -18,12 +19,12 @@ from utils import (
 )
 
 
-class BuiltinEchoExample:
+class BuiltinOnlineDecryptExample:
     def __init__(self, user_id, user_password):
         self.user_id = user_id
         self.user_password = user_password
 
-    def echo(self, key_file_id="Hello, Teaclave!"):
+    def decrypt(self, key, nonce, encrypted_data):
         channel = AuthenticationService(AUTHENTICATION_SERVICE_ADDRESS,
                                         AS_ROOT_CA_CERT_PATH,
                                         ENCLAVE_INFO_PATH).connect()
@@ -50,8 +51,8 @@ class BuiltinEchoExample:
 
         print("[+] creating task")
         task_id = client.create_task(function_id=function_id,
-                                     function_arguments={"key": "aqUdgZ0lJnuz9yiPkoDxM6ZcTcVVpd4KKLqzbHD88Lg=",
-                                                         "nonce": "AAECAwQFBgcICQoL",
+                                     function_arguments={"key": DataToBase64(key),
+                                                         "nonce": DataToBase64(nonce),
                                                          "encrypted_data": "CaZd8qSMMlBp8SjSXj2I4dQIuC9KkZ5DI/ATo1sWJw=="},
                                      executor="builtin")
 
@@ -64,15 +65,15 @@ class BuiltinEchoExample:
 
         return bytes(result)
 
+def DataToBase64(data):
+    return base64.standard_b64encode(bytes(data)).decode("utf-8")
 
 def main():
-    example = BuiltinEchoExample(USER_ID, USER_PASSWORD)
-    if len(sys.argv) > 1:
-        message = sys.argv[1]
-        rt = example.echo(message)
-    else:
-        rt = example.echo()
-
+    example = BuiltinOnlineDecryptExample(USER_ID, USER_PASSWORD)
+    key = [106, 165, 29, 129, 157, 37, 38, 123, 179, 247, 40, 143, 146, 128, 241, 51, 166, 92, 77, 197, 85, 165, 222, 10, 40, 186, 179, 108, 112, 252, 240, 184]
+    nonce = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    encrypted_data = "CaZd8qSMMlBp8SjSXj2I4dQIuC9KkZ5DI/ATo1sWJw=="
+    rt = example.decrypt(key, nonce, encrypted_data)
     print("[+] function return: ", rt)
 
 
