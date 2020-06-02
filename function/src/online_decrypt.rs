@@ -39,7 +39,9 @@ enum Error {
 }
 
 impl From<ring::error::Unspecified> for Error {
-    fn from(_: ring::error::Unspecified) -> Self { Error::CryptoError }
+    fn from(_: ring::error::Unspecified) -> Self {
+        Error::CryptoError
+    }
 }
 
 impl TryFrom<FunctionArguments> for OnlineDecryptArguments {
@@ -51,7 +53,12 @@ impl TryFrom<FunctionArguments> for OnlineDecryptArguments {
     }
 }
 
-fn decrypt(key: &[u8], nonce_data: &[u8], data: &mut Vec<u8>, alg: &'static ring::aead::Algorithm) -> Result<(), Error> {
+fn decrypt(
+    key: &[u8],
+    nonce_data: &[u8],
+    data: &mut Vec<u8>,
+    alg: &'static ring::aead::Algorithm,
+) -> Result<(), Error> {
     let key = LessSafeKey::new(UnboundKey::new(&alg, &key).unwrap());
     let nonce = Nonce::try_assume_unique_for_key(&nonce_data[0..12])?;
     key.open_in_place(nonce, Aad::empty(), data)?;
@@ -59,13 +66,17 @@ fn decrypt(key: &[u8], nonce_data: &[u8], data: &mut Vec<u8>, alg: &'static ring
     Ok(())
 }
 
-fn decrypt_string_base64(key: &str, nonce_str: &str, encrypted: &str, alg: &'static ring::aead::Algorithm) -> Result<String, base64::DecodeError> {
+fn decrypt_string_base64(
+    key: &str,
+    nonce_str: &str,
+    encrypted: &str,
+    alg: &'static ring::aead::Algorithm,
+) -> Result<String, base64::DecodeError> {
     let decoded_key = base64::decode(&key)?;
     let nonce = base64::decode(&nonce_str)?;
     let mut data_vec = base64::decode(&encrypted)?;
 
-    let _result = match decrypt(&decoded_key, &nonce, &mut data_vec, &alg)
-    {
+    let _result = match decrypt(&decoded_key, &nonce, &mut data_vec, &alg) {
         Err(_e) => panic!("Encryption Errors"),
         Ok(_v) => (),
     };
@@ -118,7 +129,7 @@ pub mod tests {
         run_tests!(test_online_decrypt)
     }
 
-    fn test_subroutine(args:FunctionArguments, result: &str) {
+    fn test_subroutine(args: FunctionArguments, result: &str) {
         let input_files = StagedFiles::default();
         let output_files = StagedFiles::default();
         let runtime = Box::new(RawIoRuntime::new(input_files, output_files));
@@ -145,6 +156,5 @@ pub mod tests {
         }))
         .unwrap();
         test_subroutine(args2, "Hello Teaclave!");
-
     }
 }
