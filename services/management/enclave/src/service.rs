@@ -28,7 +28,8 @@ use teaclave_proto::teaclave_frontend_service::{
     RegisterFunctionRequest, RegisterFunctionResponse, RegisterFusionOutputRequest,
     RegisterFusionOutputResponse, RegisterInputFileRequest, RegisterInputFileResponse,
     RegisterInputFromOutputRequest, RegisterInputFromOutputResponse, RegisterOutputFileRequest,
-    RegisterOutputFileResponse,
+    RegisterOutputFileResponse, UpdateInputFileRequest, UpdateInputFileResponse,
+    UpdateOutputFileRequest, UpdateOutputFileResponse,
 };
 use teaclave_proto::teaclave_management_service::TeaclaveManagement;
 use teaclave_proto::teaclave_storage_service::{
@@ -91,6 +92,37 @@ impl TeaclaveManagement for TeaclaveManagementService {
     }
 
     // access control: none
+    fn update_input_file(
+        &self,
+        request: Request<UpdateInputFileRequest>,
+    ) -> TeaclaveServiceResponseResult<UpdateInputFileResponse> {
+        let user_id = self.get_request_user_id(request.metadata())?;
+        let request = request.message;
+
+        let old_input_file: TeaclaveInputFile = self
+            .read_from_db(&request.data_id)
+            .map_err(|_| ServiceError::PermissionDenied)?;
+
+        ensure!(
+            old_input_file.owner.contains(&user_id),
+            ServiceError::PermissionDenied
+        );
+
+        let input_file = TeaclaveInputFile::new(
+            request.url,
+            old_input_file.cmac,
+            old_input_file.crypto_info,
+            vec![user_id],
+        );
+
+        self.write_to_db(&input_file)
+            .map_err(|_| ServiceError::StorageError)?;
+
+        let response = UpdateInputFileResponse::new(input_file.external_id());
+        Ok(response)
+    }
+
+    // access control: none
     fn register_output_file(
         &self,
         request: Request<RegisterOutputFileRequest>,
@@ -103,6 +135,33 @@ impl TeaclaveManagement for TeaclaveManagementService {
             .map_err(|_| ServiceError::StorageError)?;
 
         let response = RegisterOutputFileResponse::new(output_file.external_id());
+        Ok(response)
+    }
+
+    // access control: none
+    fn update_output_file(
+        &self,
+        request: Request<UpdateOutputFileRequest>,
+    ) -> TeaclaveServiceResponseResult<UpdateOutputFileResponse> {
+        let user_id = self.get_request_user_id(request.metadata())?;
+        let request = request.message;
+
+        let old_output_file: TeaclaveOutputFile = self
+            .read_from_db(&request.data_id)
+            .map_err(|_| ServiceError::PermissionDenied)?;
+
+        ensure!(
+            old_output_file.owner.contains(&user_id),
+            ServiceError::PermissionDenied
+        );
+
+        let output_file =
+            TeaclaveOutputFile::new(request.url, old_output_file.crypto_info, vec![user_id]);
+
+        self.write_to_db(&output_file)
+            .map_err(|_| ServiceError::StorageError)?;
+
+        let response = UpdateOutputFileResponse::new(output_file.external_id());
         Ok(response)
     }
 

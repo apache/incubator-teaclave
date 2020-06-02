@@ -53,6 +53,24 @@ fn test_register_input_file() {
 }
 
 #[test_case]
+fn test_update_input_file() {
+    let url = Url::parse("https://external-storage.com/filepath?presigned_token").unwrap();
+    let cmac = FileAuthTag::mock();
+    let crypto_info = FileCrypto::default();
+
+    let request = RegisterInputFileRequest::new(url.clone(), cmac, crypto_info);
+    let response = authorized_client().register_input_file(request);
+    assert!(response.is_ok());
+
+    let old_data_id = response.unwrap().data_id;
+    let new_url = Url::parse("https://external-storage.com/filepath-new?presigned_token").unwrap();
+    let update_request = UpdateInputFileRequest::new(old_data_id.clone(), new_url.clone());
+    let update_response = authorized_client().update_input_file(update_request);
+    assert!(update_response.is_ok());
+    assert!(old_data_id != update_response.unwrap().data_id);
+}
+
+#[test_case]
 fn test_register_output_file() {
     let url = Url::parse("https://external-storage.com/filepath?presigned_token").unwrap();
     let crypto_info = FileCrypto::default();
@@ -64,6 +82,23 @@ fn test_register_output_file() {
     let request = RegisterOutputFileRequest::new(url, crypto_info);
     let response = unauthorized_client().register_output_file(request);
     assert!(response.is_err());
+}
+
+#[test_case]
+fn test_update_output_file() {
+    let url = Url::parse("https://external-storage.com/filepath?presigned_token").unwrap();
+    let crypto_info = FileCrypto::default();
+
+    let request = RegisterOutputFileRequest::new(url.clone(), crypto_info);
+    let response = authorized_client().register_output_file(request);
+    assert!(response.is_ok());
+
+    let old_data_id = response.unwrap().data_id;
+    let new_url = Url::parse("https://external-storage.com/filepath-new?presigned_token").unwrap();
+    let update_request = UpdateOutputFileRequest::new(old_data_id.clone(), new_url.clone());
+    let update_response = authorized_client().update_output_file(update_request);
+    assert!(update_response.is_ok());
+    assert!(old_data_id != update_response.unwrap().data_id);
 }
 
 #[test_case]

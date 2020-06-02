@@ -57,6 +57,20 @@ impl RegisterInputFileRequest {
     }
 }
 
+#[into_request(TeaclaveFrontendRequest::UpdateInputFile)]
+#[into_request(TeaclaveManagementRequest::UpdateInputFile)]
+#[derive(Debug, PartialEq)]
+pub struct UpdateInputFileRequest {
+    pub data_id: ExternalID,
+    pub url: Url,
+}
+
+impl UpdateInputFileRequest {
+    pub fn new(data_id: ExternalID, url: Url) -> Self {
+        Self { data_id, url }
+    }
+}
+
 #[into_request(TeaclaveFrontendResponse::RegisterInputFile)]
 #[into_request(TeaclaveManagementResponse::RegisterInputFile)]
 #[derive(Debug, PartialEq)]
@@ -65,6 +79,19 @@ pub struct RegisterInputFileResponse {
 }
 
 impl RegisterInputFileResponse {
+    pub fn new(data_id: ExternalID) -> Self {
+        Self { data_id }
+    }
+}
+
+#[into_request(TeaclaveFrontendResponse::UpdateInputFile)]
+#[into_request(TeaclaveManagementResponse::UpdateInputFile)]
+#[derive(Debug, PartialEq)]
+pub struct UpdateInputFileResponse {
+    pub data_id: ExternalID,
+}
+
+impl UpdateInputFileResponse {
     pub fn new(data_id: ExternalID) -> Self {
         Self { data_id }
     }
@@ -87,6 +114,20 @@ impl RegisterOutputFileRequest {
     }
 }
 
+#[into_request(TeaclaveFrontendRequest::UpdateOutputFile)]
+#[into_request(TeaclaveManagementRequest::UpdateOutputFile)]
+#[derive(Debug)]
+pub struct UpdateOutputFileRequest {
+    pub data_id: ExternalID,
+    pub url: Url,
+}
+
+impl UpdateOutputFileRequest {
+    pub fn new(data_id: ExternalID, url: Url) -> Self {
+        Self { data_id, url }
+    }
+}
+
 #[into_request(TeaclaveFrontendResponse::RegisterOutputFile)]
 #[into_request(TeaclaveManagementResponse::RegisterOutputFile)]
 #[derive(Debug)]
@@ -95,6 +136,19 @@ pub struct RegisterOutputFileResponse {
 }
 
 impl RegisterOutputFileResponse {
+    pub fn new(data_id: ExternalID) -> Self {
+        Self { data_id }
+    }
+}
+
+#[into_request(TeaclaveFrontendResponse::UpdateOutputFile)]
+#[into_request(TeaclaveManagementResponse::UpdateOutputFile)]
+#[derive(Debug)]
+pub struct UpdateOutputFileResponse {
+    pub data_id: ExternalID,
+}
+
+impl UpdateOutputFileResponse {
     pub fn new(data_id: ExternalID) -> Self {
         Self { data_id }
     }
@@ -518,6 +572,26 @@ impl From<RegisterInputFileRequest> for proto::RegisterInputFileRequest {
     }
 }
 
+impl std::convert::TryFrom<proto::UpdateInputFileRequest> for UpdateInputFileRequest {
+    type Error = Error;
+
+    fn try_from(proto: proto::UpdateInputFileRequest) -> Result<Self> {
+        let data_id = proto.data_id.try_into()?;
+        let url = Url::parse(&proto.url)?;
+
+        Ok(UpdateInputFileRequest { data_id, url })
+    }
+}
+
+impl From<UpdateInputFileRequest> for proto::UpdateInputFileRequest {
+    fn from(request: UpdateInputFileRequest) -> Self {
+        Self {
+            data_id: request.data_id.to_string(),
+            url: request.url.into_string(),
+        }
+    }
+}
+
 impl std::convert::TryFrom<proto::RegisterInputFileResponse> for RegisterInputFileResponse {
     type Error = Error;
 
@@ -529,6 +603,23 @@ impl std::convert::TryFrom<proto::RegisterInputFileResponse> for RegisterInputFi
 
 impl From<RegisterInputFileResponse> for proto::RegisterInputFileResponse {
     fn from(request: RegisterInputFileResponse) -> Self {
+        Self {
+            data_id: request.data_id.to_string(),
+        }
+    }
+}
+
+impl std::convert::TryFrom<proto::UpdateInputFileResponse> for UpdateInputFileResponse {
+    type Error = Error;
+
+    fn try_from(proto: proto::UpdateInputFileResponse) -> Result<Self> {
+        let data_id = proto.data_id.try_into()?;
+        Ok(Self { data_id })
+    }
+}
+
+impl From<UpdateInputFileResponse> for proto::UpdateInputFileResponse {
+    fn from(request: UpdateInputFileResponse) -> Self {
         Self {
             data_id: request.data_id.to_string(),
         }
@@ -560,6 +651,28 @@ impl From<RegisterOutputFileRequest> for proto::RegisterOutputFileRequest {
     }
 }
 
+impl std::convert::TryFrom<proto::UpdateOutputFileRequest> for UpdateOutputFileRequest {
+    type Error = Error;
+
+    fn try_from(proto: proto::UpdateOutputFileRequest) -> Result<Self> {
+        let ret = Self {
+            data_id: proto.data_id.try_into()?,
+            url: Url::parse(&proto.url)?,
+        };
+
+        Ok(ret)
+    }
+}
+
+impl From<UpdateOutputFileRequest> for proto::UpdateOutputFileRequest {
+    fn from(request: UpdateOutputFileRequest) -> Self {
+        Self {
+            data_id: request.data_id.to_string(),
+            url: request.url.into_string(),
+        }
+    }
+}
+
 impl std::convert::TryFrom<proto::RegisterOutputFileResponse> for RegisterOutputFileResponse {
     type Error = Error;
 
@@ -571,6 +684,23 @@ impl std::convert::TryFrom<proto::RegisterOutputFileResponse> for RegisterOutput
 
 impl From<RegisterOutputFileResponse> for proto::RegisterOutputFileResponse {
     fn from(request: RegisterOutputFileResponse) -> Self {
+        Self {
+            data_id: request.data_id.to_string(),
+        }
+    }
+}
+
+impl std::convert::TryFrom<proto::UpdateOutputFileResponse> for UpdateOutputFileResponse {
+    type Error = Error;
+
+    fn try_from(proto: proto::UpdateOutputFileResponse) -> Result<Self> {
+        let data_id = proto.data_id.try_into()?;
+        Ok(Self { data_id })
+    }
+}
+
+impl From<UpdateOutputFileResponse> for proto::UpdateOutputFileResponse {
+    fn from(request: UpdateOutputFileResponse) -> Self {
         Self {
             data_id: request.data_id.to_string(),
         }

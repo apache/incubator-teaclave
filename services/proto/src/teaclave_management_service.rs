@@ -23,9 +23,13 @@ pub use proto::TeaclaveManagementRequest;
 pub use proto::TeaclaveManagementResponse;
 
 pub type RegisterInputFileRequest = crate::teaclave_frontend_service::RegisterInputFileRequest;
+pub type UpdateInputFileRequest = crate::teaclave_frontend_service::UpdateInputFileRequest;
 pub type RegisterInputFileResponse = crate::teaclave_frontend_service::RegisterInputFileResponse;
+pub type UpdateInputFileResponse = crate::teaclave_frontend_service::UpdateInputFileResponse;
 pub type RegisterOutputFileRequest = crate::teaclave_frontend_service::RegisterOutputFileRequest;
+pub type UpdateOutputFileRequest = crate::teaclave_frontend_service::UpdateOutputFileRequest;
 pub type RegisterOutputFileResponse = crate::teaclave_frontend_service::RegisterOutputFileResponse;
+pub type UpdateOutputFileResponse = crate::teaclave_frontend_service::UpdateOutputFileResponse;
 pub type RegisterFusionOutputRequest =
     crate::teaclave_frontend_service::RegisterFusionOutputRequest;
 pub type RegisterFusionOutputResponse =
