@@ -31,6 +31,15 @@ struct OnlineDecryptArguments {
     key: String,
     nonce: String,
     encrypted_data: String,
+    algorithm: String,
+}
+
+enum Error {
+    CryptoError,
+}
+
+impl From<ring::error::Unspecified> for Error {
+    fn from(_: ring::error::Unspecified) -> Self { Error::CryptoError }
 }
 
 impl TryFrom<FunctionArguments> for OnlineDecryptArguments {
@@ -42,26 +51,30 @@ impl TryFrom<FunctionArguments> for OnlineDecryptArguments {
     }
 }
 
-fn decrypt(key: &[u8], nonce_data: &[u8], data: &mut Vec<u8>) {
-    let key = LessSafeKey::new(UnboundKey::new(&AES_256_GCM, &key).unwrap());
-    let nonce = Nonce::try_assume_unique_for_key(&nonce_data[0..12]).unwrap();
-    key.open_in_place(nonce, Aad::empty(), data).unwrap();
-    data.truncate(data.len() - AES_256_GCM.tag_len());
+fn decrypt(key: &[u8], nonce_data: &[u8], data: &mut Vec<u8>, alg: &'static ring::aead::Algorithm) -> Result<(), Error> {
+    let key = LessSafeKey::new(UnboundKey::new(&alg, &key).unwrap());
+    let nonce = Nonce::try_assume_unique_for_key(&nonce_data[0..12])?;
+    key.open_in_place(nonce, Aad::empty(), data)?;
+    data.truncate(data.len() - alg.tag_len());
+    Ok(())
 }
 
-fn decrypt_string_base64(key: &str, nonce_str: &str, encrypted: &str) -> String {
-    let decoded_key = base64::decode(&key).unwrap();
-    let nonce = base64::decode(&nonce_str).unwrap();
-    let mut data_vec = base64::decode(&encrypted).unwrap();
+fn decrypt_string_base64(key: &str, nonce_str: &str, encrypted: &str, alg: &'static ring::aead::Algorithm) -> Result<String, base64::DecodeError> {
+    let decoded_key = base64::decode(&key)?;
+    let nonce = base64::decode(&nonce_str)?;
+    let mut data_vec = base64::decode(&encrypted)?;
 
-    decrypt(&decoded_key, &nonce, &mut data_vec);
-
+    let _result = match decrypt(&decoded_key, &nonce, &mut data_vec, &alg)
+    {
+        Err(_e) => panic!("Encryption Errors"),
+        Ok(_v) => (),
+    };
     let string = match str::from_utf8(&data_vec) {
         Ok(v) => v,
         Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
     };
 
-    string.to_string()
+    Ok(string.to_string())
 }
 
 impl OnlineDecrypt {
@@ -80,7 +93,15 @@ impl OnlineDecrypt {
         let key = args.key;
         let nonce = args.nonce;
         let encrypted_data = args.encrypted_data;
-        let result = decrypt_string_base64(&key, &nonce, &encrypted_data);
+        let algorithm = &args.algorithm[..];
+
+        let alg = match algorithm {
+            "aes128gcm" => &AES_128_GCM,
+            "aes256gcm" => &AES_256_GCM,
+            _ => panic!("Invalid key length"),
+        };
+
+        let result = decrypt_string_base64(&key, &nonce, &encrypted_data, alg)?;
         Ok(result)
     }
 }
@@ -97,21 +118,33 @@ pub mod tests {
         run_tests!(test_online_decrypt)
     }
 
-    fn test_online_decrypt() {
-        let args = FunctionArguments::from_json(json!({
-            "key": "aqUdgZ0lJnuz9yiPkoDxM6ZcTcVVpd4KKLqzbHD88Lg=",
-            "nonce": "AAECAwQFBgcICQoL",
-            "encrypted_data": "CaZd8qSMMlBp8SjSXj2I4dQIuC9KkZ5DI/ATo1sWJw=="
-        }))
-        .unwrap();
-
+    fn test_subroutine(args:FunctionArguments, result: &str) {
         let input_files = StagedFiles::default();
         let output_files = StagedFiles::default();
-
         let runtime = Box::new(RawIoRuntime::new(input_files, output_files));
         let function = OnlineDecrypt;
-
         let summary = function.run(args, runtime).unwrap();
-        assert_eq!(summary, "Hello Teaclave!");
+        assert_eq!(summary, result);
+    }
+
+    fn test_online_decrypt() {
+        let args1 = FunctionArguments::from_json(json!({
+            "key": "aqUdgZ0lJnuz9yiPkoDxM6ZcTcVVpd4KKLqzbHD88Lg=",
+            "nonce": "AAECAwQFBgcICQoL",
+            "encrypted_data": "CaZd8qSMMlBp8SjSXj2I4dQIuC9KkZ5DI/ATo1sWJw==",
+            "algorithm": "aes256gcm"
+        }))
+        .unwrap();
+        test_subroutine(args1, "Hello Teaclave!");
+
+        let args2 = FunctionArguments::from_json(json!({
+            "key": "aqUdgZ0lJnuz9yiPkoDxMw==",
+            "nonce": "AAECAwQFBgcICQoL",
+            "encrypted_data": "OqMscYqxk1CshHQZulTrrDlJjS/v6BE/clWJyTerUw==",
+            "algorithm": "aes128gcm"
+        }))
+        .unwrap();
+        test_subroutine(args2, "Hello Teaclave!");
+
     }
 }

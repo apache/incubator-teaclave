@@ -15,7 +15,7 @@ class BuiltinOnlineDecryptExample:
         self.user_id = user_id
         self.user_password = user_password
 
-    def decrypt(self, key, nonce, encrypted_data):
+    def decrypt(self, key, nonce, encrypted_data, algorithm):
         channel = AuthenticationService(AUTHENTICATION_SERVICE_ADDRESS,
                                         AS_ROOT_CA_CERT_PATH,
                                         ENCLAVE_INFO_PATH).connect()
@@ -38,7 +38,7 @@ class BuiltinOnlineDecryptExample:
             name="builtin-online-decrypt",
             description="Native Echo Function",
             executor_type="builtin",
-            arguments=["key", "nonce", "encrypted_data"])
+            arguments=["key", "nonce", "encrypted_data", "algorithm"])
 
         print("[+] creating task")
         task_id = client.create_task(
@@ -47,7 +47,8 @@ class BuiltinOnlineDecryptExample:
                 "key": DataToBase64(key),
                 "nonce": DataToBase64(nonce),
                 "encrypted_data":
-                "CaZd8qSMMlBp8SjSXj2I4dQIuC9KkZ5DI/ATo1sWJw=="
+                "CaZd8qSMMlBp8SjSXj2I4dQIuC9KkZ5DI/ATo1sWJw==",
+                "algorithm": algorithm
             },
             executor="builtin")
 
@@ -74,10 +75,10 @@ def main():
     ]
     nonce = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
     encrypted_data = "CaZd8qSMMlBp8SjSXj2I4dQIuC9KkZ5DI/ATo1sWJw=="
-    rt = example.decrypt(key, nonce, encrypted_data)
+    algorithm = "aes256gcm" #Alogorithm can be "aes256gcm" or "aes128gcm"
+    rt = example.decrypt(key, nonce, encrypted_data, algorithm)
     print("[+] function return: ", rt)
 
 
 if __name__ == '__main__':
     main()
-    
