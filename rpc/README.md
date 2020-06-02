@@ -29,7 +29,7 @@ TLS and attestation configs.
 
 Server is an entity to listening a network address, processing incoming
 messages, and forwarding requests to certain service. Similar with channel in
-Teaclave, we implement `SgxTrustedTlsServer`, which can establish a attested TLS
+Teaclave, we implement `SgxTrustedTlsServer`, which can establish an attested TLS
 channel with clients.
 
 Similar with the client, you can use `SgxTrustedTlsServerConfig` to setup TLS
