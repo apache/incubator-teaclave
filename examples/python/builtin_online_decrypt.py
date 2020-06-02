@@ -75,7 +75,7 @@ def main():
     ]
     nonce = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
     encrypted_data = "CaZd8qSMMlBp8SjSXj2I4dQIuC9KkZ5DI/ATo1sWJw=="
-    algorithm = "aes256gcm" # Alogorithm can be "aes256gcm" or "aes128gcm"
+    algorithm = "aes256gcm"  # Alogorithm can be "aes256gcm" or "aes128gcm"
     rt = example.decrypt(key, nonce, encrypted_data, algorithm)
     print("[+] function return: ", rt)
 

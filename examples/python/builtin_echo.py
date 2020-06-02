@@ -2,20 +2,11 @@
 
 import sys
 
-from teaclave import (
-    AuthenticationService,
-    FrontendService,
-    AuthenticationClient,
-    FrontendClient
-)
-from utils import (
-    AUTHENTICATION_SERVICE_ADDRESS,
-    FRONTEND_SERVICE_ADDRESS,
-    AS_ROOT_CA_CERT_PATH,
-    ENCLAVE_INFO_PATH,
-    USER_ID,
-    USER_PASSWORD
-)
+from teaclave import (AuthenticationService, FrontendService,
+                      AuthenticationClient, FrontendClient)
+from utils import (AUTHENTICATION_SERVICE_ADDRESS, FRONTEND_SERVICE_ADDRESS,
+                   AS_ROOT_CA_CERT_PATH, ENCLAVE_INFO_PATH, USER_ID,
+                   USER_PASSWORD)
 
 
 class BuiltinEchoExample:

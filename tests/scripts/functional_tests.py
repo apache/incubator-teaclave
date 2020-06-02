@@ -78,8 +78,8 @@ def verify_report(cert, endpoint_name):
     quote = base64.b64decode(quote)
 
     # get mr_enclave and mr_signer from the quote
-    mr_enclave = quote[112:112+32].hex()
-    mr_signer = quote[176:176+32].hex()
+    mr_enclave = quote[112:112 + 32].hex()
+    mr_signer = quote[176:176 + 32].hex()
 
     # get enclave_info
     enclave_info = toml.load(ENCLAVE_INFO_PATH)
@@ -94,7 +94,6 @@ def verify_report(cert, endpoint_name):
 
 
 class TestAuthenticationService(unittest.TestCase):
-
     def setUp(self):
         sock = socket.create_connection(AUTHENTICATION_SERVICE_ADDRESS)
         self.socket = CONTEXT.wrap_socket(sock, server_hostname=HOSTNAME)

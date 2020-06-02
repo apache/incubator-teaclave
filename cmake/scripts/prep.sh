@@ -14,7 +14,7 @@ for var in "${REQUIRED_ENVS[@]}"; do
     [ -z "${!var}" ] && echo "Please set ${var}" && exit -1
 done
 
-${MT_SCRIPT_DIR}/setup_cmake_tomls ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}
+${MT_SCRIPT_DIR}/setup_cmake_tomls.py ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}
 mkdir -p ${TEACLAVE_OUT_DIR} ${TEACLAVE_TARGET_DIR} ${TEACLAVE_SERVICE_INSTALL_DIR} \
       ${TEACLAVE_EXAMPLE_INSTALL_DIR} ${TEACLAVE_CLI_INSTALL_DIR} \
       ${TEACLAVE_BIN_INSTALL_DIR} ${TEACLAVE_LIB_INSTALL_DIR} \
