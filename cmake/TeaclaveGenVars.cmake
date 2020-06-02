@@ -77,7 +77,7 @@ else()
     set(SGX_ENCLAVE_FEATURES -Z package-features --features "mesalock_sgx cov")
     set(CARGO_INCREMENTAL 0)
     set(RUSTFLAGS "${RUSTFLAGS} -D warnings -Zprofile -Ccodegen-units=1 \
--Cllvm_args=-inline-threshold=0 -Coverflow-checks=off -Zno-landing-pads")
+-Cllvm_args=-inline-threshold=0 -Coverflow-checks=off")
   endif()
 endif()
 
