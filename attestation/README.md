@@ -2,10 +2,10 @@
 permalink: /attestation
 ---
 
+# Attestation in Teaclave
+
 This directory contains the implementation of the attestation in Apache
 Teaclave.
-
-# Attestation in Teaclave
 
 Attestation is the process of demonstrating that a software component is running
 properly on a Trusted Execution Environment (e.g., Intel SGX).

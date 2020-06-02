@@ -31,7 +31,7 @@ other, it is impossible to decide which enclave is to be built first.
 
 ## Solution
 
-Teaclave resolves this problem by replying on third-party auditors. We assume
+Teaclave resolves this problem by relying on third-party auditors. We assume
 that there will be several parties trusted by all participants of Teaclave's
 computation tasks (could platforms, data providers, and customers, etc). The
 source code and binaries of Teaclave are audited by these trusted parties. Once
