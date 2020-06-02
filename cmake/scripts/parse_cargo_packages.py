@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 '''
 [usage] python parse_cargo_package.py <cargo_toml_path> <teaclave_root>
 This script parses Cargo.toml to print three lists for CMake
@@ -67,17 +68,18 @@ def pkg_path_2_category(pkg_path):
     elif pkg_path == 'dcap':
         return 'dcap'
     else:
-        sys.stderr.write('[Error]: Unknown category for package_path {}\n'.format(pkg_path))
+        sys.stderr.write(
+            '[Error]: Unknown category for package_path {}\n'.format(pkg_path))
         sys.exit(-1)
 
 
 DEFAULT_EDL_LIB = "Enclave_common_t"
 PKG_NAME_TO_EDL_LIB = {
-        "teaclave_unit_tests_enclave" : "Enclave_fa_t",
-        "teaclave_execution_service_enclave" : "Enclave_fa_t",
-    }
+    "teaclave_unit_tests_enclave": "Enclave_fa_t",
+    "teaclave_execution_service_enclave": "Enclave_fa_t",
+}
 
-    
+
 def pkg_name_2_edl_lib_name(pkg_name):
     """
     Take pkg_name and return its configured edl libary name, default is DEFAULT_EDL_LIB.
@@ -110,8 +112,10 @@ def main():
         pkg_categories.append(pkg_path_2_category(pkg_path))
         edl_lib_names.append(pkg_name_2_edl_lib_name(pkg_name))
 
-    out = [":".join(pkg_names), ":".join(pkg_paths),
-           ":".join(pkg_categories), ":".join(edl_lib_names)]
+    out = [
+        ":".join(pkg_names), ":".join(pkg_paths), ":".join(pkg_categories),
+        ":".join(edl_lib_names)
+    ]
     sys.stdout.write("\n".join(out))
 
 

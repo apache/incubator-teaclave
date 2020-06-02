@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 '''
-[usage] setup_cmake_tomls [project_root_dir] [project_build_dir]
+[usage] setup_cmake_tomls.py [project_root_dir] [project_build_dir]
 Create cmake_tomls under build_dir
 Create separate folders for unix_app|sgx_trusted|sgx_untrusted under build_dir/cmake_tomls
 Create symlinks for Cargo.*.toml and folders so cargo build can run in separate folders
@@ -11,13 +11,7 @@ import os.path as osp
 import sys
 
 # symlinks won't be created for the following directories
-SYM_FOLDER_BLACKLIST = [
-    'docs',
-    'cmake',
-    'out',
-    'bin',
-    'build'
-]
+SYM_FOLDER_BLACKLIST = ['docs', 'cmake', 'out', 'bin', 'build']
 
 CATEGORIES = ['sgx_trusted_lib', 'sgx_untrusted_app', 'unix_app']
 
@@ -31,7 +25,8 @@ def exec_cmd(cmd):
 def filter_sym_dir(root_dir, name):
     """return true if name corresponds to a folder and is not in blacklist"""
     return not name.startswith(
-        '.') and not name in SYM_FOLDER_BLACKLIST and osp.isdir(osp.join(root_dir, name))
+        '.') and not name in SYM_FOLDER_BLACKLIST and osp.isdir(
+            osp.join(root_dir, name))
 
 
 def create_symlinks(root_dir, build_dir):
@@ -39,23 +34,24 @@ def create_symlinks(root_dir, build_dir):
     exec_cmd('mkdir -p {build_dir}/cmake_tomls'.format(build_dir=build_dir))
 
     sym_folders = list(
-        filter(
-            lambda name: filter_sym_dir(
-                root_dir,
-                name),
-            os.listdir(root_dir)))
+        filter(lambda name: filter_sym_dir(root_dir, name),
+               os.listdir(root_dir)))
 
     for cate in CATEGORIES:
-        cate_dir = '{build_dir}/cmake_tomls/{cate}'.format(
-            build_dir=build_dir, cate=cate)
+        cate_dir = '{build_dir}/cmake_tomls/{cate}'.format(build_dir=build_dir,
+                                                           cate=cate)
         cmd = 'mkdir -p {cate_dir} && [ ! -f {cate_dir}/Cargo.toml ] && \
             ln -s {root_dir}/cmake/tomls/Cargo.{cate}.toml \
-            {cate_dir}/Cargo.toml'.format(root_dir=root_dir, cate=cate, cate_dir=cate_dir)
+            {cate_dir}/Cargo.toml'.format(root_dir=root_dir,
+                                          cate=cate,
+                                          cate_dir=cate_dir)
         exec_cmd(cmd)
 
         for folder in sym_folders:
             cmd = '[ ! -d {cate_dir}/{folder} ] && ln -sn {root_dir}/{folder} \
-                {cate_dir}/'.format(root_dir=root_dir, folder=folder, cate_dir=cate_dir)
+                {cate_dir}/'.format(root_dir=root_dir,
+                                    folder=folder,
+                                    cate_dir=cate_dir)
             exec_cmd(cmd)
 
 
@@ -80,14 +76,18 @@ def setup_cargo_for_unix(root_dir, build_dir):
         && cp -f {third_party_dir}/crates-io/config {build_dir}/cmake_tomls/{target}/.cargo/config \
         && sed -i 's/directory = "vendor"/directory = "third_party\/crates-io\/vendor"/' \
         {build_dir}/cmake_tomls/{target}/.cargo/config'''
-        cmd = cmd.format(build_dir=build_dir, third_party_dir=third_party_dir, target=target)
+        cmd = cmd.format(build_dir=build_dir,
+                         third_party_dir=third_party_dir,
+                         target=target)
         exec_cmd(cmd)
 
 
 def main():
     """setup tomls for cmake"""
     if len(sys.argv) != 3:
-        print('[usage] setup_cmake_tomls [project_root_dir] [project_build_dir]')
+        print(
+            '[usage] setup_cmake_tomls.py [project_root_dir] [project_build_dir]'
+        )
         sys.exit(-1)
     root_dir = sys.argv[1]
     build_dir = sys.argv[2]

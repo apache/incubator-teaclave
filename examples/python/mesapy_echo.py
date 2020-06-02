@@ -2,20 +2,11 @@
 
 import sys
 
-from teaclave import (
-    AuthenticationService,
-    FrontendService,
-    AuthenticationClient,
-    FrontendClient
-)
-from utils import (
-    AUTHENTICATION_SERVICE_ADDRESS,
-    FRONTEND_SERVICE_ADDRESS,
-    AS_ROOT_CA_CERT_PATH,
-    ENCLAVE_INFO_PATH,
-    USER_ID,
-    USER_PASSWORD
-)
+from teaclave import (AuthenticationService, FrontendService,
+                      AuthenticationClient, FrontendClient)
+from utils import (AUTHENTICATION_SERVICE_ADDRESS, FRONTEND_SERVICE_ADDRESS,
+                   AS_ROOT_CA_CERT_PATH, ENCLAVE_INFO_PATH, USER_ID,
+                   USER_PASSWORD)
 
 
 class MesaPyEchoExample:
@@ -23,7 +14,9 @@ class MesaPyEchoExample:
         self.user_id = user_id
         self.user_password = user_password
 
-    def echo(self, payload_file="mesapy_echo_payload.py", message="Hello, Teaclave!"):
+    def echo(self,
+             payload_file="mesapy_echo_payload.py",
+             message="Hello, Teaclave!"):
         channel = AuthenticationService(AUTHENTICATION_SERVICE_ADDRESS,
                                         AS_ROOT_CA_CERT_PATH,
                                         ENCLAVE_INFO_PATH).connect()

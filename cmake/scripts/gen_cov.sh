@@ -6,7 +6,7 @@ for var in "${REQUIRED_ENVS[@]}"; do
 done
 
 LCOV=lcov
-LCOVOPT="--gcov-tool ${TEACLAVE_PROJECT_ROOT}/cmake/scripts/llvm-gcov"
+LCOVOPT="--gcov-tool ${TEACLAVE_PROJECT_ROOT}/cmake/scripts/llvm-gcov.sh"
 LCOV_REALPATH="${TEACLAVE_PROJECT_ROOT}/cmake/scripts/lcov_realpath.py"
 GENHTML=genhtml
 

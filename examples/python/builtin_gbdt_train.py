@@ -128,7 +128,7 @@ class BuiltinGbdtExample:
 
 def main():
     example = BuiltinGbdtExample(USER_ID, USER_PASSWORD)
-    rt = example.gbdt() 
+    rt = example.gbdt()
 
     print("[+] function return: ", rt)
 

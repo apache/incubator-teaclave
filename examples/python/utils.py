@@ -20,4 +20,3 @@ if os.environ.get('TEACLAVE_PROJECT_ROOT'):
 else:
     AS_ROOT_CA_CERT_PATH = "../../keys/" + AS_ROOT_CERT_FILENAME
     ENCLAVE_INFO_PATH = "../../release/tests/enclave_info.toml"
-
