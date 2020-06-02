@@ -42,6 +42,7 @@ using and contributing to Teaclave in alphabetical order.
 ### Organizations
   - [Baidu](https://www.baidu.com/)
   - [ByteDance](https://www.bytedance.com/)
+  - [Enigma](https://www.enigma.co/)
 
 ### Projects
   - [Advanca](https://github.com/advanca/advanca): A privacy-preserving
@@ -52,5 +53,9 @@ using and contributing to Teaclave in alphabetical order.
     prototype of Crypto.com Chain.
   - [Occlum](https://github.com/occlum/occlum): Occlum is a memory-safe,
     multi-process library OS for Intel SGX.
+  - [SecretNetwork](https://github.com/enigmampc/SecretNetwork): A
+    blockchain-based, open-source protocol that lets anyone perform computations
+    on encrypted data, bringing privacy to smart contracts and public
+    blockchains.
   - [substraTEE](https://github.com/scs/substraTEE): Trusted Off-Chain Compute
     Framework for substrate blockchains.
