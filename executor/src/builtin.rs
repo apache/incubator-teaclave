@@ -49,7 +49,7 @@ impl TeaclaveExecutor for BuiltinFunctionExecutor {
             LogisticRegressionPredict::NAME => {
                 LogisticRegressionPredict::new().run(arguments, runtime)
             }
-            #[cfg(feature = "builtin-online-decrypt")]
+            #[cfg(feature = "builtin_online_decrypt")]
             OnlineDecrypt::NAME => OnlineDecrypt::new().run(arguments, runtime),
             _ => bail!("Function not found."),
         }

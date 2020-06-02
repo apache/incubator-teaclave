@@ -35,7 +35,7 @@ class BuiltinOnlineDecryptExample:
 
         print("[+] registering function")
         function_id = client.register_function(
-            name="builtin-online-decrypt",
+            name="builtin_online_decrypt",
             description="Native Echo Function",
             executor_type="builtin",
             arguments=["key", "nonce", "encrypted_data", "algorithm"])
@@ -44,8 +44,8 @@ class BuiltinOnlineDecryptExample:
         task_id = client.create_task(
             function_id=function_id,
             function_arguments={
-                "key": DataToBase64(key),
-                "nonce": DataToBase64(nonce),
+                "key": dataToBase64(key),
+                "nonce": dataToBase64(nonce),
                 "encrypted_data":
                 "CaZd8qSMMlBp8SjSXj2I4dQIuC9KkZ5DI/ATo1sWJw==",
                 "algorithm": algorithm
@@ -62,7 +62,7 @@ class BuiltinOnlineDecryptExample:
         return bytes(result)
 
 
-def DataToBase64(data):
+def dataToBase64(data):
     return base64.standard_b64encode(bytes(data)).decode("utf-8")
 
 
@@ -75,7 +75,7 @@ def main():
     ]
     nonce = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
     encrypted_data = "CaZd8qSMMlBp8SjSXj2I4dQIuC9KkZ5DI/ATo1sWJw=="
-    algorithm = "aes256gcm" #Alogorithm can be "aes256gcm" or "aes128gcm"
+    algorithm = "aes256gcm" # Alogorithm can be "aes256gcm" or "aes128gcm"
     rt = example.decrypt(key, nonce, encrypted_data, algorithm)
     print("[+] function return: ", rt)
 

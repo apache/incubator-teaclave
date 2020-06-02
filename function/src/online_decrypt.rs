@@ -18,7 +18,7 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 extern crate base64;
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 use ring::aead::*;
 use std::convert::TryFrom;
 use std::str;
@@ -33,16 +33,6 @@ struct OnlineDecryptArguments {
     nonce: String,
     encrypted_data: String,
     algorithm: String,
-}
-
-enum Error {
-    CryptoError,
-}
-
-impl From<ring::error::Unspecified> for Error {
-    fn from(_: ring::error::Unspecified) -> Self {
-        Error::CryptoError
-    }
 }
 
 impl TryFrom<FunctionArguments> for OnlineDecryptArguments {
@@ -80,15 +70,14 @@ fn decrypt_string_base64(
     let nonce = base64::decode(&nonce_str)?;
     let mut data_vec = base64::decode(&encrypted)?;
 
-    let _result = decrypt(&decoded_key, &nonce, &mut data_vec, &alg)
-        .map_err(|_| anyhow!("decryption error"))?;
+    decrypt(&decoded_key, &nonce, &mut data_vec, &alg).map_err(|_| anyhow!("decryption error"))?;
     let string = str::from_utf8(&data_vec).map_err(|_| anyhow!("base64 decoded error"))?;
 
     Ok(string.to_string())
 }
 
 impl OnlineDecrypt {
-    pub const NAME: &'static str = "builtin-online-decrypt";
+    pub const NAME: &'static str = "builtin_online_decrypt";
 
     pub fn new() -> Self {
         Default::default()
@@ -108,7 +97,7 @@ impl OnlineDecrypt {
         let alg = match algorithm {
             "aes128gcm" => &AES_128_GCM,
             "aes256gcm" => &AES_256_GCM,
-            _ => return Err(anyhow!("Invalid algorithm")),
+            _ => bail!("Invalid algorithm"),
         };
 
         let result = decrypt_string_base64(&key, &nonce, &encrypted_data, alg)?;
