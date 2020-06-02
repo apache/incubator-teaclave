@@ -18,6 +18,7 @@
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 extern crate base64;
+use anyhow::{anyhow, Result};
 use ring::aead::*;
 use std::convert::TryFrom;
 use std::str;
@@ -39,7 +40,9 @@ enum Error {
 }
 
 impl From<ring::error::Unspecified> for Error {
-    fn from(_: ring::error::Unspecified) -> Self { Error::CryptoError }
+    fn from(_: ring::error::Unspecified) -> Self {
+        Error::CryptoError
+    }
 }
 
 impl TryFrom<FunctionArguments> for OnlineDecryptArguments {
@@ -51,28 +54,35 @@ impl TryFrom<FunctionArguments> for OnlineDecryptArguments {
     }
 }
 
-fn decrypt(key: &[u8], nonce_data: &[u8], data: &mut Vec<u8>, alg: &'static ring::aead::Algorithm) -> Result<(), Error> {
-    let key = LessSafeKey::new(UnboundKey::new(&alg, &key).unwrap());
-    let nonce = Nonce::try_assume_unique_for_key(&nonce_data[0..12])?;
-    key.open_in_place(nonce, Aad::empty(), data)?;
+fn decrypt(
+    key: &[u8],
+    nonce_data: &[u8],
+    data: &mut Vec<u8>,
+    alg: &'static ring::aead::Algorithm,
+) -> anyhow::Result<()> {
+    let key =
+        LessSafeKey::new(UnboundKey::new(&alg, &key).map_err(|_| anyhow!("decryption error"))?);
+    let nonce = Nonce::try_assume_unique_for_key(&nonce_data[0..12])
+        .map_err(|_| anyhow!("decryption error"))?;
+    key.open_in_place(nonce, Aad::empty(), data)
+        .map_err(|_| anyhow!("decryption error"))?;
     data.truncate(data.len() - alg.tag_len());
     Ok(())
 }
 
-fn decrypt_string_base64(key: &str, nonce_str: &str, encrypted: &str, alg: &'static ring::aead::Algorithm) -> Result<String, base64::DecodeError> {
+fn decrypt_string_base64(
+    key: &str,
+    nonce_str: &str,
+    encrypted: &str,
+    alg: &'static ring::aead::Algorithm,
+) -> anyhow::Result<String> {
     let decoded_key = base64::decode(&key)?;
     let nonce = base64::decode(&nonce_str)?;
     let mut data_vec = base64::decode(&encrypted)?;
 
-    let _result = match decrypt(&decoded_key, &nonce, &mut data_vec, &alg)
-    {
-        Err(_e) => panic!("Encryption Errors"),
-        Ok(_v) => (),
-    };
-    let string = match str::from_utf8(&data_vec) {
-        Ok(v) => v,
-        Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
-    };
+    let _result = decrypt(&decoded_key, &nonce, &mut data_vec, &alg)
+        .map_err(|_| anyhow!("decryption error"))?;
+    let string = str::from_utf8(&data_vec).map_err(|_| anyhow!("base64 decoded error"))?;
 
     Ok(string.to_string())
 }
@@ -98,7 +108,7 @@ impl OnlineDecrypt {
         let alg = match algorithm {
             "aes128gcm" => &AES_128_GCM,
             "aes256gcm" => &AES_256_GCM,
-            _ => panic!("Invalid key length"),
+            _ => return Err(anyhow!("Invalid algorithm")),
         };
 
         let result = decrypt_string_base64(&key, &nonce, &encrypted_data, alg)?;
@@ -118,7 +128,7 @@ pub mod tests {
         run_tests!(test_online_decrypt)
     }
 
-    fn test_subroutine(args:FunctionArguments, result: &str) {
+    fn test_subroutine(args: FunctionArguments, result: &str) {
         let input_files = StagedFiles::default();
         let output_files = StagedFiles::default();
         let runtime = Box::new(RawIoRuntime::new(input_files, output_files));
@@ -145,6 +155,5 @@ pub mod tests {
         }))
         .unwrap();
         test_subroutine(args2, "Hello Teaclave!");
-
     }
 }
