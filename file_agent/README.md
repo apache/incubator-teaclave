@@ -11,7 +11,7 @@ handle file downloading/uploading from and to various storage service providers
 Before executing a task, the execution service will use the file agent to
 prepare any registered input files comes with the task. For example, the
 registered file input could be a presigned URL from AWS S3. The file agent will
-download and prepare the file to the local storage. With these files in local
-storage, the executor can finally invoke the function. Similarly, after the task
-is successfully executed, the file agent will help to upload the output files to
-remote storage.
+download and prepare the file in local. With these files in the local storage,
+the executor can finally invoke the function. Similarly, after the task is
+successfully executed, the file agent will help to upload the output files to
+a remote file storage like S3.
