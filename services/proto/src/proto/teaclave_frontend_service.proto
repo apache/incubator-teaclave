@@ -14,12 +14,30 @@ message RegisterInputFileResponse {
   string data_id = 1;
 }
 
+message UpdateInputFileRequest {
+  string data_id = 1;
+  string url = 2;
+}
+
+message UpdateInputFileResponse {
+  string data_id = 1;
+}
+
 message RegisterOutputFileRequest {
   string url = 1;
   teaclave_common_proto.FileCryptoInfo crypto_info = 2;
 }
 
 message RegisterOutputFileResponse {
+  string data_id = 1;
+}
+
+message UpdateOutputFileRequest {
+  string data_id = 1;
+  string url = 2;
+}
+
+message UpdateOutputFileResponse {
   string data_id = 1;
 }
 
@@ -163,6 +181,8 @@ message InvokeTaskResponse { }
 service TeaclaveFrontend {
   rpc RegisterInputFile (RegisterInputFileRequest) returns (RegisterInputFileResponse);
   rpc RegisterOutputFile (RegisterOutputFileRequest) returns (RegisterOutputFileResponse);
+  rpc UpdateInputFile (UpdateInputFileRequest) returns (UpdateInputFileResponse);
+  rpc UpdateOutputFile (UpdateOutputFileRequest) returns (UpdateOutputFileResponse);
   rpc RegisterFusionOutput (RegisterFusionOutputRequest) returns (RegisterFusionOutputResponse);
   rpc RegisterInputFromOutput (RegisterInputFromOutputRequest) returns (RegisterInputFromOutputResponse);
   rpc GetOutputFile (GetOutputFileRequest) returns (GetOutputFileResponse);

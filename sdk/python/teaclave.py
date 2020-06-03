@@ -121,6 +121,20 @@ class RegisterOutputFileRequest:
         self.url = url
         self.crypto_info = crypto_info
 
+class UpdateInputFileRequest:
+    def __init__(self, metadata, data_id, url):
+        self.request = "update_input_file"
+        self.metadata = metadata
+        self.data_id =data_id
+        self.url = url
+
+
+class UpdateOutputFileRequest:
+    def __init__(self, metadata, data_id, url):
+        self.request = "update_output_file"
+        self.metadata = metadata
+        self.data_id =data_id
+        self.url = url
 
 class CreateTaskRequest:
     def __init__(self, metadata, function_id, function_arguments, executor,

@@ -32,7 +32,8 @@ use teaclave_proto::teaclave_frontend_service::{
     RegisterFunctionRequest, RegisterFunctionResponse, RegisterFusionOutputRequest,
     RegisterFusionOutputResponse, RegisterInputFileRequest, RegisterInputFileResponse,
     RegisterInputFromOutputRequest, RegisterInputFromOutputResponse, RegisterOutputFileRequest,
-    RegisterOutputFileResponse, TeaclaveFrontend,
+    RegisterOutputFileResponse, TeaclaveFrontend, UpdateInputFileRequest, UpdateInputFileResponse,
+    UpdateOutputFileRequest, UpdateOutputFileResponse,
 };
 use teaclave_proto::teaclave_management_service::TeaclaveManagementClient;
 use teaclave_rpc::endpoint::Endpoint;
@@ -135,11 +136,25 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
         authentication_and_forward_to_management!(self, request, register_input_file)
     }
 
+    fn update_input_file(
+        &self,
+        request: Request<UpdateInputFileRequest>,
+    ) -> TeaclaveServiceResponseResult<UpdateInputFileResponse> {
+        authentication_and_forward_to_management!(self, request, update_input_file)
+    }
+
     fn register_output_file(
         &self,
         request: Request<RegisterOutputFileRequest>,
     ) -> TeaclaveServiceResponseResult<RegisterOutputFileResponse> {
         authentication_and_forward_to_management!(self, request, register_output_file)
+    }
+
+    fn update_output_file(
+        &self,
+        request: Request<UpdateOutputFileRequest>,
+    ) -> TeaclaveServiceResponseResult<UpdateOutputFileResponse> {
+        authentication_and_forward_to_management!(self, request, update_output_file)
     }
 
     fn register_fusion_output(
