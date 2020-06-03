@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-#![feature(llvm_asm)]
+
 #![cfg_attr(feature = "mesalock_sgx", no_std)]
 #[cfg(feature = "mesalock_sgx")]
 extern crate sgx_tstd as std;
@@ -28,7 +28,6 @@ mod gbdt_train;
 mod logistic_regression_predict;
 mod logistic_regression_train;
 mod online_decrypt;
-mod psi;
 
 pub use echo::Echo;
 pub use gbdt_predict::GbdtPredict;
@@ -36,7 +35,6 @@ pub use gbdt_train::GbdtTrain;
 pub use logistic_regression_predict::LogisticRegressionPredict;
 pub use logistic_regression_train::LogisticRegressionTrain;
 pub use online_decrypt::OnlineDecrypt;
-pub use psi::PSI;
 
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
@@ -51,7 +49,6 @@ pub mod tests {
             logistic_regression_train::tests::run_tests(),
             logistic_regression_predict::tests::run_tests(),
             online_decrypt::tests::run_tests(),
-            psi::tests::run_tests(),
         )
     }
 }

@@ -19,8 +19,7 @@
 use std::prelude::v1::*;
 
 use teaclave_function::{
-    Echo, GbdtPredict, GbdtTrain, LogisticRegressionPredict, LogisticRegressionTrain,
-    OnlineDecrypt, PSI,
+    Echo, GbdtPredict, GbdtTrain, LogisticRegressionPredict, LogisticRegressionTrain, OnlineDecrypt,
 };
 use teaclave_types::{FunctionArguments, FunctionRuntime, TeaclaveExecutor};
 
@@ -52,8 +51,6 @@ impl TeaclaveExecutor for BuiltinFunctionExecutor {
             }
             #[cfg(feature = "builtin_online_decrypt")]
             OnlineDecrypt::NAME => OnlineDecrypt::new().run(arguments, runtime),
-            #[cfg(feature = "builtin_psi")]
-            PSI::NAME => PSI::new().run(arguments, runtime),
             _ => bail!("Function not found."),
         }
     }
