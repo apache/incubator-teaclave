@@ -91,7 +91,9 @@ impl TeaclaveManagement for TeaclaveManagementService {
         Ok(response)
     }
 
-    // access control: none
+    // access control:
+    // 1) exisiting_file.owner_list.len() == 1
+    // 2) user_id in existing_file.owner_list
     fn update_input_file(
         &self,
         request: Request<UpdateInputFileRequest>,
@@ -104,7 +106,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
             .map_err(|_| ServiceError::PermissionDenied)?;
 
         ensure!(
-            old_input_file.owner.contains(&user_id),
+            old_input_file.owner == OwnerList::from(vec![user_id]),
             ServiceError::PermissionDenied
         );
 
@@ -112,7 +114,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
             request.url,
             old_input_file.cmac,
             old_input_file.crypto_info,
-            vec![user_id],
+            old_input_file.owner,
         );
 
         self.write_to_db(&input_file)
@@ -138,7 +140,9 @@ impl TeaclaveManagement for TeaclaveManagementService {
         Ok(response)
     }
 
-    // access control: none
+    // access control:
+    // 1) exisiting_file.owner_list.len() == 1
+    // 2) user_id in existing_file.owner_list
     fn update_output_file(
         &self,
         request: Request<UpdateOutputFileRequest>,
@@ -151,12 +155,15 @@ impl TeaclaveManagement for TeaclaveManagementService {
             .map_err(|_| ServiceError::PermissionDenied)?;
 
         ensure!(
-            old_output_file.owner.contains(&user_id),
+            old_output_file.owner == OwnerList::from(vec![user_id]),
             ServiceError::PermissionDenied
         );
 
-        let output_file =
-            TeaclaveOutputFile::new(request.url, old_output_file.crypto_info, vec![user_id]);
+        let output_file = TeaclaveOutputFile::new(
+            request.url,
+            old_output_file.crypto_info,
+            old_output_file.owner,
+        );
 
         self.write_to_db(&output_file)
             .map_err(|_| ServiceError::StorageError)?;
