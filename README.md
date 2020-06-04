@@ -51,6 +51,8 @@ platform, making computation on privacy-sensitive data safe and simple.
 - [Configurations in Teaclave](config)
 - [Data Center Attestation Service](dcap)
 - [Dockerfile and Compose File](docker)
+- [Examples](examples)
+- [File Agent](file_agent)
 - [Function Executors](executor)
 - [Keys and Certificates](keys)
 - [RPC](rpc)
