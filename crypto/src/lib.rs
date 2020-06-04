@@ -77,7 +77,7 @@ impl AesGcm256Key {
         Self::default()
     }
 
-    pub fn decrypt(&self, in_out: &mut Vec<u8>) -> Result<[u8; CMAC_LENGTH]> {
+    pub fn decrypt(&self, in_out: &mut Vec<u8>) -> Result<CMac> {
         let plaintext_len = aead_decrypt(&aead::AES_256_GCM, in_out, &self.key, &self.iv)?.len();
         let mut cmac: CMac = [0u8; CMAC_LENGTH];
         cmac.copy_from_slice(&in_out[plaintext_len..]);
@@ -85,7 +85,7 @@ impl AesGcm256Key {
         Ok(cmac)
     }
 
-    pub fn encrypt(&self, in_out: &mut Vec<u8>) -> Result<[u8; CMAC_LENGTH]> {
+    pub fn encrypt(&self, in_out: &mut Vec<u8>) -> Result<CMac> {
         aead_encrypt(&aead::AES_256_GCM, in_out, &self.key, &self.iv)?;
         let mut cmac: CMac = [0u8; CMAC_LENGTH];
         let n = in_out.len();
@@ -147,7 +147,7 @@ impl AesGcm128Key {
         Self::default()
     }
 
-    pub fn decrypt(&self, in_out: &mut Vec<u8>) -> Result<[u8; CMAC_LENGTH]> {
+    pub fn decrypt(&self, in_out: &mut Vec<u8>) -> Result<CMac> {
         let plaintext_len = aead_decrypt(&aead::AES_128_GCM, in_out, &self.key, &self.iv)?.len();
         let mut cmac: CMac = [0u8; CMAC_LENGTH];
         cmac.copy_from_slice(&in_out[plaintext_len..]);
@@ -155,7 +155,7 @@ impl AesGcm128Key {
         Ok(cmac)
     }
 
-    pub fn encrypt(&self, in_out: &mut Vec<u8>) -> Result<[u8; CMAC_LENGTH]> {
+    pub fn encrypt(&self, in_out: &mut Vec<u8>) -> Result<CMac> {
         aead_encrypt(&aead::AES_128_GCM, in_out, &self.key, &self.iv)?;
         let mut cmac: CMac = [0u8; CMAC_LENGTH];
         let n = in_out.len();
@@ -201,7 +201,7 @@ impl TeaclaveFile128Key {
         Ok(TeaclaveFile128Key { key })
     }
 
-    pub fn decrypt<P: AsRef<Path>>(&self, path: P, out: &mut Vec<u8>) -> Result<[u8; CMAC_LENGTH]> {
+    pub fn decrypt<P: AsRef<Path>>(&self, path: P, out: &mut Vec<u8>) -> Result<CMac> {
         use std::io::Read;
         let mut file = ProtectedFile::open_ex(path.as_ref(), &self.key)?;
         let cmac = file.current_meta_gmac()?;
@@ -209,7 +209,7 @@ impl TeaclaveFile128Key {
         Ok(cmac)
     }
 
-    pub fn encrypt<P: AsRef<Path>>(&self, path: P, content: &[u8]) -> Result<[u8; CMAC_LENGTH]> {
+    pub fn encrypt<P: AsRef<Path>>(&self, path: P, content: &[u8]) -> Result<CMac> {
         use std::io::Write;
         let mut file = ProtectedFile::create_ex(path.as_ref(), &self.key)?;
         let cmac = file.current_meta_gmac()?;

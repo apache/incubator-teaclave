@@ -73,8 +73,9 @@ struct Opt {
     command: Command,
 }
 
-fn decrypt(opt: EncryptDecryptOpt, cmac: &mut CMac) -> Result<()> {
+fn decrypt(opt: EncryptDecryptOpt) -> Result<CMac> {
     let key = opt.key;
+    let mut cmac: CMac = [0u8; FILE_AUTH_TAG_LENGTH];
     match opt.algorithm.as_str() {
         AesGcm128Key::SCHEMA => {
             let iv = opt.iv.expect("IV is required.");
@@ -102,11 +103,12 @@ fn decrypt(opt: EncryptDecryptOpt, cmac: &mut CMac) -> Result<()> {
         _ => bail!("Invalid crypto algorithm"),
     }
 
-    Ok(())
+    Ok(cmac)
 }
 
-fn encrypt(opt: EncryptDecryptOpt, cmac: &mut CMac) -> Result<()> {
+fn encrypt(opt: EncryptDecryptOpt) -> Result<CMac> {
     let key = opt.key;
+    let mut cmac: CMac = [0u8; FILE_AUTH_TAG_LENGTH];
     match opt.algorithm.as_str() {
         AesGcm128Key::SCHEMA => {
             let iv = opt.iv.expect("IV is required.");
@@ -133,16 +135,15 @@ fn encrypt(opt: EncryptDecryptOpt, cmac: &mut CMac) -> Result<()> {
         _ => bail!("Invalid crypto algorithm"),
     }
 
-    Ok(())
+    Ok(cmac)
 }
 
 fn main() -> Result<()> {
     let args = Opt::from_args();
-    let mut cmac: CMac = [0u8; FILE_AUTH_TAG_LENGTH];
-    match args.command {
-        Command::Decrypt(opt) => decrypt(opt, &mut cmac)?,
-        Command::Encrypt(opt) => encrypt(opt, &mut cmac)?,
-    }
+    let cmac = match args.command {
+        Command::Decrypt(opt) => decrypt(opt)?,
+        Command::Encrypt(opt) => encrypt(opt)?,
+    };
     let cmac_string = hex::encode(cmac);
     println!("{}", cmac_string);
     Ok(())
