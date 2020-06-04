@@ -63,12 +63,13 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
             None => Err(anyhow!("cannot get enclave attribute of {}", service)),
         })
         .collect::<Result<_>>()?;
-    let server_config = SgxTrustedTlsServerConfig::from_attested_tls_config(attested_tls_config)?
-        .attestation_report_verifier(
-        accepted_enclave_attrs,
-        AS_ROOT_CA_CERT,
-        verifier::universal_quote_verifier,
-    )?;
+    let server_config =
+        SgxTrustedTlsServerConfig::from_attested_tls_config(attested_tls_config.clone())?
+            .attestation_report_verifier(
+                accepted_enclave_attrs,
+                AS_ROOT_CA_CERT,
+                verifier::universal_quote_verifier,
+            )?;
     let mut server =
         SgxTrustedTlsServer::<TeaclaveManagementResponse, TeaclaveManagementRequest>::new(
             listen_address,
@@ -80,7 +81,8 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
         &enclave_info,
         AS_ROOT_CA_CERT,
         verifier::universal_quote_verifier,
-    );
+        attested_tls_config,
+    )?;
 
     let service = service::TeaclaveManagementService::new(storage_service_endpoint)?;
     match server.start(service) {

@@ -53,7 +53,8 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
         .generate_and_endorse()?
         .attested_tls_config()
         .ok_or_else(|| anyhow!("cannot get attested TLS config"))?;
-    let server_config = SgxTrustedTlsServerConfig::from_attested_tls_config(attested_tls_config)?;
+    let server_config =
+        SgxTrustedTlsServerConfig::from_attested_tls_config(attested_tls_config.clone())?;
 
     let mut server = SgxTrustedTlsServer::<TeaclaveFrontendResponse, TeaclaveFrontendRequest>::new(
         listen_address,
@@ -66,14 +67,16 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
         &enclave_info,
         AS_ROOT_CA_CERT,
         verifier::universal_quote_verifier,
-    );
+        attested_tls_config.clone(),
+    )?;
 
     let management_service_endpoint = create_trusted_management_endpoint(
         &config.internal_endpoints.management.advertised_address,
         &enclave_info,
         AS_ROOT_CA_CERT,
         verifier::universal_quote_verifier,
-    );
+        attested_tls_config,
+    )?;
 
     let service = service::TeaclaveFrontendService::new(
         authentication_service_endpoint,

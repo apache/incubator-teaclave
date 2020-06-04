@@ -24,9 +24,9 @@ extern crate sgx_tstd as std;
 use std::prelude::v1::*;
 use std::untrusted::path::PathEx;
 
-use anyhow::{ensure, Result};
+use anyhow::{anyhow, ensure, Result};
 
-use teaclave_attestation::verifier;
+use teaclave_attestation::{verifier, AttestationConfig, RemoteAttestation};
 use teaclave_binder::proto::{
     ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
     StartServiceInput, StartServiceOutput,
@@ -43,6 +43,11 @@ mod service;
 mod task_file_manager;
 
 fn start_service(config: &RuntimeConfig) -> Result<()> {
+    let attestation_config = AttestationConfig::from_teaclave_config(&config)?;
+    let attested_tls_config = RemoteAttestation::new(attestation_config)
+        .generate_and_endorse()?
+        .attested_tls_config()
+        .ok_or_else(|| anyhow!("cannot get attested TLS config"))?;
     let enclave_info = EnclaveInfo::verify_and_new(
         &config.audit.enclave_info_bytes,
         AUDITOR_PUBLIC_KEYS,
@@ -54,7 +59,8 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
         &enclave_info,
         AS_ROOT_CA_CERT,
         verifier::universal_quote_verifier,
-    );
+        attested_tls_config,
+    )?;
 
     let fusion_base = config.mount.fusion_base_dir.clone();
 

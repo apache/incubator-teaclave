@@ -137,6 +137,7 @@ run_examples() {
   trap cleanup INT TERM ERR
 
   echo_title "examples"
+  mkdir -p /tmp/fusion_data
   pushd ${TEACLAVE_SERVICE_INSTALL_DIR}
   ./teaclave_authentication_service &
   ./teaclave_storage_service &
