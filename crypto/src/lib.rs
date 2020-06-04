@@ -39,7 +39,6 @@ const TEACLAVE_FILE_128_ROOT_KEY_LENGTH: usize = 16;
 const CMAC_LENGTH: usize = 16;
 type CMac = [u8; CMAC_LENGTH];
 
-
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct AesGcm256Key {
     pub key: [u8; AES_GCM_256_KEY_LENGTH],
@@ -80,7 +79,7 @@ impl AesGcm256Key {
 
     pub fn decrypt(&self, in_out: &mut Vec<u8>) -> Result<[u8; CMAC_LENGTH]> {
         let plaintext_len = aead_decrypt(&aead::AES_256_GCM, in_out, &self.key, &self.iv)?.len();
-        let mut cmac:CMac = [0u8; CMAC_LENGTH];
+        let mut cmac: CMac = [0u8; CMAC_LENGTH];
         cmac.copy_from_slice(&in_out[plaintext_len..]);
         in_out.truncate(plaintext_len);
         Ok(cmac)
@@ -88,7 +87,7 @@ impl AesGcm256Key {
 
     pub fn encrypt(&self, in_out: &mut Vec<u8>) -> Result<[u8; CMAC_LENGTH]> {
         aead_encrypt(&aead::AES_256_GCM, in_out, &self.key, &self.iv)?;
-        let mut cmac:CMac = [0u8; CMAC_LENGTH];
+        let mut cmac: CMac = [0u8; CMAC_LENGTH];
         let n = in_out.len();
         let cybertext_len = n - CMAC_LENGTH;
         cmac.copy_from_slice(&in_out[cybertext_len..]);
@@ -150,7 +149,7 @@ impl AesGcm128Key {
 
     pub fn decrypt(&self, in_out: &mut Vec<u8>) -> Result<[u8; CMAC_LENGTH]> {
         let plaintext_len = aead_decrypt(&aead::AES_128_GCM, in_out, &self.key, &self.iv)?.len();
-        let mut cmac:CMac = [0u8; CMAC_LENGTH];
+        let mut cmac: CMac = [0u8; CMAC_LENGTH];
         cmac.copy_from_slice(&in_out[plaintext_len..]);
         in_out.truncate(plaintext_len);
         Ok(cmac)
@@ -158,11 +157,11 @@ impl AesGcm128Key {
 
     pub fn encrypt(&self, in_out: &mut Vec<u8>) -> Result<[u8; CMAC_LENGTH]> {
         aead_encrypt(&aead::AES_128_GCM, in_out, &self.key, &self.iv)?;
-        let mut cmac:CMac = [0u8; CMAC_LENGTH];
+        let mut cmac: CMac = [0u8; CMAC_LENGTH];
         let n = in_out.len();
         let cybertext_len = n - CMAC_LENGTH;
         cmac.copy_from_slice(&in_out[cybertext_len..]);
-        Ok(cmac)   
+        Ok(cmac)
     }
 }
 
