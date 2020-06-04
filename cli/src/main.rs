@@ -71,6 +71,10 @@ enum Command {
 struct Opt {
     #[structopt(subcommand)]
     command: Command,
+
+    /// Whether to print cmac
+    #[structopt(short, long)]
+    cmac_flag: bool,
 }
 
 fn decrypt(opt: EncryptDecryptOpt) -> Result<CMac> {
@@ -144,7 +148,9 @@ fn main() -> Result<()> {
         Command::Decrypt(opt) => decrypt(opt)?,
         Command::Encrypt(opt) => encrypt(opt)?,
     };
-    let cmac_string = hex::encode(cmac);
-    println!("{}", cmac_string);
+    if args.cmac_flag {
+        let cmac_string = hex::encode(cmac);
+        println!("{}", cmac_string);
+    }
     Ok(())
 }

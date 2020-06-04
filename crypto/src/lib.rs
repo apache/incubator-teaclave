@@ -204,16 +204,16 @@ impl TeaclaveFile128Key {
     pub fn decrypt<P: AsRef<Path>>(&self, path: P, out: &mut Vec<u8>) -> Result<CMac> {
         use std::io::Read;
         let mut file = ProtectedFile::open_ex(path.as_ref(), &self.key)?;
-        let cmac = file.current_meta_gmac()?;
         file.read_to_end(out)?;
+        let cmac = file.current_meta_gmac()?;
         Ok(cmac)
     }
 
     pub fn encrypt<P: AsRef<Path>>(&self, path: P, content: &[u8]) -> Result<CMac> {
         use std::io::Write;
         let mut file = ProtectedFile::create_ex(path.as_ref(), &self.key)?;
-        let cmac = file.current_meta_gmac()?;
         file.write_all(content)?;
+        let cmac = file.current_meta_gmac()?;
         Ok(cmac)
     }
 }
