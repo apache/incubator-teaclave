@@ -23,7 +23,9 @@ extern crate sgx_tstd as std;
 use log::debug;
 use log::error;
 use std::backtrace;
+use std::sync::{Arc, SgxRwLock as RwLock};
 use teaclave_attestation::verifier::AttestationReportVerificationFn;
+use teaclave_attestation::AttestedTlsConfig;
 use teaclave_rpc::config::SgxTrustedTlsClientConfig;
 use teaclave_rpc::endpoint::Endpoint;
 use teaclave_types::EnclaveInfo;
@@ -77,19 +79,21 @@ macro_rules! impl_create_trusted_endpoint_fn {
             enclave_info: &EnclaveInfo,
             as_root_ca_cert: &[u8],
             verifier: AttestationReportVerificationFn,
-        ) -> Endpoint {
+            attested_tls_config: Arc<RwLock<AttestedTlsConfig>>,
+        ) -> anyhow::Result<Endpoint> {
             let service_enclave_attrs = enclave_info
                 .get_enclave_attr($enclave_attr)
                 .expect("enclave_info");
-            let service_client_config = SgxTrustedTlsClientConfig::new()
-                .attestation_report_verifier(
-                    vec![service_enclave_attrs],
-                    as_root_ca_cert,
-                    verifier,
-                );
+            let service_client_config =
+                SgxTrustedTlsClientConfig::from_attested_tls_config(attested_tls_config)?
+                    .attestation_report_verifier(
+                        vec![service_enclave_attrs],
+                        as_root_ca_cert,
+                        verifier,
+                    );
             let service_address = &advertised_address;
 
-            Endpoint::new(service_address).config(service_client_config)
+            Ok(Endpoint::new(service_address).config(service_client_config))
         }
     };
 }
