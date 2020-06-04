@@ -36,6 +36,9 @@ const AES_GCM_128_IV_LENGTH: usize = 12;
 const AES_GCM_256_KEY_LENGTH: usize = 32;
 const AES_GCM_256_IV_LENGTH: usize = 12;
 const TEACLAVE_FILE_128_ROOT_KEY_LENGTH: usize = 16;
+const CMAC_LENGTH: usize = 16;
+type CMac = [u8; CMAC_LENGTH];
+
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct AesGcm256Key {
@@ -75,15 +78,21 @@ impl AesGcm256Key {
         Self::default()
     }
 
-    pub fn decrypt(&self, in_out: &mut Vec<u8>) -> Result<()> {
+    pub fn decrypt(&self, in_out: &mut Vec<u8>) -> Result<[u8; CMAC_LENGTH]> {
         let plaintext_len = aead_decrypt(&aead::AES_256_GCM, in_out, &self.key, &self.iv)?.len();
+        let mut cmac:CMac = [0u8; CMAC_LENGTH];
+        cmac.copy_from_slice(&in_out[plaintext_len..]);
         in_out.truncate(plaintext_len);
-
-        Ok(())
+        Ok(cmac)
     }
 
-    pub fn encrypt(&self, in_out: &mut Vec<u8>) -> Result<()> {
-        aead_encrypt(&aead::AES_256_GCM, in_out, &self.key, &self.iv)
+    pub fn encrypt(&self, in_out: &mut Vec<u8>) -> Result<[u8; CMAC_LENGTH]> {
+        aead_encrypt(&aead::AES_256_GCM, in_out, &self.key, &self.iv)?;
+        let mut cmac:CMac = [0u8; CMAC_LENGTH];
+        let n = in_out.len();
+        let cybertext_len = n - CMAC_LENGTH;
+        cmac.copy_from_slice(&in_out[cybertext_len..]);
+        Ok(cmac)
     }
 }
 
@@ -139,15 +148,21 @@ impl AesGcm128Key {
         Self::default()
     }
 
-    pub fn decrypt(&self, in_out: &mut Vec<u8>) -> Result<()> {
+    pub fn decrypt(&self, in_out: &mut Vec<u8>) -> Result<[u8; CMAC_LENGTH]> {
         let plaintext_len = aead_decrypt(&aead::AES_128_GCM, in_out, &self.key, &self.iv)?.len();
+        let mut cmac:CMac = [0u8; CMAC_LENGTH];
+        cmac.copy_from_slice(&in_out[plaintext_len..]);
         in_out.truncate(plaintext_len);
-
-        Ok(())
+        Ok(cmac)
     }
 
-    pub fn encrypt(&self, in_out: &mut Vec<u8>) -> Result<()> {
-        aead_encrypt(&aead::AES_128_GCM, in_out, &self.key, &self.iv)
+    pub fn encrypt(&self, in_out: &mut Vec<u8>) -> Result<[u8; CMAC_LENGTH]> {
+        aead_encrypt(&aead::AES_128_GCM, in_out, &self.key, &self.iv)?;
+        let mut cmac:CMac = [0u8; CMAC_LENGTH];
+        let n = in_out.len();
+        let cybertext_len = n - CMAC_LENGTH;
+        cmac.copy_from_slice(&in_out[cybertext_len..]);
+        Ok(cmac)   
     }
 }
 
@@ -187,7 +202,7 @@ impl TeaclaveFile128Key {
         Ok(TeaclaveFile128Key { key })
     }
 
-    pub fn decrypt<P: AsRef<Path>>(&self, path: P, out: &mut Vec<u8>) -> Result<[u8; 16]> {
+    pub fn decrypt<P: AsRef<Path>>(&self, path: P, out: &mut Vec<u8>) -> Result<[u8; CMAC_LENGTH]> {
         use std::io::Read;
         let mut file = ProtectedFile::open_ex(path.as_ref(), &self.key)?;
         let cmac = file.current_meta_gmac()?;
@@ -195,7 +210,7 @@ impl TeaclaveFile128Key {
         Ok(cmac)
     }
 
-    pub fn encrypt<P: AsRef<Path>>(&self, path: P, content: &[u8]) -> Result<[u8; 16]> {
+    pub fn encrypt<P: AsRef<Path>>(&self, path: P, content: &[u8]) -> Result<[u8; CMAC_LENGTH]> {
         use std::io::Write;
         let mut file = ProtectedFile::create_ex(path.as_ref(), &self.key)?;
         let cmac = file.current_meta_gmac()?;

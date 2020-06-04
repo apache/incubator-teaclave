@@ -80,26 +80,16 @@ fn decrypt(opt: EncryptDecryptOpt, cmac: &mut CMac) -> Result<()> {
             let iv = opt.iv.expect("IV is required.");
             let key = AesGcm128Key::new(&key, &iv)?;
             let mut content = fs::read(opt.input_file)?;
-            let n = content.len();
-            anyhow::ensure!(
-                n > FILE_AUTH_TAG_LENGTH,
-                "AesGcm128 File, invalid length: {:?}",
-            );
-            cmac.copy_from_slice(&content[n - FILE_AUTH_TAG_LENGTH..]);
-            key.decrypt(&mut content)?;
+            let res = key.decrypt(&mut content)?;
+            cmac.copy_from_slice(&res);
             fs::write(opt.output_file, content)?;
         }
         AesGcm256Key::SCHEMA => {
             let iv = opt.iv.expect("IV is required.");
             let key = AesGcm256Key::new(&key, &iv)?;
             let mut content = fs::read(opt.input_file)?;
-            let n = content.len();
-            anyhow::ensure!(
-                n > FILE_AUTH_TAG_LENGTH,
-                "AesGcm256 File, invalid length: {:?}",
-            );
-            cmac.copy_from_slice(&content[n - FILE_AUTH_TAG_LENGTH..]);
-            key.decrypt(&mut content)?;
+            let res = key.decrypt(&mut content)?;
+            cmac.copy_from_slice(&res);
             fs::write(opt.output_file, content)?;
         }
         TeaclaveFile128Key::SCHEMA => {
@@ -122,26 +112,16 @@ fn encrypt(opt: EncryptDecryptOpt, cmac: &mut CMac) -> Result<()> {
             let iv = opt.iv.expect("IV is required.");
             let key = AesGcm128Key::new(&key, &iv)?;
             let mut content = fs::read(opt.input_file)?;
-            key.encrypt(&mut content)?;
-            let n = content.len();
-            anyhow::ensure!(
-                n > FILE_AUTH_TAG_LENGTH,
-                "AesGcm128 File, invalid length: {:?}",
-            );
-            cmac.copy_from_slice(&content[n - FILE_AUTH_TAG_LENGTH..]);
+            let res = key.encrypt(&mut content)?;
+            cmac.copy_from_slice(&res);
             fs::write(opt.output_file, content)?;
         }
         AesGcm256Key::SCHEMA => {
             let iv = opt.iv.expect("IV is required.");
             let key = AesGcm256Key::new(&key, &iv)?;
             let mut content = fs::read(opt.input_file)?;
-            key.encrypt(&mut content)?;
-            let n = content.len();
-            anyhow::ensure!(
-                n > FILE_AUTH_TAG_LENGTH,
-                "AesGcm256 File, invalid length: {:?}",
-            );
-            cmac.copy_from_slice(&content[n - FILE_AUTH_TAG_LENGTH..]);
+            let res = key.encrypt(&mut content)?;
+            cmac.copy_from_slice(&res);
             fs::write(opt.output_file, content)?;
         }
         TeaclaveFile128Key::SCHEMA => {
