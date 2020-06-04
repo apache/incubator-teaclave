@@ -391,40 +391,50 @@ int32_t protected_fs_file::clear_cache()
 }
 
 
-int32_t protected_fs_file::get_current_meta_gmac(sgx_aes_gcm_128bit_tag_t out_gmac) {
+int32_t protected_fs_file::get_current_meta_gmac(sgx_aes_gcm_128bit_tag_t out_gmac)
+{
+	sgx_thread_mutex_lock(&mutex);
+
 	if (out_gmac == NULL) {
 		last_error = EINVAL;
+		sgx_thread_mutex_unlock(&mutex);
 		return -1;
 	}
 
-	sgx_thread_mutex_lock(&mutex);
 	memcpy(out_gmac, file_meta_data.plain_part.meta_data_gmac, sizeof(sgx_aes_gcm_128bit_tag_t));
 	sgx_thread_mutex_unlock(&mutex);
 	return 0;
 }
 
 
-int32_t protected_fs_file::rename_meta(const char* old_name, const char* new_name) {
+int32_t protected_fs_file::rename_meta(const char* old_name, const char* new_name)
+{
+	sgx_thread_mutex_lock(&mutex);
+
 	if ((old_name == NULL) || (new_name == NULL)) {
 		last_error = EINVAL;
+		sgx_thread_mutex_unlock(&mutex);
 		return -1;
 	}
 
 	if (strnlen(old_name, FILENAME_MAX_LEN) >= FILENAME_MAX_LEN-1)
 	{
 		last_error = ENAMETOOLONG;
+		sgx_thread_mutex_unlock(&mutex);
 		return -1;
 	}
 
 	if (strnlen(new_name, FILENAME_MAX_LEN) >= FILENAME_MAX_LEN-1)
 	{
 		last_error = ENAMETOOLONG;
+		sgx_thread_mutex_unlock(&mutex);
 		return -1;
 	}
 
 	if (strncmp(old_name, encrypted_part_plain.clean_filename, FILENAME_MAX_LEN) != 0)
 	{
 		last_error = SGX_ERROR_FILE_NAME_MISMATCH;
+		sgx_thread_mutex_unlock(&mutex);
 		return -1;
 	}
 
@@ -434,7 +444,10 @@ int32_t protected_fs_file::rename_meta(const char* old_name, const char* new_nam
 	bool success = internal_flush(true);
 	if (success == false) {
 		last_error = SGX_ERROR_FILE_FLUSH_FAILED;
+		sgx_thread_mutex_unlock(&mutex);
 		return -1;
 	}
+
+	sgx_thread_mutex_unlock(&mutex);
 	return 0;
 }
