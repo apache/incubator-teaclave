@@ -53,6 +53,10 @@ struct EncryptDecryptOpt {
     /// Path of output file
     #[structopt(short, long = "output-file")]
     output_file: PathBuf,
+
+    /// Whether to print cmac
+    #[structopt(short, long)]
+    cmac_flag: bool,
 }
 
 #[derive(Debug, StructOpt)]
@@ -71,10 +75,6 @@ enum Command {
 struct Opt {
     #[structopt(subcommand)]
     command: Command,
-
-    /// Whether to print cmac
-    #[structopt(short, long)]
-    cmac_flag: bool,
 }
 
 fn decrypt(opt: EncryptDecryptOpt) -> Result<CMac> {
@@ -144,11 +144,19 @@ fn encrypt(opt: EncryptDecryptOpt) -> Result<CMac> {
 
 fn main() -> Result<()> {
     let args = Opt::from_args();
+    let flag: bool;
     let cmac = match args.command {
-        Command::Decrypt(opt) => decrypt(opt)?,
-        Command::Encrypt(opt) => encrypt(opt)?,
+        Command::Decrypt(opt) => {
+            flag = opt.cmac_flag;
+            decrypt(opt)?
+        }
+        Command::Encrypt(opt) => {
+            flag = opt.cmac_flag;
+            encrypt(opt)?
+        }
     };
-    if args.cmac_flag {
+
+    if flag {
         let cmac_string = hex::encode(cmac);
         println!("{}", cmac_string);
     }

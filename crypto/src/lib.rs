@@ -197,7 +197,6 @@ impl TeaclaveFile128Key {
         );
         let mut key = [0u8; TEACLAVE_FILE_128_ROOT_KEY_LENGTH];
         key.copy_from_slice(in_key);
-
         Ok(TeaclaveFile128Key { key })
     }
 
