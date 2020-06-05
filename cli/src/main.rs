@@ -144,21 +144,24 @@ fn encrypt(opt: EncryptDecryptOpt) -> Result<CMac> {
 
 fn main() -> Result<()> {
     let args = Opt::from_args();
-    let flag: bool;
-    let cmac = match args.command {
+    match args.command {
         Command::Decrypt(opt) => {
-            flag = opt.cmac_flag;
-            decrypt(opt)?
+            let flag = opt.cmac_flag;
+            let cmac = decrypt(opt)?;
+            if flag {
+                let cmac_string = hex::encode(cmac);
+                println!("{}", cmac_string);
+            }
         }
         Command::Encrypt(opt) => {
-            flag = opt.cmac_flag;
-            encrypt(opt)?
+            let flag = opt.cmac_flag;
+            let cmac = encrypt(opt)?;
+            if flag {
+                let cmac_string = hex::encode(cmac);
+                println!("{}", cmac_string);
+            }
         }
     };
 
-    if flag {
-        let cmac_string = hex::encode(cmac);
-        println!("{}", cmac_string);
-    }
     Ok(())
 }
