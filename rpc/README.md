@@ -37,7 +37,7 @@ and attestation configs.
 
 ## Protocol
 
-There are many RPC protocols can be implemented in the RPC framework. Currently,
+There are many RPC protocols that can be implemented in the RPC framework. Currently,
 there's only one simple protocol called `JsonProtocol`. Simply speaking, for
 the json protocol, one RPC message will contain a length of the following
 requests (in big endian) and a json serialized request.
