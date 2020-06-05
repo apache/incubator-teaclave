@@ -26,13 +26,13 @@ a safe and secure FaaS platform.
   and function information will be persistent into the storage services.
 - **Storage Service**: Basically, the storage service stores persistent data like
   function, execution data, and task information in the platform. Here, we
-  deploy a key-value database (an implementation of LevelDB) in TEE and use
+  deploy a key-value database (an implementation of LevelDB) in TEE and use the
   protected file system (secured by the enclave) for data persistence.
 - **Access Control Service**: Provides a flexible access control domain specific
-  language to support access control rules for multi-party secure computation.
+  language to support access control rules for secure multi-party computation.
   The access control engine is written in Python and evaluated in SGX. Please
   read [this document](../docs/access-control.md) to learn more about the design of it.
-- **Scheduler Service**: Schedules staged task ready for execution to a proper
+- **Scheduler Service**: Schedules staged tasks ready for execution to a proper
   execution node with desirable capabilities.
 - **Execution Service**: A host of different executors interacting with the
   scheduler service to complete tasks. There could be many execution service
@@ -67,6 +67,6 @@ clients => frontend ----------> management            scheduler <-- execution
 ```
 
 Internal endpoint connections will be established and verified with mutual
-remote attestation to ensure the integrity and confidentiality of whole system.
+remote attestation to ensure the integrity and confidentiality of the whole system.
 Therefore, clients can trust the whole platform and safely interacting with the
 system through the attested authentication and frontend services.
