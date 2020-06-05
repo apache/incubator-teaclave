@@ -47,6 +47,7 @@ platform, making computation on privacy-sensitive data safe and simple.
 
 - [Attestation](attestation)
 - [Built-in Functions](function)
+- [Client SDK](sdk)
 - [Command Line Tool](cli)
 - [Configurations in Teaclave](config)
 - [Data Center Attestation Service](dcap)
