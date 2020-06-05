@@ -23,6 +23,8 @@ use structopt::StructOpt;
 
 use teaclave_crypto::{AesGcm128Key, AesGcm256Key, TeaclaveFile128Key};
 
+const FILE_AUTH_TAG_LENGTH: usize = 16;
+type CMac = [u8; FILE_AUTH_TAG_LENGTH];
 type KeyVec = Vec<u8>; // Need define a type to use parse derive macro
 
 fn decode_hex(src: &str) -> Result<Vec<u8>, hex::FromHexError> {
@@ -51,6 +53,10 @@ struct EncryptDecryptOpt {
     /// Path of output file
     #[structopt(short, long = "output-file")]
     output_file: PathBuf,
+
+    /// Whether to print cmac
+    #[structopt(short, long)]
+    cmac_flag: bool,
 }
 
 #[derive(Debug, StructOpt)]
@@ -71,69 +77,91 @@ struct Opt {
     command: Command,
 }
 
-fn decrypt(opt: EncryptDecryptOpt) -> Result<()> {
+fn decrypt(opt: EncryptDecryptOpt) -> Result<CMac> {
     let key = opt.key;
+    let mut cmac: CMac = [0u8; FILE_AUTH_TAG_LENGTH];
     match opt.algorithm.as_str() {
         AesGcm128Key::SCHEMA => {
             let iv = opt.iv.expect("IV is required.");
             let key = AesGcm128Key::new(&key, &iv)?;
             let mut content = fs::read(opt.input_file)?;
-            key.decrypt(&mut content)?;
+            let res = key.decrypt(&mut content)?;
+            cmac.copy_from_slice(&res);
             fs::write(opt.output_file, content)?;
         }
         AesGcm256Key::SCHEMA => {
             let iv = opt.iv.expect("IV is required.");
             let key = AesGcm256Key::new(&key, &iv)?;
             let mut content = fs::read(opt.input_file)?;
-            key.decrypt(&mut content)?;
+            let res = key.decrypt(&mut content)?;
+            cmac.copy_from_slice(&res);
             fs::write(opt.output_file, content)?;
         }
         TeaclaveFile128Key::SCHEMA => {
             let key = TeaclaveFile128Key::new(&key)?;
             let mut content = vec![];
-            key.decrypt(opt.input_file, &mut content)?;
+            let res = key.decrypt(opt.input_file, &mut content)?;
+            cmac.copy_from_slice(&res);
             fs::write(opt.output_file, content)?;
         }
         _ => bail!("Invalid crypto algorithm"),
     }
 
-    Ok(())
+    Ok(cmac)
 }
 
-fn encrypt(opt: EncryptDecryptOpt) -> Result<()> {
+fn encrypt(opt: EncryptDecryptOpt) -> Result<CMac> {
     let key = opt.key;
+    let mut cmac: CMac = [0u8; FILE_AUTH_TAG_LENGTH];
     match opt.algorithm.as_str() {
         AesGcm128Key::SCHEMA => {
             let iv = opt.iv.expect("IV is required.");
             let key = AesGcm128Key::new(&key, &iv)?;
             let mut content = fs::read(opt.input_file)?;
-            key.encrypt(&mut content)?;
+            let res = key.encrypt(&mut content)?;
+            cmac.copy_from_slice(&res);
             fs::write(opt.output_file, content)?;
         }
         AesGcm256Key::SCHEMA => {
             let iv = opt.iv.expect("IV is required.");
             let key = AesGcm256Key::new(&key, &iv)?;
             let mut content = fs::read(opt.input_file)?;
-            key.encrypt(&mut content)?;
+            let res = key.encrypt(&mut content)?;
+            cmac.copy_from_slice(&res);
             fs::write(opt.output_file, content)?;
         }
         TeaclaveFile128Key::SCHEMA => {
             let key = TeaclaveFile128Key::new(&key)?;
             let content = fs::read(opt.input_file)?;
-            key.encrypt(opt.output_file, &content)?;
+            let res = key.encrypt(opt.output_file, &content)?;
+            cmac.copy_from_slice(&res);
         }
         _ => bail!("Invalid crypto algorithm"),
     }
 
-    Ok(())
+    Ok(cmac)
 }
 
 fn main() -> Result<()> {
     let args = Opt::from_args();
     match args.command {
-        Command::Decrypt(opt) => decrypt(opt)?,
-        Command::Encrypt(opt) => encrypt(opt)?,
-    }
+        Command::Decrypt(opt) => {
+            let flag = opt.cmac_flag;
+            let cmac = decrypt(opt)?;
+            if flag {
+                let cmac_string = hex::encode(cmac);
+                println!("{}", cmac_string);
+            }
+        }
+        Command::Encrypt(opt) => {
+            let flag = opt.cmac_flag;
+            let cmac = encrypt(opt)?;
+            if flag {
+                let cmac_string = hex::encode(cmac);
+                println!("{}", cmac_string);
+            }
+        }
+    };
 
     Ok(())
 }
