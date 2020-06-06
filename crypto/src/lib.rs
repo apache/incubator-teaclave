@@ -212,6 +212,7 @@ impl TeaclaveFile128Key {
         use std::io::Write;
         let mut file = ProtectedFile::create_ex(path.as_ref(), &self.key)?;
         file.write_all(content)?;
+        file.flush()?;
         let cmac = file.current_meta_gmac()?;
         Ok(cmac)
     }
