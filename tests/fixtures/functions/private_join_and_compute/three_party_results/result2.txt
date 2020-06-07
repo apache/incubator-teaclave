@@ -1,0 +1,6 @@
+
+[+] Task status is Finished
+Bank_B get result: 
+c : 470000
+e : 5033000
+
