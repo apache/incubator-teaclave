@@ -3,34 +3,11 @@
 import sys
 
 from teaclave import (AuthenticationService, FrontendService,
-                      AuthenticationClient, FrontendClient)
+                      AuthenticationClient, FrontendClient, FunctionInput,
+                      FunctionOutput, OwnerList, DataMap)
 from utils import (AUTHENTICATION_SERVICE_ADDRESS, FRONTEND_SERVICE_ADDRESS,
                    AS_ROOT_CA_CERT_PATH, ENCLAVE_INFO_PATH, USER_ID,
                    USER_PASSWORD)
-
-
-class FunctionInput:
-    def __init__(self, name, description):
-        self.name = name
-        self.description = description
-
-
-class FunctionOutput:
-    def __init__(self, name, description):
-        self.name = name
-        self.description = description
-
-
-class OwnerList:
-    def __init__(self, data_name, uids):
-        self.data_name = data_name
-        self.uids = uids
-
-
-class DataList:
-    def __init__(self, data_name, data_id):
-        self.data_name = data_name
-        self.data_id = data_id
 
 
 class BuiltinGbdtExample:
@@ -39,10 +16,9 @@ class BuiltinGbdtExample:
         self.user_password = user_password
 
     def gbdt(self):
-        channel = AuthenticationService(AUTHENTICATION_SERVICE_ADDRESS,
-                                        AS_ROOT_CA_CERT_PATH,
-                                        ENCLAVE_INFO_PATH).connect()
-        client = AuthenticationClient(channel)
+        client = AuthenticationService(
+            AUTHENTICATION_SERVICE_ADDRESS, AS_ROOT_CA_CERT_PATH,
+            ENCLAVE_INFO_PATH).connect().get_client()
 
         print("[+] registering user")
         client.user_register(self.user_id, self.user_password)
@@ -50,11 +26,11 @@ class BuiltinGbdtExample:
         print("[+] login")
         token = client.user_login(self.user_id, self.user_password)
 
-        channel = FrontendService(FRONTEND_SERVICE_ADDRESS,
-                                  AS_ROOT_CA_CERT_PATH,
-                                  ENCLAVE_INFO_PATH).connect()
+        client = FrontendService(FRONTEND_SERVICE_ADDRESS,
+                                 AS_ROOT_CA_CERT_PATH,
+                                 ENCLAVE_INFO_PATH).connect().get_client()
         metadata = {"id": self.user_id, "token": token}
-        client = FrontendClient(channel, metadata)
+        client.metadata = metadata
 
         print("[+] registering function")
         function_id = client.register_function(
@@ -110,8 +86,8 @@ class BuiltinGbdtExample:
 
         print("[+] assigning data to task")
         client.assign_data_to_task(
-            task_id, [DataList("training_data", training_data_id)],
-            [DataList("trained_model", output_model_id)])
+            task_id, [DataMap("training_data", training_data_id)],
+            [DataMap("trained_model", output_model_id)])
 
         print("[+] approving task")
         client.approve_task(task_id)
