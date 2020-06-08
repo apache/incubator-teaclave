@@ -67,6 +67,7 @@ List of external contributors of Teaclave and Teaclave SGX SDK (in alphabetical 
   - [garbageslam](https://github.com/garbageslam)
   - [lhf](https://github.com/EighteenZi)
   - [luoyanhua2011](https://github.com/luoyanhua2011)
+  - [lyj](https://github.com/lengyijun)
   - [piotr-roslaniec](https://github.com/piotr-roslaniec)
   - [volcano](https://github.com/volcano0dr)
   - [zEqueue](https://github.com/z1queue)
