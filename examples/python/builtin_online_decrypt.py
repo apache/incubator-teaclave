@@ -16,10 +16,9 @@ class BuiltinOnlineDecryptExample:
         self.user_password = user_password
 
     def decrypt(self, key, nonce, encrypted_data, algorithm):
-        channel = AuthenticationService(AUTHENTICATION_SERVICE_ADDRESS,
-                                        AS_ROOT_CA_CERT_PATH,
-                                        ENCLAVE_INFO_PATH).connect()
-        client = AuthenticationClient(channel)
+        client = AuthenticationService(
+            AUTHENTICATION_SERVICE_ADDRESS, AS_ROOT_CA_CERT_PATH,
+            ENCLAVE_INFO_PATH).connect().get_client()
 
         print("[+] registering user")
         client.user_register(self.user_id, self.user_password)
@@ -27,11 +26,11 @@ class BuiltinOnlineDecryptExample:
         print("[+] login")
         token = client.user_login(self.user_id, self.user_password)
 
-        channel = FrontendService(FRONTEND_SERVICE_ADDRESS,
-                                  AS_ROOT_CA_CERT_PATH,
-                                  ENCLAVE_INFO_PATH).connect()
+        client = FrontendService(FRONTEND_SERVICE_ADDRESS,
+                                 AS_ROOT_CA_CERT_PATH,
+                                 ENCLAVE_INFO_PATH).connect().get_client()
         metadata = {"id": self.user_id, "token": token}
-        client = FrontendClient(channel, metadata)
+        client.metadata = metadata
 
         print("[+] registering function")
         function_id = client.register_function(
