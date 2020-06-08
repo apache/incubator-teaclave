@@ -19,7 +19,6 @@
 #[cfg(feature = "mesalock_sgx")]
 extern crate sgx_tstd as std;
 
-
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 

@@ -19,7 +19,8 @@
 use std::prelude::v1::*;
 
 use teaclave_function::{
-    Echo, GbdtPredict, GbdtTrain, LogisticRegressionPredict, LogisticRegressionTrain, OnlineDecrypt, PrivateJoinAndCompute,
+    Echo, GbdtPredict, GbdtTrain, LogisticRegressionPredict, LogisticRegressionTrain,
+    OnlineDecrypt, PrivateJoinAndCompute,
 };
 use teaclave_types::{FunctionArguments, FunctionRuntime, TeaclaveExecutor};
 
