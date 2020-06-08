@@ -47,11 +47,13 @@ platform, making computation on privacy-sensitive data safe and simple.
 
 - [Attestation](attestation)
 - [Built-in Functions](function)
+- [Client SDK](sdk)
 - [Command Line Tool](cli)
 - [Configurations in Teaclave](config)
 - [Data Center Attestation Service](dcap)
 - [Dockerfile and Compose File](docker)
 - [Examples](examples)
+- [Executor Runtime](runtime)
 - [File Agent](file_agent)
 - [Function Executors](executor)
 - [Keys and Certificates](keys)
@@ -65,7 +67,8 @@ platform, making computation on privacy-sensitive data safe and simple.
 
 Teaclave is open source in [The Apache Way](https://www.apache.org/theapacheway/),
 we aim to create a project that is maintained and owned by the community. All
-kinds of contributions are welcome. Thanks to our [contributors](CONTRIBUTORS.md).
+kinds of contributions are welcome. Read this [document](CONTRIBUTING.md) to
+learn more about how to contribute. Thanks to our [contributors](CONTRIBUTORS.md).
 
 ## Community
 

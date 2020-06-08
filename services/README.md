@@ -38,6 +38,24 @@ a safe and secure FaaS platform.
   scheduler service to complete tasks. There could be many execution service
   instances (or nodes) with different capabilities deployed in a cloud
   infrastructure.
+
+## Structure
+
+A service is consist of two parts: app (untrusted) and enclave (trusted). The
+app part is responsible for launching and terminating the service, which the
+enclave part is to serve RPC requests from trusted channels. Typically, a service's
+implementation contains two important structs and one trait. Let's take the
+frontend service as an example.
+
+- `TeaclaveFrontendService` (struct): Define properties or configurations along
+  with the lifetime of the service. For example, the frontend service need to
+  hold clients (with established trusted channels) to communicate with the
+  authentication service and management service.
+- `TeaclaveFrontendError` (struct): Define errors which may occur in this
+  service, authentication error, for example.
+- `TeaclaveFrontend` (trait): Define functions (requests) the service need to
+  handle. The trait will be automatically derived from definitions in the
+  ProtoBuf file and can be imported from the `teaclave_proto` crate.
   
 ## RPC and Protocols
 
