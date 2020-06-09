@@ -6,8 +6,8 @@ permalink: /docs/how-to-add-your-function
 
 Teaclave supports two kinds of executors: native functions and Python
 functions. Compared to Python functions, native functions have better
-performances. AS native functions can be statically linken into Teaclave
-itself. So you can attest the implemented native function as well 
+performances. As native functions can be statically linken into Teaclave
+itself, you can attest the implemented native function as well. 
 In this document, we will show you how to add a native function to 
 Teaclave stey by step with the example from [`private_join_and_compute.rs`](https://github.com/apache/incubator-teaclave/blob/master/function/src/private_join_and_compute.rs). 
 
@@ -23,15 +23,16 @@ in Bank B.
 
 ```
 Bank A                  Bank B
-Name : Balance          Name : Balance
-Bob: 1000               Bob : 2000
-Eva: 100                Alice : 100
+Name : Balance          Name  : Balance
+Bob  : 1000             Bob   : 2000
+Eva  : 100              Alice : 100
 ```
 
-Teaclave achieves the goal by asking those Banks upload the encrypted data into the trusted Teaclave executors. After both party attests the executors
+Teaclave achieves the goal by asking those Banks to upload the encrypted data into the trusted Teaclave executors. After both party attests the executors
 and approve the task. The computation is done in the secure TEEs. 
-So no one can know the data. After the computation. Each 
-Bank retrived the result via an attested TLS channel.
+So the confidentiality and integrity of the data is protected. 
+After the computation. Each 
+Bank retrives the encrypted result via an attested TLS channel.
 
 ## Write your function in Rust
 The native function is written in Rust. Typically, we put the native
@@ -65,7 +66,7 @@ impl PrivateJoinAndCompute {
 To implement the `run` method, you may need to read the argument from `FunctionArguments`.
 Before that, you can convert `FunctionArguments` into the structure you defined to ease
 the implementation. For
-example, here we define `PrivateJoinAndComputeArguments`. 
+example, here we define the struct `PrivateJoinAndComputeArguments`. 
 ```rust
 #[derive(serde::Deserialize)]
 struct PrivateJoinAndComputeArguments {
@@ -73,7 +74,7 @@ struct PrivateJoinAndComputeArguments {
 }
 ```
 Typically, you can write `Tryfrom` trait to convert the `FunctionArguments` into the struct that
-you define. Here we define the struct `PrivateJoinAndComputeArguments`.
+you define. 
 In the example, we pass one parameter into the function, the number of banks that exchange the 
 data.
 We can read the parameter with the following code.
@@ -87,12 +88,22 @@ method. Those files should be registerd by the client. After the computation, yo
 write the result into file and return a summary of the result. It is mentioned that the input
 file should be encrypted with `cli` tool. After the computation, you can decrypt the 
 output file with `cli` tool as well. Please refer the document of `cli` for further 
-information. In the example, we write the result into the file and return a descriprion of the task.
+information. In the example, we write the result into the file and return a descriprion of the task. However, Teaclave can do the encryption and decryption autimatically for you,
+so you can think those files as the plaintext.
+```rust
+// Read data from a file
+let mut input_io = runtime.open_input(&input_file_name)?;
+input_io.read_to_end(&mut data)?;
+...
+// Write data into a file
+let mut output = runtime.create_output(&output_file_name)?;
+output.write_all(&output_bytes)?;
+```
 
 ## Rigister your function
 After you finish implementing your function, you need to register your function
 in [`builtin.rs`](https://github.com/apache/incubator-teaclave/blob/master/executor/src/builtin.rs). 
-As the source code of the builtin function is conditionally compiled using the attributes cfg.
+As the source code of the builtin function is conditionally compiled using the attributes `cfg`.
 You also need to update the `Cargo.toml` file.
 ``` rust
 impl TeaclaveExecutor for BuiltinFunctionExecutor {
@@ -195,8 +206,9 @@ user0.approve_task(task_id)
 ```
 #### Invoke the task
 The next step is to invoke the task. Because every party involving in the task has approved 
-the task. Teaclave only require one party to invoke the task. In the example, user 3 invokes
-the task.
+the task. Teaclave only require one party to invoke the task. If one party doesn't approve
+the task, the step will fail.
+In the example, user 3 invokes the task.
 
 #### Get the result
 After the computation, one user can get results from two sources, a summary of the task you returned by your implemented function and the output files you register in the above task. 
@@ -205,6 +217,4 @@ computation task. In the example, all users get the output file with the same co
 But different users can get different output files as well. 
 
 The example of the client in the document can be found in [`private_join_and_compute.py`](https://github.com/apache/incubator-teaclave/blob/dev/examples/python/builtin_private_join_and_compute.py).
-
-
 
