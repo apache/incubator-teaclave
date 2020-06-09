@@ -1,6 +1,0 @@
-
-[+] Task status is Finished
-Bank_C get result: 
-c : 470000
-e : 5033000
-

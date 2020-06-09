@@ -63,45 +63,54 @@ impl PrivateJoinAndCompute {
             bail!("The demo requires at least two parties!");
         }
 
-        let mut counter_map: HashMap<String, usize> = HashMap::new();
-        let mut add_map: HashMap<String, u32> = HashMap::new();
         let mut output = String::new();
+        let data_0 = get_data(0, &runtime)?;
+        let input_map_0 = parse_input(data_0)?;
+        let mut res_map: HashMap<String, u32> = input_map_0;
+
+        for i in 1..num_user {
+            let data = get_data(i, &runtime)?;
+            let input_map = parse_input(data)?;
+            res_map = get_intersection_sum(&input_map, &res_map);
+        }
+
+        for (identity, amount) in res_map {
+            fmt::write(&mut output, format_args!("{}, {}\n", identity, amount))?;
+        }
+
+        let output_bytes = output.as_bytes();
 
         for i in 0..num_user {
-            let mut data1: Vec<u8> = Vec::new();
-            let input_file_name = IN_DATA.to_string() + &i.to_string();
-            let mut input_io = runtime.open_input(&input_file_name[..])?;
-            input_io.read_to_end(&mut data1)?;
-            let res1 = parse_input(data1)?;
-            for (identity, amount) in res1.into_iter() {
-                let value = counter_map.get(&identity).cloned().unwrap_or(0);
-                counter_map.insert(identity.to_owned(), value + 1);
-                let value = add_map.get(&identity).cloned().unwrap_or(0);
-                add_map.insert(identity, value + amount);
-            }
+            let output_file_name = format!("{}{}", OUT_RESULT, i);
+            let mut output = runtime.create_output(&output_file_name)?;
+            output.write_all(&output_bytes)?;
         }
 
-        counter_map.retain(|_, &mut v| v == num_user);
-
-        for (identity, amount) in add_map.into_iter() {
-            if counter_map.contains_key(&identity) {
-                fmt::write(&mut output, format_args!("{}, {}\n", identity, amount))?;
-            }
-        }
-
-        let output_bytes = output.as_bytes().to_vec();
-
-        for i in 0..num_user {
-            let output_file_name = OUT_RESULT.to_string() + &i.to_string();
-            let mut output = runtime.create_output(&output_file_name[..])?;
-            output.write_all(&output_bytes.clone())?;
-        }
-
-        let result = String::from_utf8_lossy(&output_bytes);
-
-        let summary = format!("{}", result);
+        let summary = format!("{} users join the task in total.", num_user);
         Ok(summary)
     }
+}
+
+fn get_data(user_id: usize, runtime: &FunctionRuntime) -> anyhow::Result<Vec<u8>> {
+    let mut data: Vec<u8> = Vec::new();
+    let input_file_name = format!("{}{}", IN_DATA, user_id);
+    let mut input_io = runtime.open_input(&input_file_name)?;
+    input_io.read_to_end(&mut data)?;
+    Ok(data)
+}
+
+fn get_intersection_sum(
+    map1: &HashMap<String, u32>,
+    map2: &HashMap<String, u32>,
+) -> HashMap<String, u32> {
+    let mut res_map: HashMap<String, u32> = HashMap::new();
+    for (identity, amount) in map1 {
+        if map2.contains_key(identity) {
+            let total = amount + map2[identity];
+            res_map.insert(identity.to_owned(), total);
+        }
+    }
+    res_map
 }
 
 fn parse_input(data: Vec<u8>) -> anyhow::Result<HashMap<String, u32>> {

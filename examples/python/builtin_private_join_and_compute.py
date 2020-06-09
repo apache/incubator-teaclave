@@ -64,23 +64,21 @@ class ConfigClient:
     def __init__(self, user_id, user_password):
         self.user_id = user_id
         self.user_password = user_password
-        self.channel = AuthenticationService(AUTHENTICATION_SERVICE_ADDRESS,
+        self.client = AuthenticationService(AUTHENTICATION_SERVICE_ADDRESS,
                                              AS_ROOT_CA_CERT_PATH,
-                                             ENCLAVE_INFO_PATH).connect()
-        self.client = AuthenticationClient(self.channel)
+                                             ENCLAVE_INFO_PATH).connect().get_client()
         print("[+] registering user")
         self.client.user_register(self.user_id, self.user_password)
         print("[+] login")
         token = self.client.user_login(self.user_id, self.user_password)
-        self.channel = FrontendService(FRONTEND_SERVICE_ADDRESS,
+        self.client = FrontendService(FRONTEND_SERVICE_ADDRESS,
                                        AS_ROOT_CA_CERT_PATH,
-                                       ENCLAVE_INFO_PATH).connect()
+                                       ENCLAVE_INFO_PATH).connect().get_client()
         metadata = {"id": self.user_id, "token": token}
-        self.client = FrontendClient(self.channel, metadata)
+        self.client.metadata = metadata
 
     def set_task(self):
         client = self.client
-        channel = self.channel
 
         print("[+] registering function")
 
@@ -122,7 +120,6 @@ class ConfigClient:
 
     def run_task(self, task_id):
         client = self.client
-        channel = self.channel
 
         client.approve_task(task_id)
         print("[+] invoking task")
@@ -139,24 +136,22 @@ class DataClient:
     def __init__(self, user_id, user_password):
         self.user_id = user_id
         self.user_password = user_password
-        self.channel = AuthenticationService(AUTHENTICATION_SERVICE_ADDRESS,
+        self.client = AuthenticationService(AUTHENTICATION_SERVICE_ADDRESS,
                                              AS_ROOT_CA_CERT_PATH,
-                                             ENCLAVE_INFO_PATH).connect()
-        self.client = AuthenticationClient(self.channel)
+                                             ENCLAVE_INFO_PATH).connect().get_client()
         print("[+] registering user")
         self.client.user_register(self.user_id, self.user_password)
         print("[+] login")
         token = self.client.user_login(self.user_id, self.user_password)
-        self.channel = FrontendService(FRONTEND_SERVICE_ADDRESS,
+        self.client = FrontendService(FRONTEND_SERVICE_ADDRESS,
                                        AS_ROOT_CA_CERT_PATH,
-                                       ENCLAVE_INFO_PATH).connect()
+                                       ENCLAVE_INFO_PATH).connect().get_client()
         metadata = {"id": self.user_id, "token": token}
-        self.client = FrontendClient(self.channel, metadata)
+        self.client.metadata = metadata
 
     def register_data(self, task_id, input_url, input_cmac, output_url,
                       file_key, input_label, output_label):
         client = self.client
-        channel = self.channel
 
         print("[+] registering input file")
         url = input_url
@@ -182,7 +177,6 @@ class DataClient:
 
     def approve_task(self, task_id):
         client = self.client
-        channel = self.channel
         client.approve_task(task_id)
 
 

@@ -6,6 +6,10 @@ permalink: /docs/how-to-add-your-function
 
 Example: function/src/private_join_and_compute.rs
 
+Currently, Teaclave supports two kinds of executors: native functions and Python
+functions. In order to support better performance, you can implement you own
+functions in Rust. 
+
 ## Define function with rust
 You need to write down the name of your function and implement the
 `run` method. `run` method is the main body of your function. It 
