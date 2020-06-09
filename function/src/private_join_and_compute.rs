@@ -194,8 +194,8 @@ pub mod tests {
         let user0 = fs::read_to_string(&user0_output).unwrap();
         let user1 = fs::read_to_string(&user1_output).unwrap();
         let user2 = fs::read_to_string(&user2_output).unwrap();
-        assert_eq!(&user0[..], summary);
-        assert_eq!(&user1[..], summary);
-        assert_eq!(&user2[..], summary);
+        assert_eq!(&user0[..], &user1[..]);
+        assert_eq!(&user1[..], &user2[..]);
+        assert_eq!(summary, "3 users join the task in total.")
     }
 }
