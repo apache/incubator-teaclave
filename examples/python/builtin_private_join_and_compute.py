@@ -133,19 +133,17 @@ class DataClient:
         schema = "teaclave-file-128"
         key = file_key
         iv = []
-        training_data_id = client.register_input_file(url, schema, key, iv,
-                                                      cmac)
+        input_id = client.register_input_file(url, schema, key, iv, cmac)
         print(f"[+] {self.user_id} registering output file")
         url = output_url
         schema = "teaclave-file-128"
         key = file_key
         iv = []
-        output_model_id = client.register_output_file(url, schema, key, iv)
+        output_id = client.register_output_file(url, schema, key, iv)
 
         print(f"[+] {self.user_id} assigning data to task")
-        client.assign_data_to_task(task_id,
-                                   [DataList(input_label, training_data_id)],
-                                   [DataList(output_label, output_model_id)])
+        client.assign_data_to_task(task_id, [DataList(input_label, input_id)],
+                                   [DataList(output_label, output_id)])
 
     def approve_task(self, task_id):
         client = self.client

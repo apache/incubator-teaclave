@@ -113,20 +113,93 @@ impl TeaclaveExecutor for BuiltinFunctionExecutor {
 }
 ```
 ## Write the client
-Currently, you can implement you client in Rust or Python. Examples can be found under
+Currently, you can implement your client in Rust or Python. Examples can be found under
 the `examples/python` and `tests/functional/enclave/src/end_to_end` directories.
-For one function, you can have one client or several clients. If the task require
-one client. Then the client should do the following step.
+For one task, Teaclave have one party or several parties. In the example, because we
+may have several banks that want to exachange the data. The task has several parties.
+Still, we use the client of [`private_join_and_compute.rs`](https://github.com/apache/incubator-teaclave/blob/master/function/src/private_join_and_compute.rs) as an example.
+It is located at the `examples/python` folder.
 
-### Set up the task
+In the example, we have four users in total. User 3 create the task and user 0, 1, 2
+upload the data. After the computation, user 0, 1, 3 can get the result. It is mentioned
+that we have a seperate user (user 3) to create the task to illustrate the problem
+clearly. In reality, one user can create the task and upload the data at the same time.
 
-### Register Input and Output files
+#### Set up the task
+The first step of task is to register the function. Here User 3 creates the task and defines
+the input and output informaiton. `name` is the function name when we write the native
+function. Becasue it is a native function, so `executor_type` is `builts`. We also define
+the argument, input files, and output files of the task. 
+```Python
+function_id = client.register_function(
+    name="builtin-private-join-and-compute",
+    description="Native Private Join And Compute",
+    executor_type="builtin",
+    arguments=["num_user"],
+    inputs=[
+        FunctionInput("input_data0", "Bank A data file."),
+        FunctionInput("input_data1", "Bank B data file."),
+        FunctionInput("input_data2", "Bank C data file.")
+    ],
+    outputs=[
+        FunctionOutput("output_data0", "Output data."),
+        FunctionOutput("output_data1", "Output data."),
+        FunctionOutput("output_data2", "Output date.")
+        ])
+```
+After that, we can create the task. For the example, we have three users who share the data in total. We also define the ownership of the file. That is, only the user who own the file can
+read or wirte the file.
+```Python
+task_id = client.create_task(function_id=function_id,
+                             function_arguments=({
+                                "num_user": 3,
+                             }),
+                             executor="builtin",
+                             inputs_ownership=[
+                                OwnerList("input_data0",
+                                          [user0_data.user_id]),
+                                OwnerList("input_data1",
+                                          [user1_data.user_id]),
+                                OwnerList("input_data2",
+                                          [user2_data.user_id])
+                                ],
+                            outputs_ownership=[
+                                OwnerList("output_data0",
+                                          [user0_data.user_id]),
+                                OwnerList("output_data1",
+                                          [user1_data.user_id]),
+                                OwnerList("output_data2",
+                                          [user2_data.user_id])
+                            ])
+```
 
-### Approve the task
+#### Register Input and Output files
+After the task is created. Users need to register the input and output files. In the example, User 0, 1, 2 reigister the input and output file. In the example, one user register one input
+file and one output file. It is mentioned only the user who owns the file can register the 
+file.
+```Python
+data_id = client.register_input_file(url, schema, key, iv,
+                                     cmac)
+output_id = client.register_output_file(url, schema, key, iv)
+...
+client.assign_data_to_task(task_id,
+                           [DataList(input_label, training_id)],
+                           [DataList(output_label, output_id)])
+```
+#### Approve the task
+Before invoking the task, Teaclave requires every party involving in the task approves the task.
+```Python
+user0.approve_task(task_id)
+```
+#### Invoke the task
+The next step is to invoke the task. Because every party involving in the task has approved 
+the task. Teaclave only require one party to invoke the task. In the example, user 3 invokes
+the task.
 
-### Invoke the task
+#### Get the result
+After the computation, one user can get results from two ways, a summary of the task you returned by your implemented function and the output files you register in the above task. 
 
-### Approve the task
+The example of the client in the document can be found in [`private_join_and_compute.py`](https://github.com/apache/incubator-teaclave/blob/dev/examples/python/builtin_private_join_and_compute.py)
 
 
 
