@@ -9,11 +9,19 @@ add_custom_target(
   format
   COMMAND rustup component add rustfmt --toolchain ${RUSTUP_TOOLCHAIN}
   COMMAND
-    RUSTUP_TOOLCHAIN=${RUSTUP_TOOLCHAIN} find ${TEACLAVE_PROJECT_ROOT} -path
-    ${TEACLAVE_PROJECT_ROOT}/third_party -prune -o -path
-    ${TEACLAVE_PROJECT_ROOT}/.git -prune -o -path ${TEACLAVE_BUILD_ROOT} -prune
+    RUSTUP_TOOLCHAIN=${RUSTUP_TOOLCHAIN} find ${TEACLAVE_PROJECT_ROOT}
+    -path ${TEACLAVE_PROJECT_ROOT}/third_party -prune -o
+    -path ${TEACLAVE_PROJECT_ROOT}/.git -prune -o
+    -path ${TEACLAVE_BUILD_ROOT} -prune
     -o -name "*.rs" -exec rustfmt {} +
-  COMMENT "Formating every .rs file"
+  COMMAND
+    find ${TEACLAVE_PROJECT_ROOT}
+    -path ${TEACLAVE_PROJECT_ROOT}/third_party -prune -o
+    -path ${TEACLAVE_PROJECT_ROOT}/.git -prune -o
+    -path ${TEACLAVE_PROJECT_ROOT}/services/access_control -prune -o
+    -path ${TEACLAVE_BUILD_ROOT} -prune
+    -o -name "*.py" -exec yapf -i {} +
+  COMMENT "Formating every .rs and .py file with rustfmt and yapf"
   DEPENDS prep)
 
 add_custom_target(
@@ -24,7 +32,14 @@ add_custom_target(
     ${TEACLAVE_PROJECT_ROOT}/third_party -prune -o -path
     ${TEACLAVE_PROJECT_ROOT}/.git -prune -o -path ${TEACLAVE_BUILD_ROOT} -prune
     -o -name "*.rs" -exec rustfmt --check {} +
-  COMMENT "Checking the format of every .rs file"
+  COMMAND
+    find ${TEACLAVE_PROJECT_ROOT}
+    -path ${TEACLAVE_PROJECT_ROOT}/third_party -prune -o
+    -path ${TEACLAVE_PROJECT_ROOT}/.git -prune -o
+    -path ${TEACLAVE_PROJECT_ROOT}/services/access_control -prune -o
+    -path ${TEACLAVE_BUILD_ROOT} -prune
+    -o -name "*.py" -exec yapf -d {} +
+  COMMENT "Checking the format of every .rs and .py file with rustfmt and yapf"
   DEPENDS prep)
 
 if(TEST_MODE)
