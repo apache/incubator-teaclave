@@ -29,6 +29,30 @@ class UserData:
         self.key = key
 
 
+INPUT_FILE_URL_PREFIX = "http://localhost:6789/fixtures/functions/private_join_and_compute/three_party_data/"
+OUTPUT_FILE_URL_PREFIX = "http://localhost:6789/fixtures/functions/private_join_and_compute/three_party_data/"
+
+USER_DATA_0 = UserData("user0", "password",
+                       INPUT_FILE_URL_PREFIX + "bank_a.enc",
+                       OUTPUT_FILE_URL_PREFIX + "user0_output.enc",
+                       "7884a62894e7be50b9795ba22ce5ee7f",
+                       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+
+USER_DATA_1 = UserData("user1", "password",
+                       INPUT_FILE_URL_PREFIX + "bank_b.enc",
+                       OUTPUT_FILE_URL_PREFIX + "user1_output.enc",
+                       "75b8e931887bd57564d93df31c282bb9",
+                       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+
+USER_DATA_2 = UserData("user2", "password",
+                       INPUT_FILE_URL_PREFIX + "bank_c.enc",
+                       OUTPUT_FILE_URL_PREFIX + "user2_output.enc",
+                       "35acf29139485067d1ae6212c0577b43",
+                       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+
+USER_DATA_3 = UserData("user3", "password")
+
+
 class DataList:
     def __init__(self, data_name, data_id):
         self.data_name = data_name
@@ -81,26 +105,25 @@ class ConfigClient:
                                      executor="builtin",
                                      inputs_ownership=[
                                          OwnerList("input_data0",
-                                                   [user0_data.user_id]),
+                                                   [USER_DATA_0.user_id]),
                                          OwnerList("input_data1",
-                                                   [user1_data.user_id]),
+                                                   [USER_DATA_1.user_id]),
                                          OwnerList("input_data2",
-                                                   [user2_data.user_id])
+                                                   [USER_DATA_2.user_id])
                                      ],
                                      outputs_ownership=[
                                          OwnerList("output_data0",
-                                                   [user0_data.user_id]),
+                                                   [USER_DATA_0.user_id]),
                                          OwnerList("output_data1",
-                                                   [user1_data.user_id]),
+                                                   [USER_DATA_1.user_id]),
                                          OwnerList("output_data2",
-                                                   [user2_data.user_id])
+                                                   [USER_DATA_2.user_id])
                                      ])
 
         return task_id
 
     def run_task(self, task_id):
         client = self.client
-
         client.approve_task(task_id)
         print(f"[+] {self.user_id} invoking task")
         client.invoke_task(task_id)
@@ -157,48 +180,24 @@ class DataClient:
 
 
 def main():
-
-    user0_data = UserData(
-        "user0", "password",
-        "http://localhost:6789/fixtures/functions/private_join_and_compute/three_party_data/bank_a.enc",
-        "http://localhost:6789/fixtures/functions/private_join_and_compute/three_party_results/user0_output.enc",
-        "7884a62894e7be50b9795ba22ce5ee7f",
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-
-    user1_data = UserData(
-        "user1", "password",
-        "http://localhost:6789/fixtures/functions/private_join_and_compute/three_party_data/bank_b.enc",
-        "http://localhost:6789/fixtures/functions/private_join_and_compute/three_party_results/user1_output.enc",
-        "75b8e931887bd57564d93df31c282bb9",
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-
-    user2_data = UserData(
-        "user2", "password",
-        "http://localhost:6789/fixtures/functions/private_join_and_compute/three_party_data/bank_c.enc",
-        "http://localhost:6789/fixtures/functions/private_join_and_compute/three_party_results/user2_output.enc",
-        "35acf29139485067d1ae6212c0577b43",
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-
-    user3_data = UserData("user3", "password")
-
     ## USER 3 creates the task
-    config_client = ConfigClient(user3_data.user_id, user3_data.password)
+    config_client = ConfigClient(USER_DATA_3.user_id, USER_DATA_3.password)
     task_id = config_client.set_task()
 
     ## USER 0, 1, 2 join the task and upload their data
-    user0 = DataClient(user0_data.user_id, user0_data.password)
-    user0.register_data(task_id, user0_data.input_url, user0_data.input_cmac,
-                        user0_data.output_url, user0_data.key, "input_data0",
+    user0 = DataClient(USER_DATA_0.user_id, USER_DATA_0.password)
+    user0.register_data(task_id, USER_DATA_0.input_url, USER_DATA_0.input_cmac,
+                        USER_DATA_0.output_url, USER_DATA_0.key, "input_data0",
                         "output_data0")
 
-    user1 = DataClient(user1_data.user_id, user1_data.password)
-    user1.register_data(task_id, user1_data.input_url, user1_data.input_cmac,
-                        user1_data.output_url, user1_data.key, "input_data1",
+    user1 = DataClient(USER_DATA_1.user_id, USER_DATA_1.password)
+    user1.register_data(task_id, USER_DATA_1.input_url, USER_DATA_1.input_cmac,
+                        USER_DATA_1.output_url, USER_DATA_1.key, "input_data1",
                         "output_data1")
 
-    user2 = DataClient(user2_data.user_id, user2_data.password)
-    user2.register_data(task_id, user2_data.input_url, user2_data.input_cmac,
-                        user2_data.output_url, user2_data.key, "input_data2",
+    user2 = DataClient(USER_DATA_2.user_id, USER_DATA_2.password)
+    user2.register_data(task_id, USER_DATA_2.input_url, USER_DATA_2.input_cmac,
+                        USER_DATA_2.output_url, USER_DATA_2.key, "input_data2",
                         "output_data2")
 
     user0.approve_task(task_id)

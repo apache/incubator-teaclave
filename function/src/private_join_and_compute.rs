@@ -157,15 +157,15 @@ pub mod tests {
 
         let user0_input = "fixtures/functions/private_join_and_compute/three_party_data/bank_a.txt";
         let user0_output =
-            "fixtures/functions/private_join_and_compute/three_party_results/user0_output.txt";
+            "fixtures/functions/private_join_and_compute/three_party_data/user0_output.txt";
 
         let user1_input = "fixtures/functions/private_join_and_compute/three_party_data/bank_b.txt";
         let user1_output =
-            "fixtures/functions/private_join_and_compute/three_party_results/user1_output.txt";
+            "fixtures/functions/private_join_and_compute/three_party_data/user1_output.txt";
 
         let user2_input = "fixtures/functions/private_join_and_compute/three_party_data/bank_c.txt";
         let user2_output =
-            "fixtures/functions/private_join_and_compute/three_party_results/user2_output.txt";
+            "fixtures/functions/private_join_and_compute/three_party_data/user2_output.txt";
 
         let input_files = StagedFiles::new(hashmap!(
             "input_data0" =>
