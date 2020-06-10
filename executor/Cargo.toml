@@ -32,6 +32,7 @@ full_builtin_function = [
   "builtin_logistic_regression_predict",
   "builtin_logistic_regression_train",
   "builtin_online_decrypt",
+  "builtin_private_join_and_compute",
 ]
 
 builtin_echo = []
@@ -40,6 +41,7 @@ builtin_gbdt_train = []
 builtin_logistic_regression_predict = []
 builtin_logistic_regression_train = []
 builtin_online_decrypt = []
+builtin_private_join_and_compute = []
 
 [dependencies]
 log           = { version = "0.4.6" }

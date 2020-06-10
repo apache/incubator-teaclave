@@ -54,6 +54,7 @@ impl TeaclaveRuntime for RawIoRuntime {
             .output_files
             .get(identifier)
             .ok_or_else(|| anyhow::anyhow!("Invalid output file identifier"))?;
+        log::debug!("create_output: {:?}", file_info.path);
         let f = File::create(&file_info.path)?;
         Ok(Box::new(f))
     }
