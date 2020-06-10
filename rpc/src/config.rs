@@ -17,10 +17,19 @@
 
 use anyhow::{anyhow, bail, Result};
 use log::debug;
+#[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
-use std::sync::{Arc, SgxRwLock as RwLock};
+#[cfg(not(feature = "mesalock_sgx"))]
+use std::sync::RwLock;
+#[cfg(feature = "mesalock_sgx")]
+use std::sync::SgxRwLock as RwLock;
+
+use std::sync::Arc;
 use std::time::SystemTime;
+
+#[cfg(feature = "mesalock_sgx")]
 use std::untrusted::time::SystemTimeEx;
+
 use teaclave_attestation::report::AttestationReport;
 use teaclave_attestation::verifier::AttestationReportVerifier;
 use teaclave_attestation::AttestedTlsConfig;
@@ -75,6 +84,7 @@ impl SgxTrustedTlsServerConfig {
         Ok(config)
     }
 
+    #[cfg(feature = "mesalock_sgx")]
     pub fn attestation_report_verifier(
         mut self,
         accepted_enclave_attrs: Vec<EnclaveAttr>,
