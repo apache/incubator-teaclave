@@ -8,7 +8,7 @@ build = "build.rs"
 edition = "2018"
 
 [dependencies]
-log        = { version = "0.4.6" }
+log        = { version = "0.4.6", features = ["release_max_level_info"] }
 env_logger = { version = "0.7.1" }
 anyhow     = { version = "1.0.26" }
 structopt  = { version = "0.3" }
