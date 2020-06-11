@@ -74,7 +74,7 @@ impl PrivateSetIntersection {
         for item in result1 {
             write!(&mut output1, "{}", item)?;
             if *item > 0 {
-                common_sets = common_sets + 1;
+                common_sets += 1;
             }
         }
 
