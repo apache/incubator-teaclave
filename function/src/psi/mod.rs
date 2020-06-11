@@ -69,14 +69,19 @@ impl PrivateSetIntersection {
         let mut output1 = runtime.create_output(OUT_RESULT1)?;
         let mut output2 = runtime.create_output(OUT_RESULT2)?;
 
-        for i in result1 {
-            write!(&mut output1, "{}", i)?;
+        let mut common_sets = 0;
+
+        for item in result1 {
+            write!(&mut output1, "{}", item)?;
+            if *item > 0 {
+                common_sets = common_sets + 1;
+            }
         }
 
-        for i in result2 {
-            write!(&mut output2, "{}", i)?;
+        for item in result2 {
+            write!(&mut output2, "{}", item)?;
         }
-        Ok(format!("Finish the task"))
+        Ok(format!("{} common items", common_sets))
     }
 }
 
@@ -140,6 +145,6 @@ pub mod tests {
 
         assert_eq!(&user1_result[..], "01100");
         assert_eq!(&user2_result[..], "1100");
-        assert_eq!(summary, "Finish the task");
+        assert_eq!(summary, "2 common items");
     }
 }

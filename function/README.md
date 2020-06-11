@@ -20,6 +20,8 @@ Currently, we have these built-in functions:
   - `builtin-logistic-regression-predict`: LR prediction with input model and input test data.
   - `builtin-private-join-and-compute`: Find intersection of muti-parties' input
     data and compute sum of the common items.
+  - `builtin-private-set-intersection`: Allow two parties to compute the intersection
+    without reavealing anything except for the elements in the intersection. 
   
 The function arguments are in JSON format and can be serialized to a Rust struct
 very easily. You can learn more about supported arguments in the implementation
