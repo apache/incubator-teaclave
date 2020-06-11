@@ -15,9 +15,9 @@ how to add a built-in function to Teaclave step by step with a "private join and
 compute" example.
 
 In this example, consider several banks have names and balance of their clients.
-These banks want to compute total balance of common clients in their private
-data set without leaking the raw sensitive client data to other parties. This is
-a perfect usage scenarios of the Teaclave platform, and we will provide a
+These banks want to compute the total balance of common clients in their private
+data set without leaking the raw sensitive data to other parties. This is
+a perfect usage scenario of the Teaclave platform, and we will provide a
 solution by implementing a built-in function in Teaclave.
 
 ## Implement Built-in Functions in Rust
@@ -58,7 +58,7 @@ can return a summary of the function execution.
 Since the function arguments is in the JSON object format and can be easily
 deserialized to a Rust struct with `serde_json`. Therefore, we define a struct
 `PrivateJoinAndComputeArguments` which derive the `serde::Deserialize` trait for
-the conversion. Then implement `TryFrom` trait for the struct to convert the
+the conversion. Then we implement `TryFrom` trait for the struct to convert the
 `FunctionArguments` type to the actual `PrivateJoinAndComputeArguments` type.
 
 ```rust
@@ -122,5 +122,5 @@ impl TeaclaveExecutor for BuiltinFunctionExecutor {
 
 Finally, we can invoke the function with the client SDK. In our example, we use
 the Python client SDK. Basically, this process includes registering input/output
-files, creating task, approving task, invoking task and getting execution
+files, creating tasks, approving tasks, invoking tasks and getting execution
 results. You can see more details in the `examples/python` directory.
