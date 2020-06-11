@@ -553,7 +553,6 @@ impl std::convert::TryFrom<proto::RegisterInputFileRequest> for RegisterInputFil
             .crypto_info
             .ok_or_else(|| anyhow!("missing crypto_info"))?
             .try_into()?;
-
         Ok(RegisterInputFileRequest {
             url,
             cmac,
