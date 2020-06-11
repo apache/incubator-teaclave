@@ -20,7 +20,7 @@ enclave_unit_test = ["teaclave_test_utils/mesalock_sgx"]
 [dependencies]
 protected_fs_rs  = { path = "../common/protected_fs_rs", default-features = false}
 
-log           = { version = "0.4.6" }
+log           = { version = "0.4.6", features = ["release_max_level_info"] }
 anyhow       = { version = "1.0.26" }
 sgx_types    = { version = "1.1.2" }
 rand         = { version = "0.7.0" }

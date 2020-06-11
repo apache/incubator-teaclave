@@ -18,7 +18,7 @@ mesalock_sgx = [
 anyhow     = { version = "1.0.26" }
 cfg-if     = { version = "0.1.9" }
 http       = { version = "0.2" }
-log        = { version = "0.4.6" }
+log        = { version = "0.4.6", features = ["release_max_level_info"] }
 rustls     = { version = "0.16.0", features = ["dangerous_configuration"] }
 serde      = { version = "1.0.92", features = ["derive"] }
 serde_json = { version = "1.0.39" }

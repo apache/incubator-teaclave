@@ -16,7 +16,7 @@ cov = ["sgx_cov", "sgx_trts"]
 [dependencies]
 anyhow     = { version = "1.0.26" }
 env_logger = { version = "0.7.1" }
-log        = { version = "0.4.6" }
+log        = { version = "0.4.6", features = ["release_max_level_info"] }
 
 teaclave_service_enclave_utils_proc_macro = { path = "./proc_macro" }
 teaclave_types       = { path = "../../../types" }

@@ -11,7 +11,7 @@ edition = "2018"
 ctrlc      = { version = "3.1.2" }
 env_logger = { version = "0.7.1" }
 anyhow     = { version = "1.0.26" }
-log        = { version = "0.4.6" }
+log        = { version = "0.4.6", features = ["release_max_level_info"] }
 libc        = { version = "0.2.66" }
 signal-hook = { version = "0.1.13" }
 
