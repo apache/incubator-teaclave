@@ -49,7 +49,6 @@ builtin_private_set_intersection = []
 log           = { version = "0.4.6", features = ["release_max_level_info"] }
 anyhow        = { version = "1.0.26" }
 serde_json    = { version = "1.0.39" }
-hex           = { version = "0.4.0"  }
 serde         = { version = "1.0.92", features = ["derive"] }
 thiserror     = { version = "1.0.9" }
 gbdt          = { version = "0.1.0", features = ["input", "enable_training"] }

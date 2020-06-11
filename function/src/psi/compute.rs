@@ -15,7 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// Insert std prelude in the top for the sgx feature
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
