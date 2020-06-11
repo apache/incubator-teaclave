@@ -157,7 +157,7 @@ pub mod tests {
         let user = service.db_client.get_user("test_login_id").unwrap();
         assert!(user.validate_token(&service.jwt_secret, &token));
 
-        info!("saved user_info: {:?}", user);
+        debug!("saved user_info: {:?}", user);
         let request = UserLoginRequest::new("test_login_id", "test_password1").into_request();
         assert!(service.user_login(request).is_err());
     }

@@ -96,7 +96,7 @@ pub mod tests {
         let response = get_authenticate_response(id, &token, &service);
         assert!(response.accept);
         let token = validate_token(id, &service.jwt_secret, &token);
-        info!("valid token: {:?}", token.unwrap());
+        debug!("valid token: {:?}", token.unwrap());
     }
 
     pub fn test_invalid_algorithm() {

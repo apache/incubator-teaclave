@@ -64,7 +64,7 @@ def entrypoint(argv):
         .inputs(vec![input1, input2])
         .outputs(vec![fusion_output]);
     let response = client.register_function(request).unwrap();
-    log::info!("Resgister function: {:?}", response);
+    log::debug!("Resgister function: {:?}", response);
     response.function_id
 }
 
@@ -78,7 +78,7 @@ fn register_input_file(
     let cmac = FileAuthTag::from_hex(auth_tag.as_ref()).unwrap();
     let request = RegisterInputFileRequest::new(url, cmac, crypto);
     let response = client.register_input_file(request).unwrap();
-    log::info!("Register input: {:?}", response);
+    log::debug!("Register input: {:?}", response);
     response.data_id
 }
 
@@ -104,7 +104,7 @@ fn create_data_fusion_task(
         .outputs_ownership(hashmap!("OutFusionData" => vec![USERNAME1, USERNAME2]))
         .executor(Executor::MesaPy);
     let response = client.create_task(request).unwrap();
-    log::info!("Create task: {:?}", response);
+    log::debug!("Create task: {:?}", response);
     response.task_id
 }
 
@@ -116,7 +116,7 @@ fn assign_data_for_task(
 ) {
     let request = AssignDataRequest::new(task_id.clone(), input_map, output_map);
     let response = client.assign_data(request).unwrap();
-    log::info!("Assign data: {:?}", response);
+    log::debug!("Assign data: {:?}", response);
 }
 
 #[test_case]
@@ -239,7 +239,7 @@ def entrypoint(argv):
         .public(true)
         .inputs(vec![input_spec]);
     let response = client.register_function(request).unwrap();
-    log::info!("Resgister function: {:?}", response);
+    log::debug!("Resgister function: {:?}", response);
     response.function_id
 }
 
@@ -256,6 +256,6 @@ fn create_wlc_task(
         ))
         .executor(Executor::MesaPy);
     let response = client.create_task(request).unwrap();
-    log::info!("Create task: {:?}", response);
+    log::debug!("Create task: {:?}", response);
     response.task_id
 }

@@ -184,7 +184,7 @@ impl InterInputs {
         });
         let request =
             FileAgentRequest::new(HandleFileCommand::Download, req_info, fusion_base.as_ref());
-        log::info!("Ocall file download request: {:?}", request);
+        log::debug!("Ocall file download request: {:?}", request);
         handle_file_request(request)?;
         Ok(())
     }
@@ -285,7 +285,7 @@ impl InterOutputs {
         });
         let request =
             FileAgentRequest::new(HandleFileCommand::Upload, req_info, fusion_base.as_ref());
-        log::info!("Ocall file upload request: {:?}", request);
+        log::debug!("Ocall file upload request: {:?}", request);
         handle_file_request(request)?;
         Ok(())
     }

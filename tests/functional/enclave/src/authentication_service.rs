@@ -78,7 +78,7 @@ fn test_login_success() {
 
     let request = UserLoginRequest::new("test_login_id1", "test_password");
     let response_result = client.user_login(request);
-    info!("{:?}", response_result);
+    debug!("{:?}", response_result);
     assert!(response_result.is_ok());
 }
 
@@ -91,7 +91,7 @@ fn test_login_fail() {
 
     let request = UserLoginRequest::new("test_login_id2", "wrong_password");
     let response_result = client.user_login(request);
-    info!("{:?}", response_result);
+    debug!("{:?}", response_result);
     assert!(response_result.is_err());
 }
 
@@ -109,7 +109,7 @@ fn test_authenticate_success() {
     let credential = UserCredential::new("test_authenticate_id1", response_result.unwrap().token);
     let request = UserAuthenticateRequest::new(credential);
     let response_result = internal_client.user_authenticate(request);
-    info!("{:?}", response_result);
+    debug!("{:?}", response_result);
     assert!(response_result.unwrap().accept);
 }
 
@@ -125,7 +125,7 @@ fn test_authenticate_fail() {
     let credential = UserCredential::new("test_authenticate_id2", "wrong_token");
     let request = UserAuthenticateRequest::new(credential);
     let response_result = internal_client.user_authenticate(request);
-    info!("{:?}", response_result);
+    debug!("{:?}", response_result);
     assert!(!response_result.unwrap().accept);
 }
 
@@ -134,7 +134,7 @@ fn test_register_success() {
     let mut client = get_api_client();
     let request = UserRegisterRequest::new("test_register_id1", "test_password");
     let response_result = client.user_register(request);
-    info!("{:?}", response_result);
+    debug!("{:?}", response_result);
     assert!(response_result.is_ok());
 }
 
@@ -146,6 +146,6 @@ fn test_register_fail() {
     assert!(response_result.is_ok());
     let request = UserRegisterRequest::new("test_register_id2", "test_password");
     let response_result = client.user_register(request);
-    info!("{:?}", response_result);
+    debug!("{:?}", response_result);
     assert!(response_result.is_err());
 }

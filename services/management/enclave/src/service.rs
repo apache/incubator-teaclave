@@ -339,7 +339,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
         )
         .map_err(|_| ServiceError::BadTask)?;
 
-        log::info!("CreateTask: {:?}", task);
+        log::debug!("CreateTask: {:?}", task);
 
         let ts: TaskState = task.into();
         self.write_to_db(&ts)
@@ -362,7 +362,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
 
         ensure!(ts.has_participant(&user_id), ServiceError::PermissionDenied);
 
-        log::info!("GetTask: {:?}", ts);
+        log::debug!("GetTask: {:?}", ts);
 
         let response = GetTaskResponse {
             task_id: ts.external_id(),
@@ -427,7 +427,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
                 .map_err(|_| ServiceError::PermissionDenied)?;
         }
 
-        log::info!("AssignData: {:?}", task);
+        log::debug!("AssignData: {:?}", task);
 
         let ts: TaskState = task.into();
         self.write_to_db(&ts)
@@ -458,7 +458,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
         task.approve(&user_id)
             .map_err(|_| ServiceError::PermissionDenied)?;
 
-        log::info!("ApproveTask: approve:{:?}", task);
+        log::debug!("ApproveTask: approve:{:?}", task);
 
         let ts: TaskState = task.into();
         self.write_to_db(&ts)
@@ -488,18 +488,18 @@ impl TeaclaveManagement for TeaclaveManagementService {
             .read_from_db(&ts.function_id)
             .map_err(|_| ServiceError::PermissionDenied)?;
 
-        log::info!("InvokeTask: get function: {:?}", function);
+        log::debug!("InvokeTask: get function: {:?}", function);
 
         let mut task: Task<Stage> = ts.try_into().map_err(|e| {
             log::warn!("Stage state error: {:?}", e);
             ServiceError::PermissionDenied
         })?;
 
-        log::info!("InvokeTask: get task: {:?}", task);
+        log::debug!("InvokeTask: get task: {:?}", task);
 
         let staged_task = task.stage_for_running(&user_id, function)?;
 
-        log::info!("InvokeTask: staged task: {:?}", staged_task);
+        log::debug!("InvokeTask: staged task: {:?}", staged_task);
 
         self.enqueue_to_db(StagedTask::get_queue_key().as_bytes(), &staged_task)?;
 
@@ -658,7 +658,7 @@ pub mod tests {
         assert!(TeaclaveInputFile::match_prefix(&input_file.key_string()));
         let value = input_file.to_vec().unwrap();
         let deserialized_file = TeaclaveInputFile::from_slice(&value).unwrap();
-        info!("file: {:?}", deserialized_file);
+        debug!("file: {:?}", deserialized_file);
     }
 
     pub fn handle_output_file() {
@@ -667,7 +667,7 @@ pub mod tests {
         assert!(TeaclaveOutputFile::match_prefix(&output_file.key_string()));
         let value = output_file.to_vec().unwrap();
         let deserialized_file = TeaclaveOutputFile::from_slice(&value).unwrap();
-        info!("file: {:?}", deserialized_file);
+        debug!("file: {:?}", deserialized_file);
     }
 
     pub fn handle_function() {
@@ -686,7 +686,7 @@ pub mod tests {
         assert!(Function::match_prefix(&function.key_string()));
         let value = function.to_vec().unwrap();
         let deserialized_function = Function::from_slice(&value).unwrap();
-        info!("function: {:?}", deserialized_function);
+        debug!("function: {:?}", deserialized_function);
     }
 
     pub fn handle_task() {
@@ -713,7 +713,7 @@ pub mod tests {
         let ts: TaskState = task.try_into().unwrap();
         let value = ts.to_vec().unwrap();
         let deserialized_task = TaskState::from_slice(&value).unwrap();
-        info!("task: {:?}", deserialized_task);
+        debug!("task: {:?}", deserialized_task);
     }
 
     pub fn handle_staged_task() {
@@ -740,6 +740,6 @@ pub mod tests {
 
         let value = staged_task.to_vec().unwrap();
         let deserialized_data = StagedTask::from_slice(&value).unwrap();
-        info!("staged task: {:?}", deserialized_data);
+        debug!("staged task: {:?}", deserialized_data);
     }
 }

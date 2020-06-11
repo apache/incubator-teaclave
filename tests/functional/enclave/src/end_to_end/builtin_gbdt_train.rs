@@ -69,7 +69,7 @@ fn register_gbdt_function(client: &mut TeaclaveFrontendClient) -> ExternalID {
         .outputs(vec![fn_output]);
 
     let response = client.register_function(request).unwrap();
-    log::info!("Register function: {:?}", response);
+    log::debug!("Register function: {:?}", response);
     response.function_id
 }
 
@@ -82,7 +82,7 @@ fn register_input_file(client: &mut TeaclaveFrontendClient) -> ExternalID {
 
     let request = RegisterInputFileRequest::new(url, cmac, crypto_info);
     let response = client.register_input_file(request).unwrap();
-    log::info!("Register input: {:?}", response);
+    log::debug!("Register input: {:?}", response);
     response.data_id
 }
 
@@ -95,7 +95,7 @@ fn register_output_file(
             .unwrap();
     let request = RegisterOutputFileRequest::new(url, crypto);
     let response = client.register_output_file(request).unwrap();
-    log::info!("Register output: {:?}", response);
+    log::debug!("Register output: {:?}", response);
     response.data_id
 }
 
@@ -123,7 +123,7 @@ fn create_gbdt_training_task(
         .outputs_ownership(hashmap!("trained_model" => vec![USERNAME]));
 
     let response = client.create_task(request).unwrap();
-    log::info!("Create task: {:?}", response);
+    log::debug!("Create task: {:?}", response);
 
     response.task_id
 }
@@ -142,5 +142,5 @@ fn assign_data_to_task(
     );
     let response = client.assign_data(request).unwrap();
 
-    log::info!("Assign data: {:?}", response);
+    log::debug!("Assign data: {:?}", response);
 }

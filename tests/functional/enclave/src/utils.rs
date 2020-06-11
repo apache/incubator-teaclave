@@ -141,7 +141,7 @@ pub fn register_new_account(
     let request = UserRegisterRequest::new(username, password);
     let response = api_client.user_register(request)?;
 
-    log::info!("User register: {:?}", response);
+    log::debug!("User register: {:?}", response);
 
     Ok(())
 }
@@ -154,7 +154,7 @@ pub fn login(
     let request = UserLoginRequest::new(username, password);
     let response = api_client.user_login(request)?;
 
-    log::info!("User login: {:?}", response);
+    log::debug!("User login: {:?}", response);
 
     Ok(UserCredential::new(username, response.token))
 }
