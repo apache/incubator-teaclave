@@ -15,17 +15,17 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use std::env;
 use std::fmt;
 use std::format;
+use std::io::{self, BufRead, BufReader, Read, Write};
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 use teaclave_types::{FunctionArguments, FunctionRuntime};
-use std::env;
-use std::io::{self, BufRead, BufReader, Write, Read};
 mod basic;
 mod compute;
-use compute::SetIntersection;
 use anyhow::{anyhow, bail, Result};
+use compute::SetIntersection;
 
 extern crate hex;
 
@@ -33,7 +33,6 @@ const IN_DATA1: &str = "input_data1";
 const IN_DATA2: &str = "input_data2";
 const OUT_RESULT1: &str = "output_result1";
 const OUT_RESULT2: &str = "output_result2";
-
 
 #[derive(Default)]
 pub struct PrivateSetIntersection;
@@ -57,10 +56,10 @@ impl PrivateSetIntersection {
         let data2 = parse_input_data(input2)?;
 
         let mut si = SetIntersection::new();
-        if !si.psi_add_hash_data(data1, 0){
+        if !si.psi_add_hash_data(data1, 0) {
             bail!("Invalid Data");
         }
-        if !si.psi_add_hash_data(data2, 1){
+        if !si.psi_add_hash_data(data2, 1) {
             bail!("Invalid Data");
         }
 
@@ -80,12 +79,10 @@ impl PrivateSetIntersection {
             write!(&mut output2, "{}", i)?;
         }
         Ok(format!("items in total"))
- 
     }
 }
 
 fn parse_input_data(input: impl io::Read) -> anyhow::Result<Vec<u8>> {
-
     let mut samples: Vec<u8> = Vec::new();
     let reader = BufReader::new(input);
     for byte_result in reader.lines() {
@@ -95,8 +92,6 @@ fn parse_input_data(input: impl io::Read) -> anyhow::Result<Vec<u8>> {
     }
     Ok(samples)
 }
-
-
 
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
@@ -111,6 +106,4 @@ pub mod tests {
     pub fn run_tests() -> bool {
         true
     }
-
-    
 }
