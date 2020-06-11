@@ -44,7 +44,7 @@ def entrypoint(argv):
 
     let response = client.register_function(request).unwrap();
 
-    log::info!("Resgister function: {:?}", response);
+    log::debug!("Resgister function: {:?}", response);
 
     // Create Task
     let function_id = response.function_id;
@@ -55,14 +55,14 @@ def entrypoint(argv):
 
     let response = client.create_task(request).unwrap();
 
-    log::info!("Create task: {:?}", response);
+    log::debug!("Create task: {:?}", response);
 
     // Assign Data To Task
     let task_id = response.task_id;
     let request = AssignDataRequest::new(task_id.clone(), hashmap!(), hashmap!());
     let response = client.assign_data(request).unwrap();
 
-    log::info!("Assign data: {:?}", response);
+    log::debug!("Assign data: {:?}", response);
 
     // Approve Task
     approve_task(&mut client, &task_id).unwrap();

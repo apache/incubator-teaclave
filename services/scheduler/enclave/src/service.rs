@@ -170,7 +170,7 @@ impl TeaclaveScheduler for TeaclaveSchedulerService {
         let ts = self.get_task_state(&request.task_id)?;
         let task: Task<Run> = ts.try_into()?;
 
-        log::info!("UpdateTaskStatus: Task {:?}", task);
+        log::debug!("UpdateTaskStatus: Task {:?}", task);
         // Only TaskStatus::Running is implicitly allowed here.
 
         let ts = TaskState::from(task);
@@ -195,7 +195,7 @@ impl TeaclaveScheduler for TeaclaveSchedulerService {
 
         // Updating task result means we have finished execution
         task.update_result(request.task_result)?;
-        log::info!("UpdateTaskResult: Task {:?}", task);
+        log::debug!("UpdateTaskResult: Task {:?}", task);
 
         let ts = TaskState::from(task);
         self.put_into_db(&ts)?;

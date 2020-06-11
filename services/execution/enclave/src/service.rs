@@ -75,9 +75,9 @@ impl TeaclaveExecutionService {
                 }
             };
 
-            log::info!("InvokeTask: {:?}", staged_task);
+            log::debug!("InvokeTask: {:?}", staged_task);
             let result = self.invoke_task(&staged_task);
-            log::info!("InvokeTask result: {:?}", result);
+            log::debug!("InvokeTask result: {:?}", result);
 
             match self.update_task_result(&staged_task.task_id, result) {
                 Ok(_) => (),
@@ -114,7 +114,7 @@ impl TeaclaveExecutionService {
         )?;
         let invocation = prepare_task(&task, &file_mgr)?;
 
-        log::info!("Invoke function: {:?}", invocation);
+        log::debug!("Invoke function: {:?}", invocation);
         let worker = Worker::default();
         let summary = worker.invoke_function(invocation)?;
 

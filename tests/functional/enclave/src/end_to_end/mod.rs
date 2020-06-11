@@ -29,7 +29,7 @@ mod mesapy_echo;
 fn get_task(client: &mut TeaclaveFrontendClient, task_id: &ExternalID) -> GetTaskResponse {
     let request = GetTaskRequest::new(task_id.clone());
     let response = client.get_task(request).unwrap();
-    log::info!("Get task: {:?}", response);
+    log::debug!("Get task: {:?}", response);
     response
 }
 
@@ -41,7 +41,7 @@ fn get_task_until(
     loop {
         let request = GetTaskRequest::new(task_id.clone());
         let response = client.get_task(request).unwrap();
-        log::info!("Get task: {:?}", response);
+        log::debug!("Get task: {:?}", response);
 
         std::thread::sleep(std::time::Duration::from_secs(1));
 
@@ -49,7 +49,7 @@ fn get_task_until(
             match response.result {
                 TaskResult::Ok(outputs) => {
                     let ret_val = String::from_utf8(outputs.return_value).unwrap();
-                    log::info!("Task returns: {:?}", ret_val);
+                    log::debug!("Task returns: {:?}", ret_val);
                     return ret_val;
                 }
                 TaskResult::Err(failure) => {
@@ -65,13 +65,13 @@ fn get_task_until(
 fn approve_task(client: &mut TeaclaveFrontendClient, task_id: &ExternalID) -> anyhow::Result<()> {
     let request = ApproveTaskRequest::new(task_id.clone());
     let response = client.approve_task(request)?;
-    log::info!("Approve task: {:?}", response);
+    log::debug!("Approve task: {:?}", response);
     Ok(())
 }
 
 fn invoke_task(client: &mut TeaclaveFrontendClient, task_id: &ExternalID) -> anyhow::Result<()> {
     let request = InvokeTaskRequest::new(task_id.clone());
     let response = client.invoke_task(request)?;
-    log::info!("Invoke task: {:?}", response);
+    log::debug!("Invoke task: {:?}", response);
     Ok(())
 }

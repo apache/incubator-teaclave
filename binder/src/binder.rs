@@ -18,7 +18,7 @@
 use sgx_types::*;
 use sgx_urts::SgxEnclave;
 
-use log::{debug, info};
+use log::{debug, error};
 use serde::{Deserialize, Serialize};
 
 use crate::ipc::ECallChannel;
@@ -84,7 +84,7 @@ impl TeeBinder {
             FinalizeEnclaveInput,
         ) {
             Ok(_) => {}
-            Err(e) => info!("{:?}", e),
+            Err(e) => error!("{:?}", e),
         }
     }
 }

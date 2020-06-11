@@ -62,7 +62,7 @@ impl TeaclaveService<EchoRequest, EchoResponse> for EchoService {
         &self,
         request: teaclave_rpc::Request<EchoRequest>,
     ) -> TeaclaveServiceResponseResult<EchoResponse> {
-        info!("handle request: {:?}", request);
+        debug!("handle request: {:?}", request);
         let message = match request.message {
             EchoRequest::Say(s) => s.message,
         };
@@ -138,7 +138,7 @@ fn echo_success() {
         message: "Hello, World!".to_string(),
     };
     let response_result = client.say(request);
-    info!("{:?}", response_result);
+    debug!("{:?}", response_result);
 
     assert!(response_result.is_ok());
     assert!(response_result.unwrap().message == "Hello, World!");

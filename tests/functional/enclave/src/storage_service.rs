@@ -34,7 +34,7 @@ fn test_get_success() {
     let mut client = get_client();
     let request = GetRequest::new("test_get_key");
     let response_result = client.get(request);
-    info!("{:?}", response_result);
+    debug!("{:?}", response_result);
     assert!(response_result.is_ok());
 }
 
@@ -51,12 +51,12 @@ fn test_put_success() {
     let mut client = get_client();
     let request = PutRequest::new("test_put_key", "test_put_value");
     let response_result = client.put(request);
-    info!("{:?}", response_result);
+    debug!("{:?}", response_result);
     assert!(response_result.is_ok());
 
     let request = GetRequest::new("test_put_key");
     let response_result = client.get(request);
-    info!("{:?}", response_result);
+    debug!("{:?}", response_result);
     assert!(response_result.is_ok());
     assert_eq!(response_result.unwrap().value, b"test_put_value");
 }
@@ -66,7 +66,7 @@ fn test_delete_success() {
     let mut client = get_client();
     let request = DeleteRequest::new("test_delete_key");
     let response_result = client.delete(request);
-    info!("{:?}", response_result);
+    debug!("{:?}", response_result);
     assert!(response_result.is_ok());
 
     let request = GetRequest::new("test_delete_key");
@@ -79,7 +79,7 @@ fn test_enqueue_success() {
     let mut client = get_client();
     let request = EnqueueRequest::new("test_enqueue_key", "test_enqueue_value");
     let response_result = client.enqueue(request);
-    info!("{:?}", response_result);
+    debug!("{:?}", response_result);
     assert!(response_result.is_ok());
 }
 

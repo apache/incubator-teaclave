@@ -314,7 +314,7 @@ extern "C" fn c_open_input(fid: *mut c_char, out_handle: *mut c_int) -> c_uint {
             FFI_OK
         }
         Err(e) => {
-            info!("c_open_file: {:?}", e);
+            error!("c_open_file: {:?}", e);
             FFI_FILE_ERROR
         }
     }
@@ -337,7 +337,7 @@ extern "C" fn c_create_output(fid: *mut c_char, out_handle: *mut c_int) -> c_uin
             FFI_OK
         }
         Err(e) => {
-            info!("c_open_file: {:?}", e);
+            error!("c_open_file: {:?}", e);
             FFI_FILE_ERROR
         }
     }
@@ -367,7 +367,7 @@ extern "C" fn c_read_file(
             FFI_OK
         }
         Err(e) => {
-            info!("c_read_file: {:?}", e);
+            error!("c_read_file: {:?}", e);
             FFI_FILE_ERROR
         }
     }
@@ -395,7 +395,7 @@ extern "C" fn c_write_file(
             FFI_OK
         }
         Err(e) => {
-            info!("c_write_file: {:?}", e);
+            error!("c_write_file: {:?}", e);
             FFI_FILE_ERROR
         }
     }
@@ -411,7 +411,7 @@ extern "C" fn c_close_file(handle: c_int) -> c_uint {
     match rtc_close_handle(handle) {
         Ok(size) => FFI_OK,
         Err(e) => {
-            info!("c_close_file: {:?}", e);
+            error!("c_close_file: {:?}", e);
             FFI_FILE_ERROR
         }
     }
