@@ -84,6 +84,7 @@ impl SgxTrustedTlsServerConfig {
         Ok(config)
     }
 
+    // Disable this function for non-SGX targets.
     #[cfg(feature = "mesalock_sgx")]
     pub fn attestation_report_verifier(
         mut self,
