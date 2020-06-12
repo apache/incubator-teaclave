@@ -138,6 +138,12 @@ run_examples() {
 
   echo_title "examples"
   mkdir -p /tmp/fusion_data
+  pushd ${TEACLAVE_CLI_INSTALL_DIR}
+  ./teaclave_cli verify \
+                 --enclave-info ../examples/enclave_info.toml \
+                 --public-keys $(find ../examples -name "*.public.pem") \
+                 --signatures $(find ../examples -name "*.sign.sha256")
+  popd
   pushd ${TEACLAVE_SERVICE_INSTALL_DIR}
   ./teaclave_authentication_service &
   ./teaclave_storage_service &
