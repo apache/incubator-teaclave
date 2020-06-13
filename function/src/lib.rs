@@ -30,6 +30,7 @@ mod logistic_regression_train;
 mod online_decrypt;
 mod ordered_set_intersect;
 mod private_join_and_compute;
+mod rsa_sign;
 
 pub use echo::Echo;
 pub use gbdt_predict::GbdtPredict;
@@ -39,6 +40,7 @@ pub use logistic_regression_train::LogisticRegressionTrain;
 pub use online_decrypt::OnlineDecrypt;
 pub use ordered_set_intersect::OrderedSetIntersect;
 pub use private_join_and_compute::PrivateJoinAndCompute;
+pub use rsa_sign::RsaSign;
 
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
@@ -55,6 +57,7 @@ pub mod tests {
             online_decrypt::tests::run_tests(),
             private_join_and_compute::tests::run_tests(),
             ordered_set_intersect::tests::run_tests(),
+            rsa_sign::tests::run_tests(),
         )
     }
 }

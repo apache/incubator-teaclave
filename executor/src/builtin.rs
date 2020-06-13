@@ -20,7 +20,7 @@ use std::prelude::v1::*;
 
 use teaclave_function::{
     Echo, GbdtPredict, GbdtTrain, LogisticRegressionPredict, LogisticRegressionTrain,
-    OnlineDecrypt, OrderedSetIntersect, PrivateJoinAndCompute,
+    OnlineDecrypt, OrderedSetIntersect, PrivateJoinAndCompute, RsaSign,
 };
 use teaclave_types::{FunctionArguments, FunctionRuntime, TeaclaveExecutor};
 
@@ -56,6 +56,8 @@ impl TeaclaveExecutor for BuiltinFunctionExecutor {
             PrivateJoinAndCompute::NAME => PrivateJoinAndCompute::new().run(arguments, runtime),
             #[cfg(feature = "builtin_ordered_set_intersect")]
             OrderedSetIntersect::NAME => OrderedSetIntersect::new().run(arguments, runtime),
+            #[cfg(feature = "builtin_rsa_sign")]
+            RsaSign::NAME => RsaSign::new().run(arguments, runtime),
             _ => bail!("Function not found."),
         }
     }
