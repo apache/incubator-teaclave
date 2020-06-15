@@ -82,13 +82,13 @@ impl OrderedSetIntersect {
         let mut common_sets = 0;
 
         for item in result1 {
-            write!(&mut output1, "{}", item)?;
-            if item > 0 {
+            write!(&mut output1, "{}", item as u32)?;
+            if item {
                 common_sets += 1;
             }
         }
         for item in result2 {
-            write!(&mut output2, "{}", item)?;
+            write!(&mut output2, "{}", item as u32)?;
         }
         Ok(format!("{} common items", common_sets))
     }
@@ -119,12 +119,12 @@ fn intersection_ordered_vec(
     input1: &[Vec<u8>],
     input2: &[Vec<u8>],
     ascending_order: bool,
-) -> anyhow::Result<(Vec<u32>, Vec<u32>)> {
+) -> anyhow::Result<(Vec<bool>, Vec<bool>)> {
     let v1_len = input1.len();
     let v2_len = input2.len();
 
-    let mut res1 = std::vec![0; v1_len];
-    let mut res2 = std::vec![0; v2_len];
+    let mut res1 = std::vec![false; v1_len];
+    let mut res2 = std::vec![false; v2_len];
 
     let mut i = 0;
     let mut j = 0;
@@ -133,8 +133,8 @@ fn intersection_ordered_vec(
         let order = &input1[i].cmp(&input2[j]);
         match order {
             cmp::Ordering::Equal => {
-                res1[i] = 1;
-                res2[j] = 1;
+                res1[i] = true;
+                res2[j] = true;
                 i += 1;
                 j += 1;
             }
