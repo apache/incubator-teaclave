@@ -20,6 +20,10 @@ Currently, we have these built-in functions:
   - `builtin-logistic-regression-predict`: LR prediction with input model and input test data.
   - `builtin-private-join-and-compute`: Find intersection of muti-parties' input
     data and compute sum of the common items.
+  - `builtin-ordered-set-intersect`: Allow two parties to compute the
+    intersection of their ordered sets without revealing anything except for the
+    elements in the intersection. Users should calculate hash values of each item
+    and upload them as a sorted list.
   - `builtin-rsa-sign`: Signing data with RSA key.
   
 The function arguments are in JSON format and can be serialized to a Rust struct

@@ -169,6 +169,7 @@ run_examples() {
   python3 builtin_gbdt_train.py
   python3 builtin_online_decrypt.py
   python3 builtin_private_join_and_compute.py
+  python3 builtin_ordered_set_intersect.py
   python3 builtin_rsa_sign.py
   popd
 

@@ -33,6 +33,7 @@ full_builtin_function = [
   "builtin_logistic_regression_train",
   "builtin_online_decrypt",
   "builtin_private_join_and_compute",
+  "builtin_ordered_set_intersect",
   "builtin_rsa_sign",
 ]
 
@@ -43,6 +44,7 @@ builtin_logistic_regression_predict = []
 builtin_logistic_regression_train = []
 builtin_online_decrypt = []
 builtin_private_join_and_compute = []
+builtin_ordered_set_intersect = []
 builtin_rsa_sign = []
 
 [dependencies]
