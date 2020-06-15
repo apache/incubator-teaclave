@@ -102,9 +102,8 @@ fn parse_input_data(input: impl io::Read, ascending_order: bool) -> anyhow::Resu
         let result = hex::decode(byte)?;
         if index > 0 {
             // If vec has more than 2 elements, then verify the ordering
-            let last_element = &samples[index - 1];
-            if ascending_order && result < *last_element
-                || !ascending_order && result > *last_element
+            let last_element = samples[index - 1];
+            if ascending_order && result < last_element || !ascending_order && result > last_element
             {
                 bail!("Invalid ordering");
             }
