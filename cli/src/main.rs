@@ -60,6 +60,21 @@ struct EncryptDecryptOpt {
 }
 
 #[derive(Debug, StructOpt)]
+struct VerifyOpt {
+    /// Path of enclave info
+    #[structopt(short, long = "enclave-info")]
+    enclave_info: PathBuf,
+
+    /// Path of signatures
+    #[structopt(required = true, short, long)]
+    signatures: Vec<PathBuf>,
+
+    /// Path of auditor's public key
+    #[structopt(required = true, short, long = "public-keys")]
+    public_keys: Vec<PathBuf>,
+}
+
+#[derive(Debug, StructOpt)]
 enum Command {
     /// Encrypt file
     #[structopt(name = "encrypt")]
@@ -68,6 +83,10 @@ enum Command {
     /// Decrypt file
     #[structopt(name = "decrypt")]
     Decrypt(EncryptDecryptOpt),
+
+    /// Verify signatures of enclave info with auditors' public keys
+    #[structopt(name = "verify")]
+    Verify(VerifyOpt),
 }
 
 #[derive(Debug, StructOpt)]
@@ -142,6 +161,27 @@ fn encrypt(opt: EncryptDecryptOpt) -> Result<CMac> {
     Ok(cmac)
 }
 
+fn verify(opt: VerifyOpt) -> Result<bool> {
+    let enclave_info = fs::read(opt.enclave_info)?;
+    let mut public_keys = Vec::new();
+    let mut signatures = Vec::new();
+    for p in opt.public_keys {
+        let content = fs::read(p)?;
+        let pem = pem::parse(content).expect("Expect a valid PEM file");
+        public_keys.push(pem.contents);
+    }
+
+    for s in opt.signatures {
+        signatures.push(fs::read(s)?);
+    }
+
+    Ok(teaclave_types::EnclaveInfo::verify(
+        &enclave_info,
+        &public_keys,
+        &signatures,
+    ))
+}
+
 fn main() -> Result<()> {
     let args = Opt::from_args();
     match args.command {
@@ -161,6 +201,13 @@ fn main() -> Result<()> {
                 println!("{}", cmac_string);
             }
         }
+        Command::Verify(opt) => match verify(opt) {
+            Ok(false) | Err(_) => bail!("Failed to verify signatures."),
+            Ok(true) => {
+                println!("Verify successfully.");
+                return Ok(());
+            }
+        },
     };
 
     Ok(())
