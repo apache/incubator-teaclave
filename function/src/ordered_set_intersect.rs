@@ -97,25 +97,21 @@ impl OrderedSetIntersect {
 fn parse_input_data(input: impl io::Read, ascending_order: bool) -> anyhow::Result<Vec<Vec<u8>>> {
     let mut samples: Vec<Vec<u8>> = Vec::new();
     let reader = BufReader::new(input);
-    for byte_result in reader.lines() {
+    for (index, byte_result) in reader.lines().enumerate() {
         let byte = byte_result?;
         let result = hex::decode(byte)?;
-        samples.push(result)
-    }
-    let len = samples.len();
-
-    // Verify the order
-    if len > 1 {
-        for i in 1..len {
-            if ascending_order && samples[i] < samples[i - 1] {
-                bail!("Invalid ordering");
-            }
-
-            if !ascending_order && samples[i] > samples[i - 1] {
+        if index > 0 {
+            // If vec has more than 2 elements, then verify the ordering
+            let last_element = &samples[index - 1];
+            if ascending_order && result < *last_element
+                || !ascending_order && result > *last_element
+            {
                 bail!("Invalid ordering");
             }
         }
+        samples.push(result)
     }
+
     Ok(samples)
 }
 
