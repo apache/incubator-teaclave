@@ -54,6 +54,9 @@ using and contributing to Teaclave in alphabetical order.
     prototype of Crypto.com Chain.
   - [Occlum](https://github.com/occlum/occlum): Occlum is a memory-safe,
     multi-process library OS for Intel SGX.
+  - [Phala Network](https://github.com/Phala-Network/phala-blockchain):
+    a TEE-Blockchain hybrid architecture implementing Confidential Contract on
+    Polkadot.
   - [SecretNetwork](https://github.com/enigmampc/SecretNetwork): A
     blockchain-based, open-source protocol that lets anyone perform computations
     on encrypted data, bringing privacy to smart contracts and public
