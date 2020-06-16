@@ -27,7 +27,7 @@ RUN wget $SGX_LINUX_X64_SDK_URL               && \
     chmod u+x $SGX_LINUX_X64_SDK              && \
     echo -e 'no\n/opt/intel' | ./$SGX_LINUX_X64_SDK && \
     rm $SGX_LINUX_X64_SDK                     && \
-    echo 'source /opt/sgxsdk/environment' >> /etc/environment
+    echo 'source /opt/intel/sgxsdk/environment' >> /etc/environment
 ENV LD_LIBRARY_PATH=/opt/intel/sgxsdk/sdk_libs
 
 # Make a directory for fusion data. Since we are in the single machine mode,
