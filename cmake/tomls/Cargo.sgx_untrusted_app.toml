@@ -20,3 +20,5 @@ exclude = [
 # We cannot remove these crates, because proto crates depend on them
 sgx_urts = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.2" }
 sgx_types = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.2" }
+sgx_tstd = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.2" }
+sgx_trts = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.2" }

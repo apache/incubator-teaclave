@@ -44,6 +44,11 @@ platform, making computation on privacy-sensitive data safe and simple.
 - [Access Control](docs/access-control.md)
 - [Build System](docs/build-system.md)
 
+### Contribute to Teaclave
+
+- [Rust Development Guideline](docs/rust-guideline.md)
+- [Development Tips](docs/development-tips.md)
+
 ### Codebase
 
 - [Attestation](attestation)
