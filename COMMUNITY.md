@@ -44,10 +44,13 @@ using and contributing to Teaclave in alphabetical order.
   - [Baidu](https://www.baidu.com/)
   - [ByteDance](https://www.bytedance.com/)
   - [Enigma](https://www.enigma.co/)
+  - [LayerX](https://layerx.co.jp/)
 
 ### Projects
   - [Advanca](https://github.com/advanca/advanca): A privacy-preserving
     general-purpose compute/storage infrastructure for Dapps.
+  - [Anonify](https://github.com/LayerXcom/anonify): A blockchain-agnostic
+    execution environment with privacy and auditability based on TEE.
   - [Enigma Core](https://github.com/enigmampc/enigma-core): Enigma Core
     library. The domain: Trusted and Untrusted App in Rust.
   - [Crypto.com Chain](https://github.com/crypto-com/chain): Alpha version
@@ -55,9 +58,9 @@ using and contributing to Teaclave in alphabetical order.
   - [Occlum](https://github.com/occlum/occlum): Occlum is a memory-safe,
     multi-process library OS for Intel SGX.
   - [Phala Network](https://github.com/Phala-Network/phala-blockchain):
-    a TEE-Blockchain hybrid architecture implementing Confidential Contract on
+    A TEE-Blockchain hybrid architecture implementing Confidential Contract on
     Polkadot.
-  - [SecretNetwork](https://github.com/enigmampc/SecretNetwork): A
+  - [Secret Network](https://github.com/enigmampc/SecretNetwork): A
     blockchain-based, open-source protocol that lets anyone perform computations
     on encrypted data, bringing privacy to smart contracts and public
     blockchains.
