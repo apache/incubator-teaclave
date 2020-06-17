@@ -15,3 +15,8 @@ fi
 if [ ! -z "$CLP" ]; then
     cargo clippy "$@" -- -D warnings
 fi
+
+# if DOC is set, run cargo doc after cargo build
+if [ ! -z "$DOC" ]; then
+    RUSTDOCFLAGS="--enable-index-page -Zunstable-options" RUSTC="${RUSTC}" cargo doc "$@"
+fi

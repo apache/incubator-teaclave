@@ -20,6 +20,7 @@ serde_json    = { version = "1.0.39" }
 serde         = { version = "1.0.92", features = ["derive"] }
 thiserror     = { version = "1.0.9" }
 itertools     = { version = "0.8.0", default-features = false }
+
 teaclave_types = { path = "../types" }
 teaclave_test_utils = { path = "../tests/utils", optional = true }
 
