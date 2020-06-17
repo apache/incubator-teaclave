@@ -1,5 +1,5 @@
 ---
-permalink: /file-agent
+permalink: /docs/codebase/file-agent
 ---
 
 # File Agent

@@ -1,5 +1,5 @@
 ---
-permalink: /cli
+permalink: /docs/codebase/cli
 ---
 
 # Teaclave Command Line Tool

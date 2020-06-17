@@ -1,5 +1,5 @@
 ---
-permalink: /tests
+permalink: /docs/codebase/tests
 ---
 
 # Test Harness and Test Cases

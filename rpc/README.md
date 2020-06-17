@@ -1,5 +1,5 @@
 ---
-permalink: /rpc
+permalink: /docs/codebase/rpc
 ---
 
 # RPC
