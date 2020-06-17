@@ -25,10 +25,10 @@ RUN mkdir /etc/init
 # Install Intel SGX SDK for libsgx_urts_sim.so
 RUN wget $SGX_LINUX_X64_SDK_URL               && \
     chmod u+x $SGX_LINUX_X64_SDK              && \
-    echo -e 'no\n/opt/intel' | ./$SGX_LINUX_X64_SDK && \
+    echo -e 'no\n/opt' | ./$SGX_LINUX_X64_SDK && \
     rm $SGX_LINUX_X64_SDK                     && \
     echo 'source /opt/sgxsdk/environment' >> /etc/environment
-ENV LD_LIBRARY_PATH=/opt/intel/sgxsdk/sdk_libs
+ENV LD_LIBRARY_PATH=/opt/sgxsdk/sdk_libs
 
 # Make a directory for fusion data. Since we are in the single machine mode,
 # there is no need to mount a network file system.
