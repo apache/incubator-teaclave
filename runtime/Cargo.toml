@@ -22,6 +22,7 @@ enclave_unit_test = ["teaclave_test_utils/mesalock_sgx"]
 [dependencies]
 log           = { version = "0.4.6", features = ["release_max_level_info"] }
 anyhow        = { version = "1.0.26" }
+
 teaclave_types = { path = "../types" }
 teaclave_test_utils = { path = "../tests/utils", optional = true }
 
