@@ -33,6 +33,7 @@ sgx_tstd          = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = 
 # sgx_tunittest     = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.2" }
 sgx_types         = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.2" }
 sgx_unwind        = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.2" }
+sgx_urts          = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.2" }
 
 # SGX crates
 # adler32           = { git = "https://github.com/mesalock-linux/adler32-rs-sgx" }
@@ -46,6 +47,7 @@ chrono            = { git = "https://github.com/mesalock-linux/chrono-sgx" }
 # deflate           = { git = "https://github.com/mesalock-linux/deflate-rs-sgx", branch = "dev" }
 gbdt              = { git = "https://github.com/mesalock-linux/gbdt-rs", branch = "mesatee-sgx" }
 getrandom         = { git = "https://github.com/mesalock-linux/getrandom-sgx" }
+crc               = { git = "https://github.com/mesalock-linux/crc-rs-sgx" }
 # gif               = { git = "https://github.com/mesalock-linux/image-gif-sgx" }
 # image             = { git = "https://github.com/mesalock-linux/image-sgx" }
 # inflate           = { git = "https://github.com/mesalock-linux/inflate-sgx" }

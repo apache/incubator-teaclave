@@ -45,7 +45,7 @@ teaclave_binder                = { path = "../../../binder" }
 teaclave_rpc                   = { path = "../../../rpc" }
 teaclave_service_enclave_utils = { path = "../../utils/service_enclave_utils" }
 teaclave_types                 = { path = "../../../types" }
-teaclave_test_utils            = { path = "../../../tests/utils" }
+teaclave_test_utils            = { path = "../../../tests/utils", optional = true }
 
 sgx_tstd      = { version = "1.1.2", features = ["net", "thread", "backtrace"], optional = true }
 sgx_types     = { version = "1.1.2" }

@@ -13,6 +13,8 @@ mesalock_sgx = [
     "sgx_tcrypto",
     "sgx_rand",
     "sgx_tse",
+    "teaclave_types/mesalock_sgx",
+    "teaclave_config/mesalock_sgx",
 ]
 enclave_unit_test = ["teaclave_test_utils/mesalock_sgx"]
 
@@ -39,7 +41,7 @@ yasna            = { version = "0.3.0", features = ["bit-vec", "num-bigint", "ch
 
 teaclave_types  = { path = "../types" }
 teaclave_config = { path = "../config", features = ["build_config"] }
-teaclave_test_utils = { path = "../tests/utils" }
+teaclave_test_utils = { path = "../tests/utils", optional = true }
 
 sgx_rand    = { version = "1.1.2", optional = true }
 sgx_tcrypto = { version = "1.1.2", optional = true }

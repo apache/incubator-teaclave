@@ -11,7 +11,9 @@ default = []
 app = ["sgx_urts"]
 mesalock_sgx = [
     "sgx_tstd",
-    "teaclave_binder_attribute"
+    "teaclave_binder_attribute",
+    "teaclave_types/mesalock_sgx",
+    "teaclave_config/mesalock_sgx",
 ]
 enclave_unit_test = []
 

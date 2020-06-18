@@ -26,6 +26,7 @@ log           = { version = "0.4.6", features = ["release_max_level_info"] }
 anyhow        = { version = "1.0.26" }
 serde_json    = { version = "1.0.39" }
 thiserror     = { version = "1.0.9" }
+
 teaclave_types = { path = "../types" }
 teaclave_executor = { path = "../executor", features = ["full_builtin_function"] }
 teaclave_runtime = { path = "../runtime" }

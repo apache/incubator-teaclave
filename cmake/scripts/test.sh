@@ -138,6 +138,12 @@ run_examples() {
 
   echo_title "examples"
   mkdir -p /tmp/fusion_data
+  pushd ${TEACLAVE_CLI_INSTALL_DIR}
+  ./teaclave_cli verify \
+                 --enclave-info ../examples/enclave_info.toml \
+                 --public-keys $(find ../examples -name "*.public.pem") \
+                 --signatures $(find ../examples -name "*.sign.sha256")
+  popd
   pushd ${TEACLAVE_SERVICE_INSTALL_DIR}
   ./teaclave_authentication_service &
   ./teaclave_storage_service &
@@ -163,6 +169,8 @@ run_examples() {
   python3 builtin_gbdt_train.py
   python3 builtin_online_decrypt.py
   python3 builtin_private_join_and_compute.py
+  python3 builtin_ordered_set_intersect.py
+  python3 builtin_rsa_sign.py
   popd
 
   # kill all background services

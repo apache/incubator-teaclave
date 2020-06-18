@@ -62,6 +62,7 @@ To set a variable or option, you can pass `-DXXX=` to `cmake`. For example,
   ON.
 - `CLP`: Enable `cargo clippy` to lint Rust code during the compilation.
   Defaults to OFF.
+- `DOC`: Generate document with `cargo doc` during the compilation. Defaults to OFF.
 
 ## Targets
 
@@ -102,6 +103,11 @@ Above targets are automatically generated from the
 ### Linting
 
 - `format`: Format all code.
+- `clippy`: Run `cargo clippy` for linting. Same with `make CLP=1`.
+
+### Doc
+
+- `doc`: Run `cargo doc` to generate documents. Same with `make DOC=1`.
 
 ### Tests
 

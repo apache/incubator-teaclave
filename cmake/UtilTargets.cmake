@@ -86,10 +86,11 @@ set_property(
 add_custom_target(
   doc
   COMMAND
-    cd ${PROJECT_BINARY_DIR}/cmake_tomls/unix_app && ${TEACLAVE_COMMON_ENVS}
-    cargo doc --all ${CARGO_BUILD_FLAGS} ${MTEE_EXTRA_CARGO_FLAGS} && cp -RT
-    ${PROJECT_BINARY_DIR}/cmake_tomls/unix_app/target/doc
-    ${TEACLAVE_DOC_INSTALL_DIR}
+    make DOC=1 all
+    && mkdir -p ${TEACLAVE_DOC_INSTALL_DIR}
+    && cp -RT ${TEACLAVE_TARGET_DIR}/trusted/doc ${TEACLAVE_DOC_INSTALL_DIR}/enclave
+    && cp -RT ${TEACLAVE_TARGET_DIR}/untrusted/doc ${TEACLAVE_DOC_INSTALL_DIR}/app
+    && cp -RT ${TEACLAVE_TARGET_DIR}/unix/doc ${TEACLAVE_DOC_INSTALL_DIR}/unix
   DEPENDS prep)
 
 # clippy target

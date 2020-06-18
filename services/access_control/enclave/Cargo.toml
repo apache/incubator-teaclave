@@ -27,14 +27,14 @@ cov = ["teaclave_service_enclave_utils/cov"]
 enclave_unit_test = ["teaclave_binder/enclave_unit_test", "teaclave_test_utils/mesalock_sgx"]
 
 [dependencies]
-anyhow    = { version = "1.0.26" }
-cfg-if    = { version = "0.1.9" }
-log       = { version = "0.4.6", features = ["release_max_level_info"] }
-serde     = { version = "1.0.92" }
+anyhow     = { version = "1.0.26" }
+cfg-if     = { version = "0.1.9" }
+log        = { version = "0.4.6", features = ["release_max_level_info"] }
+serde      = { version = "1.0.92" }
 serde_json = { version = "1.0.39" }
-thiserror = { version = "1.0.9" }
-ring      = { version = "0.16.5" }
-rand      = { version = "0.7.0" }
+thiserror  = { version = "1.0.9" }
+ring       = { version = "0.16.5" }
+rand       = { version = "0.7.0" }
 
 teaclave_attestation           = { path = "../../../attestation" }
 teaclave_config                = { path = "../../../config" }
@@ -43,7 +43,7 @@ teaclave_binder                = { path = "../../../binder" }
 teaclave_rpc                   = { path = "../../../rpc" }
 teaclave_service_enclave_utils = { path = "../../utils/service_enclave_utils" }
 teaclave_types                 = { path = "../../../types" }
-teaclave_test_utils            = { path = "../../../tests/utils" }
+teaclave_test_utils            = { path = "../../../tests/utils", optional = true }
 
 sgx_tstd      = { version = "1.1.2", features = ["net", "thread", "backtrace"], optional = true }
 sgx_types     = { version = "1.1.2" }

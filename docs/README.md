@@ -10,4 +10,5 @@ permalink: /docs/
 - [Mutual Attestation: Why and How](mutual-attestation.md)
 - [My First Function](my-first-function.md)
 - [Rust Development Guideline](rust-guideline.md)
+- [Development Tips](development-tips.md)
 - [Threat Model](threat-model.md)

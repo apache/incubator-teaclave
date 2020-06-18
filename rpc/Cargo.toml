@@ -12,6 +12,7 @@ mesalock_sgx = [
     "sgx_trts",
     "sgx_tstd",
     "teaclave_types/mesalock_sgx",
+    "teaclave_attestation/mesalock_sgx",
 ]
 
 [dependencies]

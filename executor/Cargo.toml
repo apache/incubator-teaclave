@@ -15,6 +15,8 @@ default = []
 mesalock_sgx = [
   "sgx_tstd",
   "teaclave_types/mesalock_sgx",
+  "teaclave_crypto/mesalock_sgx",
+  "teaclave_runtime/mesalock_sgx",
   "teaclave_function/mesalock_sgx",
 ]
 cov = ["sgx_cov"]
@@ -33,6 +35,8 @@ full_builtin_function = [
   "builtin_logistic_regression_train",
   "builtin_online_decrypt",
   "builtin_private_join_and_compute",
+  "builtin_ordered_set_intersect",
+  "builtin_rsa_sign",
 ]
 
 builtin_echo = []
@@ -42,6 +46,8 @@ builtin_logistic_regression_predict = []
 builtin_logistic_regression_train = []
 builtin_online_decrypt = []
 builtin_private_join_and_compute = []
+builtin_ordered_set_intersect = []
+builtin_rsa_sign = []
 
 [dependencies]
 log           = { version = "0.4.6", features = ["release_max_level_info"] }
@@ -52,11 +58,12 @@ thiserror     = { version = "1.0.9" }
 gbdt          = { version = "0.1.0", features = ["input", "enable_training"] }
 rusty-machine = { version = "0.5.4" }
 itertools     = { version = "0.8.0", default-features = false }
-teaclave_types = { path = "../types" }
-teaclave_crypto = { path = "../crypto" }
-teaclave_runtime = { path = "../runtime", optional = true }
+
+teaclave_types      = { path = "../types" }
+teaclave_crypto     = { path = "../crypto" }
+teaclave_runtime    = { path = "../runtime", optional = true }
 teaclave_test_utils = { path = "../tests/utils", optional = true }
-teaclave_function = { path = "../function" }
+teaclave_function   = { path = "../function" }
 
 sgx_cov       = { version = "1.1.2", optional = true }
 sgx_tstd      = { version = "1.1.2", features = ["net", "thread", "backtrace"], optional = true }

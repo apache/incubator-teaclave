@@ -15,6 +15,8 @@ default = []
 mesalock_sgx = [
   "sgx_tstd",
   "teaclave_types/mesalock_sgx",
+  "teaclave_crypto/mesalock_sgx",
+  "teaclave_runtime/mesalock_sgx",
 ]
 cov = ["sgx_cov"]
 enclave_unit_test = [
@@ -33,6 +35,8 @@ rusty-machine = { version = "0.5.4" }
 itertools     = { version = "0.8.0", default-features = false }
 ring          = { version = "0.16.5" }
 base64        = { version = "0.10.1" }
+hex           = { version = "0.4.0"  }
+
 teaclave_types = { path = "../types" }
 teaclave_crypto = { path = "../crypto" }
 teaclave_runtime = { path = "../runtime", optional = true }
