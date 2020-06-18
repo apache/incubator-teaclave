@@ -1,5 +1,5 @@
 ---
-permalink: /keys
+permalink: /docs/codebase/keys
 ---
 
 # Keys and Certificates in Teaclave

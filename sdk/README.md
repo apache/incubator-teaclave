@@ -1,5 +1,5 @@
 ---
-permalink: /sdk
+permalink: /docs/codebase/sdk
 ---
 
 # Client SDK
