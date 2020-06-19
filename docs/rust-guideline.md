@@ -31,10 +31,10 @@ articles or docs for reference:
 
 Using unsafe Rust is extremely dangerous, and may break Rust's strong
 memory-safety guarantees. Therefore, we want to keep unsafe Rust as minimal as
-possible. Sometime (very rare) using unsafe Rust can significant improve
-performance, the unsafe code should *well documented* and *explain the
+possible. Sometimes (very rare) using unsafe Rust can significantly improve
+performance, the unsafe code should be *well documented* and *explain the
 rationales*. For contributors and reviewers, pay attention to the unsafe code
-and carefully check whether the pre-conditions and post-conditions are still
+and carefully check whether the pre-conditions and post-conditions still
 hold.
 
 ## Error Handling
