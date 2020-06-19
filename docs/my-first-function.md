@@ -9,16 +9,16 @@ Teaclave platform.
 
 ## Prerequisites
 
-To run Teacalve, a hardware with Intel SGX support is needed. You can
+To run Teaclave, a hardware with Intel SGX support is needed. You can
 check with this list of [supported hardware](https://github.com/ayeks/SGX-hardware).
-Note that you need to configure BIOS to enable SGX sometime. Additionally, you
+Note that you sometimes need to configure BIOS to enable SGX. Additionally, you
 need to install driver and platform software to run SGX applications. Details
-can found in
+can be found in
 [Intel SGX Installation Guide](https://download.01.org/intel-sgx/sgx-linux/2.9/docs/Intel_SGX_Installation_Guide_Linux_2.9_Open_Source.pdf).
 
 If you don't have an SGX supported hardware at hand, Teaclave can also run in
-simulation mode. However some functions like remote attestation will be disable
-at this mode. Please start from [here](#simulation-mode) if you plan to try in
+simulation mode. However some functions like remote attestation will be disabled
+in this mode. Please start from [here](#simulation-mode) if you plan to try in
 simulation mode.
 
 ## Clone and Build Teaclave
@@ -29,7 +29,7 @@ Clone the Teaclave repository:
 $ git clone https://github.com/apache/incubator-teaclave.git
 ```
 
-Since the building dependencies is a bit complicated, we suggest to build the
+Since the building dependencies are a bit complicated, we suggest to build the
 Teaclave platform with our docker images. You can learn more details about the
 building environment from `Dockerfile` under the [`docker`](../docker)
 directory.
@@ -59,7 +59,7 @@ later usage.
 There is one more setup if you are using linkable attestation service subscription.
 Edit the `/etc/aesmd.conf` file and uncomment
 the `default quoting type = epid_linkable` line to enable linkable quotes for EPID-based attestation service
-(i.e., Intel Attestation Service). At last, the AESM service need to be restarted by
+(i.e., Intel Attestation Service). At last, the AESM service needs to be restarted by
 `sudo systemctl restart aesmd`.
 
 ## Launch Teaclave Services
@@ -92,9 +92,9 @@ Attaching to ...
 
 ## Invoke Function
 
-We provide several examples to demonstrating the platform. Let's get started
-with invoking a built-in function: echo, which is a simple function takes one
-input message and return it.
+We provide several examples to demonstrate the platform. Let's get started
+with invoking a built-in function: echo, which is a simple function that takes one
+input message and returns it.
 
 This example is written in Python, and some dependencies are needed for the
 remote attestation. They can be installed with `pip`:
@@ -127,7 +127,7 @@ If you see above log, this means that the function is successfully invoked in Te
 
 The previous example is to demonstrate invoking the built-in echo function. In
 Teaclave, you can also register and invoke a function written by yourself.
-For example, we can implement a echo function in Python like this:
+For example, we can implement an echo function in Python like this:
 
 ```
 $ cat mesapy_echo_payload.py
