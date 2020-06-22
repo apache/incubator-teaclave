@@ -86,13 +86,13 @@ class ConfigClient:
         metadata = {"id": self.user_id, "token": token}
         self.client.metadata = metadata
 
-    def set_mesapy_task(self,
-                        functionname,
-                        payloadpath,
-                        args={},
-                        inlabels=["input_data_0"],
-                        outlabels=["result_data_0"],
-                        ex=Executor.builtin):
+    def set_single_party_task(self,
+                              functionname,
+                              payloadpath,
+                              args={},
+                              inlabels=["input_data_0"],
+                              outlabels=["result_data_0"],
+                              ex=Executor.builtin):
         client = self.client
         print(f"[+] {self.user_id} registering function")
         p_str = ""
@@ -207,21 +207,21 @@ out_tests = OutputData(fo_test,
 def main():
     print("[+] mesapy_logistic_reg_train_task begin!")
     tc = ConfigClient(USER.user_id, USER.password)
-    train_task_id = tc.set_mesapy_task("mesapy_logistic_reg_train_task",
-                                       "./mesapy_logistic_reg_payload.py", {
-                                           "train_file": "input_train",
-                                           "operation": "train",
-                                           "params_saved": "output_params",
-                                           "scaler_saved": "output_scaler"
-                                       }, ["input_train"],
-                                       ["output_params", "output_scaler"],
-                                       ex=Executor.python)
+    train_task_id = tc.set_single_party_task(
+        "mesapy_logistic_reg_train_task",
+        "./mesapy_logistic_reg_payload.py", {
+            "train_file": "input_train",
+            "operation": "train",
+            "params_saved": "output_params",
+            "scaler_saved": "output_scaler"
+        }, ["input_train"], ["output_params", "output_scaler"],
+        ex=Executor.python)
     tc.register_data(train_task_id, train_inputs, train_outputs)
     tc.run_task(train_task_id)
     train_task_result = tc.get_task_result(train_task_id)
     print("[+] User 0 result: " + train_task_result.decode("utf-8"))
     print("[+] mesapy_logistic_reg_predict_task begin!")
-    predict_task_id = tc.set_mesapy_task(
+    predict_task_id = tc.set_single_party_task(
         "mesapy_logistic_reg_predict_task",
         "./mesapy_logistic_reg_payload.py", {
             "operation": "predict",
