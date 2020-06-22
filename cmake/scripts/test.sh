@@ -166,6 +166,7 @@ run_examples() {
   export PYTHONPATH=${TEACLAVE_PROJECT_ROOT}/sdk/python
   python3 builtin_echo.py
   python3 mesapy_echo.py
+  python3 mesapy_logistic_reg.py
   python3 builtin_gbdt_train.py
   python3 builtin_online_decrypt.py
   python3 builtin_private_join_and_compute.py

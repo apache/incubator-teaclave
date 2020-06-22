@@ -417,6 +417,16 @@ class FrontendClient:
 
         return response["content"]["result"]["result"]["Ok"]["return_value"]
 
+    def get_output_cmac_by_tag(self, task_id: str, tag: str):
+        request = GetTaskRequest(self.metadata, task_id)
+        while True:
+            _write_message(self.channel, request)
+            response = _read_message(self.channel)
+            time.sleep(1)
+            if response["content"]["status"] == 10:
+                break
+        return response["content"]["result"]["result"]["Ok"]["tags_map"][tag]
+
 
 def _write_message(sock: ssl.SSLSocket, message: Any):
     class RequestEncoder(json.JSONEncoder):
