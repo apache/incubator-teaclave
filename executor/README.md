@@ -1,5 +1,5 @@
 ---
-permalink: /executor
+permalink: /docs/codebase/executor
 ---
 
 # Function Executors

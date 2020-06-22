@@ -1,5 +1,5 @@
 ---
-permalink: /attestation
+permalink: /docs/codebase/attestation
 ---
 
 # Attestation in Teaclave

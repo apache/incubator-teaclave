@@ -1,5 +1,5 @@
 ---
-permalink: /docker
+permalink: /docs/codebase/docker
 ---
 
 # Teaclave Docker

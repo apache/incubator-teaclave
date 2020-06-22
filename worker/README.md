@@ -1,5 +1,5 @@
 ---
-permalink: /worker
+permalink: /docs/codebase/worker
 ---
 
 # Teaclave Worker

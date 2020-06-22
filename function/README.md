@@ -1,5 +1,5 @@
 ---
-permalink: /function
+permalink: /docs/codebase/function
 ---
 
 # Built-in Functions

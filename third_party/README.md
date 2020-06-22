@@ -1,5 +1,5 @@
 ---
-permalink: /third-party
+permalink: /docs/codebase/third-party
 ---
 
 # Third-Party Dependency Vendoring

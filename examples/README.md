@@ -1,5 +1,5 @@
 ---
-permalink: /examples
+permalink: /docs/codebase/examples
 ---
 
 # Examples

@@ -5,9 +5,9 @@ permalink: /docs/builtin-functions
 # How to Add Built-in Functions
 
 There are several ways to execute user-defined functions in the Teaclave
-platform. One simple way is to write Python scripts and register as functions,
+platform. One simple way is to write Python scripts and register them as functions,
 and the scripts will be executed by the *MesaPy executor*. Another way is to add native
-functions as built-in functions, and will they be managed by the *Built-in executor*.
+functions as built-in functions, and they will be managed by the *Built-in executor*.
 Compared to Python scripts, native built-in functions implemented in Rust are
 memory-safe, have better performance, support more third-party libraries and
 can be remotely attested as well. In this document, we will guide you through

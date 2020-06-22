@@ -1,5 +1,5 @@
 ---
-permalink: /config
+permalink: /docs/codebase/config
 ---
 
 # Configurations in Teaclave

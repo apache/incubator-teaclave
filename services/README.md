@@ -1,5 +1,5 @@
 ---
-permalink: /services
+permalink: /docs/codebase/services
 ---
 
 # Teaclave Services

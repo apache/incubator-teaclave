@@ -7,7 +7,7 @@ permalink: /docs/development-tips
 ## RLS/rust-analyzer and IDEs
 
 The most common question on developing Teaclave is how to use Rust IDEs to
-improve help the development, e.g., code completions, type hints and cross
+improve the development experience, e.g., code completions, type hints and cross
 references. Internally, these features are supported by either
 [RLS](https://github.com/rust-lang/rls) or
 [rust-analyzer](https://github.com/rust-analyzer/rust-analyzer). Unfortunately,

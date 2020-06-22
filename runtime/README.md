@@ -1,5 +1,5 @@
 ---
-permalink: /runtime
+permalink: /docs/codebase/runtime
 ---
 
 # Executor Runtime

@@ -1,5 +1,5 @@
 ---
-permalink: /dcap
+permalink: /docs/codebase/dcap
 ---
 
 # Data Center Attestation Service
