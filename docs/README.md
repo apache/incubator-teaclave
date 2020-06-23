@@ -24,10 +24,13 @@ permalink: /docs/
 ## Codebase
 
 - [Attestation](../attestation/README.md)
+- [Binder](../binder/README.md)
 - [Built-in Functions](../function/README.md)
 - [Client SDK](../sdk/README.md)
 - [Command Line Tool](../cli/README.md)
+- [Common Libraries](../common/README.md)
 - [Configurations in Teaclave](../config/README.md)
+- [Crypto Primitives](../crypto/README.md)
 - [Data Center Attestation Service](../dcap/README.md)
 - [Dockerfile and Compose File](../docker/README.md)
 - [Examples](../examples/README.md)
@@ -40,3 +43,4 @@ permalink: /docs/
 - [Teaclave Worker](../worker/README.md)
 - [Test Harness and Test Cases](../tests/README.md)
 - [Third-Party Dependency Vendoring](../third_party/README.md)
+- [Types](../types/README.md)

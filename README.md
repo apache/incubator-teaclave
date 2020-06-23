@@ -52,10 +52,13 @@ platform, making computation on privacy-sensitive data safe and simple.
 ### Codebase
 
 - [Attestation](attestation)
+- [Binder](binder)
 - [Built-in Functions](function)
 - [Client SDK](sdk)
 - [Command Line Tool](cli)
+- [Common Libraries](common)
 - [Configurations in Teaclave](config)
+- [Crypto Primitives](crypto)
 - [Data Center Attestation Service](dcap)
 - [Dockerfile and Compose File](docker)
 - [Examples](examples)
@@ -68,6 +71,7 @@ platform, making computation on privacy-sensitive data safe and simple.
 - [Teaclave Worker](worker)
 - [Test Harness and Test Cases](tests)
 - [Third-Party Dependency Vendoring](third_party)
+- [Types](types)
 
 ### API Docs
 
