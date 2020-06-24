@@ -48,6 +48,7 @@ List of external contributors of Teaclave and Teaclave SGX SDK (in alphabetical 
   - [Akhil Velagapudi](https://github.com/akhilles)
   - [David Phan](https://github.com/davidp94)
   - [Elichai Turkel](https://github.com/elichai)
+  - [GeminiCarrie](https://github.com/GeminiCarrie)
   - [Greg Kapka](https://github.com/gskapka)
   - [Hongbin Mao](https://github.com/hello2mao)
   - [Jackson Owens](https://github.com/jbowens)
