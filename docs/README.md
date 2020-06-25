@@ -6,8 +6,9 @@ permalink: /docs/
 
 ## Try
 
-- [How to Add Built-in Functions](builtin-functions.md)
 - [My First Function](my-first-function.md)
+- [Function in Python](functions-in-python.md)
+- [How to Add Built-in Functions](builtin-functions.md)
 
 ## Design
 
