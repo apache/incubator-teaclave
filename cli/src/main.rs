@@ -118,10 +118,9 @@ fn decrypt(opt: EncryptDecryptOpt) -> Result<CMac> {
         }
         TeaclaveFile128Key::SCHEMA => {
             let key = TeaclaveFile128Key::new(&key)?;
-            let mut content = vec![];
-            let res = key.decrypt(opt.input_file, &mut content)?;
+            let mut output_file = fs::File::create(opt.output_file)?;
+            let res = key.decrypt(opt.input_file, &mut output_file)?;
             cmac.copy_from_slice(&res);
-            fs::write(opt.output_file, content)?;
         }
         _ => bail!("Invalid crypto algorithm"),
     }
@@ -151,8 +150,8 @@ fn encrypt(opt: EncryptDecryptOpt) -> Result<CMac> {
         }
         TeaclaveFile128Key::SCHEMA => {
             let key = TeaclaveFile128Key::new(&key)?;
-            let content = fs::read(opt.input_file)?;
-            let res = key.encrypt(opt.output_file, &content)?;
+            let content = fs::File::open(opt.input_file)?;
+            let res = key.encrypt(opt.output_file, content)?;
             cmac.copy_from_slice(&res);
         }
         _ => bail!("Invalid crypto algorithm"),

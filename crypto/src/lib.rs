@@ -28,6 +28,7 @@ use rand::prelude::RngCore;
 use ring::aead;
 use serde::{Deserialize, Serialize};
 use std::format;
+use std::io::{Read, Write};
 use std::path::Path;
 
 const AES_GCM_128_KEY_LENGTH: usize = 16;
@@ -37,6 +38,8 @@ const AES_GCM_256_KEY_LENGTH: usize = 32;
 const AES_GCM_256_IV_LENGTH: usize = 12;
 const TEACLAVE_FILE_128_ROOT_KEY_LENGTH: usize = 16;
 const CMAC_LENGTH: usize = 16;
+const FILE_CHUNK_SIZE: usize = 1024 * 1024;
+
 type CMac = [u8; CMAC_LENGTH];
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -200,18 +203,33 @@ impl TeaclaveFile128Key {
         Ok(TeaclaveFile128Key { key })
     }
 
-    pub fn decrypt<P: AsRef<Path>>(&self, path: P, out: &mut Vec<u8>) -> Result<CMac> {
-        use std::io::Read;
+    pub fn decrypt<P: AsRef<Path>>(&self, path: P, output: &mut impl Write) -> Result<CMac> {
         let mut file = ProtectedFile::open_ex(path.as_ref(), &self.key)?;
-        file.read_to_end(out)?;
+        let mut buffer = std::vec![0; FILE_CHUNK_SIZE];
+        loop {
+            let n = file.read(&mut buffer)?;
+            if n > 0 {
+                output.write(&buffer[..n])?;
+            } else {
+                break;
+            }
+        }
+        output.flush()?;
         let cmac = file.current_meta_gmac()?;
         Ok(cmac)
     }
 
-    pub fn encrypt<P: AsRef<Path>>(&self, path: P, content: &[u8]) -> Result<CMac> {
-        use std::io::Write;
+    pub fn encrypt<P: AsRef<Path>>(&self, path: P, mut content: impl Read) -> Result<CMac> {
         let mut file = ProtectedFile::create_ex(path.as_ref(), &self.key)?;
-        file.write_all(content)?;
+        let mut buffer = std::vec![0; FILE_CHUNK_SIZE];
+        loop {
+            let n = content.read(&mut buffer[..])?;
+            if n > 0 {
+                file.write(&buffer[..n])?;
+            } else {
+                break;
+            }
+        }
         file.flush()?;
         let cmac = file.current_meta_gmac()?;
         Ok(cmac)
