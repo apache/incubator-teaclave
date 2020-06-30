@@ -209,7 +209,7 @@ impl TeaclaveFile128Key {
         loop {
             let n = file.read(&mut buffer)?;
             if n > 0 {
-                output.write(&buffer[..n])?;
+                output.write_all(&buffer[..n])?;
             } else {
                 break;
             }
@@ -225,7 +225,7 @@ impl TeaclaveFile128Key {
         loop {
             let n = content.read(&mut buffer[..])?;
             if n > 0 {
-                file.write(&buffer[..n])?;
+                file.write_all(&buffer[..n])?;
             } else {
                 break;
             }

@@ -15,12 +15,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use std::prelude::v1::*;
+
 use sgx_types::*;
 use sgx_urts::SgxEnclave;
 
 use log::{debug, error};
 use serde::{Deserialize, Serialize};
 
+use crate::error::TeeBinderError;
 use crate::ipc::ECallChannel;
 use crate::ipc::IpcSender;
 use crate::proto::{
@@ -30,22 +33,12 @@ use teaclave_types::TeeServiceResult;
 
 const ENCLAVE_FILE_SUFFIX: &str = "_enclave.signed.so";
 
-#[derive(thiserror::Error, Debug)]
-pub enum TeeBinderError {
-    #[error("IpcError")]
-    IpcError,
-    #[error("SgxError")]
-    SgxError(sgx_types::sgx_status_t),
-    #[error("TeeServiceError")]
-    TeeServiceError,
-}
-
 pub struct TeeBinder {
     enclave: SgxEnclave,
 }
 
 impl TeeBinder {
-    pub fn new(name: &str) -> std::result::Result<TeeBinder, TeeBinderError> {
+    pub fn new(name: &str) -> Result<TeeBinder, TeeBinderError> {
         let enclave = if cfg!(production) {
             create_sgx_enclave(&name, false)?
         } else {
@@ -63,11 +56,7 @@ impl TeeBinder {
         Ok(tee)
     }
 
-    pub fn invoke<U, V>(
-        &self,
-        command: ECallCommand,
-        input: U,
-    ) -> std::result::Result<V, TeeBinderError>
+    pub fn invoke<U, V>(&self, command: ECallCommand, input: U) -> Result<V, TeeBinderError>
     where
         U: Serialize,
         V: for<'de> Deserialize<'de>,
@@ -75,7 +64,7 @@ impl TeeBinder {
         let mut channel = ECallChannel::new(self.enclave.geteid());
         channel
             .invoke::<U, V>(command.into(), input)
-            .map_err(|_| TeeBinderError::IpcError)
+            .map_err(TeeBinderError::IpcError)
     }
 
     pub fn finalize(&self) {
@@ -99,7 +88,7 @@ impl Drop for TeeBinder {
 fn create_sgx_enclave(
     enclave_name: &str,
     debug_launch: bool,
-) -> std::result::Result<SgxEnclave, TeeBinderError> {
+) -> Result<SgxEnclave, TeeBinderError> {
     let mut launch_token: sgx_launch_token_t = [0; 1024]; // launch_token is deprecated
     let mut launch_token_updated: i32 = 0; // launch_token is deprecated
 

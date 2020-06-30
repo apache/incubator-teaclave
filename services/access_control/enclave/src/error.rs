@@ -15,21 +15,19 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#![cfg_attr(feature = "mesalock_sgx", no_std)]
-#[cfg(feature = "mesalock_sgx")]
-extern crate sgx_tstd as std;
+use std::prelude::v1::*;
 
-mod error;
-pub mod ipc;
-pub mod proto;
+use teaclave_types::TeaclaveServiceResponseError;
+use thiserror::Error;
 
-cfg_if::cfg_if! {
-    if #[cfg(feature = "app")]  {
-        mod binder;
-        mod ocall;
-        pub use binder::TeeBinder;
-    } else if #[cfg(feature = "mesalock_sgx")] {
-        mod macros;
-        pub use teaclave_binder_attribute::handle_ecall;
+#[derive(Error, Debug)]
+pub(crate) enum TeaclavAccessControlError {
+    #[error("access control error")]
+    AccessControlError,
+}
+
+impl From<TeaclavAccessControlError> for TeaclaveServiceResponseError {
+    fn from(error: TeaclavAccessControlError) -> Self {
+        TeaclaveServiceResponseError::RequestError(error.to_string())
     }
 }

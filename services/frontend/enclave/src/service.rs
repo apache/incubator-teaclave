@@ -15,10 +15,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use crate::error::TeaclaveFrontendError;
+
 use anyhow::Result;
 use std::prelude::v1::*;
 use std::sync::{Arc, SgxMutex as Mutex};
-use thiserror::Error;
 
 use teaclave_proto::teaclave_authentication_service::{
     TeaclaveAuthenticationInternalClient, UserAuthenticateRequest,
@@ -39,21 +40,7 @@ use teaclave_proto::teaclave_management_service::TeaclaveManagementClient;
 use teaclave_rpc::endpoint::Endpoint;
 use teaclave_rpc::Request;
 use teaclave_service_enclave_utils::{bail, teaclave_service};
-use teaclave_types::{TeaclaveServiceResponseError, TeaclaveServiceResponseResult};
-
-#[derive(Error, Debug)]
-enum TeaclaveFrontendError {
-    #[error("authentication error")]
-    AuthenticationError,
-    #[error("lock error")]
-    LockError,
-}
-
-impl From<TeaclaveFrontendError> for TeaclaveServiceResponseError {
-    fn from(error: TeaclaveFrontendError) -> Self {
-        TeaclaveServiceResponseError::RequestError(error.to_string())
-    }
-}
+use teaclave_types::TeaclaveServiceResponseResult;
 
 #[teaclave_service(teaclave_frontend_service, TeaclaveFrontend, TeaclaveFrontendError)]
 #[derive(Clone)]

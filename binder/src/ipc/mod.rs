@@ -18,6 +18,8 @@
 use serde::{Deserialize, Serialize};
 use std::prelude::v1::*;
 
+use crate::error::IpcError;
+
 // Intra-Process-Communication
 // Developer should split a process into two partitions, App and TEE.
 
@@ -53,18 +55,6 @@ pub trait IpcReceiver {
         U: for<'de> Deserialize<'de>,
         V: Serialize,
         X: IpcService<U, V>;
-}
-
-#[derive(thiserror::Error, Debug, Serialize, Deserialize)]
-pub enum IpcError {
-    #[error("SgxError")]
-    SgxError(i32),
-    #[error("EnclaveError")]
-    EnclaveError(teaclave_types::EnclaveStatus),
-    #[error("SerdeError")]
-    SerdeError,
-    #[error("TeeServiceError")]
-    TeeServiceError,
 }
 
 cfg_if::cfg_if! {

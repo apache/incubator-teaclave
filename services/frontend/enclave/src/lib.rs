@@ -44,6 +44,7 @@ use teaclave_service_enclave_utils::{
 };
 use teaclave_types::{TeeServiceError, TeeServiceResult};
 
+mod error;
 mod service;
 
 fn start_service(config: &RuntimeConfig) -> Result<()> {

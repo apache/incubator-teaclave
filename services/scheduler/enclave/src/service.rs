@@ -15,16 +15,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#![allow(unused_imports)]
-#![allow(unused_variables)]
+use crate::error::TeaclaveSchedulerError;
 
 use std::collections::VecDeque;
 use std::convert::TryInto;
-#[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 use std::sync::{Arc, SgxMutex as Mutex};
 
-use std::collections::HashMap;
 use teaclave_proto::teaclave_scheduler_service::*;
 use teaclave_proto::teaclave_storage_service::*;
 use teaclave_rpc::endpoint::Endpoint;
@@ -35,23 +32,6 @@ use uuid::Uuid;
 
 use anyhow::anyhow;
 use anyhow::Result;
-use thiserror::Error;
-
-#[derive(Error, Debug)]
-pub enum TeaclaveSchedulerError {
-    #[error("scheduler service error")]
-    SchedulerServiceErr,
-    #[error("data error")]
-    DataError,
-    #[error("storage error")]
-    StorageError,
-}
-
-impl From<TeaclaveSchedulerError> for TeaclaveServiceResponseError {
-    fn from(error: TeaclaveSchedulerError) -> Self {
-        TeaclaveServiceResponseError::RequestError(error.to_string())
-    }
-}
 
 #[teaclave_service(teaclave_scheduler_service, TeaclaveScheduler, TeaclaveSchedulerError)]
 #[derive(Clone)]
@@ -146,7 +126,7 @@ impl TeaclaveScheduler for TeaclaveSchedulerService {
     // Subscriber
     fn subscribe(
         &self,
-        request: Request<SubscribeRequest>,
+        _request: Request<SubscribeRequest>,
     ) -> TeaclaveServiceResponseResult<SubscribeResponse> {
         // TODO: subscribe a specific topic
         unimplemented!()
@@ -154,7 +134,7 @@ impl TeaclaveScheduler for TeaclaveSchedulerService {
 
     fn pull_task(
         &self,
-        request: Request<PullTaskRequest>,
+        _request: Request<PullTaskRequest>,
     ) -> TeaclaveServiceResponseResult<PullTaskResponse> {
         let key = StagedTask::get_queue_key().as_bytes();
         let staged_task = self.pull_staged_task(key)?;

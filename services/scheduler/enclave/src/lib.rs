@@ -27,9 +27,6 @@ use std::prelude::v1::*;
 extern crate log;
 use anyhow::{anyhow, Result};
 
-mod publisher;
-mod service;
-
 use teaclave_attestation::{verifier, AttestationConfig, RemoteAttestation};
 use teaclave_binder::proto::{
     ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
@@ -46,6 +43,10 @@ use teaclave_rpc::server::SgxTrustedTlsServer;
 use teaclave_service_enclave_utils::create_trusted_storage_endpoint;
 use teaclave_service_enclave_utils::ServiceEnclave;
 use teaclave_types::{EnclaveInfo, TeeServiceError, TeeServiceResult};
+
+mod error;
+mod publisher;
+mod service;
 
 fn start_service(config: &RuntimeConfig) -> Result<()> {
     let listen_address = config.internal_endpoints.scheduler.listen_address;

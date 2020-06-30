@@ -49,6 +49,7 @@ use teaclave_service_enclave_utils::ServiceEnclave;
 use teaclave_types::{EnclaveInfo, TeeServiceError, TeeServiceResult};
 
 mod api_service;
+mod error;
 mod internal_service;
 mod user_db;
 mod user_info;

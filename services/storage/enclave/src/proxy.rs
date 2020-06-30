@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use crate::service::TeaclaveStorageError;
+use crate::error::TeaclaveStorageError;
 use std::prelude::v1::*;
 use std::sync::mpsc::{channel, Sender};
 use teaclave_proto::teaclave_storage_service::{TeaclaveStorageRequest, TeaclaveStorageResponse};
