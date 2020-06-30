@@ -15,21 +15,30 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#![cfg_attr(feature = "mesalock_sgx", no_std)]
-#[cfg(feature = "mesalock_sgx")]
-extern crate sgx_tstd as std;
+use teaclave_types::{ECallStatus, SgxStatus};
+use thiserror::Error;
 
-mod error;
-pub mod ipc;
-pub mod proto;
+#[cfg(feature = "app")]
+#[derive(Error, Debug)]
+pub enum TeeBinderError {
+    #[error("failed to invoke IPC")]
+    IpcError(IpcError),
+    #[error("found SGX error: {0}")]
+    SgxError(SgxStatus),
+}
 
-cfg_if::cfg_if! {
-    if #[cfg(feature = "app")]  {
-        mod binder;
-        mod ocall;
-        pub use binder::TeeBinder;
-    } else if #[cfg(feature = "mesalock_sgx")] {
-        mod macros;
-        pub use teaclave_binder_attribute::handle_ecall;
+#[derive(Error, Debug)]
+pub enum IpcError {
+    #[error("found SGX error: {0}")]
+    SgxError(SgxStatus),
+    #[error("ECall returns error code: {0}")]
+    ECallError(ECallStatus),
+    #[error("cannot serialize or deserialize IPC messages")]
+    SerdeError,
+}
+
+impl From<serde_json::error::Error> for IpcError {
+    fn from(_: serde_json::error::Error) -> Self {
+        IpcError::SerdeError
     }
 }

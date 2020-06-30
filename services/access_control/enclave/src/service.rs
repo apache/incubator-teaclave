@@ -16,6 +16,7 @@
 // under the License.
 
 use crate::acs::{AccessControlModule, EnforceRequest};
+use crate::error::TeaclavAccessControlError;
 use std::prelude::v1::*;
 use teaclave_proto::teaclave_access_control_service::{
     AuthorizeDataRequest, AuthorizeDataResponse, AuthorizeFunctionRequest,
@@ -24,20 +25,7 @@ use teaclave_proto::teaclave_access_control_service::{
 };
 use teaclave_rpc::Request;
 use teaclave_service_enclave_utils::{bail, teaclave_service};
-use teaclave_types::{TeaclaveServiceResponseError, TeaclaveServiceResponseResult};
-use thiserror::Error;
-
-#[derive(Error, Debug)]
-enum TeaclavAccessControlError {
-    #[error("access control error")]
-    AccessControlError,
-}
-
-impl From<TeaclavAccessControlError> for TeaclaveServiceResponseError {
-    fn from(error: TeaclavAccessControlError) -> Self {
-        TeaclaveServiceResponseError::RequestError(error.to_string())
-    }
-}
+use teaclave_types::TeaclaveServiceResponseResult;
 
 #[teaclave_service(teaclave_access_control_service, TeaclaveAccessControl)]
 #[derive(Clone)]

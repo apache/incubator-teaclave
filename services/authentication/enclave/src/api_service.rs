@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use crate::error::TeaclaveAuthenticationApiError;
 use crate::user_db::{DbClient, DbError};
 use crate::user_info::UserInfo;
 use std::prelude::v1::*;
@@ -26,26 +27,7 @@ use teaclave_proto::teaclave_authentication_service::{
 };
 use teaclave_rpc::Request;
 use teaclave_service_enclave_utils::{bail, ensure, teaclave_service};
-use teaclave_types::{TeaclaveServiceResponseError, TeaclaveServiceResponseResult};
-use thiserror::Error;
-
-#[derive(Error, Debug)]
-enum TeaclaveAuthenticationApiError {
-    #[error("permission denied")]
-    PermissionDenied,
-    #[error("invalid userid")]
-    InvalidUserId,
-    #[error("invalid password")]
-    InvalidPassword,
-    #[error("service unavailable")]
-    ServiceUnavailable,
-}
-
-impl From<TeaclaveAuthenticationApiError> for TeaclaveServiceResponseError {
-    fn from(error: TeaclaveAuthenticationApiError) -> Self {
-        TeaclaveServiceResponseError::RequestError(error.to_string())
-    }
-}
+use teaclave_types::TeaclaveServiceResponseResult;
 
 #[teaclave_service(
     teaclave_authentication_service,

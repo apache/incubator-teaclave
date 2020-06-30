@@ -90,7 +90,7 @@ macro_rules! register_ecall_handler {
             out_buf: *mut u8,
             out_max: usize,
             out_len: &mut usize,
-        ) -> teaclave_types::EnclaveStatus {
+        ) -> teaclave_types::ECallStatus {
             // The last argument could be either * mut usize, or &mut usize
             let input_buf: &[u8] = unsafe { std::slice::from_raw_parts(in_buf, in_len) };
 
@@ -101,7 +101,7 @@ macro_rules! register_ecall_handler {
                     Ok(out) => out,
                     Err(e) => {
                         log::error!("tee execute cmd: {:x}, error: {}", cmd, e);
-                        return teaclave_types::EnclaveStatus(1);
+                        return teaclave_types::ECallStatus(1);
                     }
                 }
             };
@@ -113,7 +113,7 @@ macro_rules! register_ecall_handler {
 
             if inner_len > out_max {
                 log::debug!("tee before copy out_buf check: out_max={:x} < inner={:x}", out_max, inner_len);
-                return teaclave_types::EnclaveStatus(0x0000_000c);
+                return teaclave_types::ECallStatus(0x0000_000c);
             }
 
             // The following lines use a trick of "constructing a mutable slice
@@ -126,7 +126,7 @@ macro_rules! register_ecall_handler {
 
             // out_len would be used in `set_len` in the untrusted app
             // so out_len cannot be larger than out_max. Additional checks are **required**.
-            teaclave_types::EnclaveStatus::default()
+            teaclave_types::ECallStatus::default()
         }
     }
 }

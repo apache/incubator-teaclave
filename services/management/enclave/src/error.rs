@@ -15,21 +15,26 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#![cfg_attr(feature = "mesalock_sgx", no_std)]
-#[cfg(feature = "mesalock_sgx")]
-extern crate sgx_tstd as std;
+use std::prelude::v1::*;
+use teaclave_types::TeaclaveServiceResponseError;
+use thiserror::Error;
 
-mod error;
-pub mod ipc;
-pub mod proto;
+#[derive(Error, Debug)]
+pub(crate) enum TeaclaveManagementServiceError {
+    #[error("invalid request")]
+    InvalidRequest,
+    #[error("data error")]
+    DataError,
+    #[error("storage error")]
+    StorageError,
+    #[error("permission denied")]
+    PermissionDenied,
+    #[error("bad task")]
+    BadTask,
+}
 
-cfg_if::cfg_if! {
-    if #[cfg(feature = "app")]  {
-        mod binder;
-        mod ocall;
-        pub use binder::TeeBinder;
-    } else if #[cfg(feature = "mesalock_sgx")] {
-        mod macros;
-        pub use teaclave_binder_attribute::handle_ecall;
+impl From<TeaclaveManagementServiceError> for TeaclaveServiceResponseError {
+    fn from(error: TeaclaveManagementServiceError) -> Self {
+        TeaclaveServiceResponseError::RequestError(error.to_string())
     }
 }

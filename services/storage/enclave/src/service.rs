@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use crate::error::TeaclaveStorageError;
 use crate::proxy::ProxyRequest;
 use rusty_leveldb::DB;
 use std::cell::RefCell;
@@ -26,24 +27,7 @@ use teaclave_proto::teaclave_storage_service::{
 };
 use teaclave_rpc::Request;
 use teaclave_service_enclave_utils::{bail, teaclave_service};
-use teaclave_types::{TeaclaveServiceResponseError, TeaclaveServiceResponseResult};
-use thiserror::Error;
-
-#[derive(Error, Debug)]
-pub(crate) enum TeaclaveStorageError {
-    #[error("connection error")]
-    Connection,
-    #[error("leveldb error")]
-    LevelDb(#[from] rusty_leveldb::Status),
-    #[error("none error")]
-    None,
-}
-
-impl From<TeaclaveStorageError> for TeaclaveServiceResponseError {
-    fn from(error: TeaclaveStorageError) -> Self {
-        TeaclaveServiceResponseError::RequestError(error.to_string())
-    }
-}
+use teaclave_types::TeaclaveServiceResponseResult;
 
 #[teaclave_service(teaclave_storage_service, TeaclaveStorage, TeaclaveStorageError)]
 pub(crate) struct TeaclaveStorageService {
