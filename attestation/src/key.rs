@@ -30,14 +30,14 @@ const CERT_VALID_DAYS: i64 = 90i64;
 
 /// NistP256KeyPair stores a pair of ECDSA (private, public) key based on the
 /// NIST P-256 curve (a.k.a secp256r1).
-pub(crate) struct NistP256KeyPair {
+pub struct NistP256KeyPair {
     prv_k: sgx_ec256_private_t,
     pub_k: sgx_ec256_public_t,
 }
 
 impl NistP256KeyPair {
     /// Generate a ECDSA key pair.
-    pub(crate) fn new() -> Result<Self> {
+    pub fn new() -> Result<Self> {
         let ecc_handle = SgxEccHandle::new();
         ecc_handle.open()?;
         let (prv_k, pub_k) = ecc_handle.create_key_pair()?;
@@ -45,7 +45,7 @@ impl NistP256KeyPair {
         Ok(Self { prv_k, pub_k })
     }
 
-    pub(crate) fn pub_k(&self) -> sgx_ec256_public_t {
+    pub fn pub_k(&self) -> sgx_ec256_public_t {
         self.pub_k
     }
 

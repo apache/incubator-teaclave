@@ -71,7 +71,7 @@ pub(crate) enum AttestationServiceError {
 }
 
 impl EndorsedAttestationReport {
-    pub(crate) fn new(
+    pub fn new(
         att_service_cfg: &AttestationServiceConfig,
         pub_k: sgx_types::sgx_ec256_public_t,
     ) -> anyhow::Result<Self> {

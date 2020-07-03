@@ -1,0 +1,39 @@
+[package]
+name = "teaclave_sgx_tool_enclave"
+version = "0.1.0"
+authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
+description = "Teaclave SGX Tool"
+license = "Apache-2.0"
+edition = "2018"
+
+[lib]
+name = "teaclave_sgx_tool_enclave"
+crate-type = ["staticlib"]
+
+[features]
+default = []
+mesalock_sgx = [
+  "sgx_tstd",
+  "teaclave_attestation/mesalock_sgx",
+  "teaclave_binder/mesalock_sgx",
+  "teaclave_types/mesalock_sgx",
+  "teaclave_service_enclave_utils/mesalock_sgx",
+]
+cov = ["teaclave_service_enclave_utils/cov"]
+
+[dependencies]
+log         = { version = "0.4.6", features = ["release_max_level_info"] }
+anyhow      = { version = "1.0.26" }
+serde       = { version = "1.0.92" }
+serde_json       = { version = "1.0.39" }
+base64           = { version = "0.10.1" }
+thiserror   = { version = "1.0.9" }
+
+
+teaclave_attestation           = { path = "../../attestation" }
+teaclave_binder                = { path = "../../binder" }
+teaclave_service_enclave_utils = { path = "../../services/utils/service_enclave_utils" }
+teaclave_types                 = { path = "../../types" }
+
+sgx_tstd  = { version = "1.1.2", features = ["net", "thread", "backtrace"], optional = true }
+sgx_types = { version = "1.1.2" }
