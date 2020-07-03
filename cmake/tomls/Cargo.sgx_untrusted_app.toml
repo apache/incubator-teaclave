@@ -11,6 +11,7 @@ members = [
   "tests/unit/app",
   "tests/functional/app",
   "tests/integration/app",
+  "tool/app",
 ]
 
 exclude = [

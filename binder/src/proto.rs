@@ -24,6 +24,7 @@ pub enum ECallCommand {
     InitEnclave,
     FinalizeEnclave,
     RunTest,
+    Raw,
     Unimplemented,
 }
 
@@ -35,6 +36,7 @@ impl From<u32> for ECallCommand {
             0x0000_1001 => ECallCommand::InitEnclave,
             0x0000_1002 => ECallCommand::FinalizeEnclave,
             0x0000_1003 => ECallCommand::RunTest,
+            0x0000_1004 => ECallCommand::Raw,
             _ => ECallCommand::Unimplemented,
         }
     }
@@ -48,6 +50,7 @@ impl Into<u32> for ECallCommand {
             ECallCommand::InitEnclave => 0x0000_1001,
             ECallCommand::FinalizeEnclave => 0x0000_1002,
             ECallCommand::RunTest => 0x0000_1003,
+            ECallCommand::Raw => 0x0000_1004,
             ECallCommand::Unimplemented => 0xffff_ffff,
         }
     }
@@ -92,3 +95,21 @@ impl RunTestInput {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RunTestOutput;
+
+#[derive(Default, Serialize, Deserialize, Debug)]
+pub struct RawJsonInput {
+    pub json: String,
+}
+
+impl RawJsonInput {
+    pub fn new(json: impl ToString) -> Self {
+        Self {
+            json: json.to_string(),
+        }
+    }
+}
+
+#[derive(Default, Serialize, Deserialize, Debug)]
+pub struct RawJsonOutput {
+    pub json: String,
+}

@@ -186,6 +186,10 @@ function(add_sgx_build_target sgx_lib_path pkg_name)
     set(_enclave_info "${TEACLAVE_OUT_DIR}/${pkg_name}_info.toml")
   endif()
 
+  if(pkg_name_no_enclave MATCHES "_tool$")
+    set(_enclave_info "/dev/null")
+  endif()
+
   add_custom_target(
     ${_target_name} ALL
     COMMAND

@@ -342,7 +342,7 @@ impl std::fmt::Debug for SgxQuote {
 
 impl SgxQuote {
     /// Parse from bytes to `SgxQuote`.
-    fn parse_from<'a>(bytes: &'a [u8]) -> Result<Self> {
+    pub fn parse_from<'a>(bytes: &'a [u8]) -> Result<Self> {
         let mut pos: usize = 0;
         let mut take = |n: usize| -> Result<&'a [u8]> {
             if n > 0 && bytes.len() >= pos + n {

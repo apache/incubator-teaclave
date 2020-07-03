@@ -11,6 +11,7 @@ members = [
   "tests/unit/enclave",
   "tests/functional/enclave",
   "tests/integration/enclave",
+  "tool/enclave",
 ]
 
 exclude = [

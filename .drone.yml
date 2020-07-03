@@ -36,6 +36,8 @@ steps:
     path: /var/run/aesmd/aesm.socket
   commands:
   - . /root/.cargo/env
+  - (cd release/tool && ./teaclave_sgx_tool status)
+  - (cd release/tool && ./teaclave_sgx_tool attestation --key $AS_KEY --spid $AS_SPID)
   - cd build && make run-tests
 
 volumes:
