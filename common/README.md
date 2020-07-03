@@ -1,3 +1,7 @@
+---
+permalink: /docs/codebase/common
+---
+
 # Common Libraries
 
 This directory contains some supporting libraries such as error handling, file
