@@ -1,3 +1,7 @@
+---
+permalink: /docs/codebase/tool
+---
+
 # Teaclave SGX Tool
 
 This tool is to dump some SGX related information, e.g., hardware and software

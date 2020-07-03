@@ -1,3 +1,7 @@
+---
+permalink: /docs/codebase/types
+---
+
 # Types
 
 This directory defines common types (useful structs and traits) such as file,
