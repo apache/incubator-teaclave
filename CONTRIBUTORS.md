@@ -16,7 +16,7 @@ following mentors.
 - Felix Cheung
 - Furkan Kamaci
 - Jianyong Dai
-- Luciano Resende
+- Luciano Resende (Retired)
 - Matt Sicker
 - Zhijie Shen
 
@@ -46,6 +46,7 @@ contributions it receives.
 
 List of external contributors of Teaclave and Teaclave SGX SDK (in alphabetical order):
   - [Akhil Velagapudi](https://github.com/akhilles)
+  - [dtorfs](https://github.com/dtorfs)
   - [David Phan](https://github.com/davidp94)
   - [Elichai Turkel](https://github.com/elichai)
   - [GeminiCarrie](https://github.com/GeminiCarrie)
