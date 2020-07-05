@@ -173,21 +173,15 @@ fn status() {
         std::path::Path::new("/var/run/aesmd/aesm.socket").exists()
     );
 
-    println!("\nKernel module (isgx):");
-    if process::Command::new("modinfo")
-        .arg("isgx")
-        .status()
-        .is_err()
-    {
-        println!("failed to execute modinfo isgx");
-    }
-    println!("\nKernel module (sgx):");
-    if process::Command::new("modinfo")
-        .arg("sgx")
-        .status()
-        .is_err()
-    {
-        println!("failed to execute modinfo sgx");
+    for module in &["isgx", "sgx", "intel_sgx"] {
+        println!("\nKernel module ({}):", module);
+        if process::Command::new("modinfo")
+            .arg(module)
+            .status()
+            .is_err()
+        {
+            println!("failed to execute modinfo {}", module);
+        }
     }
 }
 
