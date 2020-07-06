@@ -46,7 +46,6 @@ contributions it receives.
 
 List of external contributors of Teaclave and Teaclave SGX SDK (in alphabetical order):
   - [Akhil Velagapudi](https://github.com/akhilles)
-  - [dtorfs](https://github.com/dtorfs)
   - [David Phan](https://github.com/davidp94)
   - [Elichai Turkel](https://github.com/elichai)
   - [GeminiCarrie](https://github.com/GeminiCarrie)
@@ -64,9 +63,11 @@ List of external contributors of Teaclave and Teaclave SGX SDK (in alphabetical 
   - [Sythanos](https://github.com/sythanos)
   - [T0day](https://github.com/hi-T0day)
   - [Tianjia Zhang](https://github.com/uudiin)
+  - [Zha0Chan](https://github.com/Zha0Chan)
   - [akoskinas](https://github.com/akoskinas)
   - [czzmmc](https://github.com/czzmmc)
   - [devashishdxt](https://github.com/devashishdxt)
+  - [dtorfs](https://github.com/dtorfs)
   - [garbageslam](https://github.com/garbageslam)
   - [h4x3rotab](https://github.com/h4x3rotab)
   - [lhf](https://github.com/EighteenZi)
