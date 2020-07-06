@@ -96,6 +96,7 @@ These targets are automatically generated from the
 - `teaclave_cli`: Build the Teclave command line tool.
 - `teaclave_dcap_ref_as`: Build the reference implementation of DCAP's
   attestation service.
+- `teaclave_sgx_tool`: Build the SGX tool.
 
 Above targets are automatically generated from the
 `cmake/tomls/Cargo.unix_app.toml` files.
