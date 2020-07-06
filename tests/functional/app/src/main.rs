@@ -30,7 +30,11 @@ struct Cli {
 
 fn main() -> anyhow::Result<()> {
     let args = Cli::from_args();
-    env_logger::init();
+    env_logger::init_from_env(
+        env_logger::Env::new()
+            .filter_or("TEACLAVE_LOG", "RUST_LOG")
+            .write_style_or("TEACLAVE_LOG_STYLE", "RUST_LOG_STYLE"),
+    );
     let tee = TeeBinder::new(env!("CARGO_PKG_NAME"))?;
     start_enclave_unit_test_driver(&tee, args.test_names)?;
     tee.finalize();
