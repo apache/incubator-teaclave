@@ -27,3 +27,27 @@ root directory as `Cargo.toml`. For standalone Rust applications such as CLI, no
 `Cargo.toml` is needed. After the preparation of `Cargo.toml` in root,
 RLS/rust-analyzer can understand the projects finally. You will see type hints
 and cross references using IDEs with extensions.
+
+## Logging
+
+Teaclave utilizes the [`env_logger`](https://github.com/sebasmagri/env_logger/)
+crate to configure the display of *debug logs* via environment variables.
+
+Logging is controlled via the `TEACLAVE_LOG` environment variables and the value
+of this variable is a comma-separated list of logging directives in the
+`parth::to::module=level` form. For example, you can set the environment
+`TEACLAVE_LOG=attestation=debug` before launching a service to print the debug
+level (and higher-level) logs in the `attestation` module to stdout/stderr.
+There are five logging levels: `error`, `warn`, `info`, `debug` and `trace`
+where error represents the highest-priority log level. Furthermore, you can also
+filter the results with regular expression by simply put `/` followed by a regex
+in the directives in the environment variable. You can find more filter usages
+in the `env_logger`'s
+[document](https://docs.rs/env_logger/0.7.1/env_logger/index.html#filtering-results).
+
+
+::: tip NOTE
+To prevent sensitive information leakage through logging, for the release build,
+we disable all logging (at build time) lower than the `info` level. That is,
+only `error`, `warn` and `info` logs will be printed.
+:::

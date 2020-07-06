@@ -21,7 +21,11 @@ use teaclave_binder::TeeBinder;
 use teaclave_types::TeeServiceResult;
 
 fn main() -> anyhow::Result<()> {
-    env_logger::init();
+    env_logger::init_from_env(
+        env_logger::Env::new()
+            .filter_or("TEACLAVE_LOG", "RUST_LOG")
+            .write_style_or("TEACLAVE_LOG_STYLE", "RUST_LOG_STYLE"),
+    );
     let tee = TeeBinder::new(env!("CARGO_PKG_NAME"))?;
     run(&tee)?;
     tee.finalize();
