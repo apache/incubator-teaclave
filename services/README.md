@@ -39,33 +39,8 @@ a safe and secure FaaS platform.
   instances (or nodes) with different capabilities deployed in a cloud
   infrastructure.
 
-## Structure
-
-A service is consist of two parts: app (untrusted) and enclave (trusted). The
-app part is responsible for launching and terminating the service, which the
-enclave part is to serve RPC requests from trusted channels. Typically, a service's
-implementation contains two important structs and one trait. Let's take the
-frontend service as an example.
-
-- `TeaclaveFrontendService` (struct): Define properties or configurations along
-  with the lifetime of the service. For example, the frontend service need to
-  hold clients (with established trusted channels) to communicate with the
-  authentication service and management service.
-- `TeaclaveFrontendError` (struct): Define errors which may occur in this
-  service, authentication error, for example.
-- `TeaclaveFrontend` (trait): Define functions (requests) the service need to
-  handle. The trait will be automatically derived from definitions in the
-  ProtoBuf file and can be imported from the `teaclave_proto` crate.
-  
-## RPC and Protocols
-
-We use ProtoBuf to define messages and RPC interfaces of the Teaclave services.
-You can find detailed protocol definitions in the
-[`proto` directory](https://github.com/apache/incubator-teaclave/tree/master/services/proto/src/proto).
-In addition, utility functions, traits, and structures will be automatically
-generated to help implementing services to handle requests and send responses.
-This is done by a build time tool called
-[`proto_gen`](https://github.com/apache/incubator-teaclave/tree/master/services/proto/proto_gen).
+To learn more about the design and internal implementation of services, please
+read [Teaclave Service Internals](../docs/service-internals.md).
 
 ## Topology
 
