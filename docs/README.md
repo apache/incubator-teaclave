@@ -16,6 +16,7 @@ permalink: /docs/
 - [Build System](build-system.md)
 - [Mutual Attestation: Why and How](mutual-attestation.md)
 - [Threat Model](threat-model.md)
+- [Teaclave Service Internals](docs/service-internals.md)
 
 ## Contribute
 
