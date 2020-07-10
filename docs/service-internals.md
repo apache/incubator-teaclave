@@ -35,7 +35,7 @@ service TeaclaveAuthenticationApi {
 }
 ```
 
-This means that the authentication service (for the API endpoint) has a RPC
+This means that the authentication service (for the API endpoint) has an RPC
 interface called "`UserLogin`", which takes a "`UserLoginRequest`" message with
 `id` and `password` inside (in string type) and reply a "`UserLoginResponse`"
 message with `token` inside (in string type).
@@ -64,6 +64,7 @@ logic and process data in the trusted execution environment.
 ### App (Untrusted)
 
 Basically, the app part of a service does the followings:
+
 - Load the runtime configuration from the config file.
 - Create a service launcher: prepare the binder and set the serialized config as
   an input.
@@ -103,11 +104,33 @@ steps to prepare and start to serving requests.
   and management service.
 - Start the service (with endpoint handlers) and begin to serve requests.
 
+Here is a code snippet from authentication service in the enclave part:
+
+```rust
+let api_listen_address = config.api_endpoints.authentication.listen_address;
+let attestation_config = AttestationConfig::from_teaclave_config(&config)?;
+let attested_tls_config = RemoteAttestation::new(attestation_config)
+    .generate_and_endorse()?
+    .attested_tls_config()
+    .ok_or_else(|| anyhow!("cannot get attested TLS config"))?;
+let server_config = SgxTrustedTlsServerConfig::from_attested_tls_config(attested_tls_config)?;
+
+let mut server = SgxTrustedTlsServer::<
+    TeaclaveAuthenticationApiResponse,
+    TeaclaveAuthenticationApiRequest,
+>::new(addr, server_config);
+
+let service = api_service::TeaclaveAuthenticationApiService::new(db_client, jwt_secret);
+
+match server.start(service) {}
+```
+
 ## Attestation in Services
 
 To explain the usages of remote attestation mechanism in services, we need to
-consider two different scenarios: 1) the service wants serve other RPC requests,
-2) the service wants to connect and send requests to other services.
+consider two different scenarios: 1) the service wants to serve RPC requests
+from clients, 2) the service wants to connect and send requests to other
+services.
 
 For the first scenario, the endorsed attestation report is used for creating the
 trusted TLS server, so that clients can attest the service's report to verify
@@ -117,8 +140,44 @@ from the *enclave info* first to create the trusted TLS server. By this, the
 server can also attest clients' attestation reports and only accept expected
 connections.
 
+You may find code like the following to get the accepted enclave attributes for
+mutual attestation:
+
+```rust
+let enclave_info = EnclaveInfo::verify_and_new(...)?;
+let accepted_enclave_attrs: Vec<teaclave_types::EnclaveAttr> = AUTHENTICATION_INBOUND_SERVICES
+    .iter()
+    .map(|service| match enclave_info.get_enclave_attr(service) {...})
+    .collect::<Result<_>>()?;
+
+...
+
+let server_config = SgxTrustedTlsServerConfig::from_attested_tls_config(attested_tls_config)?
+    .attestation_report_verifier(
+    accepted_enclave_attrs,
+    AS_ROOT_CA_CERT,
+    verifier::universal_quote_verifier,
+)?;
+```
+
 For the second scenario, the report is used to create a trusted TLS channel so
 that the client can present its report when establishing the channel. Also, the
 server's report will be verified.
 
 ## Customize a Standalone Service
+
+For most cases, we suggest to use the Teaclave platform as a whole for security
+and functionality concerns. However, you may want to customize a TEE service
+using Teaclave's existing capabilities under our service framework. For
+instance, the execution service can be used as a standalone TEE Python executor,
+and the storage service can be used as a secure database as well. 
+
+To customize Teaclave services as a standalone one, you need to first to think
+about the interfaces exposed to clients, that is the definitions in protobuf.
+For example, for a key-value database, we have defined `Get`, `Put` and `Delete`
+interfaces.
+
+Additionally, if you are using as a standalone TEE service, the attestation
+mechanism needs to be "one-way attestation" accordingly. That is, only clients
+can establish trusted channel and attest the service's identity and platform
+status, but service cannot attest clients.
