@@ -125,6 +125,23 @@ let service = api_service::TeaclaveAuthenticationApiService::new(db_client, jwt_
 match server.start(service) {}
 ```
 
+## Topology
+
+These services are communicating through RPC with remote attestation. Here is a
+topological graph illustrating connections between services.
+
+```
+clients => authentication <-+       +----> storage <----+
+                            |       |                   |
+clients => frontend ----------> management            scheduler <-- execution
+                                    |
+                                    +--> access_control
+
+
+                                                  =>      api endpoint connections
+                                                  -> internal endpoint connections
+```
+
 ## Attestation in Services
 
 To explain the usages of remote attestation mechanism in services, we need to
