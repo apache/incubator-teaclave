@@ -35,7 +35,7 @@ async fn download_remote_input_to_file(
     let mut outfile = tokio::fs::File::create(dest).await?;
 
     while let Some(chunk) = download.chunk().await? {
-        outfile.write(&chunk).await?;
+        outfile.write_all(&chunk).await?;
     }
 
     // Must flush tokio::io::BufWriter manually.
