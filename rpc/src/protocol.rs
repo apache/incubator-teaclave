@@ -18,7 +18,6 @@
 use log::debug;
 use serde::{Deserialize, Serialize};
 use std::io;
-use std::mem::transmute;
 use std::prelude::v1::*;
 use std::vec::Vec;
 use teaclave_types::TeaclaveServiceResponseError;
@@ -77,8 +76,7 @@ where
         let mut header = [0u8; 8];
 
         self.transport.read_exact(&mut header)?;
-        let buf_len = u64::from_be(unsafe { transmute::<[u8; 8], u64>(header) });
-
+        let buf_len = u64::from_be_bytes(header);
         if buf_len > self.max_frame_len {
             return Err(ProtocolError::Other(anyhow::anyhow!(
                 "Exceed max frame length"
@@ -103,7 +101,7 @@ where
         debug!("Send: {}", std::string::String::from_utf8_lossy(&send_buf));
 
         let buf_len = send_buf.len() as u64;
-        let header = unsafe { transmute::<u64, [u8; 8]>(buf_len.to_be()) };
+        let header = buf_len.to_be_bytes();
 
         self.transport.write(&header)?;
         self.transport.write_all(&send_buf)?;
