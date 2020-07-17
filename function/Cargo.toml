@@ -36,6 +36,8 @@ itertools     = { version = "0.8.0", default-features = false }
 ring          = { version = "0.16.5" }
 base64        = { version = "0.10.1" }
 hex           = { version = "0.4.0"  }
+image         = { version = "0.22.4" }
+rustface      = { version = "0.1.2", features = [ "include_default_model" ] }
 
 teaclave_types = { path = "../types" }
 teaclave_crypto = { path = "../crypto" }
