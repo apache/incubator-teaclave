@@ -17,6 +17,7 @@ permalink: /docs/
 - [Mutual Attestation: Why and How](mutual-attestation.md)
 - [Threat Model](threat-model.md)
 - [Teaclave Service Internals](service-internals.md)
+- [Papers, Talks, and Related Articles](papers-talks.md)
 
 ## Contribute
 
@@ -47,3 +48,10 @@ permalink: /docs/
 - [Third-Party Dependency Vendoring](../third_party/README.md)
 - [Tool](../tool/README.md)
 - [Types](../types/README.md)
+
+## API References
+
+- [Teaclave SGX SDK](https://teaclave.apache.org/docs/sgx-sdk/)
+- [Teaclave Client SDK (Python)](https://teaclave.apache.org/docs/client-sdk-python/)
+- [Crates in Teaclave (Enclave)](https://teaclave.apache.org/docs/crates-enclave/)
+- [Crates in Teaclave (App)](https://teaclave.apache.org/docs/crates-app/)

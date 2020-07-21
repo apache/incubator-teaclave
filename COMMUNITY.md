@@ -60,6 +60,8 @@ using and contributing to Teaclave in alphabetical order.
   - [Phala Network](https://github.com/Phala-Network/phala-blockchain):
     A TEE-Blockchain hybrid architecture implementing Confidential Contract on
     Polkadot.
+  - [SafeTrace](https://github.com/enigmampc/SafeTrace): Privacy preserving
+    voluntary COVID-19 self-reporting platform for contact tracing.
   - [Secret Network](https://github.com/enigmampc/SecretNetwork): A
     blockchain-based, open-source protocol that lets anyone perform computations
     on encrypted data, bringing privacy to smart contracts and public

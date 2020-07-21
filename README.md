@@ -45,6 +45,7 @@ platform, making computation on privacy-sensitive data safe and simple.
 - [Access Control](docs/access-control.md)
 - [Build System](docs/build-system.md)
 - [Teaclave Service Internals](docs/service-internals.md)
+- [Papers, Talks, and Related Articles](docs/papers-talks.md)
 
 ### Contribute to Teaclave
 
@@ -76,7 +77,7 @@ platform, making computation on privacy-sensitive data safe and simple.
 - [Tool](tool)
 - [Types](types)
 
-### API Docs
+### API References
 
 - [Teaclave SGX SDK](https://teaclave.apache.org/docs/sgx-sdk/)
 - [Teaclave Client SDK (Python)](https://teaclave.apache.org/docs/client-sdk-python/)
