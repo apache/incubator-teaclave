@@ -23,7 +23,7 @@ community.
 - [Teaclave: A Universal Secure Computing Platform](https://mssun.me/assets/teaclave-2nd-sgx-community-workshop.pdf).
   Mingshen Sun.
   The 2nd SGX Community Workshop, July 2020.
-- [MesaTEESGX: Redefining AI and Big Data Analysis with Intel SGX](https://query.prod.cms.rt.microsoft.com/cms/api/am/binary/RE37dMs).
+- [MesaTEE SGX: Redefining AI and Big Data Analysis with Intel SGX](https://query.prod.cms.rt.microsoft.com/cms/api/am/binary/RE37dMs).
   Yu Ding.
   BlueHat Shanghai '19, May 2019.
 - [Bringing Intel SGX to the Rust Ecosystem](https://paris.rustfest.eu/sessions/mesalock-sgx).
