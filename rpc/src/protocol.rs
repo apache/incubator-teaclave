@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use log::debug;
+use log::trace;
 use serde::{Deserialize, Serialize};
 use std::io;
 use std::prelude::v1::*;
@@ -64,8 +64,8 @@ where
     pub fn new(transport: &'a mut T) -> JsonProtocol<'a, T> {
         Self {
             transport,
-            // Default max frame length is 8MB
-            max_frame_len: 8 * 1_024 * 1_024,
+            // Default max frame length is 32MB
+            max_frame_len: 32 * 1_024 * 1_024,
         }
     }
 
@@ -86,7 +86,7 @@ where
         let mut recv_buf: Vec<u8> = vec![0u8; buf_len as usize];
         self.transport.read_exact(&mut recv_buf)?;
 
-        debug!("Recv: {}", std::string::String::from_utf8_lossy(&recv_buf));
+        trace!("Recv: {}", std::string::String::from_utf8_lossy(&recv_buf));
         let r: V = serde_json::from_slice(&recv_buf)?;
 
         Ok(r)
@@ -98,7 +98,7 @@ where
     {
         let send_buf = serde_json::to_vec(&message)?;
 
-        debug!("Send: {}", std::string::String::from_utf8_lossy(&send_buf));
+        trace!("Send: {}", std::string::String::from_utf8_lossy(&send_buf));
 
         let buf_len = send_buf.len() as u64;
         let header = buf_len.to_be_bytes();
