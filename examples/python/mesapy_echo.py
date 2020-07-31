@@ -63,7 +63,7 @@ def main():
     example = MesaPyEchoExample(USER_ID, USER_PASSWORD)
     if len(sys.argv) == 2:
         message = sys.argv[1]
-        rt = example.echo(message)
+        rt = example.echo(message=message)
     elif len(sys.argv) == 3:
         payload = sys.argv[1]
         message = sys.argv[2]
