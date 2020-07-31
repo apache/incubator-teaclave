@@ -23,7 +23,7 @@ services:
       - AS_KEY
       - AS_ALGO
       - AS_URL
-      - RUST_LOG
+      - TEACLAVE_LOG
     entrypoint: ./teaclave_authentication_service
     container_name: teaclave-authentication-service
     networks:
@@ -51,7 +51,7 @@ services:
       - AS_KEY
       - AS_ALGO
       - AS_URL
-      - RUST_LOG
+      - TEACLAVE_LOG
     entrypoint: ./teaclave_frontend_service
     depends_on:
       - teaclave-management-service
@@ -79,7 +79,7 @@ services:
       - AS_KEY
       - AS_ALGO
       - AS_URL
-      - RUST_LOG
+      - TEACLAVE_LOG
     entrypoint: ./teaclave_management_service
     depends_on:
       - teaclave-storage-service
@@ -107,7 +107,7 @@ services:
       - AS_KEY
       - AS_ALGO
       - AS_URL
-      - RUST_LOG
+      - TEACLAVE_LOG
     entrypoint: ./teaclave_storage_service
     container_name: teaclave-storage-service
     networks:
@@ -132,7 +132,7 @@ services:
       - AS_KEY
       - AS_ALGO
       - AS_URL
-      - RUST_LOG
+      - TEACLAVE_LOG
     container_name: teaclave-access-control-service
     entrypoint: ./teaclave_access_control_service
     networks:
@@ -157,7 +157,7 @@ services:
       - AS_KEY
       - AS_ALGO
       - AS_URL
-      - RUST_LOG
+      - TEACLAVE_LOG
     entrypoint: ./teaclave_execution_service
     container_name: teaclave-execution-service
     depends_on:
@@ -184,7 +184,7 @@ services:
       - AS_KEY
       - AS_ALGO
       - AS_URL
-      - RUST_LOG
+      - TEACLAVE_LOG
     entrypoint: ./teaclave_scheduler_service
     container_name: teaclave-scheduler-service
     depends_on:

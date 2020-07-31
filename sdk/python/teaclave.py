@@ -434,14 +434,19 @@ def _write_message(sock: ssl.SSLSocket, message: Any):
             return o.__dict__
 
     message = json.dumps(message, cls=RequestEncoder).encode()
-    sock.write(struct.pack(">Q", len(message)))
-    sock.write(message)
+    sock.sendall(struct.pack(">Q", len(message)))
+    sock.sendall(message)
 
 
 def _read_message(sock: ssl.SSLSocket):
     response_len = struct.unpack(">Q", sock.read(8))
-    response = sock.read(response_len[0])
-    response = json.loads(response)
+    raw = bytearray()
+    total_recv = 0
+    while total_recv < response_len[0]:
+        data = sock.recv()
+        total_recv += len(data)
+        raw += data
+    response = json.loads(raw)
     return response
 
 
