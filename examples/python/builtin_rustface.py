@@ -89,7 +89,7 @@ def main():
 
         bboxes = json.loads(rt)
 
-        img = Image.open(img_file_name)
+        img = Image.open(img_file_name).convert('RGB')
         draw = ImageDraw.Draw(img)
 
         for bbox in bboxes:
@@ -98,7 +98,7 @@ def main():
                 box['x'], box['y'], box['x'] + box['height'],
                 box['y'] + box['width']
             ],
-                           outline='blue',
+                           outline='red',
                            width=2)
 
         img.save('out.jpg', 'JPEG')

@@ -50,7 +50,7 @@ gbdt              = { git = "https://github.com/mesalock-linux/gbdt-rs", branch 
 getrandom         = { git = "https://github.com/mesalock-linux/getrandom-sgx" }
 crc               = { git = "https://github.com/mesalock-linux/crc-rs-sgx" }
 # gif               = { git = "https://github.com/mesalock-linux/image-gif-sgx" }
-# image             = { git = "https://github.com/mesalock-linux/image-sgx" }
+image             = { git = "https://github.com/mesalock-linux/image-sgx" }
 # inflate           = { git = "https://github.com/mesalock-linux/inflate-sgx" }
 itoa              = { git = "https://github.com/mesalock-linux/itoa-sgx" }
 # jpeg-decoder      = { git = "https://github.com/mesalock-linux/jpeg-decoder-sgx" }

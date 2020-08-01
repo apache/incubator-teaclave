@@ -60,6 +60,10 @@ impl RustfaceDetector {
         let img = image::load_from_memory(&bytes)?;
 
         let mut detector = rustface::create_default_detector()?;
+        detector.set_min_face_size(20);
+        detector.set_score_thresh(2.0);
+        detector.set_pyramid_scale_factor(0.8);
+        detector.set_slide_window_step(4, 4);
 
         let faces = rustface::detect_faces(&mut *detector, img);
         let result = serde_json::to_string(&faces)?;
