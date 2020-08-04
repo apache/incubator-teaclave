@@ -81,7 +81,7 @@ RUN apt-get update && apt-get install -q -y \
     iproute2 \
     python3-pip
 
-RUN pip3 install pyopenssl toml cryptography yapf
+RUN pip3 install pyopenssl toml cryptography yapf requests Pillow
 
 # clean up apt caches
 
