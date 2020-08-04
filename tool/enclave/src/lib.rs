@@ -60,7 +60,7 @@ fn attestation(raw_json_input: &RawJsonInput) -> anyhow::Result<()> {
     };
     println!("Remote Attestation Report:");
     println!("{}", serde_json::to_string_pretty(&attn_report)?);
-    println!("");
+    println!();
     println!("ISV Enclave Quote Body:");
     println!("{:?}", sgx_quote_body);
     Ok(())

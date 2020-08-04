@@ -23,6 +23,7 @@ extern crate sgx_tstd as std;
 use std::prelude::v1::*;
 
 mod echo;
+mod face_detection;
 mod gbdt_predict;
 mod gbdt_train;
 mod logistic_regression_predict;
@@ -31,9 +32,9 @@ mod online_decrypt;
 mod ordered_set_intersect;
 mod private_join_and_compute;
 mod rsa_sign;
-mod rustface_detector;
 
 pub use echo::Echo;
+pub use face_detection::FaceDetection;
 pub use gbdt_predict::GbdtPredict;
 pub use gbdt_train::GbdtTrain;
 pub use logistic_regression_predict::LogisticRegressionPredict;
@@ -42,7 +43,6 @@ pub use online_decrypt::OnlineDecrypt;
 pub use ordered_set_intersect::OrderedSetIntersect;
 pub use private_join_and_compute::PrivateJoinAndCompute;
 pub use rsa_sign::RsaSign;
-pub use rustface_detector::RustfaceDetector;
 
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
@@ -60,7 +60,7 @@ pub mod tests {
             private_join_and_compute::tests::run_tests(),
             ordered_set_intersect::tests::run_tests(),
             rsa_sign::tests::run_tests(),
-            rustface_detector::tests::run_tests(),
+            face_detection::tests::run_tests(),
         )
     }
 }

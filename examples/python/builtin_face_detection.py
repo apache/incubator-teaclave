@@ -16,7 +16,7 @@ from utils import (AUTHENTICATION_SERVICE_ADDRESS, FRONTEND_SERVICE_ADDRESS,
                    USER_PASSWORD)
 
 
-class BuiltinRustfaceExample:
+class BuiltinFaceDetectionExample:
     def __init__(self, user_id, user_password):
         self.user_id = user_id
         self.user_password = user_password
@@ -40,18 +40,28 @@ class BuiltinRustfaceExample:
 
         print("[+] registering function")
         function_id = client.register_function(
-            name="builtin-rustface-detector",
+            name="builtin-face-detection",
             description="Native Face Detection Function",
             executor_type="builtin",
             inputs=[],
-            arguments=["image_base64"])
+            arguments=[
+                "image_base64", "min_face_size", "score_thresh",
+                "pyramid_scale_factor", "slide_window_step_x",
+                "slide_window_step_y"
+            ])
 
         print("[+] creating task")
-        task_id = client.create_task(
-            function_id=function_id,
-            function_arguments={"image_base64": image_base64},
-            inputs_ownership=[],
-            executor="builtin")
+        task_id = client.create_task(function_id=function_id,
+                                     function_arguments={
+                                         "image_base64": image_base64,
+                                         "min_face_size": 20,
+                                         "score_thresh": 2.0,
+                                         "pyramid_scale_factor": 0.8,
+                                         "slide_window_step_x": 4,
+                                         "slide_window_step_y": 4
+                                     },
+                                     inputs_ownership=[],
+                                     executor="builtin")
 
         print("[+] invoking task")
         client.invoke_task(task_id)
@@ -81,7 +91,7 @@ def main():
         image_data = fin.read()
         base64_encoded_data = base64.b64encode(image_data).decode('utf-8')
 
-        example = BuiltinRustfaceExample(USER_ID, USER_PASSWORD)
+        example = BuiltinFaceDetectionExample(USER_ID, USER_PASSWORD)
 
         rt = example.detect_face(base64_encoded_data)
 
