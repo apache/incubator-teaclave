@@ -77,6 +77,7 @@ List of external contributors of Teaclave and Teaclave SGX SDK (in alphabetical 
   - [piotr-roslaniec](https://github.com/piotr-roslaniec)
   - [rebol0x6c](https://github.com/rebol0x6c)
   - [volcano](https://github.com/volcano0dr)
+  - [yc-huang](https://github.com/yc-huang)
   - [zEqueue](https://github.com/z1queue)
 
 More people tracked in GitHub:

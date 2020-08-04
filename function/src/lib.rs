@@ -23,6 +23,7 @@ extern crate sgx_tstd as std;
 use std::prelude::v1::*;
 
 mod echo;
+mod face_detection;
 mod gbdt_predict;
 mod gbdt_train;
 mod logistic_regression_predict;
@@ -33,6 +34,7 @@ mod private_join_and_compute;
 mod rsa_sign;
 
 pub use echo::Echo;
+pub use face_detection::FaceDetection;
 pub use gbdt_predict::GbdtPredict;
 pub use gbdt_train::GbdtTrain;
 pub use logistic_regression_predict::LogisticRegressionPredict;
@@ -58,6 +60,7 @@ pub mod tests {
             private_join_and_compute::tests::run_tests(),
             ordered_set_intersect::tests::run_tests(),
             rsa_sign::tests::run_tests(),
+            face_detection::tests::run_tests(),
         )
     }
 }

@@ -78,7 +78,7 @@ RUN apt-get update && apt-get install -q -y \
     curl \
     python3-pip
 
-RUN pip3 install pyopenssl toml cryptography yapf
+RUN pip3 install pyopenssl toml cryptography yapf requests Pillow
 
 # clean up apt caches
 
