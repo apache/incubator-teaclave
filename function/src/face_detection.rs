@@ -30,7 +30,7 @@ pub struct FaceDetection;
 
 #[derive(serde::Deserialize)]
 struct FaceDetectionArguments {
-    image_base64: String,
+    image: Vec<u8>,
     /// Set the size of the sliding window.
     ///
     /// The minimum size is constrained as no smaller than 20.
@@ -108,10 +108,8 @@ impl FaceDetection {
         _runtime: FunctionRuntime,
     ) -> anyhow::Result<String> {
         let arguments = FaceDetectionArguments::try_from(arguments)?;
-        let image_base64 = arguments.image_base64;
-        let vec = base64::decode(&image_base64).unwrap();
-        let bytes: &[u8] = &vec;
-        let img = image::load_from_memory(&bytes)?;
+        let image = arguments.image;
+        let img = image::load_from_memory(&image)?;
 
         let mut detector = rustface::create_default_detector()?;
         if let Some(window_size) = arguments.window_size {
@@ -157,9 +155,9 @@ pub mod tests {
 
     fn test_face_detection() {
         let input = "fixtures/functions/face_detection/input.jpg";
-        let image_base64 = base64::encode(&fs::read(input).unwrap());
+        let image = fs::read(input).unwrap();
         let arguments = FunctionArguments::from_json(json!({
-            "image_base64": image_base64,
+            "image": &image,
             "min_face_size": 20,
             "score_thresh": 2.0,
             "pyramid_scale_factor": 0.8,
