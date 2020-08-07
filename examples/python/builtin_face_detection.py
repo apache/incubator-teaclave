@@ -2,7 +2,6 @@
 
 import os
 import sys
-import base64
 import json
 
 from PIL import Image, ImageDraw
@@ -21,7 +20,7 @@ class BuiltinFaceDetectionExample:
         self.user_id = user_id
         self.user_password = user_password
 
-    def detect_face(self, image_base64):
+    def detect_face(self, image):
         client = AuthenticationService(
             AUTHENTICATION_SERVICE_ADDRESS, AS_ROOT_CA_CERT_PATH,
             ENCLAVE_INFO_PATH).connect().get_client()
@@ -45,7 +44,7 @@ class BuiltinFaceDetectionExample:
             executor_type="builtin",
             inputs=[],
             arguments=[
-                "image_base64", "min_face_size", "score_thresh",
+                "image", "min_face_size", "score_thresh",
                 "pyramid_scale_factor", "slide_window_step_x",
                 "slide_window_step_y"
             ])
@@ -53,7 +52,7 @@ class BuiltinFaceDetectionExample:
         print("[+] creating task")
         task_id = client.create_task(function_id=function_id,
                                      function_arguments={
-                                         "image_base64": image_base64,
+                                         "image": image,
                                          "min_face_size": 20,
                                          "score_thresh": 2.0,
                                          "pyramid_scale_factor": 0.8,
@@ -89,11 +88,9 @@ def main():
 
     with open(img_file_name, 'rb') as fin:
         image_data = fin.read()
-        base64_encoded_data = base64.b64encode(image_data).decode('utf-8')
-
         example = BuiltinFaceDetectionExample(USER_ID, USER_PASSWORD)
 
-        rt = example.detect_face(base64_encoded_data)
+        rt = example.detect_face(list(image_data))
 
         print("[+] function return:", rt)
 
