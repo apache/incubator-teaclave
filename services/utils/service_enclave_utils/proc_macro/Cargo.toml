@@ -1,6 +1,6 @@
 [package]
 name = "teaclave_service_enclave_utils_proc_macro"
-version = "0.0.1"
+version = "0.1.0"
 edition = "2018"
 publish = false
 
