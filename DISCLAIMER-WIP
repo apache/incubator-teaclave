@@ -12,6 +12,8 @@ policy. For example, releases may have incomplete or un-reviewed licensing
 conditions. What follows is a list of known issues the project is currently
 aware of (note that this list, by definition, is likely to be incomplete):
 
+  * Releases may have incomplete licensing conditions.
+
 If you are planning to incorporate this work into your product/project, please
 be aware that you will need to conduct a thorough licensing review to determine
 the overall implications of including this work. For the current status of this
