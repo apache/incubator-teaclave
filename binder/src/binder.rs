@@ -76,6 +76,10 @@ impl TeeBinder {
             Err(e) => error!("{:?}", e),
         }
     }
+
+    pub unsafe fn destroy(&self) {
+        let _ = sgx_destroy_enclave(self.enclave.geteid());
+    }
 }
 
 impl Drop for TeeBinder {

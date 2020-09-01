@@ -53,6 +53,10 @@ impl TeaclaveServiceLauncher {
     pub fn finalize(&self) {
         self.tee.finalize();
     }
+
+    pub unsafe fn destroy(&self) {
+        self.tee.destroy();
+    }
 }
 
 pub fn register_signals(term: Arc<AtomicBool>) -> Result<()> {
