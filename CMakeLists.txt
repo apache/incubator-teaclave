@@ -34,7 +34,7 @@ set_strvar_from_env_or(SGX_SDK "/opt/sgxsdk" "Path of SGX SDK")
 set_strvar_from_env_or(RUSTFLAGS "" "Rust flags")
 set_strvar_from_env_or(TEACLAVE_CMAKE_DBG ""
                        "set to turn on debug message for cmake")
-set(MESAPY_VERSION eb769f13d6f9947b62aa04c2fb34496082bdadeb)
+set(MESAPY_VERSION d92659cfad8ad54d1105ede8570e6ccc7925ee7e)
 set(RUSTUP_TOOLCHAIN "nightly-2020-04-07")
 option(COV "Turn on/off coverage" OFF)
 option(OFFLINE "Turn on/off cargo offline" ON)
