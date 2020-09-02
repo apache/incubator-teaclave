@@ -51,6 +51,9 @@ fn main() -> Result<()> {
     }
 
     launcher.finalize();
+    unsafe {
+        launcher.destroy(); // force to destroy the enclave
+    }
 
     Ok(())
 }

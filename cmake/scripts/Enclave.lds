@@ -3,6 +3,8 @@ enclave.so
     global:
         g_global_data_sim;
         g_global_data;
+        g_peak_heap_used;
+        g_peak_rsrv_mem_committed;
         enclave_entry;
     local:
         *;
