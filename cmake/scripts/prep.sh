@@ -60,14 +60,6 @@ ln -snf ${CMAKE_BINARY_DIR} ${TEACLAVE_SYMLINKS}/teaclave_build
 (cd ${CMAKE_SOURCE_DIR}/third_party/crates-sgx/ && git clean -fdx vendor/sgx_unwind/libunwind/)
 if git submodule status | egrep -q '^[-]|^[+]'; then echo 'INFO: Need to reinitialize git submodules' && git submodule update --init --recursive; fi
 rustup install --no-self-update ${RUSTUP_TOOLCHAIN} > /dev/null 2>&1
-# get mesapy
-if [ ! -f ${TEACLAVE_OUT_DIR}/libpypy-c.a ] || [ ! -f ${TEACLAVE_OUT_DIR}/${MESAPY_VERSION}-mesapy-sgx.tar.gz ]; then
-    cd ${TEACLAVE_OUT_DIR};
-    echo "Downloading MesaPy ${MESAPY_VERSION}..."
-    wget -qN https://mesapy.org/release/${MESAPY_VERSION}-mesapy-sgx.tar.gz;
-    tar xzf ${MESAPY_VERSION}-mesapy-sgx.tar.gz;
-    cd -
-fi
 
 # build edl_libs
 function build_edl() {
