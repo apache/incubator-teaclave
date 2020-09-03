@@ -34,7 +34,7 @@ set_strvar_from_env_or(SGX_SDK "/opt/sgxsdk" "Path of SGX SDK")
 set_strvar_from_env_or(RUSTFLAGS "" "Rust flags")
 set_strvar_from_env_or(TEACLAVE_CMAKE_DBG ""
                        "set to turn on debug message for cmake")
-set(MESAPY_VERSION eb769f13d6f9947b62aa04c2fb34496082bdadeb)
+set(MESAPY_VERSION 947fb3f598eede83ba0e33b5b5655b9a9597c2d8)
 set(RUSTUP_TOOLCHAIN "nightly-2020-04-07")
 option(COV "Turn on/off coverage" OFF)
 option(OFFLINE "Turn on/off cargo offline" ON)
@@ -42,6 +42,7 @@ option(TEST_MODE "Turn on/off test mode" OFF)
 option(SGX_SIM_MODE "Turn on/off sgx simulation mode" OFF)
 option(DCAP "Turn on/off DCAP attestation" OFF)
 option(GIT_SUBMODULE "Check submodules during build" ON)
+option(USE_PREBUILT_MESAPY "Use prebuilt MesaPy SGX executor" ON)
 init_submodules()
 
 if(DCAP)
@@ -143,6 +144,38 @@ foreach(_i RANGE ${SGX_APP_LAST_INDEX})
     prep)
 endforeach()
 
+set(MESAPY_OUTPUTS
+  ${TEACLAVE_OUT_DIR}/libpypy-c.a
+  ${TEACLAVE_OUT_DIR}/libffi.a
+  ${TEACLAVE_OUT_DIR}/libsgx_tlibc_ext.a
+  ${TEACLAVE_OUT_DIR}/libsgx_ulibc.a
+  ${TEACLAVE_OUT_DIR}/ffi.o
+)
+if(USE_PREBUILT_MESAPY)
+add_custom_command(
+  OUTPUT ${MESAPY_OUTPUTS}
+  COMMAND
+    wget -qN https://mesapy.org/release/${MESAPY_VERSION}-mesapy-sgx.tar.gz &&
+    tar xzf ${MESAPY_VERSION}-mesapy-sgx.tar.gz
+  WORKING_DIRECTORY ${TEACLAVE_OUT_DIR})
+else()
+  add_custom_command(
+    OUTPUT ${MESAPY_OUTPUTS}
+    COMMAND
+      make sgx &&
+      make -C sgx/examples/exec &&
+      cp pypy/goal/libpypy-c.a
+        sgx/libffi/build_dir/lib/libffi.a
+        sgx/sgx_tlibc_ext/libsgx_tlibc_ext.a
+        sgx/sgx_ulibc/libsgx_ulibc.a
+        sgx/examples/exec/Enclave/src/ffi.o
+        ${TEACLAVE_OUT_DIR}
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/third_party/mesapy)
+endif()
+add_custom_target(mesapy
+  DEPENDS ${MESAPY_OUTPUTS}
+  )
+
 # mesapy components
 add_custom_command(
   OUTPUT ${TEACLAVE_OUT_DIR}/acs_py_enclave.c
@@ -179,6 +212,7 @@ foreach(_i RANGE ${SGX_LIB_LAST_INDEX})
     ${_pkg_name}
     DEPENDS
     prep
+    mesapy
     pycomponent
     INSTALL_DIR
     ${TEACLAVE_INSTALL_DIR}/${_category}
