@@ -67,7 +67,7 @@ fn attestation(raw_json_input: &RawJsonInput) -> anyhow::Result<()> {
 }
 
 #[handle_ecall]
-fn handle_run_test(input: &RawJsonInput) -> TeeServiceResult<RawJsonOutput> {
+fn handle_remote_attestation(input: &RawJsonInput) -> TeeServiceResult<RawJsonOutput> {
     match attestation(input) {
         Ok(_) => Ok(RawJsonOutput::default()),
         Err(e) => {

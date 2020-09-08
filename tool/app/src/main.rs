@@ -15,8 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use anyhow::anyhow;
 use anyhow::Result;
-use log::error;
 use std::process;
 use structopt::StructOpt;
 use teaclave_binder::proto::{ECallCommand, RawJsonInput, RawJsonOutput};
@@ -36,21 +36,19 @@ fn attestation(opt: &AttestationOpt) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn start_enclave_unit_test_driver(tee: &TeeBinder, opt: &AttestationOpt) -> anyhow::Result<()> {
+fn start_enclave_remote_attestation(tee: &TeeBinder, opt: &AttestationOpt) -> anyhow::Result<()> {
     let cmd = ECallCommand::Raw;
     let json = serde_json::to_string(opt)?;
     let input = RawJsonInput::new(json);
     match tee.invoke::<RawJsonInput, TeeServiceResult<RawJsonOutput>>(cmd, input) {
-        Err(e) => error!("{:?}", e),
-        Ok(Err(e)) => error!("{:?}", e),
-        _ => (),
+        Err(e) => Err(anyhow!("{:?}", e)),
+        Ok(Err(e)) => Err(anyhow!("{:?}", e)),
+        _ => Ok(()),
     }
-
-    Ok(())
 }
 
 fn run(tee: &TeeBinder, opt: &AttestationOpt) -> anyhow::Result<()> {
-    start_enclave_unit_test_driver(tee, opt)?;
+    start_enclave_remote_attestation(tee, opt)?;
 
     Ok(())
 }

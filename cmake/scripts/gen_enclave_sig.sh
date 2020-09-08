@@ -23,7 +23,9 @@ for var in "${REQUIRED_ENVS[@]}"; do
     [ -z "${!var}" ] && echo "Please set ${var}" && exit -1
 done
 
-cd ${TEACLAVE_OUT_DIR} && cat *_enclave_info.toml > ${TEACLAVE_SERVICE_INSTALL_DIR}/enclave_info.toml
+if ls "${TEACLAVE_OUT_DIR}"/*_enclave_info.toml > /dev/null 2>&1; then
+    cat ${TEACLAVE_OUT_DIR}/*_enclave_info.toml > ${TEACLAVE_SERVICE_INSTALL_DIR}/enclave_info.toml
+fi
 
 AUDITOR_PATHS=$(find ${TEACLAVE_AUDITORS_DIR} -mindepth 1 -maxdepth 1 -type d)
 for auditor_path in ${AUDITOR_PATHS}; do
