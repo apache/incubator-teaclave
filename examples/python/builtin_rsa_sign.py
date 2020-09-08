@@ -53,7 +53,7 @@ def register_input_file(client):
         --input-file ./tests/fixtures/functions/rsa_sign/key.der
         --key 00000000000000000000000000000003
         --output-file ./tests/fixtures/functions/rsa_sign/rsakey.enc
-        --cmac-flag
+        --print-cmac
     """
     url = "http://localhost:6789/fixtures/functions/rsa_sign/rsakey.enc"
     cmac = "4de3bb77327c82923640835c6e5ada66"

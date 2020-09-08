@@ -38,25 +38,25 @@ struct EncryptDecryptOpt {
     #[structopt(short, long)]
     algorithm: String,
 
-    /// Key in hex format
+    /// Key in the hex format.
     #[structopt(short, long, parse(try_from_str = decode_hex))]
     key: KeyVec,
 
-    /// IV for AES keys in hex format
+    /// IV for AES keys in the hex format.
     #[structopt(long, parse(try_from_str = decode_hex))]
     iv: Option<KeyVec>,
 
-    /// Path of input file
+    /// Path of input file.
     #[structopt(short, long = "input-file")]
     input_file: PathBuf,
 
-    /// Path of output file
+    /// Path of output file.
     #[structopt(short, long = "output-file")]
     output_file: PathBuf,
 
-    /// Whether to print cmac
-    #[structopt(short, long)]
-    cmac_flag: bool,
+    /// Flag to print out CMAC.
+    #[structopt(short = "c", long = "print-cmac")]
+    print_cmac: bool,
 }
 
 #[derive(Debug, StructOpt)]
@@ -185,7 +185,7 @@ fn main() -> Result<()> {
     let args = Opt::from_args();
     match args.command {
         Command::Decrypt(opt) => {
-            let flag = opt.cmac_flag;
+            let flag = opt.print_cmac;
             let cmac = decrypt(opt)?;
             if flag {
                 let cmac_string = hex::encode(cmac);
@@ -193,7 +193,7 @@ fn main() -> Result<()> {
             }
         }
         Command::Encrypt(opt) => {
-            let flag = opt.cmac_flag;
+            let flag = opt.print_cmac;
             let cmac = encrypt(opt)?;
             if flag {
                 let cmac_string = hex::encode(cmac);
