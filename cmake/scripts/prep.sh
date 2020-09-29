@@ -57,8 +57,7 @@ ln -snf ${HOME}/.cargo ${TEACLAVE_SYMLINKS}/cargo_home
 ln -snf ${CMAKE_SOURCE_DIR} ${TEACLAVE_SYMLINKS}/teaclave_src
 ln -snf ${CMAKE_BINARY_DIR} ${TEACLAVE_SYMLINKS}/teaclave_build
 # cleanup sgx_unwind/libunwind
-(cd ${CMAKE_SOURCE_DIR}/third_party/crates-sgx/ && git clean -fdx vendor/sgx_unwind/libunwind/)
-if git submodule status | egrep -q '^[-]|^[+]'; then echo 'INFO: Need to reinitialize git submodules' && git submodule update --init --recursive; fi
+(cd ${CMAKE_SOURCE_DIR}/third_party/crates-sgx/ && if [ -d .git ]; then git clean -fdx vendor/sgx_unwind/libunwind/; fi)
 rustup install --no-self-update ${RUSTUP_TOOLCHAIN} > /dev/null 2>&1
 
 # build edl_libs
