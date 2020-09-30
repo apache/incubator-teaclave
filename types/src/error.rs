@@ -24,6 +24,11 @@ use thiserror::Error;
 
 pub type SgxStatus = sgx_types::sgx_status_t;
 
+pub const ES_OK: u32 = 0;
+pub const ES_ERR_GENERAL: u32 = 0x0000_0001;
+pub const ES_ERR_INVALID_PARAMETER: u32 = 0x0000_0002;
+pub const ES_ERR_FFI_INSUFFICIENT_OUTBUF_SIZE: u32 = 0x0000_000c;
+
 /// Status for Ecall
 #[repr(C)]
 #[derive(Debug, Serialize, Deserialize, Default)]
@@ -31,15 +36,15 @@ pub struct ECallStatus(pub u32);
 
 impl ECallStatus {
     pub fn is_err(&self) -> bool {
-        self.0 != 0
+        self.0 != ES_OK
     }
 
     pub fn is_ok(&self) -> bool {
-        self.0 == 0
+        self.0 == ES_OK
     }
 
     pub fn is_err_ffi_outbuf(&self) -> bool {
-        self.0 == 0x0000_000c
+        self.0 == ES_ERR_FFI_INSUFFICIENT_OUTBUF_SIZE
     }
 }
 

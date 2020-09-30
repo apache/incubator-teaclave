@@ -80,6 +80,11 @@ impl TeeBinder {
     pub unsafe fn destroy(&self) {
         let _ = sgx_destroy_enclave(self.enclave.geteid());
     }
+
+    #[cfg(feature = "app_unit_test")]
+    pub fn run_app_tests(&self) -> bool {
+        crate::ipc::app::tests::run_tests(self.enclave.geteid())
+    }
 }
 
 impl Drop for TeeBinder {

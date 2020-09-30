@@ -16,6 +16,7 @@ mesalock_sgx = [
     "teaclave_config/mesalock_sgx",
 ]
 enclave_unit_test = []
+app_unit_test = []
 
 [dependencies]
 cfg-if     = { version = "0.1.9" }

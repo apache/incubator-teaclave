@@ -59,7 +59,7 @@ pub trait IpcReceiver {
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "app")]  {
-        mod app;
+        pub(crate) mod app;
         pub use app::ECallChannel;
     } else if #[cfg(feature = "mesalock_sgx")] {
         mod enclave;
