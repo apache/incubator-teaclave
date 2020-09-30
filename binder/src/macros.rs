@@ -91,6 +91,11 @@ macro_rules! register_ecall_handler {
             out_max: usize,
             out_len: &mut usize,
         ) -> teaclave_types::ECallStatus {
+            if in_buf.is_null() || out_buf.is_null() {
+                log::error!("tee execute cmd: {:x}, invalid in/out buf.", cmd);
+                return teaclave_types::ECallStatus(teaclave_types::ES_ERR_INVALID_PARAMETER);
+            }
+
             // The last argument could be either * mut usize, or &mut usize
             let input_buf: &[u8] = unsafe { std::slice::from_raw_parts(in_buf, in_len) };
 
@@ -101,7 +106,7 @@ macro_rules! register_ecall_handler {
                     Ok(out) => out,
                     Err(e) => {
                         log::error!("tee execute cmd: {:x}, error: {}", cmd, e);
-                        return teaclave_types::ECallStatus(1);
+                        return teaclave_types::ECallStatus(teaclave_types::ES_ERR_GENERAL);
                     }
                 }
             };
@@ -113,7 +118,7 @@ macro_rules! register_ecall_handler {
 
             if inner_len > out_max {
                 log::debug!("tee before copy out_buf check: out_max={:x} < inner={:x}", out_max, inner_len);
-                return teaclave_types::ECallStatus(0x0000_000c);
+                return teaclave_types::ECallStatus(teaclave_types::ES_ERR_FFI_INSUFFICIENT_OUTBUF_SIZE);
             }
 
             // The following lines use a trick of "constructing a mutable slice

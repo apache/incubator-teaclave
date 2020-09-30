@@ -18,6 +18,7 @@
 use log::error;
 use teaclave_binder::proto::{ECallCommand, RunTestInput, RunTestOutput};
 use teaclave_binder::TeeBinder;
+use teaclave_test_utils::*;
 use teaclave_types::TeeServiceResult;
 
 pub use teaclave_file_agent::ocall_handle_file_request;
@@ -28,11 +29,17 @@ fn main() -> anyhow::Result<()> {
             .filter_or("TEACLAVE_LOG", "RUST_LOG")
             .write_style_or("TEACLAVE_LOG_STYLE", "RUST_LOG_STYLE"),
     );
-    let tee = TeeBinder::new(env!("CARGO_PKG_NAME"))?;
-    run(&tee)?;
-    tee.finalize();
+
+    run_tests!(test_app_and_enclave);
 
     Ok(())
+}
+
+fn test_app_and_enclave() {
+    let tee = TeeBinder::new(env!("CARGO_PKG_NAME")).unwrap();
+    tee.run_app_tests();
+    run_enclave_tests(&tee).unwrap();
+    tee.finalize();
 }
 
 fn start_enclave_unit_test_driver(tee: &TeeBinder) -> anyhow::Result<()> {
@@ -47,8 +54,7 @@ fn start_enclave_unit_test_driver(tee: &TeeBinder) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn run(tee: &TeeBinder) -> anyhow::Result<()> {
+fn run_enclave_tests(tee: &TeeBinder) -> anyhow::Result<()> {
     start_enclave_unit_test_driver(tee)?;
-
     Ok(())
 }

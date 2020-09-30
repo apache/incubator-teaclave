@@ -142,3 +142,30 @@ impl IpcSender for ECallChannel {
         Ok(response)
     }
 }
+
+#[cfg(feature = "app_unit_test")]
+pub mod tests {
+    use super::*;
+
+    pub fn run_tests(eid: sgx_enclave_id_t) -> bool {
+        let mut ecall_ret = ECallStatus::default();
+        let mut out_buf = vec![0; 128];
+        let mut out_len = 0usize;
+        let sgx_status = unsafe {
+            ecall_ipc_entry_point(
+                eid,
+                &mut ecall_ret,
+                0x0000_1003,      //cmd,
+                std::ptr::null(), //in_ptr,
+                128,              //in_len,
+                out_buf.as_mut_ptr(),
+                128,
+                &mut out_len,
+            )
+        };
+        assert_eq!(sgx_status, sgx_status_t::SGX_SUCCESS);
+        assert!(ecall_ret.is_err());
+
+        true
+    }
+}
