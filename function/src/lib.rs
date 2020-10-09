@@ -30,6 +30,7 @@ mod logistic_regression_predict;
 mod logistic_regression_train;
 mod online_decrypt;
 mod ordered_set_intersect;
+mod principal_components_analysis;
 mod private_join_and_compute;
 mod rsa_sign;
 
@@ -41,6 +42,7 @@ pub use logistic_regression_predict::LogisticRegressionPredict;
 pub use logistic_regression_train::LogisticRegressionTrain;
 pub use online_decrypt::OnlineDecrypt;
 pub use ordered_set_intersect::OrderedSetIntersect;
+pub use principal_components_analysis::PrincipalComponentsAnalysis;
 pub use private_join_and_compute::PrivateJoinAndCompute;
 pub use rsa_sign::RsaSign;
 
@@ -61,6 +63,7 @@ pub mod tests {
             ordered_set_intersect::tests::run_tests(),
             rsa_sign::tests::run_tests(),
             face_detection::tests::run_tests(),
+            principal_components_analysis::tests::run_tests(),
         )
     }
 }
