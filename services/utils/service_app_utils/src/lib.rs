@@ -54,6 +54,8 @@ impl TeaclaveServiceLauncher {
         self.tee.finalize();
     }
 
+    /// # Safety
+    /// Force to destroy current enclave.
     pub unsafe fn destroy(&self) {
         self.tee.destroy();
     }

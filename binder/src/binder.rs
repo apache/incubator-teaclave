@@ -77,6 +77,8 @@ impl TeeBinder {
         }
     }
 
+    /// # Safety
+    /// Force to destroy current enclave.
     pub unsafe fn destroy(&self) {
         let _ = sgx_destroy_enclave(self.enclave.geteid());
     }

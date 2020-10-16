@@ -25,8 +25,9 @@ Currently, we have these built-in functions:
     elements in the intersection. Users should calculate hash values of each item
     and upload them as a sorted list.
   - `builtin-rsa-sign`: Signing data with RSA key.
-  - `builtin-face-detection`: an implementation of Funnel-Structured cascade,
+  - `builtin-face-detection`: An implementation of Funnel-Structured cascade,
     which is designed for real-time multi-view face detection.
+  - `builtin-principal-components-analysis`: Example to calculate PCA.
   
 The function arguments are in JSON format and can be serialized to a Rust struct
 very easily. You can learn more about supported arguments in the implementation
