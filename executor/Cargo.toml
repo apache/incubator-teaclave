@@ -51,7 +51,7 @@ builtin_private_join_and_compute = []
 builtin_ordered_set_intersect = []
 builtin_rsa_sign = []
 builtin_face_detection = []
-builtin-principal-components-analysis = []
+builtin_principal_components_analysis = []
 
 [dependencies]
 log           = { version = "0.4.6", features = ["release_max_level_info"] }

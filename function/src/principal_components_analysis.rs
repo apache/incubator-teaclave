@@ -83,7 +83,7 @@ impl PrincipalComponentsAnalysis {
                     write!(&mut output, "{:?},", predict_result[[i, j]])?;
                 }
             }
-            write!(&mut output, "{}", "\n")?;
+            writeln!(&mut output)?;
         }
 
         Ok(format!(
