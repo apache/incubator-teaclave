@@ -1,3 +1,7 @@
+---
+permalink: /docs/codebase/binder
+---
+
 # Binder
 
 The binder library provides communication interfaces between TEE's app/enclave

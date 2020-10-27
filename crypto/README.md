@@ -1,3 +1,7 @@
+---
+permalink: /docs/codebase/crypto
+---
+
 # Crypto Primitives
 
 This directory hosts all the implementations of cryptographic primitives used in
