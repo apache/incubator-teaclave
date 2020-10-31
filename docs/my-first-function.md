@@ -12,9 +12,42 @@ Teaclave platform.
 To run Teaclave, a hardware with Intel SGX support is needed. You can
 check with this list of [supported hardware](https://github.com/ayeks/SGX-hardware).
 Note that you sometimes need to configure BIOS to enable SGX. Additionally, you
-need to install driver and platform software to run SGX applications. Details
-can be found in
+need to install driver and platform software to run SGX applications. If you are
+using Azure confidential computing VM, please refer to [this document](/docs/azure-confidential-computing/).
+Otherwise, let install SGX driver first.
+
+```
+$ wget https://download.01.org/intel-sgx/sgx-linux/2.11/distro/ubuntu18.04-server/sgx_linux_x64_driver_2.6.0_b0a445b.bin
+$ sudo ./sgx_linux_x64_driver_2.6.0_b0a445b.bin
+$ ls /dev/isgx    # Make sure you have the SGX device
+```
+
+Then, install SGX architectural enclaves and quoting libraries for attestation.
+
+```
+$ sudo apt-get install libssl-dev libcurl4-openssldev libprotobuf-dev
+$ echo 'deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu bionic main' | sudo tee /etc/apt/sources.list.d/intel-sgx.list
+$ wget -qO - https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key | sudo apt-key add -
+$ sudo apt-get update && \
+   sudo apt-get install libsgx-launch libsgx-urts libsgx-epid libsgx-urts libsgx-quote-ex  libsgx-aesm-quote-ex-plugin libsgx-aesm-epid-plugin
+```
+
+For more details, you can learn from
 [Intel SGX Installation Guide](https://download.01.org/intel-sgx/sgx-linux/2.9/docs/Intel_SGX_Installation_Guide_Linux_2.9_Open_Source.pdf).
+
+Docker and Docker Compose are also needed for building and trying Teaclave.
+
+```
+$ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+$ sudo add-apt-repository \
+   "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+   $(lsb_release -cs) \
+   stable"
+$ sudo apt-get update && sudo apt-get install docker-ce docker-ce-cli containerd.io
+$ sudo usermod -aG docker your-user-name
+$ sudo curl -L "https://github.com/docker/compose/releases/download/1.27.4/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+$ sudo chmod +x /usr/local/bin/docker-compose
+```
 
 If you don't have an SGX supported hardware at hand, Teaclave can also run in
 simulation mode. However some functions like remote attestation will be disabled
@@ -62,6 +95,11 @@ the `default quoting type = epid_linkable` line to enable linkable quotes for EP
 (i.e., Intel Attestation Service). At last, the AESM service needs to be restarted by
 `sudo systemctl restart aesmd`.
 
+```
+$ sudo sed -i '/^#default quoting type = epid_linkable/s/^#//' /etc/aesmd.conf
+$ sudo service aesmd restart
+```
+
 ## Launch Teaclave Services
 
 Teaclave contains multiple services. To ease the deployment, you can use
@@ -80,7 +118,7 @@ $ export AS_URL="https://api.trustedservices.intel.com:443"    # IAS URL
 Launch all services with `docker-compose`:
 
 ```
-$ (cd docker && docker-compose -f docker-compose-ubuntu-1804.yml up --build)
+$ (cd docker && docker-compose -f docker-compose-ubuntu-1804-isgx.yml up --build)
 Starting teaclave-authentication-service ... done
 Starting teaclave-access-control-service ... done
 Starting teaclave-scheduler-service      ... done
@@ -152,10 +190,8 @@ $ PYTHONPATH=../../sdk/python python3 mesapy_echo.py mesapy_echo_payload.py 'Hel
 ```
 
 ## Simulation Mode
-To try Teaclave in SGX simulation mode, please install Intel SGX SDK first with instructions in
-[Intel SGX Installation Guide](https://download.01.org/intel-sgx/sgx-linux/2.9/docs/Intel_SGX_Installation_Guide_Linux_2.9_Open_Source.pdf).
 
-Then clone and build Teaclave (with the `-DSGX_SIM_MODE=ON` option in `cmake`).
+Clone and build Teaclave (with the `-DSGX_SIM_MODE=ON` option in `cmake`).
 
 ```
 $ git clone https://github.com/apache/incubator-teaclave.git
@@ -179,23 +215,10 @@ $ export AS_ALGO="sgx_epid"
 $ export AS_URL="https://api.trustedservices.intel.com:443"
 ```
 
-Under the simulation mode, you also need to change the
-`docker-compose-ubuntu-1804.yml` file accordingly to remove useless
-device/volume mappings which may not exist. That is, comment out these lines for
-all services in the `docker-compose` config file:
-
-```
-#      - type: bind
-#        source: /var/run/aesmd/aesm.socket
-#        target: /var/run/aesmd/aesm.socket
-#    devices:
-#      - /dev/isgx
-```
-
 At last, launch all services with `docker-compose`:
 
 ```
-$ (cd docker && docker-compose -f docker-compose-ubuntu-1804.yml up --build)
+$ (cd docker && docker-compose -f docker-compose-ubuntu-1804-sgx-sim-mode.yml up --build)
 ```
 
 In simulation mode, run examples with `SGX_MODE=SW` environment variable.
