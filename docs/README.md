@@ -9,6 +9,7 @@ permalink: /docs/
 - [My First Function](my-first-function.md)
 - [Function in Python](functions-in-python.md)
 - [How to Add Built-in Functions](builtin-functions.md)
+- [Deploying Teaclave on Azure Confidential Computing Virtual Machines](azure-confidential-computing.md)
 
 ## Design
 

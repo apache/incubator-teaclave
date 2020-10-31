@@ -37,6 +37,7 @@ platform, making computation on privacy-sensitive data safe and simple.
 - [My First Function](docs/my-first-function.md)
 - [Write Functions in Python](docs/functions-in-python.md)
 - [How to Add Built-in Functions](docs/builtin-functions.md)
+- [Deploying Teaclave on Azure Confidential Computing Virtual Machines](docs/azure-confidential-computing.md)
 
 ### Design
 

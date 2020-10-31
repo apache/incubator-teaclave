@@ -1,0 +1,204 @@
+version: '3.7'
+
+services:
+  teaclave-authentication-service:
+    build:
+      context: ../
+      dockerfile: docker/teaclave-rt.ubuntu-1804.Dockerfile
+    ports:
+      - 7776:7776
+    expose:
+      - 7776
+      - 17776
+    volumes:
+      - ./runtime.config.toml:/teaclave/runtime.config.toml
+      - type: bind
+        source: /var/run/aesmd/aesm.socket
+        target: /var/run/aesmd/aesm.socket
+    devices:
+      - /dev/sgx/enclave
+      - /dev/sgx/provision
+    working_dir: /teaclave
+    environment:
+      - AS_SPID
+      - AS_KEY
+      - AS_ALGO
+      - AS_URL
+      - TEACLAVE_LOG
+    entrypoint: ./teaclave_authentication_service
+    container_name: teaclave-authentication-service
+    networks:
+      api:
+      internal:
+
+  teaclave-frontend-service:
+    build:
+      context: ../
+      dockerfile: docker/teaclave-rt.ubuntu-1804.Dockerfile
+    ports:
+      - 7777:7777
+    expose:
+      - 7777
+    volumes:
+      - ./runtime.config.toml:/teaclave/runtime.config.toml
+      - type: bind
+        source: /var/run/aesmd/aesm.socket
+        target: /var/run/aesmd/aesm.socket
+    devices:
+      - /dev/sgx/enclave
+      - /dev/sgx/provision
+    working_dir: /teaclave
+    environment:
+      - AS_SPID
+      - AS_KEY
+      - AS_ALGO
+      - AS_URL
+      - TEACLAVE_LOG
+    entrypoint: ./teaclave_frontend_service
+    depends_on:
+      - teaclave-management-service
+    container_name: teaclave-frontend-service
+    networks:
+      api:
+      internal:
+
+  teaclave-management-service:
+    build:
+      context: ../
+      dockerfile: docker/teaclave-rt.ubuntu-1804.Dockerfile
+    expose:
+      - 17777
+    volumes:
+      - ./runtime.config.toml:/teaclave/runtime.config.toml
+      - type: bind
+        source: /var/run/aesmd/aesm.socket
+        target: /var/run/aesmd/aesm.socket
+    devices:
+      - /dev/sgx/enclave
+      - /dev/sgx/provision
+    working_dir: /teaclave
+    environment:
+      - AS_SPID
+      - AS_KEY
+      - AS_ALGO
+      - AS_URL
+      - TEACLAVE_LOG
+    entrypoint: ./teaclave_management_service
+    depends_on:
+      - teaclave-storage-service
+      - teaclave-access-control-service
+    container_name: teaclave-management-service
+    networks:
+      internal:
+
+  teaclave-storage-service:
+    build:
+      context: ../
+      dockerfile: docker/teaclave-rt.ubuntu-1804.Dockerfile
+    expose:
+      - 17778
+    volumes:
+      - ./runtime.config.toml:/teaclave/runtime.config.toml
+      - type: bind
+        source: /var/run/aesmd/aesm.socket
+        target: /var/run/aesmd/aesm.socket
+    devices:
+      - /dev/sgx/enclave
+      - /dev/sgx/provision
+    working_dir: /teaclave
+    environment:
+      - AS_SPID
+      - AS_KEY
+      - AS_ALGO
+      - AS_URL
+      - TEACLAVE_LOG
+    entrypoint: ./teaclave_storage_service
+    container_name: teaclave-storage-service
+    networks:
+      internal:
+
+  teaclave-access-control-service:
+    build:
+      context: ../
+      dockerfile: docker/teaclave-rt.ubuntu-1804.Dockerfile
+    expose:
+      - 17779
+    volumes:
+      - ./runtime.config.toml:/teaclave/runtime.config.toml
+      - type: bind
+        source: /var/run/aesmd/aesm.socket
+        target: /var/run/aesmd/aesm.socket
+    devices:
+      - /dev/sgx/enclave
+      - /dev/sgx/provision
+    working_dir: /teaclave
+    environment:
+      - AS_SPID
+      - AS_KEY
+      - AS_ALGO
+      - AS_URL
+      - TEACLAVE_LOG
+    container_name: teaclave-access-control-service
+    entrypoint: ./teaclave_access_control_service
+    networks:
+      internal:
+
+  teaclave-execution-service:
+    build:
+      context: ../
+      dockerfile: docker/teaclave-rt.ubuntu-1804.Dockerfile
+    expose:
+      - 17770
+    volumes:
+      - ./runtime.config.toml:/teaclave/runtime.config.toml
+      - type: bind
+        source: /var/run/aesmd/aesm.socket
+        target: /var/run/aesmd/aesm.socket
+    devices:
+      - /dev/sgx/enclave
+      - /dev/sgx/provision
+    working_dir: /teaclave
+    environment:
+      - AS_SPID
+      - AS_KEY
+      - AS_ALGO
+      - AS_URL
+      - TEACLAVE_LOG
+    entrypoint: ./teaclave_execution_service
+    container_name: teaclave-execution-service
+    depends_on:
+      - teaclave-scheduler-service
+    networks:
+      internal:
+
+  teaclave-scheduler-service:
+    build:
+      context: ../
+      dockerfile: docker/teaclave-rt.ubuntu-1804.Dockerfile
+    expose:
+      - 17780
+    volumes:
+      - ./runtime.config.toml:/teaclave/runtime.config.toml
+      - type: bind
+        source: /var/run/aesmd/aesm.socket
+        target: /var/run/aesmd/aesm.socket
+    devices:
+      - /dev/sgx/enclave
+      - /dev/sgx/provision
+    working_dir: /teaclave
+    environment:
+      - AS_SPID
+      - AS_KEY
+      - AS_ALGO
+      - AS_URL
+      - TEACLAVE_LOG
+    entrypoint: ./teaclave_scheduler_service
+    container_name: teaclave-scheduler-service
+    depends_on:
+      - teaclave-storage-service
+    networks:
+      internal:
+
+networks:
+  internal:
+  api:
