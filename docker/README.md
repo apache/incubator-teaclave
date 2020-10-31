@@ -50,7 +50,10 @@ simpler, we recommend to use [docker-compose](https://docs.docker.com/compose/)
 to manage all services. Since the remote attestation is required for all
 services, you should setup the attestation service configurations
 before start the services. You can use env vars or set them in the
-`docker-compose-ubuntu-1804.yml` file.
+`docker-compose-ubuntu-1804-*.yml` file.
+Note that `-sgx-sim-mode.yml` is for the simulation mode, `-isgx.yml` and
+`-intel-sgx.yml` is for Intel's SGX driver (`isgx`) and upstream in-tree kernel
+driver (`intel_sgx`) respectively, which can be seen by `lsmod | grep sgx`.
 
 Here is an example to start all services.
 
