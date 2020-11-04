@@ -192,6 +192,10 @@ $ PYTHONPATH=../../sdk/python python3 mesapy_echo.py mesapy_echo_payload.py 'Hel
 ## Simulation Mode
 
 Clone and build Teaclave (with the `-DSGX_SIM_MODE=ON` option in `cmake`).
+Note that if you are using Docker for Mac,
+[increase the size of allocated memory](https://docs.docker.com/docker-for-mac/) to
+avoid compilation error caused by out-of-memory, e.g., reporting a "signal: 9,
+SIGKILL: kill" error during the compilation.
 
 ```
 $ git clone https://github.com/apache/incubator-teaclave.git
@@ -226,4 +230,13 @@ In simulation mode, run examples with `SGX_MODE=SW` environment variable.
 ```
 $ cd examples/python
 $ SGX_MODE=SW PYTHONPATH=../../sdk/python python3 builtin_echo.py 'Hello, Teaclave!'
+[+] registering user
+[+] login
+[+] registering function
+[+] creating task
+[+] approving task
+[+] invoking task
+[+] getting result
+[+] done
+[+] function return:  b'Hello, Teaclave!'
 ```
