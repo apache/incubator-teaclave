@@ -194,7 +194,8 @@ $ PYTHONPATH=../../sdk/python python3 mesapy_echo.py mesapy_echo_payload.py 'Hel
 Clone and build Teaclave (with the `-DSGX_SIM_MODE=ON` option in `cmake`).
 Note that if you are using Docker for Mac,
 [increase the size of allocated memory](https://docs.docker.com/docker-for-mac/) to
-avoid compilation error caused by out-of-memory.
+avoid compilation error caused by out-of-memory, e.g., reporting a "signal: 9,
+SIGKILL: kill" error during the compilation.
 
 ```
 $ git clone https://github.com/apache/incubator-teaclave.git
