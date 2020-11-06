@@ -104,6 +104,7 @@ enum Command {
     #[structopt(name = "verify")]
     Verify(VerifyOpt),
 
+    /// Display the attestation report of remote Teaclave services
     #[structopt(name = "attest")]
     Attest(AttestOpt),
 }
