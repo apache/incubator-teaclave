@@ -26,6 +26,7 @@ use crate::AttestationError;
 use crate::EndorsedAttestationReport;
 
 use std::convert::TryFrom;
+use std::fmt;
 use std::time::*;
 #[cfg(feature = "mesalock_sgx")]
 use std::untrusted::time::SystemTimeEx;
@@ -94,6 +95,35 @@ impl std::fmt::Debug for SgxEnclaveReport {
         writeln!(f, "isv_prod_id: {}", self.isv_prod_id)?;
         writeln!(f, "isv_svn: {}", self.isv_svn)?;
         writeln!(f, "report_data: {:?}", &self.report_data.to_vec())
+    }
+}
+
+impl fmt::Display for SgxEnclaveReport {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "CPU version (hex): {}", hex::encode(self.cpu_svn))?;
+        writeln!(f, "SSA Frame extended feature set: {}", self.misc_select)?;
+        writeln!(
+            f,
+            "Attributes of the enclave (hex): {}",
+            hex::encode(self.attributes)
+        )?;
+        writeln!(
+            f,
+            "Enclave measurement (hex): {}",
+            hex::encode(self.mr_enclave)
+        )?;
+        writeln!(
+            f,
+            "Hash of the enclave singing key (hex): {}",
+            hex::encode(self.mr_signer)
+        )?;
+        writeln!(f, "Enclave product ID: {}", self.isv_prod_id)?;
+        writeln!(f, "Security version of the enclave: {}", self.isv_svn)?;
+        writeln!(
+            f,
+            "The value of REPORT (hex): {}",
+            hex::encode(&self.report_data.to_vec())
+        )
     }
 }
 
@@ -194,6 +224,18 @@ pub enum SgxEcdsaQuoteAkType {
     P256_256,
     /// ECDSA-384-with-P-384 curve
     P384_384,
+}
+
+impl std::fmt::Display for SgxQuoteVersion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SgxQuoteVersion::V1(key_type) => write!(f, "Version 1, EPID {:?} signature", key_type),
+            SgxQuoteVersion::V2(key_type) => write!(f, "Version 2, EPID {:?} signature", key_type),
+            SgxQuoteVersion::V3(key_type) => {
+                write!(f, "Version 3, ECDSA {:?} attestation key", key_type)
+            }
+        }
+    }
 }
 
 /// SGX Quote status
@@ -336,7 +378,23 @@ impl std::fmt::Debug for SgxQuote {
         writeln!(f, "isv_svn_pce: {}", self.isv_svn_pce)?;
         writeln!(f, "qe_vendor_id: {}", self.qe_vendor_id)?;
         writeln!(f, "user_data: {:?}", &self.user_data)?;
-        writeln!(f, "isv_enclave_report: \n{:?}", self.isv_enclave_report)
+        write!(f, "isv_enclave_report: \n{:?}", self.isv_enclave_report)
+    }
+}
+
+impl fmt::Display for SgxQuote {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "Version and signature/key type: {}", self.version)?;
+        writeln!(f, "GID or reserved: {}", self.gid)?;
+        writeln!(f, "Security version of the QE: {}", self.isv_svn_qe)?;
+        writeln!(f, "Security version of the PCE: {}", self.isv_svn_pce)?;
+        writeln!(f, "ID of the QE vendor: {}", self.qe_vendor_id)?;
+        writeln!(
+            f,
+            "Custom user-defined data (hex): {}",
+            hex::encode(&self.user_data)
+        )?;
+        write!(f, "{}", self.isv_enclave_report)
     }
 }
 
@@ -430,6 +488,14 @@ pub struct AttestationReport {
     pub sgx_quote_status: SgxQuoteStatus,
     /// Content of the quote
     pub sgx_quote_body: SgxQuote,
+}
+
+impl fmt::Display for AttestationReport {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "Report Freshness: {:?}", self.freshness)?;
+        writeln!(f, "SGX Quote status: {:?}", self.sgx_quote_status)?;
+        write!(f, "{}", self.sgx_quote_body)
+    }
 }
 
 impl AttestationReport {
