@@ -68,3 +68,6 @@ using and contributing to Teaclave in alphabetical order.
     blockchains.
   - [substraTEE](https://github.com/scs/substraTEE): Trusted Off-Chain Compute
     Framework for substrate blockchains.
+  - [Veracruz](https://github.com/veracruz-project/veracruz): Veracruz is a
+    framework for defining and deploying collaborative, privacy-preserving
+    computations amongst a group of mutually mistrusting individuals.
