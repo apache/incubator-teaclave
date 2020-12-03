@@ -25,7 +25,7 @@ $ ls /dev/isgx    # Make sure you have the SGX device
 Then, install SGX architectural enclaves and quoting libraries for attestation.
 
 ```
-$ sudo apt-get install libssl-dev libcurl4-openssldev libprotobuf-dev
+$ sudo apt-get install libssl-dev libcurl4-openssl-dev libprotobuf-dev
 $ echo 'deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu bionic main' | sudo tee /etc/apt/sources.list.d/intel-sgx.list
 $ wget -qO - https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key | sudo apt-key add -
 $ sudo apt-get update && \
