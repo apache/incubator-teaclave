@@ -31,6 +31,7 @@ member of regular committers or PPMC of Teaclave.
 
 - [Mingshen Sun](https://github.com/mssun) (PPMC)
 - [Pei Wang](https://github.com/uraj) (PPMC)
+- [Ran Duan](https://github.com/volcano0dr/)
 - [Rundong Zhou](https://github.com/rdzhou) (PPMC)
 - [Tao Wei](https://github.com/LenxWei) (PPMC)
 - [Tongxin Li](https://github.com/litongxin1991) (PPMC)
