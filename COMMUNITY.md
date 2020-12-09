@@ -14,7 +14,7 @@ Join us on our mailing list:
   development related activities (issues, pull requests from GitHub) and
   community discussions
 
-To subscribe, just send an email to `dev-subscribe@apache.teaclave.org`.
+To subscribe, just send an email to `dev-subscribe@teaclave.apache.org`.
 
 ## GitHub Issues
 
