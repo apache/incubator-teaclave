@@ -33,6 +33,13 @@ we aim to create a project that is maintained and owned by the community. All
 kinds of contributions are welcome. Read this [document](CONTRIBUTING.md) to
 learn more about how to contribute. Huge thanks to our [contributors](CONTRIBUTORS.md).
 
+## Reporting a Vulnerability
+
+We take a very active stance in eliminating security problems in Teaclave. We
+strongly encourage folks to report such problems to our private mailing list
+first ([private@teaclave.apache.org](mailto:private@teaclave.apache.org)),
+before disclosing them in a public forum.
+
 ## Organizations and Projects
 
 Apache Teaclave (including the platform and SGX SDK) is being used and actively
