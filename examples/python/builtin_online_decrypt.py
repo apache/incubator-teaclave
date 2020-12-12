@@ -52,7 +52,7 @@ class BuiltinOnlineDecryptExample:
         print("[+] registering function")
         function_id = client.register_function(
             name="builtin_online_decrypt",
-            description="Native Echo Function",
+            description="Native Online Decrypt",
             executor_type="builtin",
             arguments=["key", "nonce", "encrypted_data", "algorithm"])
 
