@@ -97,7 +97,7 @@ class Client:
 
         function_id = client.register_function(
             name="builtin-password-check",
-            description="Native Private Set Intersection",
+            description="Check whether a password is exposed.",
             executor_type="builtin",
             arguments=[],
             inputs=[
