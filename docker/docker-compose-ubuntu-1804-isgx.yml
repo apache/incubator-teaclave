@@ -164,6 +164,7 @@ services:
       - teaclave-scheduler-service
     networks:
       internal:
+      fs:
 
   teaclave-scheduler-service:
     build:
@@ -192,6 +193,17 @@ services:
     networks:
       internal:
 
+  teaclave-file-service:
+    image: python:3
+    container_name: teaclave-file-service
+    volumes:
+      - ../tests:/teaclave-file-service
+    working_dir: /teaclave-file-service
+    entrypoint: ./scripts/simple_http_server.py
+    networks:
+      fs:
+
 networks:
   internal:
   api:
+  fs:

@@ -64,6 +64,7 @@ $ export AS_ALGO="sgx_epid"
 $ export AS_URL="https://api.trustedservices.intel.com:443"
 
 $ docker-compose -f docker-compose-ubuntu-1804.yml up
+Starting teaclave-file-service           ... done
 Starting teaclave-authentication-service ... done
 Starting teaclave-access-control-service ... done
 Starting teaclave-scheduler-service      ... done
@@ -72,3 +73,7 @@ Starting teaclave-execution-service      ... done
 Starting teaclave-frontend-service       ... done
 Attaching to ...
 ```
+
+Note that the `teaclave-file-service` container is a simple http server for
+demonstrating our examples. You can disable it and use other cloud file system
+like S3 instead for registering input/output files.
