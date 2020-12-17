@@ -191,6 +191,7 @@ run_examples() {
   python3 builtin_ordered_set_intersect.py
   python3 builtin_rsa_sign.py
   python3 builtin_face_detection.py
+  python3 builtin_password_check.py
   popd
 
   # kill all background services

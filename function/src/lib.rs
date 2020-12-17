@@ -30,6 +30,7 @@ mod logistic_regression_predict;
 mod logistic_regression_train;
 mod online_decrypt;
 mod ordered_set_intersect;
+mod password_check;
 mod principal_components_analysis;
 mod private_join_and_compute;
 mod rsa_sign;
@@ -42,6 +43,7 @@ pub use logistic_regression_predict::LogisticRegressionPredict;
 pub use logistic_regression_train::LogisticRegressionTrain;
 pub use online_decrypt::OnlineDecrypt;
 pub use ordered_set_intersect::OrderedSetIntersect;
+pub use password_check::PasswordCheck;
 pub use principal_components_analysis::PrincipalComponentsAnalysis;
 pub use private_join_and_compute::PrivateJoinAndCompute;
 pub use rsa_sign::RsaSign;
@@ -54,16 +56,17 @@ pub mod tests {
     pub fn run_tests() -> bool {
         check_all_passed!(
             echo::tests::run_tests(),
-            gbdt_train::tests::run_tests(),
-            gbdt_predict::tests::run_tests(),
-            logistic_regression_train::tests::run_tests(),
-            logistic_regression_predict::tests::run_tests(),
-            online_decrypt::tests::run_tests(),
-            private_join_and_compute::tests::run_tests(),
-            ordered_set_intersect::tests::run_tests(),
-            rsa_sign::tests::run_tests(),
             face_detection::tests::run_tests(),
+            gbdt_predict::tests::run_tests(),
+            gbdt_train::tests::run_tests(),
+            logistic_regression_predict::tests::run_tests(),
+            logistic_regression_train::tests::run_tests(),
+            password_check::tests::run_tests(),
+            online_decrypt::tests::run_tests(),
+            ordered_set_intersect::tests::run_tests(),
             principal_components_analysis::tests::run_tests(),
+            private_join_and_compute::tests::run_tests(),
+            rsa_sign::tests::run_tests(),
         )
     }
 }
