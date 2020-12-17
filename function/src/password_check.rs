@@ -74,7 +74,7 @@ impl PasswordCheck {
 pub mod tests {
     use super::*;
     use std::path::Path;
-    use std::println;
+    use teaclave_crypto::*;
     use teaclave_runtime::*;
     use teaclave_test_utils::*;
     use teaclave_types::*;
