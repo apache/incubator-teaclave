@@ -129,6 +129,15 @@ async fn handle_download(
             );
             copy_file(src, dst).await?;
         }
+        "data" => {
+            let data = remote.path().split(',').collect::<Vec<&str>>();
+            if data.len() == 2 && data[0] == "text/plain;base64" {
+                let bytes = base64::decode(data[1])?;
+                tokio::fs::write(dst, bytes).await?;
+            } else {
+                anyhow::bail!("Scheme format not supported")
+            }
+        }
         _ => anyhow::bail!("Scheme not supported"),
     }
     Ok(())
@@ -375,5 +384,19 @@ mod tests {
         handle_file_request(&bytes).unwrap();
 
         std::fs::remove_dir_all(&base).unwrap();
+    }
+
+    #[test]
+    fn test_data_scheme() {
+        let url = Url::parse("data:text/plain;base64,SGVsbG8sIFdvcmxkIQ==").unwrap();
+        let dest = PathBuf::from("/tmp/input_test.txt");
+        let info = HandleFileInfo::new(&dest, &url);
+        let req = FileAgentRequest::new(HandleFileCommand::Download, vec![info], "");
+
+        let bytes = serde_json::to_vec(&req).unwrap();
+        handle_file_request(&bytes).unwrap();
+        assert_eq!(std::fs::read_to_string(&dest).unwrap(), "Hello, World!");
+
+        std::fs::remove_file(&dest).unwrap();
     }
 }

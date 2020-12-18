@@ -23,7 +23,7 @@ if __name__ == '__main__':
     else:
         port = 6789
     socketserver.TCPServer.allow_reuse_address = True
-    with socketserver.TCPServer(("localhost", port),
+    with socketserver.TCPServer(("0.0.0.0", port),
                                 HTTPRequestHandler) as httpd:
         print("serving at port", port)
         httpd.serve_forever()

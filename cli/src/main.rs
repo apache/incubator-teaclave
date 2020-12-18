@@ -260,7 +260,7 @@ fn attest(opt: AttestOpt) -> Result<()> {
 
     let mut session = rustls::ClientSession::new(&rc_config, hostname);
     let mut tls_stream = rustls::Stream::new(&mut session, &mut stream);
-    tls_stream.write(&[0]).unwrap();
+    tls_stream.write_all(&[0]).unwrap();
 
     Ok(())
 }

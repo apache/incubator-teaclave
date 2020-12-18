@@ -28,6 +28,8 @@ Currently, we have these built-in functions:
   - `builtin-face-detection`: An implementation of Funnel-Structured cascade,
     which is designed for real-time multi-view face detection.
   - `builtin-principal-components-analysis`: Example to calculate PCA.
+  - `builtin-password-check`: Given a password, check whether it is in the
+    exposed password list.
   
 The function arguments are in JSON format and can be serialized to a Rust struct
 very easily. You can learn more about supported arguments in the implementation

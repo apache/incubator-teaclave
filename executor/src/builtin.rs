@@ -20,8 +20,8 @@ use std::prelude::v1::*;
 
 use teaclave_function::{
     Echo, FaceDetection, GbdtPredict, GbdtTrain, LogisticRegressionPredict,
-    LogisticRegressionTrain, OnlineDecrypt, OrderedSetIntersect, PrincipalComponentsAnalysis,
-    PrivateJoinAndCompute, RsaSign,
+    LogisticRegressionTrain, OnlineDecrypt, OrderedSetIntersect, PasswordCheck,
+    PrincipalComponentsAnalysis, PrivateJoinAndCompute, RsaSign,
 };
 use teaclave_types::{FunctionArguments, FunctionRuntime, TeaclaveExecutor};
 
@@ -65,6 +65,8 @@ impl TeaclaveExecutor for BuiltinFunctionExecutor {
             }
             #[cfg(feature = "builtin_face_detection")]
             FaceDetection::NAME => FaceDetection::new().run(arguments, runtime),
+            #[cfg(feature = "builtin_password_check")]
+            PasswordCheck::NAME => PasswordCheck::new().run(arguments, runtime),
             _ => bail!("Function not found."),
         }
     }
