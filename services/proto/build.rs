@@ -17,18 +17,19 @@
 
 use std::env;
 use std::path::Path;
+use std::path::PathBuf;
 use std::process::Command;
 use std::str;
 
 fn main() {
     let proto_files = [
-        "src/proto/teaclave_access_control_service.proto",
-        "src/proto/teaclave_authentication_service.proto",
-        "src/proto/teaclave_common.proto",
-        "src/proto/teaclave_storage_service.proto",
-        "src/proto/teaclave_frontend_service.proto",
-        "src/proto/teaclave_management_service.proto",
-        "src/proto/teaclave_scheduler_service.proto",
+        "services/proto/src/proto/teaclave_access_control_service.proto",
+        "services/proto/src/proto/teaclave_authentication_service.proto",
+        "services/proto/src/proto/teaclave_common.proto",
+        "services/proto/src/proto/teaclave_storage_service.proto",
+        "services/proto/src/proto/teaclave_frontend_service.proto",
+        "services/proto/src/proto/teaclave_management_service.proto",
+        "services/proto/src/proto/teaclave_scheduler_service.proto",
     ];
 
     let out_dir = env::var("OUT_DIR").expect("$OUT_DIR not set. Please build with cargo");
@@ -46,9 +47,10 @@ fn main() {
         }
         Err(_) => env::current_dir().unwrap().join("target/proto_gen"),
     };
-    let current_dir = match env::var("MT_SGXAPP_TOML_DIR") {
-        Ok(sgxapp_toml_dir) => Path::new(&sgxapp_toml_dir).join("services/proto"),
-        Err(_) => env::current_dir().unwrap(),
+    let current_dir: PathBuf = match env::var("MT_SGXAPP_TOML_DIR") {
+        Ok(sgxapp_toml_dir) => Path::new(&sgxapp_toml_dir).into(),
+        // This fallback is only for compiling rust client sdk with cargo
+        Err(_) => Path::new("../../").into()
     };
 
     let c = Command::new("cargo")
@@ -58,11 +60,11 @@ fn main() {
             "--target-dir",
             &target_dir.to_string_lossy(),
             "--manifest-path",
-            "proto_gen/Cargo.toml",
+            "services/proto/proto_gen/Cargo.toml",
             "--offline",
             "--",
             "-i",
-            "src/proto",
+            "services/proto/src/proto",
             "-d",
             &out_dir,
             "-p",
