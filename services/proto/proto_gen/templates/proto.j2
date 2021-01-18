@@ -103,4 +103,8 @@ impl {{ service.proto_name }}Client {
     pub fn metadata_mut(&mut self) -> &mut std::collections::HashMap<std::string::String, std::string::String> {
         &mut self.metadata
     }
+
+    pub fn set_metadata(&mut self, metadata: std::collections::HashMap<std::string::String, std::string::String>) {
+        self.metadata = metadata
+    }
 }

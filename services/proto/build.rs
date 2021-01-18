@@ -22,13 +22,13 @@ use std::str;
 
 fn main() {
     let proto_files = [
-        "services/proto/src/proto/teaclave_access_control_service.proto",
-        "services/proto/src/proto/teaclave_authentication_service.proto",
-        "services/proto/src/proto/teaclave_common.proto",
-        "services/proto/src/proto/teaclave_storage_service.proto",
-        "services/proto/src/proto/teaclave_frontend_service.proto",
-        "services/proto/src/proto/teaclave_management_service.proto",
-        "services/proto/src/proto/teaclave_scheduler_service.proto",
+        "src/proto/teaclave_access_control_service.proto",
+        "src/proto/teaclave_authentication_service.proto",
+        "src/proto/teaclave_common.proto",
+        "src/proto/teaclave_storage_service.proto",
+        "src/proto/teaclave_frontend_service.proto",
+        "src/proto/teaclave_management_service.proto",
+        "src/proto/teaclave_scheduler_service.proto",
     ];
 
     let out_dir = env::var("OUT_DIR").expect("$OUT_DIR not set. Please build with cargo");
@@ -40,21 +40,24 @@ fn main() {
         println!("cargo:rerun-if-changed={}", pf);
     }
 
-    let target_dir = Path::new(&env::var("TEACLAVE_SYMLINKS").expect("TEACLAVE_SYMLINKS"))
-        .join("teaclave_build/target/proto_gen");
-    let unix_toml_dir = env::var("MT_SGXAPP_TOML_DIR").expect("MT_SGXAPP_TOML_DIR");
+    let target_dir = match env::var("TEACLAVE_SYMLINKS") {
+        Ok(teaclave_symlinks) => {
+            Path::new(&teaclave_symlinks).join("teaclave_build/target/proto_gen")
+        }
+        Err(_) => env::current_dir().unwrap().join("target/proto_gen"),
+    };
+
     let c = Command::new("cargo")
-        .current_dir(&unix_toml_dir)
         .args(&[
             "run",
             "--target-dir",
             &target_dir.to_string_lossy(),
             "--manifest-path",
-            "services/proto/proto_gen/Cargo.toml",
+            "proto_gen/Cargo.toml",
             "--offline",
             "--",
             "-i",
-            "services/proto/src/proto",
+            "src/proto",
             "-d",
             &out_dir,
             "-p",

@@ -151,6 +151,44 @@ run_functional_tests() {
   cleanup
 }
 
+run_sdk_tests() {
+  trap cleanup INT TERM ERR
+
+  echo_title "SDK tests"
+  mkdir -p /tmp/fusion_data
+  pushd ${TEACLAVE_CLI_INSTALL_DIR}
+  ./teaclave_cli verify \
+                 --enclave-info ../examples/enclave_info.toml \
+                 --public-keys $(find ../examples -name "*.public.pem") \
+                 --signatures $(find ../examples -name "*.sign.sha256")
+  popd
+  pushd ${TEACLAVE_SERVICE_INSTALL_DIR}
+  ./teaclave_authentication_service &
+  ./teaclave_storage_service &
+  sleep 3    # wait for authentication and storage service
+  ./teaclave_management_service &
+  ./teaclave_scheduler_service &
+  sleep 3    # wait for management service and scheduler_service
+  ./teaclave_access_control_service &
+  ./teaclave_frontend_service &
+  sleep 3    # wait for other services
+
+  start_storage_server
+
+  # Run tests of execution service separately
+  ./teaclave_execution_service &
+  sleep 3    # wait for execution services
+  popd
+
+  pushd ${MT_SGXAPP_TOML_DIR}
+  cargo test --manifest-path ${TEACLAVE_PROJECT_ROOT}/sdk/rust/Cargo.toml \
+        --target-dir ${TEACLAVE_TARGET_DIR}/untrusted
+  popd
+
+  # kill all background services
+  cleanup
+}
+
 run_examples() {
   trap cleanup INT TERM ERR
 
@@ -207,6 +245,9 @@ case "$1" in
     "functional")
         run_functional_tests
         ;;
+    "sdk")
+        run_sdk_tests
+        ;;
     "example")
         run_examples
         ;;
@@ -214,6 +255,7 @@ case "$1" in
         run_unit_tests
         run_integration_tests
         run_functional_tests
+        run_sdk_tests
         run_examples
         ;;
 esac
