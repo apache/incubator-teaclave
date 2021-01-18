@@ -50,7 +50,7 @@ fn main() {
     let current_dir: PathBuf = match env::var("MT_SGXAPP_TOML_DIR") {
         Ok(sgxapp_toml_dir) => Path::new(&sgxapp_toml_dir).into(),
         // This fallback is only for compiling rust client sdk with cargo
-        Err(_) => Path::new("../../").into()
+        Err(_) => Path::new("../../").into(),
     };
 
     let c = Command::new("cargo")
