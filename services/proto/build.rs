@@ -46,8 +46,13 @@ fn main() {
         }
         Err(_) => env::current_dir().unwrap().join("target/proto_gen"),
     };
+    let current_dir = match env::var("MT_SGXAPP_TOML_DIR") {
+        Ok(sgxapp_toml_dir) => Path::new(&sgxapp_toml_dir).join("services/proto"),
+        Err(_) => env::current_dir().unwrap(),
+    };
 
     let c = Command::new("cargo")
+        .current_dir(&current_dir)
         .args(&[
             "run",
             "--target-dir",
