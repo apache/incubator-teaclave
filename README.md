@@ -80,10 +80,10 @@ platform, making computation on privacy-sensitive data safe and simple.
 
 ### API References
 
-- [Teaclave SGX SDK](https://teaclave.apache.org/docs/sgx-sdk/)
-- [Teaclave Client SDK (Python)](https://teaclave.apache.org/docs/client-sdk-python/)
-- [Crates in Teaclave (Enclave)](https://teaclave.apache.org/docs/crates-enclave/)
-- [Crates in Teaclave (App)](https://teaclave.apache.org/docs/crates-app/)
+- [Teaclave SGX SDK](https://teaclave.apache.org/api-docs/sgx-sdk/)
+- [Teaclave Client SDK (Python)](https://teaclave.apache.org/api-docs/client-sdk-python/)
+- [Crates in Teaclave (Enclave)](https://teaclave.apache.org/api-docs/crates-enclave/)
+- [Crates in Teaclave (App)](https://teaclave.apache.org/api-docs/crates-app/)
 
 ## Contributing
 
