@@ -17,6 +17,7 @@
 
 use std::env;
 use std::path::Path;
+use std::path::PathBuf;
 use std::process::Command;
 use std::str;
 
@@ -40,11 +41,20 @@ fn main() {
         println!("cargo:rerun-if-changed={}", pf);
     }
 
-    let target_dir = Path::new(&env::var("TEACLAVE_SYMLINKS").expect("TEACLAVE_SYMLINKS"))
-        .join("teaclave_build/target/proto_gen");
-    let unix_toml_dir = env::var("MT_SGXAPP_TOML_DIR").expect("MT_SGXAPP_TOML_DIR");
+    let target_dir = match env::var("TEACLAVE_SYMLINKS") {
+        Ok(teaclave_symlinks) => {
+            Path::new(&teaclave_symlinks).join("teaclave_build/target/proto_gen")
+        }
+        Err(_) => env::current_dir().unwrap().join("target/proto_gen"),
+    };
+    let current_dir: PathBuf = match env::var("MT_SGXAPP_TOML_DIR") {
+        Ok(sgxapp_toml_dir) => Path::new(&sgxapp_toml_dir).into(),
+        // This fallback is only for compiling rust client sdk with cargo
+        Err(_) => Path::new("../../").into(),
+    };
+
     let c = Command::new("cargo")
-        .current_dir(&unix_toml_dir)
+        .current_dir(&current_dir)
         .args(&[
             "run",
             "--target-dir",

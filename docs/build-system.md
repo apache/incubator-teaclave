@@ -117,6 +117,7 @@ Above targets are automatically generated from the
 - `run-tests`: Run all test cases.
 - `run-integration-tests`: Run integration tests only.
 - `run-funtional-tests`: Run functional tests only.
+- `run-sdk-tests`: Run tests of client SDK only.
 - `run-examples`: Run all examples.
 - `cov`: Aggregate coverage results and generate report, needs to config cmake
   with `-DCOV=ON`.

@@ -1,0 +1,16 @@
+[package]
+name = "teaclave-client-sdk"
+version = "0.1.0"
+authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
+description = "Teaclave Rust Client SDK"
+license = "Apache-2.0"
+edition = "2018"
+
+[dependencies]
+teaclave_types = { path = "../../types", features = ["app"] }
+teaclave_attestation = { path = "../../attestation" }
+teaclave_rpc = { path = "../../rpc" }
+teaclave_proto = { path = "../../services/proto" }
+anyhow       = { version = "1.0.26" }
+url          = { version = "2.1.1" }
+pem = "0.7.0"

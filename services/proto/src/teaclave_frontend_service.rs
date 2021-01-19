@@ -420,11 +420,8 @@ impl CreateTaskRequest {
         }
     }
 
-    pub fn executor(self, executor: impl Into<Executor>) -> Self {
-        Self {
-            executor: executor.into(),
-            ..self
-        }
+    pub fn executor(self, executor: Executor) -> Self {
+        Self { executor, ..self }
     }
 
     pub fn inputs_ownership(self, map: impl Into<TaskFileOwners>) -> Self {

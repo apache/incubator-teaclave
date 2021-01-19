@@ -33,6 +33,13 @@ pub struct FileAuthTag {
 }
 
 impl FileAuthTag {
+    pub fn from_bytes(input: &[u8]) -> Result<Self> {
+        ensure!(input.len() == FILE_AUTH_TAG_LENGTH, "Invalid length");
+        let mut file_auth_tag = FileAuthTag::default();
+        file_auth_tag.tag.clone_from_slice(&input);
+        Ok(file_auth_tag)
+    }
+
     pub fn from_hex(input: impl AsRef<str>) -> Result<Self> {
         let hex = hex::decode(input.as_ref()).context("Illegal AuthTag provided")?;
         let tag = hex

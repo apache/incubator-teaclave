@@ -91,6 +91,12 @@ impl EnclaveInfo {
         Ok(Self::from_bytes(enclave_info))
     }
 
+    #[cfg(feature = "app")]
+    pub fn from_file<P: AsRef<std::path::Path>>(path: P) -> Result<Self> {
+        let bytes = std::fs::read(path)?;
+        Ok(Self::from_bytes(&bytes))
+    }
+
     pub fn from_bytes(enclave_info: &[u8]) -> Self {
         let config: EnclaveInfoToml = toml::from_slice(enclave_info)
             .expect("Content not correct, unable to load enclave info.");

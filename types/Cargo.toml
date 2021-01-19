@@ -10,6 +10,7 @@ edition = "2018"
 default = [
     "protected_fs_rs/default",
 ]
+app = [ "default" ]
 mesalock_sgx = [
     "sgx_tstd",
     "teaclave_crypto/mesalock_sgx",
