@@ -181,7 +181,7 @@ run_sdk_tests() {
   popd
 
   pushd ${MT_SGXAPP_TOML_DIR}
-  cargo test --manifest-path ${TEACLAVE_PROJECT_ROOT}/sdk/rust/Cargo.toml \
+  RUSTFLAGS=${RUSTFLAGS} cargo test --manifest-path ${TEACLAVE_PROJECT_ROOT}/sdk/rust/Cargo.toml \
         --target-dir ${TEACLAVE_TARGET_DIR}/untrusted
   popd
 
