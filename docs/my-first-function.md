@@ -225,6 +225,12 @@ At last, launch all services with `docker-compose`:
 $ (cd docker && docker-compose -f docker-compose-ubuntu-1804-sgx-sim-mode.yml up --build)
 ```
 
+Install dependencies for Python client.
+
+```
+$ pip3 install pyopenssl toml cryptography
+```
+
 In simulation mode, run examples with `SGX_MODE=SW` environment variable.
 
 ```
