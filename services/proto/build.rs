@@ -53,30 +53,33 @@ fn main() {
         Err(_) => Path::new("../../").into(),
     };
 
-    let c = Command::new("cargo")
-        .current_dir(&current_dir)
-        .args(&[
-            "run",
-            "--target-dir",
-            &target_dir.to_string_lossy(),
-            "--manifest-path",
-            "services/proto/proto_gen/Cargo.toml",
-            "--offline",
-            "--",
-            "-i",
-            "services/proto/src/proto",
-            "-d",
-            &out_dir,
-            "-p",
-        ])
-        .args(&proto_files)
-        .output()
-        .expect("Generate proto failed");
-    if !c.status.success() {
+    // Use the offline flag when building within Teaclave's build system.
+    let offline = if env::var("MT_SGXAPP_TOML_DIR").is_ok() {
+        true
+    } else {
+        false
+    };
+
+    let mut c = Command::new("cargo");
+    c.current_dir(&current_dir);
+    c.args(&[
+        "run",
+        "--target-dir",
+        &target_dir.to_string_lossy(),
+        "--manifest-path",
+        "services/proto/proto_gen/Cargo.toml",
+    ]);
+    if offline {
+        c.arg("--offline");
+    }
+    c.args(&["--", "-i", "services/proto/src/proto", "-d", &out_dir, "-p"])
+        .args(&proto_files);
+    let output = c.output().expect("Generate proto failed");
+    if !output.status.success() {
         panic!(
             "stdout: {:?}, stderr: {:?}",
-            str::from_utf8(&c.stderr).unwrap(),
-            str::from_utf8(&c.stderr).unwrap()
+            str::from_utf8(&output.stderr).unwrap(),
+            str::from_utf8(&output.stderr).unwrap()
         );
     }
 }
