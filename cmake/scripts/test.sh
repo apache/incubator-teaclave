@@ -236,6 +236,15 @@ run_examples() {
   make run
   popd
 
+  pushd ${TEACLAVE_PROJECT_ROOT}/examples/rust
+  pushd ./builtin_echo
+  RUSTFLAGS=${RUSTFLAGS} cargo run
+  popd
+  pushd ./builtin_ordered_set_intersect
+  RUSTFLAGS=${RUSTFLAGS} cargo run
+  popd
+  popd
+  
   # kill all background services
   cleanup
 }
