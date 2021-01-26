@@ -19,10 +19,8 @@
 all: builtin_echo
 
 CFLAGS := -I../../sdk/c -Ltarget/debug/ -lteaclave_client_sdk
-RUSTFLAGS := $(RUSTFLAGS)
 
 ifeq ($(DCAP),ON)
-	RUSTFLAGS += "--cfg dcap"
 	CFLAGS += -DDCAP
 endif
 
