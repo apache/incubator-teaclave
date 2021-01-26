@@ -15,9 +15,15 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
 
+
+/* DO NOT MODIFY THIS MANUALLY! This file was generated using cbindgen.
+ * To generate this file:
+ * 1. Get the latest cbindgen using `cargo install --force cbindgen`
+ * 2. Run `rustup run nightly cbindgen ../rust -c cbindgen.toml -o
+     teaclave_client_sdk.h` or `make`.
+ */
 
 #include <stdarg.h>
 #include <stdbool.h>
