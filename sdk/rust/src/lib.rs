@@ -20,7 +20,9 @@ use std::collections::HashMap;
 use std::convert::TryInto;
 use teaclave_attestation::verifier;
 use teaclave_proto::teaclave_authentication_service::TeaclaveAuthenticationApiClient;
+use teaclave_proto::teaclave_authentication_service_proto as authentication_proto;
 use teaclave_proto::teaclave_frontend_service::TeaclaveFrontendClient;
+use teaclave_proto::teaclave_frontend_service_proto as frontend_proto;
 use teaclave_rpc::config::SgxTrustedTlsClientConfig;
 use teaclave_rpc::endpoint::Endpoint;
 use teaclave_types::FileAuthTag;
@@ -40,6 +42,8 @@ pub use teaclave_proto::teaclave_frontend_service::{
 pub use teaclave_types::{
     EnclaveInfo, Executor, FileCrypto, FunctionInput, FunctionOutput, TaskResult,
 };
+
+pub mod bindings;
 
 pub struct AuthenticationClient {
     api_client: TeaclaveAuthenticationApiClient,
@@ -61,6 +65,16 @@ impl AuthenticationClient {
         Ok(response)
     }
 
+    pub fn user_register_serialized(&mut self, serialized_request: &str) -> Result<String> {
+        let request: authentication_proto::UserRegisterRequest =
+            serde_json::from_str(serialized_request)?;
+        let response: authentication_proto::UserRegisterResponse =
+            self.user_register_with_request(request.try_into()?)?.into();
+        let serialized_response = serde_json::to_string(&response)?;
+
+        Ok(serialized_response)
+    }
+
     pub fn user_register(&mut self, user_id: &str, user_password: &str) -> Result<()> {
         let request = UserRegisterRequest::new(user_id, user_password);
         let _response = self.user_register_with_request(request)?;
@@ -75,6 +89,16 @@ impl AuthenticationClient {
         let response = self.api_client.user_login(request)?;
 
         Ok(response)
+    }
+
+    pub fn user_login_serialized(&mut self, serialized_request: &str) -> Result<String> {
+        let request: authentication_proto::UserLoginRequest =
+            serde_json::from_str(serialized_request)?;
+        let response: authentication_proto::UserLoginResponse =
+            self.user_login_with_request(request.try_into()?)?.into();
+        let serialized_response = serde_json::to_string(&response)?;
+
+        Ok(serialized_response)
     }
 
     pub fn user_login(&mut self, user_id: &str, user_password: &str) -> Result<String> {
@@ -106,6 +130,7 @@ impl AuthenticationService {
     }
 }
 
+#[repr(C)]
 pub struct FrontendService;
 
 impl FrontendService {
@@ -143,6 +168,17 @@ impl FrontendClient {
         metadata.insert("id".to_string(), id.to_string());
         metadata.insert("token".to_string(), token.to_string());
         self.api_client.set_metadata(metadata);
+    }
+
+    pub fn register_function_serialized(&mut self, serialized_request: &str) -> Result<String> {
+        let request: frontend_proto::RegisterFunctionRequest =
+            serde_json::from_str(serialized_request)?;
+        let response: frontend_proto::RegisterFunctionResponse = self
+            .register_function_with_request(request.try_into()?)?
+            .into();
+        let serialized_response = serde_json::to_string(&response)?;
+
+        Ok(serialized_response)
     }
 
     pub fn register_function_with_request(
@@ -195,6 +231,15 @@ impl FrontendClient {
         Ok(response)
     }
 
+    pub fn get_function_serialized(&mut self, serialized_request: &str) -> Result<String> {
+        let request: frontend_proto::GetFunctionRequest = serde_json::from_str(serialized_request)?;
+        let response: frontend_proto::GetFunctionResponse =
+            self.get_function_with_request(request.try_into()?)?.into();
+        let serialized_response = serde_json::to_string(&response)?;
+
+        Ok(serialized_response)
+    }
+
     pub fn get_function(&mut self, function_id: &str) -> Result<Function> {
         let function_id = function_id.try_into()?;
         let request = GetFunctionRequest::new(function_id);
@@ -210,6 +255,17 @@ impl FrontendClient {
         let response = self.api_client.register_input_file(request)?;
 
         Ok(response)
+    }
+
+    pub fn register_input_file_serialized(&mut self, serialized_request: &str) -> Result<String> {
+        let request: frontend_proto::RegisterInputFileRequest =
+            serde_json::from_str(serialized_request)?;
+        let response: frontend_proto::RegisterInputFileResponse = self
+            .register_input_file_with_request(request.try_into()?)?
+            .into();
+        let serialized_response = serde_json::to_string(&response)?;
+
+        Ok(serialized_response)
     }
 
     pub fn register_input_file(
@@ -235,12 +291,32 @@ impl FrontendClient {
         Ok(response)
     }
 
+    pub fn register_output_file_serialized(&mut self, serialized_request: &str) -> Result<String> {
+        let request: frontend_proto::RegisterOutputFileRequest =
+            serde_json::from_str(serialized_request)?;
+        let response: frontend_proto::RegisterOutputFileResponse = self
+            .register_output_file_with_request(request.try_into()?)?
+            .into();
+        let serialized_response = serde_json::to_string(&response)?;
+
+        Ok(serialized_response)
+    }
+
     pub fn register_output_file(&mut self, url: &str, file_crypto: FileCrypto) -> Result<String> {
         let url = Url::parse(url)?;
         let request = RegisterOutputFileRequest::new(url, file_crypto);
         let response = self.register_output_file_with_request(request)?;
 
         Ok(response.data_id.to_string())
+    }
+
+    pub fn create_task_serialized(&mut self, serialized_request: &str) -> Result<String> {
+        let request: frontend_proto::CreateTaskRequest = serde_json::from_str(serialized_request)?;
+        let response: frontend_proto::CreateTaskResponse =
+            self.create_task_with_request(request.try_into()?)?.into();
+        let serialized_response = serde_json::to_string(&response)?;
+
+        Ok(serialized_response)
     }
 
     pub fn create_task_with_request(
@@ -302,6 +378,15 @@ impl FrontendClient {
         Ok(response)
     }
 
+    pub fn assign_data_serialized(&mut self, serialized_request: &str) -> Result<String> {
+        let request: frontend_proto::AssignDataRequest = serde_json::from_str(serialized_request)?;
+        let response: frontend_proto::AssignDataResponse =
+            self.assign_data_with_request(request.try_into()?)?.into();
+        let serialized_response = serde_json::to_string(&response)?;
+
+        Ok(serialized_response)
+    }
+
     pub fn assign_data(
         &mut self,
         task_id: &str,
@@ -343,6 +428,15 @@ impl FrontendClient {
         Ok(())
     }
 
+    pub fn approve_task_serialized(&mut self, serialized_request: &str) -> Result<String> {
+        let request: frontend_proto::ApproveTaskRequest = serde_json::from_str(serialized_request)?;
+        let response: frontend_proto::ApproveTaskResponse =
+            self.approve_task_with_request(request.try_into()?)?.into();
+        let serialized_response = serde_json::to_string(&response)?;
+
+        Ok(serialized_response)
+    }
+
     pub fn invoke_task_with_request(
         &mut self,
         request: InvokeTaskRequest,
@@ -350,6 +444,15 @@ impl FrontendClient {
         let response = self.api_client.invoke_task(request)?;
 
         Ok(response)
+    }
+
+    pub fn invoke_task_serialized(&mut self, serialized_request: &str) -> Result<String> {
+        let request: frontend_proto::InvokeTaskRequest = serde_json::from_str(serialized_request)?;
+        let response: frontend_proto::InvokeTaskResponse =
+            self.invoke_task_with_request(request.try_into()?)?.into();
+        let serialized_response = serde_json::to_string(&response)?;
+
+        Ok(serialized_response)
     }
 
     pub fn invoke_task(&mut self, task_id: &str) -> Result<()> {
@@ -363,6 +466,15 @@ impl FrontendClient {
         let response = self.api_client.get_task(request)?;
 
         Ok(response)
+    }
+
+    pub fn get_task_serialized(&mut self, serialized_request: &str) -> Result<String> {
+        let request: frontend_proto::GetTaskRequest = serde_json::from_str(serialized_request)?;
+        let response: frontend_proto::GetTaskResponse =
+            self.get_task_with_request(request.try_into()?)?.into();
+        let serialized_response = serde_json::to_string(&response)?;
+
+        Ok(serialized_response)
     }
 
     pub fn get_task_result(&mut self, task_id: &str) -> Result<Vec<u8>> {

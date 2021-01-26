@@ -232,6 +232,10 @@ run_examples() {
   python3 builtin_password_check.py
   popd
 
+  pushd ${TEACLAVE_PROJECT_ROOT}/examples/c
+  make run
+  popd
+
   # kill all background services
   cleanup
 }
