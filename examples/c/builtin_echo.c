@@ -104,15 +104,16 @@ bail:
 
 int main() {
     int ret = 0;
-    char *token = (char *)calloc(BUFFER_SIZE, sizeof(char));
-    size_t token_len = BUFFER_SIZE;
-    char *serialized_response = (char *)calloc(BUFFER_SIZE, sizeof(char));
-    char *function_id = (char *)calloc(BUFFER_SIZE, sizeof(char));
-    char *serialized_request = (char *)calloc(BUFFER_SIZE, sizeof(char));
-    char *task_result = (char *)calloc(BUFFER_SIZE, sizeof(char));
-    char *task_id = (char *)calloc(BUFFER_SIZE, sizeof(char));
+
+    char token[BUFFER_SIZE] = {0};
+    char serialized_response[BUFFER_SIZE] = {0};
+    char function_id[BUFFER_SIZE] = {0};
+    char serialized_request[BUFFER_SIZE] = {0};
+    char task_result[BUFFER_SIZE] = {0};
+    char task_id[BUFFER_SIZE] = {0};
 
     /* Login. */
+    size_t token_len = BUFFER_SIZE;
     ret = login(token, &token_len);
     if (ret != 0) {
         fprintf(stderr, "[-] Failed to login.\n");
@@ -187,13 +188,6 @@ bail:
     if (ret != 0) {
         fprintf(stderr, "[-] Failed to close the frontend service client.\n");
     }
-
-    free(token);
-    free(serialized_response);
-    free(function_id);
-    free(serialized_request);
-    free(task_id);
-    free(task_result);
 
     return ret;
 }
