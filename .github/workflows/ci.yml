@@ -1,0 +1,87 @@
+name: CI
+on: [push, pull_request]
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  sim-debug-ubuntu-1804:
+    runs-on: ubuntu-18.04
+    container: teaclave/teaclave-build-ubuntu-1804-sgx-2.9.1:0.1.2
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'true'
+      - name: Setting up $HOME
+        run: |
+          cp /root/.bashrc $HOME/.bashrc &&
+          ln -sf /root/.rustup ~/.rustup &&
+          ln -sf /root/.cargo ~/.cargo
+      - name: Preparing build system
+        run: |
+          . ~/.cargo/env &&
+          . /opt/sgxsdk/environment &&
+          mkdir -p build &&
+          cd build &&
+          cmake -DCMAKE_BUILD_TYPE=Debug -DSGX_SIM_MODE=ON -DTEST_MODE=ON ..
+      - name: Building
+        run: |
+          . ~/.cargo/env &&
+          cd build &&
+          make VERBOSE=1
+      - name: Run tests and examples
+        run: |
+          export AS_SPID="00000000000000000000000000000000" &&
+          export AS_KEY="00000000000000000000000000000000" &&
+          export AS_ALGO="sgx_epid" &&
+          export AS_URL="https://api.trustedservices.intel.com:443" &&
+          . ~/.cargo/env &&
+          cd build &&
+          make run-tests
+
+  format:
+    runs-on: ubuntu-18.04
+    container: teaclave/teaclave-build-ubuntu-1804-sgx-2.9.1:0.1.2
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'true'
+      - name: Setting up $HOME
+        run: |
+          cp /root/.bashrc $HOME/.bashrc &&
+          ln -sf /root/.rustup ~/.rustup &&
+          ln -sf /root/.cargo ~/.cargo
+      - name: Preparing build system
+        run: |
+          . ~/.cargo/env &&
+          . /opt/sgxsdk/environment &&
+          mkdir -p build &&
+          cd build &&
+          cmake -DRUSTFLAGS="-D warnings" -DTEST_MODE=ON ..
+      - name: Checking code format
+        run: |
+          . /root/.cargo/env &&
+          cd build && make check
+  lint:
+    runs-on: ubuntu-18.04
+    container: teaclave/teaclave-build-ubuntu-1804-sgx-2.9.1:0.1.2
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'true'
+      - name: Setting up $HOME
+        run: |
+          cp /root/.bashrc $HOME/.bashrc &&
+          ln -sf /root/.rustup ~/.rustup &&
+          ln -sf /root/.cargo ~/.cargo
+      - name: Preparing build system
+        run: |
+          . ~/.cargo/env &&
+          . /opt/sgxsdk/environment &&
+          mkdir -p build &&
+          cd build &&
+          cmake -DRUSTFLAGS="-D warnings" -DTEST_MODE=ON ..
+      - name: Code linting with Clippy
+        run: |
+          . /root/.cargo/env &&
+          cd build && make CLP=1
