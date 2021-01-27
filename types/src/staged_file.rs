@@ -20,15 +20,15 @@ use teaclave_crypto::TeaclaveFile128Key;
 use std::collections::HashMap;
 #[cfg(not(feature = "mesalock_sgx"))]
 use std::fs::File;
-use std::io::{self, BufRead, BufReader, Read, Write};
+use std::io::Read;
+#[cfg(feature = "protected_fs")]
+use std::io::{self, BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::prelude::v1::*;
 #[cfg(feature = "mesalock_sgx")]
 use std::untrusted::fs::File;
 
 use crate::FileAuthTag;
-use anyhow::Context;
-use protected_fs::ProtectedFile;
 
 #[derive(Clone, Debug, Default)]
 pub struct StagedFileInfo {
@@ -50,8 +50,10 @@ impl StagedFileInfo {
         }
     }
 
+    #[cfg(feature = "protected_fs")]
     pub fn create_readable_io(&self) -> anyhow::Result<Box<dyn io::Read>> {
-        let f = ProtectedFile::open_ex(&self.path, &self.crypto_info.key)?;
+        use anyhow::Context;
+        let f = protected_fs::ProtectedFile::open_ex(&self.path, &self.crypto_info.key)?;
         let tag = f
             .current_meta_gmac()
             .context("Failed to get gmac from protected file")?;
@@ -59,19 +61,22 @@ impl StagedFileInfo {
         Ok(Box::new(f))
     }
 
+    #[cfg(feature = "protected_fs")]
     pub fn create_writable_io(&self) -> anyhow::Result<Box<dyn io::Write>> {
-        let f = ProtectedFile::create_ex(&self.path, &self.crypto_info.key)?;
+        let f = protected_fs::ProtectedFile::create_ex(&self.path, &self.crypto_info.key)?;
         Ok(Box::new(f))
     }
 
+    #[cfg(feature = "protected_fs")]
     pub fn convert_file(
         &self,
         dst: impl AsRef<Path>,
         crypto: TeaclaveFile128Key,
     ) -> anyhow::Result<StagedFileInfo> {
-        let src_file = ProtectedFile::open_ex(&self.path, &self.crypto_info.key)
+        use anyhow::Context;
+        let src_file = protected_fs::ProtectedFile::open_ex(&self.path, &self.crypto_info.key)
             .context("Convert: failed to open src file")?;
-        let mut dest_file = ProtectedFile::create_ex(dst.as_ref(), &crypto.key)
+        let mut dest_file = protected_fs::ProtectedFile::create_ex(dst.as_ref(), &crypto.key)
             .context("Convert: failed to create dst file")?;
 
         let mut reader = BufReader::with_capacity(4096, src_file);
@@ -99,27 +104,28 @@ impl StagedFileInfo {
         Ok(StagedFileInfo::new(dst, crypto, tag))
     }
 
-    #[cfg(test_mode)]
+    #[cfg(all(test_mode, feature = "protected_fs"))]
     pub fn create_with_plaintext_file(path: impl AsRef<Path>) -> anyhow::Result<StagedFileInfo> {
         let bytes = read_all_bytes(path.as_ref())?;
         let dst = path.as_ref().with_extension("test_enc");
         Self::create_with_bytes(dst, &bytes)
     }
 
-    #[cfg(test_mode)]
+    #[cfg(all(test_mode, feature = "protected_fs"))]
     pub fn get_plaintext(&self) -> anyhow::Result<Vec<u8>> {
         let mut content = Vec::new();
-        let mut f = ProtectedFile::open_ex(&self.path, &self.crypto_info.key)?;
+        let mut f = protected_fs::ProtectedFile::open_ex(&self.path, &self.crypto_info.key)?;
         f.read_to_end(&mut content)?;
         Ok(content)
     }
 
+    #[cfg(feature = "protected_fs")]
     pub fn create_with_bytes(
         path: impl AsRef<Path>,
         bytes: &[u8],
     ) -> anyhow::Result<StagedFileInfo> {
         let crypto = TeaclaveFile128Key::random();
-        let mut f = ProtectedFile::create_ex(&path, &crypto.key)?;
+        let mut f = protected_fs::ProtectedFile::create_ex(&path, &crypto.key)?;
         f.write_all(bytes)?;
         f.flush()?;
         let tag = f.current_meta_gmac()?;

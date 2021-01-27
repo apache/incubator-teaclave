@@ -9,7 +9,7 @@ edition = "2018"
 [dependencies]
 anyhow = { version = "1.0.26" }
 structopt = "0.3"
-teaclave_crypto = { path = "../crypto" }
+teaclave_crypto = { path = "../crypto", features = ["protected_fs"] }
 hex = { version = "0.4.0" }
 teaclave_types = { path = "../types" }
 teaclave_attestation = { path = "../attestation" }

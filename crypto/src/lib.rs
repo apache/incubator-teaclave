@@ -23,13 +23,10 @@ extern crate sgx_tstd as std;
 use std::prelude::v1::*;
 
 use anyhow::{anyhow, ensure, Context, Result};
-use protected_fs::ProtectedFile;
 use rand::prelude::RngCore;
 use ring::aead;
 use serde::{Deserialize, Serialize};
 use std::format;
-use std::io::{Read, Write};
-use std::path::Path;
 
 const AES_GCM_128_KEY_LENGTH: usize = 16;
 const AES_GCM_128_IV_LENGTH: usize = 12;
@@ -38,6 +35,8 @@ const AES_GCM_256_KEY_LENGTH: usize = 32;
 const AES_GCM_256_IV_LENGTH: usize = 12;
 const TEACLAVE_FILE_128_ROOT_KEY_LENGTH: usize = 16;
 const CMAC_LENGTH: usize = 16;
+
+#[cfg(feature = "protected_fs")]
 const FILE_CHUNK_SIZE: usize = 1024 * 1024;
 
 type CMac = [u8; CMAC_LENGTH];
@@ -203,8 +202,14 @@ impl TeaclaveFile128Key {
         Ok(TeaclaveFile128Key { key })
     }
 
-    pub fn decrypt<P: AsRef<Path>>(&self, path: P, output: &mut impl Write) -> Result<CMac> {
-        let mut file = ProtectedFile::open_ex(path.as_ref(), &self.key)?;
+    #[cfg(feature = "protected_fs")]
+    pub fn decrypt<P: AsRef<std::path::Path>>(
+        &self,
+        path: P,
+        output: &mut impl std::io::Write,
+    ) -> Result<CMac> {
+        use std::io::Read;
+        let mut file = protected_fs::ProtectedFile::open_ex(path.as_ref(), &self.key)?;
         let mut buffer = std::vec![0; FILE_CHUNK_SIZE];
         loop {
             let n = file.read(&mut buffer)?;
@@ -219,8 +224,14 @@ impl TeaclaveFile128Key {
         Ok(cmac)
     }
 
-    pub fn encrypt<P: AsRef<Path>>(&self, path: P, mut content: impl Read) -> Result<CMac> {
-        let mut file = ProtectedFile::create_ex(path.as_ref(), &self.key)?;
+    #[cfg(feature = "protected_fs")]
+    pub fn encrypt<P: AsRef<std::path::Path>>(
+        &self,
+        path: P,
+        mut content: impl std::io::Read,
+    ) -> Result<CMac> {
+        use std::io::Write;
+        let mut file = protected_fs::ProtectedFile::create_ex(path.as_ref(), &self.key)?;
         let mut buffer = std::vec![0; FILE_CHUNK_SIZE];
         loop {
             let n = content.read(&mut buffer[..])?;

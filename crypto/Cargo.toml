@@ -7,7 +7,7 @@ license = "Apache-2.0"
 edition = "2018"
 
 [features]
-default = [
+protected_fs = [
     "protected_fs_rs/default",
 ]
 mesalock_sgx = [
@@ -17,7 +17,7 @@ mesalock_sgx = [
 enclave_unit_test = ["teaclave_test_utils/mesalock_sgx"]
 
 [dependencies]
-protected_fs_rs  = { path = "../common/protected_fs_rs", default-features = false}
+protected_fs_rs  = { path = "../common/protected_fs_rs", default-features = false, optional = true}
 
 anyhow       = { version = "1.0.26" }
 rand         = { version = "0.7.0" }
