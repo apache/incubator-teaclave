@@ -29,4 +29,4 @@ autogen_warning = """/* DO NOT MODIFY THIS MANUALLY! This file was generated usi
  */"""
 
 [parse.expand]
-crates = ["teaclave-client-sdk"]
+crates = ["teaclave_client_sdk"]

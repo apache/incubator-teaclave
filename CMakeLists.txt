@@ -220,9 +220,12 @@ foreach(_i RANGE ${SGX_LIB_LAST_INDEX})
     ${_edl_lib_name})
 endforeach()
 
-# Teaclave C SDK add_cargo_build_dylib_target(teaclave_sdk_c TARGET_NAME
-# "${UNIXLIB_PREFIX}-teaclave_sdk_c" TOML_DIR ${MT_UNIX_TOML_DIR} TARGET_DIR
-# ${UNIX_TARGET_DIR} DEPENDS prep )
+# Dylib/staticlib of Teaclave Rust Client SDK
+add_cargo_build_dylib_staticlib_target(teaclave_client_sdk
+  TARGET_NAME "teaclave_client_sdk"
+  TOML_DIR ${MT_UNIX_TOML_DIR}
+  TARGET_DIR ${UNIX_TARGET_DIR}
+  DEPENDS prep )
 
 # example/quickstart_c link_directories(${TEACLAVE_LIB_INSTALL_DIR})
 # add_executable(quickstart_c
