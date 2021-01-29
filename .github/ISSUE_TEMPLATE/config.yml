@@ -1,0 +1,6 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security Issue
+    url: https://teaclave.apache.org/community/#reporting-a-vulnerability
+    about: Please report security issues to our private mailing list first
+    before disclosing them in a public forum.
