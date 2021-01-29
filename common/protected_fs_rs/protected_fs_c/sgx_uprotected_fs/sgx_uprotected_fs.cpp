@@ -19,7 +19,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <assert.h>
 #include <errno.h>
 
@@ -65,7 +65,11 @@ void* u_sgxprotectedfs_exclusive_file_open(const char* filename, uint8_t read_on
 	}
 
 	// open the file with OS API so we can 'lock' the file and get exclusive access to it
+#ifdef __linux__ 
 	fd = open(filename,	O_CREAT | (read_only ? O_RDONLY : O_RDWR) | O_LARGEFILE, mode); // create the file if it doesn't exists, read-only/read-write
+#else
+	fd = open(filename,	O_CREAT | (read_only ? O_RDONLY : O_RDWR) , mode); // create the file if it doesn't exists, read-only/read-write
+#endif
 	if (fd == -1)
 	{
 		DEBUG_PRINT("open returned %d, errno %d\n", result, errno);

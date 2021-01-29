@@ -23,15 +23,31 @@ use std::process::Command;
 #[cfg(not(feature = "mesalock_sgx"))]
 fn build_non_sgx_protected_fs_c_with_cmake() {
     let build_dir = PathBuf::from(env::var_os("OUT_DIR").unwrap()).join("build");
+    let target = std::env::var("TARGET").unwrap();
+    let profile = std::env::var("PROFILE").unwrap();
+    let build_type = match profile.as_str() {
+        "debug" => "Debug",
+        "release" => "Release",
+        _ => panic!("Unsupported profile: {}", profile),
+    };
+
     let script = PathBuf::from("protected_fs_c").join("build.sh");
-    let target_dir = build_dir.join("target");
+    let target_dir = if target == "aarch64-apple-ios" {
+        build_dir.join("target").join(build_type)
+    } else {
+        build_dir.join("target")
+    };
 
     let status = Command::new("bash")
         .arg(&script)
-        .arg("--build")
+        .arg("--build_dir")
         .arg(&build_dir)
         .arg("--mode")
         .arg("non_sgx")
+        .arg("--target")
+        .arg(&target)
+        .arg("--build_type")
+        .arg(&build_type)
         .status()
         .expect("bash command failed to start");
     assert!(status.success());
@@ -39,6 +55,10 @@ fn build_non_sgx_protected_fs_c_with_cmake() {
     println!("cargo:rustc-link-search=native={}", target_dir.display());
     println!("cargo:rustc-link-lib=static=tprotected_fs");
     println!("cargo:rustc-link-lib=static=uprotected_fs");
+    if target != "aarch64-apple-ios" {
+        println!("cargo:rustc-link-lib=crypto");
+        println!("cargo:rustc-link-lib=stdc++");
+    }
 }
 
 #[cfg(feature = "mesalock_sgx")]
@@ -46,15 +66,26 @@ fn build_sgx_protected_fs_c_with_cmake() {
     let sdk_dir = env::var("SGX_SDK").unwrap_or("/opt/intel/sgxsdk".into());
     let build_dir = PathBuf::from(env::var_os("OUT_DIR").unwrap()).join("build");
     let script = PathBuf::from("protected_fs_c").join("build.sh");
+    let target = std::env::var("TARGET").unwrap();
+    let profile = std::env::var("PROFILE").unwrap();
+    let build_type = match profile.as_str() {
+        "debug" => "Debug",
+        "release" => "Release",
+        _ => panic!("Unsupported profile: {}", profile),
+    };
     let target_dir = build_dir.join("target");
 
     let status = Command::new("bash")
         .env("SGX_SDK", &sdk_dir)
         .arg(&script)
-        .arg("--build")
+        .arg("--build_dir")
         .arg(&build_dir)
         .arg("--mode")
         .arg("sgx")
+        .arg("--target")
+        .arg(&target)
+        .arg("--build_type")
+        .arg(&build_type)
         .status()
         .expect("bash command failed to start");
     assert!(status.success());
@@ -71,8 +102,6 @@ cfg_if! {
     } else {
         fn build() {
             build_non_sgx_protected_fs_c_with_cmake();
-            println!("cargo:rustc-link-lib=crypto");
-            println!("cargo:rustc-link-lib=stdc++");
         }
     }
 }
