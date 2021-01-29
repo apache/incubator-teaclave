@@ -124,7 +124,7 @@ endfunction()
 # add_cargo_build_dylib_target(package_name [TARGET_NAME target_name] # default to
 # cg_${package_name} TOML_DIR toml_dir TARGET_DIR target_dir [DEPENDS [dep]...]
 # [NOT_SET_COMMON_ENV] [EXTRA_CARGO_FLAGS flg...] )
-function(add_cargo_build_dylib_target package_name)
+function(add_cargo_build_dylib_staticlib_target package_name)
   set(options NOT_SET_COMMON_ENV)
   set(oneValueArgs TARGET_NAME TOML_DIR TARGET_DIR)
   set(multiValueArgs DEPENDS EXTRA_CARGO_FLAGS)
@@ -154,10 +154,11 @@ function(add_cargo_build_dylib_target package_name)
     COMMAND
       ${CMAKE_COMMAND} -E env ${_envs} RUSTFLAGS=${RUSTFLAGS}
       ${MT_SCRIPT_DIR}/cargo_build_ex.sh -p ${package_name} --target-dir
-      ${MTEE_TARGET_DIR} ${CARGO_BUILD_FLAGS} ${MTEE_EXTRA_CARGO_FLAGS} && cp
-      ${MTEE_TARGET_DIR}/${TARGET}/lib${package_name}.so
+      ${MTEE_TARGET_DIR} ${CARGO_BUILD_FLAGS} ${MTEE_EXTRA_CARGO_FLAGS} &&
+      cp ${MTEE_TARGET_DIR}/${TARGET}/lib${package_name}.so
+      ${MTEE_TARGET_DIR}/${TARGET}/lib${package_name}.a
       ${TEACLAVE_LIB_INSTALL_DIR} ${_depends}
-    COMMENT "Building ${_target_name} as a dynamic library"
+    COMMENT "Building ${_target_name} as dynamic and static libraries"
     WORKING_DIRECTORY ${MTEE_TOML_DIR})
 endfunction()
 

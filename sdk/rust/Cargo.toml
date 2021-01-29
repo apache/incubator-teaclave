@@ -1,5 +1,5 @@
 [package]
-name = "teaclave-client-sdk"
+name = "teaclave_client_sdk"
 version = "0.1.0"
 authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
 description = "Teaclave Rust Client SDK"

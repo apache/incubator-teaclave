@@ -93,6 +93,14 @@ These targets are automatically generated from the
   `storage_service`, `execution_service`, `frontend_service`,
   `management_service`, `scheduler_service`, etc.
 
+### Client SDK
+
+Build Teaclave client SDK and install the compiled dynamic/static libraries to
+the release folder.
+
+- `teaclave_client_sdk`: Build the client SDK to both dynamic and static
+  libraries.
+
 ### Bin
 
 - `teaclave_cli`: Build the Teclave command line tool.
