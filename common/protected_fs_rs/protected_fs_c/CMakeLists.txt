@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.6)
+cmake_minimum_required (VERSION 3.2)
 project(protected_fs_c)
 set (PROTECTED_FS_VERSION_MAJOR 0)
 set (PROTECTED_FS_VERSION_MINOR 1)
@@ -14,13 +14,16 @@ configure_file(
 include_directories("${PROJECT_BINARY_DIR}")
 include_directories("inc")
 
+
 option (NON_SGX_PROTECTED_FS
         "Use PROTECTED_FS NON SGX VERSION" ON)
 
 set (SGX_SDK $ENV{SGX_SDK})
 
 if (NON_SGX_PROTECTED_FS)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -U__STRICT_ANSI__ -std=c++11 -lpthread -fPIC")
+    find_package(OpenSSL REQUIRED)
+    include_directories("${OPENSSL_INCLUDE_DIR}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -U__STRICT_ANSI__ -std=c++11 -fPIC")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-local-typedefs -Wno-shadow -Wno-missing-field-initializers -Wno-unused-parameter")
 elseif (NOT EXISTS ${SGX_SDK})
     message(FATAL_ERROR "$SGX_SDK directory must exist")

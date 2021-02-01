@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <errno.h>
 
 #define SGX_AESGCM_IV_SIZE              12
 #define SGX_AESGCM_KEY_SIZE             16
