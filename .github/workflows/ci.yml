@@ -10,17 +10,15 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install dependencies
-        run: brew install cmake openssl
-      - name: Install latest nightly
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly-2020-04-07
-          target: aarch64-apple-ios
-          override: true
-          components: rustfmt, clippy
+        run: |
+          brew install cmake openssl
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          export PATH=~/.cargo/bin:$PATH
+          rustup default nightly-2020-04-07 && rustup target add aarch64-apple-ios
       - name: Building Teaclave Client SDK
         run: |
           export PKG_CONFIG_PATH="/usr/local/opt/openssl/lib/pkgconfig:/usr/local/opt/libssh2/lib/pkgconfig/"
+          export PATH=~/.cargo/bin:$PATH
           cargo build --manifest-path sdk/rust/Cargo.toml
           cargo build --manifest-path sdk/rust/Cargo.toml --target aarch64-apple-ios
   sim-debug-ubuntu-1804:
