@@ -55,7 +55,7 @@ fn build_non_sgx_protected_fs_c_with_cmake() {
     println!("cargo:rustc-link-search=native={}", target_dir.display());
     println!("cargo:rustc-link-lib=static=tprotected_fs");
     println!("cargo:rustc-link-lib=static=uprotected_fs");
-    if target != "aarch64-apple-ios" {
+    if target != "aarch64-apple-ios" && target != "x86_64-apple-darwin" {
         println!("cargo:rustc-link-lib=crypto");
         println!("cargo:rustc-link-lib=stdc++");
     }

@@ -56,4 +56,4 @@ cd "${BUILD_DIR}"
 cmake ${TARGET_FLAGS} ${MODE} ${BUILD_TYPE} "${SOURCE_DIR}"
 
 # We need to force build with -j1 here.
-cmake --build . ${BUILD_TYPE} -- -j1
+MAKEFLAGS=-j1 cmake --build . ${BUILD_TYPE}
