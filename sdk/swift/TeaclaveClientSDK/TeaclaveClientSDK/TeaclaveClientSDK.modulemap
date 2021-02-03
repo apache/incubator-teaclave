@@ -1,0 +1,9 @@
+framework module TeaclaveClientSDK {
+    umbrella header "TeaclaveClientSDK.h"
+
+    explicit module CTeaclaveClientSDK {
+        private header "teaclave_client_sdk.h"
+    }
+
+    export *
+}
