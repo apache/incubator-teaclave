@@ -19,8 +19,10 @@ jobs:
         run: |
           export PKG_CONFIG_PATH="/usr/local/opt/openssl/lib/pkgconfig:/usr/local/opt/libssh2/lib/pkgconfig/"
           export PATH=~/.cargo/bin:$PATH
+          cargo install cargo-lipo
           cargo build --manifest-path sdk/rust/Cargo.toml
           cargo build --manifest-path sdk/rust/Cargo.toml --target aarch64-apple-ios
+          cargo lipo --manifest-path sdk/rust/Cargo.toml
   sim-debug-ubuntu-1804:
     runs-on: ubuntu-18.04
     container: teaclave/teaclave-build-ubuntu-1804-sgx-2.9.1:0.1.2
