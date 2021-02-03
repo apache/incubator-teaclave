@@ -29,6 +29,7 @@ while true; do
     -t | --target ) 
         case "$2" in 
             aarch64-apple-ios) TARGET_FLAGS="-G Xcode -DCMAKE_TOOLCHAIN_FILE=${SOURCE_DIR}/ios.toolchain.cmake -DPLATFORM=OS64";;
+            x86_64-apple-ios) TARGET_FLAGS="-G Xcode -DCMAKE_TOOLCHAIN_FILE=${SOURCE_DIR}/ios.toolchain.cmake -DPLATFORM=SIMULATOR64";;
             *) TARGET_FLAGS="";;
         esac
         shift; shift ;;

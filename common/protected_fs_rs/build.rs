@@ -32,7 +32,7 @@ fn build_non_sgx_protected_fs_c_with_cmake() {
     };
 
     let script = PathBuf::from("protected_fs_c").join("build.sh");
-    let target_dir = if target == "aarch64-apple-ios" {
+    let target_dir = if target == "aarch64-apple-ios" || target == "x86_64-apple-ios" {
         build_dir.join("target").join(build_type)
     } else {
         build_dir.join("target")
