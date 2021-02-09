@@ -34,89 +34,348 @@ typedef struct AuthenticationClient AuthenticationClient;
 
 typedef struct FrontendClient FrontendClient;
 
+/**
+ * Connect to Teaclave Authentication Service.
+ *
+ * This function connects and establishes trusted channel to the remote
+ * authentication service with `address`. The function gets *enclave info* from
+ * the file located in `enclave_info_path`. The file in `as_root_ca_cert_path`
+ * will be used to verify the attestation report from the remote service.
+ *
+ * # Arguments
+ *
+ * * `address`: address of remote services, normally,it's a domain name with port number.
+ * * `enclave_info_path`: file path of the *enclave info* TOML file.
+ * * `as_root_ca_cert_path`: file path of the certificate for remote attestation service.
+ *
+ * # Return
+ *
+ * * The function returns an opaque pointer (handle) of the service. On error,
+ * the function returns NULL.
+ */
 struct AuthenticationClient *teaclave_connect_authentication_service(const char *address,
                                                                      const char *enclave_info_path,
                                                                      const char *as_root_ca_cert_path);
 
+/**
+ * Close and free the authentication service handle, i.e., the
+ * `AuthenticaionClient` type opaque pointer. The function returns 0 for
+ * success. On error, the function returns 1.
+ */
 int teaclave_close_authentication_service(struct AuthenticationClient *client);
 
+/**
+ * Register a new user with `user_id` and `user_password`. The function returns
+ * 0 for success. On error, the function returns 1.
+ */
 int teaclave_user_register(struct AuthenticationClient *client,
                            const char *user_id,
                            const char *user_password);
 
+/**
+ * Login a new user with `user_id` and `user_password`. The login session token
+ * will be save in the `token` buffer, and length will be set in the
+ * `token_len` argument. The function returns 0 for success. On error, the
+ * function returns 1.
+ */
 int teaclave_user_login(struct AuthenticationClient *client,
                         const char *user_id,
                         const char *user_password,
                         char *token,
                         size_t *token_len);
 
+/**
+ * Connect to Teaclave Frontend Service.
+ *
+ * This function connects and establishes trusted channel to the remote
+ * frontend service with `address`. The function gets *enclave info* from
+ * the file located in `enclave_info_path`. The file in `as_root_ca_cert_path`
+ * will be used to verify the attestation report from the remote service.
+ *
+ * # Arguments
+ *
+ * * `address`: address of remote services, normally,it's a domain name with port number.
+ * * `enclave_info_path`: file path of the *enclave info* TOML file.
+ * * `as_root_ca_cert_path`: file path of the certificate for remote attestation service.
+ *
+ * # Return
+ *
+ * * The function returns an opaque pointer (handle) of the service. On error,
+ * the function returns NULL.
+ */
 struct FrontendClient *teaclave_connect_frontend_service(const char *address,
                                                          const char *enclave_info_path,
                                                          const char *as_root_ca_cert_path);
 
+/**
+ * Close and free the frontend service handle, i.e., the `FrontendClient` type
+ * opaque pointer. The function returns 0 for success. On error, the function
+ * returns 1.
+ */
 int teaclave_close_frontend_service(struct FrontendClient *client);
 
+/**
+ * Set user's credential with `user_id` and `user_token`. The function returns
+ * 0 for success. On error, the function returns 1.
+ */
 int teaclave_set_credential(struct FrontendClient *client,
                             const char *user_id,
                             const char *user_token);
 
+/**
+ * Invoke task with `task_id`. The function returns 0 for success. On error,
+ * the function returns 1.
+ */
 int teaclave_invoke_task(struct FrontendClient *client, const char *task_id);
 
+/**
+ * Get task result of `task_id`. The result will be save in the `task_result`
+ * buffer, and set corresponding `task_result_len` argument. Note that this is
+ * a blocking function and wait for the return of the task. The function
+ * returns 0 for success. On error, the function returns 1.
+ */
 int teaclave_get_task_result(struct FrontendClient *client,
                              const char *task_id,
                              char *task_result,
                              size_t *task_result_len);
 
+/**
+ * Send JSON serialized request to the service with the `client` and
+ * get the serialized response.
+ *
+ * # Arguments
+ *
+ * * `client`: service client.
+ * * `serialized_request`; JSON serialized request
+ * * `serialized_response`: buffer to store the JSON serialized response.
+ * * `serialized_response_len`: length of the allocated
+ *   `serialized_response`, will be set as the length of
+ *   `serialized_response` when return successfully.
+ *
+ * # Return
+ *
+ * The function returns 0 for success. On error, the function returns 1.
+ */
 int teaclave_user_register_serialized(struct AuthenticationClient *client,
                                       const char *serialized_request,
                                       char *serialized_response,
                                       size_t *serialized_response_len);
 
+/**
+ * Send JSON serialized request to the service with the `client` and
+ * get the serialized response.
+ *
+ * # Arguments
+ *
+ * * `client`: service client.
+ * * `serialized_request`; JSON serialized request
+ * * `serialized_response`: buffer to store the JSON serialized response.
+ * * `serialized_response_len`: length of the allocated
+ *   `serialized_response`, will be set as the length of
+ *   `serialized_response` when return successfully.
+ *
+ * # Return
+ *
+ * The function returns 0 for success. On error, the function returns 1.
+ */
 int teaclave_user_login_serialized(struct AuthenticationClient *client,
                                    const char *serialized_request,
                                    char *serialized_response,
                                    size_t *serialized_response_len);
 
+/**
+ * Send JSON serialized request to the service with the `client` and
+ * get the serialized response.
+ *
+ * # Arguments
+ *
+ * * `client`: service client.
+ * * `serialized_request`; JSON serialized request
+ * * `serialized_response`: buffer to store the JSON serialized response.
+ * * `serialized_response_len`: length of the allocated
+ *   `serialized_response`, will be set as the length of
+ *   `serialized_response` when return successfully.
+ *
+ * # Return
+ *
+ * The function returns 0 for success. On error, the function returns 1.
+ */
 int teaclave_register_function_serialized(struct FrontendClient *client,
                                           const char *serialized_request,
                                           char *serialized_response,
                                           size_t *serialized_response_len);
 
+/**
+ * Send JSON serialized request to the service with the `client` and
+ * get the serialized response.
+ *
+ * # Arguments
+ *
+ * * `client`: service client.
+ * * `serialized_request`; JSON serialized request
+ * * `serialized_response`: buffer to store the JSON serialized response.
+ * * `serialized_response_len`: length of the allocated
+ *   `serialized_response`, will be set as the length of
+ *   `serialized_response` when return successfully.
+ *
+ * # Return
+ *
+ * The function returns 0 for success. On error, the function returns 1.
+ */
 int teaclave_get_function_serialized(struct FrontendClient *client,
                                      const char *serialized_request,
                                      char *serialized_response,
                                      size_t *serialized_response_len);
 
+/**
+ * Send JSON serialized request to the service with the `client` and
+ * get the serialized response.
+ *
+ * # Arguments
+ *
+ * * `client`: service client.
+ * * `serialized_request`; JSON serialized request
+ * * `serialized_response`: buffer to store the JSON serialized response.
+ * * `serialized_response_len`: length of the allocated
+ *   `serialized_response`, will be set as the length of
+ *   `serialized_response` when return successfully.
+ *
+ * # Return
+ *
+ * The function returns 0 for success. On error, the function returns 1.
+ */
 int teaclave_register_input_file_serialized(struct FrontendClient *client,
                                             const char *serialized_request,
                                             char *serialized_response,
                                             size_t *serialized_response_len);
 
+/**
+ * Send JSON serialized request to the service with the `client` and
+ * get the serialized response.
+ *
+ * # Arguments
+ *
+ * * `client`: service client.
+ * * `serialized_request`; JSON serialized request
+ * * `serialized_response`: buffer to store the JSON serialized response.
+ * * `serialized_response_len`: length of the allocated
+ *   `serialized_response`, will be set as the length of
+ *   `serialized_response` when return successfully.
+ *
+ * # Return
+ *
+ * The function returns 0 for success. On error, the function returns 1.
+ */
 int teaclave_register_output_file_serialized(struct FrontendClient *client,
                                              const char *serialized_request,
                                              char *serialized_response,
                                              size_t *serialized_response_len);
 
+/**
+ * Send JSON serialized request to the service with the `client` and
+ * get the serialized response.
+ *
+ * # Arguments
+ *
+ * * `client`: service client.
+ * * `serialized_request`; JSON serialized request
+ * * `serialized_response`: buffer to store the JSON serialized response.
+ * * `serialized_response_len`: length of the allocated
+ *   `serialized_response`, will be set as the length of
+ *   `serialized_response` when return successfully.
+ *
+ * # Return
+ *
+ * The function returns 0 for success. On error, the function returns 1.
+ */
 int teaclave_create_task_serialized(struct FrontendClient *client,
                                     const char *serialized_request,
                                     char *serialized_response,
                                     size_t *serialized_response_len);
 
+/**
+ * Send JSON serialized request to the service with the `client` and
+ * get the serialized response.
+ *
+ * # Arguments
+ *
+ * * `client`: service client.
+ * * `serialized_request`; JSON serialized request
+ * * `serialized_response`: buffer to store the JSON serialized response.
+ * * `serialized_response_len`: length of the allocated
+ *   `serialized_response`, will be set as the length of
+ *   `serialized_response` when return successfully.
+ *
+ * # Return
+ *
+ * The function returns 0 for success. On error, the function returns 1.
+ */
 int teaclave_assign_data_serialized(struct FrontendClient *client,
                                     const char *serialized_request,
                                     char *serialized_response,
                                     size_t *serialized_response_len);
 
+/**
+ * Send JSON serialized request to the service with the `client` and
+ * get the serialized response.
+ *
+ * # Arguments
+ *
+ * * `client`: service client.
+ * * `serialized_request`; JSON serialized request
+ * * `serialized_response`: buffer to store the JSON serialized response.
+ * * `serialized_response_len`: length of the allocated
+ *   `serialized_response`, will be set as the length of
+ *   `serialized_response` when return successfully.
+ *
+ * # Return
+ *
+ * The function returns 0 for success. On error, the function returns 1.
+ */
 int teaclave_approve_task_serialized(struct FrontendClient *client,
                                      const char *serialized_request,
                                      char *serialized_response,
                                      size_t *serialized_response_len);
 
+/**
+ * Send JSON serialized request to the service with the `client` and
+ * get the serialized response.
+ *
+ * # Arguments
+ *
+ * * `client`: service client.
+ * * `serialized_request`; JSON serialized request
+ * * `serialized_response`: buffer to store the JSON serialized response.
+ * * `serialized_response_len`: length of the allocated
+ *   `serialized_response`, will be set as the length of
+ *   `serialized_response` when return successfully.
+ *
+ * # Return
+ *
+ * The function returns 0 for success. On error, the function returns 1.
+ */
 int teaclave_invoke_task_serialized(struct FrontendClient *client,
                                     const char *serialized_request,
                                     char *serialized_response,
                                     size_t *serialized_response_len);
 
+/**
+ * Send JSON serialized request to the service with the `client` and
+ * get the serialized response.
+ *
+ * # Arguments
+ *
+ * * `client`: service client.
+ * * `serialized_request`; JSON serialized request
+ * * `serialized_response`: buffer to store the JSON serialized response.
+ * * `serialized_response_len`: length of the allocated
+ *   `serialized_response`, will be set as the length of
+ *   `serialized_response` when return successfully.
+ *
+ * # Return
+ *
+ * The function returns 0 for success. On error, the function returns 1.
+ */
 int teaclave_get_task_serialized(struct FrontendClient *client,
                                  const char *serialized_request,
                                  char *serialized_response,
