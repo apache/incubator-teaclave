@@ -45,6 +45,23 @@ macro_rules! unwrap_or_return_one {
     };
 }
 
+/// Connect to Teaclave Authentication Service.
+///
+/// This function connects and establishes trusted channel to the remote
+/// authentication service with `address`. The function gets *enclave info* from
+/// the file located in `enclave_info_path`. The file in `as_root_ca_cert_path`
+/// will be used to verify the attestation report from the remote service.
+///
+/// # Arguments
+///
+/// * `address`: address of remote services, normally,it's a domain name with port number.
+/// * `enclave_info_path`: file path of the *enclave info* TOML file.
+/// * `as_root_ca_cert_path`: file path of the certificate for remote attestation service.
+///
+/// # Return
+///
+/// * The function returns an opaque pointer (handle) of the service. On error,
+/// the function returns NULL.
 #[no_mangle]
 pub extern "C" fn teaclave_connect_authentication_service(
     address: *const c_char,
@@ -78,6 +95,9 @@ pub extern "C" fn teaclave_connect_authentication_service(
     Box::into_raw(Box::new(client))
 }
 
+/// Close and free the authentication service handle, i.e., the
+/// `AuthenticaionClient` type opaque pointer. The function returns 0 for
+/// success. On error, the function returns 1.
 #[no_mangle]
 pub unsafe extern "C" fn teaclave_close_authentication_service(
     client: *mut AuthenticationClient,
@@ -91,6 +111,8 @@ pub unsafe extern "C" fn teaclave_close_authentication_service(
     0
 }
 
+/// Register a new user with `user_id` and `user_password`. The function returns
+/// 0 for success. On error, the function returns 1.
 #[no_mangle]
 pub extern "C" fn teaclave_user_register(
     client: &mut AuthenticationClient,
@@ -111,6 +133,10 @@ pub extern "C" fn teaclave_user_register(
     0
 }
 
+/// Login a new user with `user_id` and `user_password`. The login session token
+/// will be save in the `token` buffer, and length will be set in the
+/// `token_len` argument. The function returns 0 for success. On error, the
+/// function returns 1.
 #[no_mangle]
 pub extern "C" fn teaclave_user_login(
     client: &mut AuthenticationClient,
@@ -147,6 +173,23 @@ pub extern "C" fn teaclave_user_login(
     0
 }
 
+/// Connect to Teaclave Frontend Service.
+///
+/// This function connects and establishes trusted channel to the remote
+/// frontend service with `address`. The function gets *enclave info* from
+/// the file located in `enclave_info_path`. The file in `as_root_ca_cert_path`
+/// will be used to verify the attestation report from the remote service.
+///
+/// # Arguments
+///
+/// * `address`: address of remote services, normally,it's a domain name with port number.
+/// * `enclave_info_path`: file path of the *enclave info* TOML file.
+/// * `as_root_ca_cert_path`: file path of the certificate for remote attestation service.
+///
+/// # Return
+///
+/// * The function returns an opaque pointer (handle) of the service. On error,
+/// the function returns NULL.
 #[no_mangle]
 pub extern "C" fn teaclave_connect_frontend_service(
     address: *const c_char,
@@ -180,6 +223,9 @@ pub extern "C" fn teaclave_connect_frontend_service(
     Box::into_raw(Box::new(client))
 }
 
+/// Close and free the frontend service handle, i.e., the `FrontendClient` type
+/// opaque pointer. The function returns 0 for success. On error, the function
+/// returns 1.
 #[no_mangle]
 pub unsafe extern "C" fn teaclave_close_frontend_service(client: *mut FrontendClient) -> c_int {
     if client.is_null() {
@@ -191,6 +237,8 @@ pub unsafe extern "C" fn teaclave_close_frontend_service(client: *mut FrontendCl
     0
 }
 
+/// Set user's credential with `user_id` and `user_token`. The function returns
+/// 0 for success. On error, the function returns 1.
 #[no_mangle]
 pub extern "C" fn teaclave_set_credential(
     client: &mut FrontendClient,
@@ -208,6 +256,8 @@ pub extern "C" fn teaclave_set_credential(
     0
 }
 
+/// Invoke task with `task_id`. The function returns 0 for success. On error,
+/// the function returns 1.
 #[no_mangle]
 pub extern "C" fn teaclave_invoke_task(
     client: &mut FrontendClient,
@@ -224,6 +274,10 @@ pub extern "C" fn teaclave_invoke_task(
     }
 }
 
+/// Get task result of `task_id`. The result will be save in the `task_result`
+/// buffer, and set corresponding `task_result_len` argument. Note that this is
+/// a blocking function and wait for the return of the task. The function
+/// returns 0 for success. On error, the function returns 1.
 #[no_mangle]
 pub extern "C" fn teaclave_get_task_result(
     client: &mut FrontendClient,
@@ -254,6 +308,21 @@ pub extern "C" fn teaclave_get_task_result(
 
 macro_rules! generate_function_serialized {
     ( $client_type:ident, $c_function_name:ident, $rust_function_name:ident) => {
+        /// Send JSON serialized request to the service with the `client` and
+        /// get the serialized response.
+        ///
+        /// # Arguments
+        ///
+        /// * `client`: service client.
+        /// * `serialized_request`; JSON serialized request
+        /// * `serialized_response`: buffer to store the JSON serialized response.
+        /// * `serialized_response_len`: length of the allocated
+        ///   `serialized_response`, will be set as the length of
+        ///   `serialized_response` when return successfully.
+        ///
+        /// # Return
+        ///
+        /// The function returns 0 for success. On error, the function returns 1.
         #[no_mangle]
         pub extern "C" fn $c_function_name(
             client: &mut $client_type,
