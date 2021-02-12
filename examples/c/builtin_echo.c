@@ -24,6 +24,7 @@
 #include <string.h>
 
 #define BUFFER_SIZE 4086
+#define QUOTE(x...) #x
 
 const char *authentication_service_address = "localhost:7776";
 const char *frontend_service_address = "localhost:7777";
@@ -36,31 +37,28 @@ const char *as_root_ca_cert_path = "../../keys/ias_root_ca_cert.pem";
 const char *user_id = "test_id";
 const char *user_password = "test_password";
 
-const char *register_function_request_serialized =
-    "{"
-    "    \"request\": \"register_function\","
-    "    \"name\": \"builtin-echo\","
-    "    \"description\": \"Native Echo Function\","
-    "    \"executor_type\": \"builtin\","
-    "    \"public\": true,"
-    "    \"payload\": [],"
-    "    \"arguments\": ["
-    "        \"message\""
-    "    ],"
-    "    \"inputs\": [],"
-    "    \"outputs\": []"
-    "}";
+const char *register_function_request_serialized = QUOTE(
+{
+    "request": "register_function",
+    "name": "builtin-echo",
+    "description": "Native Echo Function",
+    "executor_type": "builtin",
+    "public": true,
+    "payload": [],
+    "arguments": ["message"],
+    "inputs": [],
+    "outputs": []
+});
 
-const char *create_task_request_serialized =
-    "{"
-    "    \"request\": \"create_task\","
-    "    \"function_id\": \"%s\","
-    "    \"function_arguments\": \"{\\\"message\\\": \\\"Hello, "
-    "Teaclave!\\\"}\","
-    "    \"executor\": \"builtin\","
-    "    \"inputs_ownership\": [],"
-    "    \"outputs_ownership\": []"
-    "}";
+const char *create_task_request_serialized = QUOTE(
+{
+    "request": "create_task",
+    "function_id": "%s",
+    "function_arguments": "{\"message\": \"Hello, Teaclave!\"}",
+    "executor": "builtin",
+    "inputs_ownership": [],
+    "outputs_ownership": []
+});
 
 int login(char *token, size_t *token_len) {
     int ret = 0;
