@@ -16,7 +16,7 @@
 # under the License.
 
 
-all: builtin_echo
+all: builtin_echo builtin_ordered_set_intersect
 
 CFLAGS := -I../../sdk/c -Ltarget/debug/ -lteaclave_client_sdk
 
@@ -30,8 +30,12 @@ target/debug/libteaclave_client_sdk.so:
 builtin_echo: builtin_echo.c target/debug/libteaclave_client_sdk.so
 	gcc -o $@ builtin_echo.c $(CFLAGS)
 
-run: builtin_echo
+builtin_ordered_set_intersect: builtin_ordered_set_intersect.c target/debug/libteaclave_client_sdk.so
+	gcc -o $@ builtin_ordered_set_intersect.c $(CFLAGS)
+
+run: builtin_echo builtin_ordered_set_intersect
 	LD_LIBRARY_PATH=target/debug  ./builtin_echo
+	LD_LIBRARY_PATH=target/debug  ./builtin_ordered_set_intersect
 
 clean:
 	@rm -rf target
