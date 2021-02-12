@@ -23,6 +23,7 @@
 #include <string.h>
 
 #define BUFFER_SIZE 4086
+#define QUOTE(x...) #x
 
 const char *authentication_service_address = "localhost:7776";
 const char *frontend_service_address = "localhost:7777";
@@ -58,91 +59,93 @@ struct UserData user1_data = {
     .input_cmac = "538dafbf7802d962bb01e2389b4e943a",
     .key = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
 
-const char *register_function_request_serialized =
-    "{"
-    "    \"request\": \"register_function\","
-    "    \"name\": \"builtin-ordered-set-intersect\","
-    "    \"description\": \"Native Private Set Intersection\","
-    "    \"executor_type\": \"builtin\","
-    "    \"public\": true,"
-    "    \"payload\": [],"
-    "    \"arguments\": ["
-    "        \"order\""
-    "    ],"
-    "    \"inputs\": ["
-    "    {\"name\": \"input_data1\", \"description\": \"Client 0 data.\"},"
-    "    {\"name\": \"input_data2\", \"description\": \"Client 1 data.\"}"
-    "    ],"
-    "    \"outputs\": ["
-    "    {\"name\": \"output_result1\", \"description\": \"Output data.\"},"
-    "    {\"name\": \"output_result2\", \"description\": \"Output data.\"}"
-    "    ]"
-    "}";
+const char *register_function_request_serialized = QUOTE(
+{
+    "request": "register_function",
+    "name": "builtin-ordered-set-intersect",
+    "description": "Native Private Set Intersection",
+    "executor_type": "builtin",
+    "public": true,
+    "payload": [],
+    "arguments": ["order"],
+    "inputs": [
+        {"name": "input_data1", "description": "Client 0 data."},
+        {"name": "input_data2", "description": "Client 1 data."}
+    ],
+    "outputs": [ 
+        {"name": "output_result1", "description": "Output data."},
+        {"name": "output_result2", "description": "Output data."}
+    ]
+});
 
-const char *create_task_request_serialized = 
-    "{"
-    "    \"request\": \"create_task\","
-    "    \"function_id\": \"%s\","
-    "    \"function_arguments\": \"{\\\"order\\\": \\\"ascending\\\"}\","
-    "    \"executor\": \"builtin\","
-    "    \"inputs_ownership\": ["
-    "    {\"data_name\": \"input_data1\", \"uids\": [\"user0\"]},"
-    "    {\"data_name\": \"input_data2\", \"uids\": [\"user1\"]}"
-    "    ],"
-    "    \"outputs_ownership\": ["
-    "    {\"data_name\": \"output_result1\", \"uids\": [\"user0\"]},"
-    "    {\"data_name\": \"output_result2\", \"uids\": [\"user1\"]}"
-    "    ]"
-    "}";
+const char *create_task_request_serialized = QUOTE(
+{
+    "request": "create_task",
+    "function_id": "%s",
+    "function_arguments": "{\"order\": \"ascending\"}",
+    "executor": "builtin",
+    "inputs_ownership": [
+        {"data_name": "input_data1", "uids": ["user0"]},
+        {"data_name": "input_data2", "uids": ["user1"]}
+    ],
+    "outputs_ownership": [
+        {"data_name": "output_result1", "uids": ["user0"]},
+        {"data_name": "output_result2", "uids": ["user1"]}
+    ]
+});
 
-const char *register_input_serialized = 
-    "{"
-    "    \"request\": \"register_input_file\","
-    "    \"url\": \"%s\","
-    "    \"cmac\": \"%s\","
-    "    \"crypto_info\":  {\"schema\": \"teaclave-file-128\","
-    "    \"key\": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],"
-    "    \"iv\": []}"
-    "}";
+const char *register_input_serialized= QUOTE(
+{
+    "request": "register_input_file",
+    "url": "%s",
+    "cmac": "%s",
+    "crypto_info": {
+        "schema": "teaclave-file-128",
+        "key": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "iv": []
+    }
+});
 
-const char *register_output_serialized = 
-    "{"
-    "    \"request\": \"register_output_file\","
-    "    \"url\": \"%s\","
-    "    \"crypto_info\":  {\"schema\": \"teaclave-file-128\","
-    "    \"key\": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],"
-    "    \"iv\": []}"
-    "}";
+const char *register_output_serialized= QUOTE(
+{
+    "request": "register_output_file",
+    "url": "%s",
+    "crypto_info": {
+        "schema": "teaclave-file-128",
+        "key": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "iv": []
+    }
+});
 
-const char *user0_assign_serialized = 
-    "{"
-    "    \"request\": \"assign_data\","
-    "    \"task_id\": \"%s\","
-    "    \"inputs\": ["
-    "    {\"data_name\": \"input_data1\", \"data_id\": \"%s\"}"
-    "    ],"
-    "    \"outputs\": ["
-    "    {\"data_name\": \"output_result1\", \"data_id\": \"%s\"}"
-    "    ]"
-    "}";
+const char *user0_assign_serialized= QUOTE(
+{
+    "request": "assign_data",
+    "task_id": "%s",
+    "inputs": [
+        {"data_name": "input_data1", "data_id": "%s"}
+    ],
+    "outputs": [
+        {"data_name": "output_result1", "data_id": "%s"}
+    ]
+});
 
-const char *user1_assign_serialized = 
-    "{"
-    "    \"request\": \"assign_data\","
-    "    \"task_id\": \"%s\","
-    "    \"inputs\": ["
-    "    {\"data_name\": \"input_data2\", \"data_id\": \"%s\"}"
-    "    ],"
-    "    \"outputs\": ["
-    "    {\"data_name\": \"output_result2\", \"data_id\": \"%s\"}"
-    "    ]"
-    "}";
+const char *user1_assign_serialized= QUOTE(
+{
+    "request": "assign_data",
+    "task_id": "%s",
+    "inputs": [
+        {"data_name": "input_data2", "data_id": "%s"}
+    ],
+    "outputs": [
+        {"data_name": "output_result2", "data_id": "%s"}
+    ]
+});
 
-const char *approve_serialized = 
-    "{"
-    "    \"request\": \"approve_task\","
-    "    \"task_id\": \"%s\""
-    "}";
+const char *approve_serialized = QUOTE(
+{
+    "request": "approve_task",
+    "task_id": "%s"
+});
 
 int login(char *user_id, char *password, char *token, size_t *token_len)
 {
