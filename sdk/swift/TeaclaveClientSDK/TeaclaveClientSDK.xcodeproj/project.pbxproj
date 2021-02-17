@@ -167,7 +167,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 1230;
-				LastUpgradeCheck = 1230;
+				LastUpgradeCheck = 1240;
 				TargetAttributes = {
 					9AA3BE5E25C9D33B00A2BA83 = {
 						CreatedOnToolsVersion = 12.3;
@@ -383,6 +383,7 @@
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = TeaclaveClientSDK/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -397,6 +398,7 @@
 				MODULEMAP_FILE = "$(SRCROOT)/TeaclaveClientSDK/TeaclaveClientSDK.modulemap";
 				PRODUCT_BUNDLE_IDENTIFIER = org.apache.teaclave.TeaclaveClientSDK;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_INCLUDE_PATHS = "";
@@ -420,6 +422,7 @@
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = TeaclaveClientSDK/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -434,6 +437,7 @@
 				MODULEMAP_FILE = "$(SRCROOT)/TeaclaveClientSDK/TeaclaveClientSDK.modulemap";
 				PRODUCT_BUNDLE_IDENTIFIER = org.apache.teaclave.TeaclaveClientSDK;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_INCLUDE_PATHS = "";

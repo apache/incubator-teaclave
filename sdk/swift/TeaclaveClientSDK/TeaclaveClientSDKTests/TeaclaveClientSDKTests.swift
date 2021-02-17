@@ -34,7 +34,7 @@ class TeaclaveClientSDKTests: XCTestCase {
             address: authentication_service_address,
             enclave_info_path: enclave_info_path,
             as_root_ca_cert_path: as_root_ca_cert_path
-        )
+        )!
         let _ = client.register(id: "test_id", password: "test_password")
         let token = try client.login(id: "test_id", password: "test_password").get()
 
@@ -52,7 +52,7 @@ class TeaclaveClientSDKTests: XCTestCase {
             address: frontend_service_address,
             enclave_info_path: enclave_info_path,
             as_root_ca_cert_path: as_root_ca_cert_path
-        )
+        )!
         try frontend_client.set_credential(id: "test_id", token: token).get()
         let response = try frontend_client.register_function(with: register_function_request).get()
         let function_id = response.function_id
@@ -77,7 +77,7 @@ class TeaclaveClientSDKTests: XCTestCase {
             address: authentication_service_address,
             enclave_info_path: enclave_info_path,
             as_root_ca_cert_path: as_root_ca_cert_path
-        )
+        )!
         let _ = user0_client.register(id: "user0", password: "password")
         let user0_token = try user0_client.login(id: "user0", password: "password").get()
 
@@ -85,7 +85,7 @@ class TeaclaveClientSDKTests: XCTestCase {
             address: frontend_service_address,
             enclave_info_path: enclave_info_path,
             as_root_ca_cert_path: as_root_ca_cert_path
-        )
+        )!
         try user0_frontend_client.set_credential(id: "user0", token: user0_token).get()
 
         let register_function_request = RegisterFunctionRequest(
@@ -136,7 +136,7 @@ class TeaclaveClientSDKTests: XCTestCase {
             address: authentication_service_address,
             enclave_info_path: enclave_info_path,
             as_root_ca_cert_path: as_root_ca_cert_path
-        )
+        )!
 
         let _ = user1_client.register(id: "user1", password: "password")
         let user1_token = try user1_client.login(id: "user1", password: "password").get()
@@ -144,7 +144,7 @@ class TeaclaveClientSDKTests: XCTestCase {
             address: frontend_service_address,
             enclave_info_path: enclave_info_path,
             as_root_ca_cert_path: as_root_ca_cert_path
-        )
+        )!
         try user1_frontend_client.set_credential(id: "user1", token: user1_token).get()
 
         let user1_register_input_file_request = RegisterInputFileRequest(
