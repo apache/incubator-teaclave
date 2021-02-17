@@ -20,7 +20,7 @@
 import Foundation
 import TeaclaveClientSDK.CTeaclaveClientSDK
 
-enum TeaclaveClientError: Error {
+public enum TeaclaveClientError: Error {
     case userLoginError
     case userRegisterError
     case setCredentialError
@@ -34,89 +34,161 @@ enum TeaclaveClientError: Error {
     case approveTaskError
 }
 
-struct RegisterFunctionRequest: Encodable {
-    let request: String = "register_function_request"
-    let name: String
-    let description: String
-    let executor_type: String
-    let `public`: Bool = true
-    let payload: Array<Int>
-    let arguments: Set<String>
-    let inputs: Array<Dictionary<String, String>>
-    let outputs: Array<Dictionary<String, String>>
+public struct RegisterFunctionRequest: Encodable {
+    public let request: String = "register_function_request"
+    public let name: String
+    public let description: String
+    public let executor_type: String
+    public let `public`: Bool = true
+    public let payload: [Int]
+    public let arguments: Set<String>
+    public let inputs: [[String: String]]
+    public let outputs: [[String: String]]
+
+    public init(name: String, description: String, executor_type: String, payload: [Int], arguments: Set<String>, inputs: [[String: String]], outputs: [[String: String]]) {
+        self.name = name
+        self.description = description
+        self.executor_type = executor_type
+        self.payload = payload
+        self.arguments = arguments
+        self.inputs = inputs
+        self.outputs = outputs
+    }
 }
 
-struct RegisterFunctionResponse: Codable {
-    let function_id: String
+public struct RegisterFunctionResponse: Codable {
+    public let function_id: String
+
+    public init(function_id: String) {
+        self.function_id = function_id
+    }
 }
 
-struct OwnerList: Encodable {
-    let data_name: String
-    let uids: Array<String>
+public struct OwnerList: Encodable {
+    public let data_name: String
+    public let uids: [String]
+
+    public init(data_name: String, uids: [String]) {
+        self.data_name = data_name
+        self.uids = uids
+    }
 }
 
-struct CreateTaskRequest: Encodable {
-    let request: String = "register_create_task"
-    let function_id: String
-    let function_arguments: String
-    let executor: String
-    let inputs_ownership: Array<OwnerList>
-    let outputs_ownership: Array<OwnerList>
+public struct CreateTaskRequest: Encodable {
+    public let request: String = "register_create_task"
+    public let function_id: String
+    public let function_arguments: String
+    public let executor: String
+    public let inputs_ownership: [OwnerList]
+    public let outputs_ownership: [OwnerList]
+
+    public init(function_id: String, function_arguments: String, executor: String, inputs_ownership: [OwnerList], outputs_ownership: [OwnerList]) {
+        self.function_id = function_id
+        self.function_arguments = function_arguments
+        self.executor = executor
+        self.inputs_ownership = inputs_ownership
+        self.outputs_ownership = outputs_ownership
+    }
 }
 
-struct CreateTaskResponse: Codable {
-    let task_id: String
+public struct CreateTaskResponse: Codable {
+    public let task_id: String
+
+    public init(task_id: String) {
+        self.task_id = task_id
+    }
 }
 
-struct CryptoInfo: Codable {
-    let schema: String
-    let key: Array<Int>
-    let iv: Array<Int>
+public struct CryptoInfo: Codable {
+    public let schema: String
+    public let key: [Int]
+    public let iv: [Int]
+
+    public init(schema: String, key: [Int], iv: [Int]) {
+        self.schema = schema
+        self.key = key
+        self.iv = iv
+    }
 }
 
-struct RegisterInputFileRequest: Encodable {
-    let request: String = "register_input_file"
-    let url: String
-    let cmac: String
-    let crypto_info: CryptoInfo
+public struct RegisterInputFileRequest: Encodable {
+    public let request: String = "register_input_file"
+    public let url: String
+    public let cmac: String
+    public let crypto_info: CryptoInfo
+
+    public init(url: String, cmac: String, crypto_info: CryptoInfo) {
+        self.url = url
+        self.cmac = cmac
+        self.crypto_info = crypto_info
+    }
 }
 
-struct RegisterInputFileResponse: Codable {
-    let data_id: String
+public struct RegisterInputFileResponse: Codable {
+    public let data_id: String
+
+    public init(data_id: String) {
+        self.data_id = data_id
+    }
 }
 
-struct RegisterOutputFileRequest: Encodable {
-    let request: String = "register_output_file"
-    let url: String
-    let cmac: String
-    let crypto_info: CryptoInfo
+public struct RegisterOutputFileRequest: Encodable {
+    public let request: String = "register_output_file"
+    public let url: String
+    public let cmac: String
+    public let crypto_info: CryptoInfo
+
+    public init(url: String, cmac: String, crypto_info: CryptoInfo) {
+        self.url = url
+        self.cmac = cmac
+        self.crypto_info = crypto_info
+    }
 }
 
-struct RegisterOutputFileResponse: Codable {
-    let data_id: String
+public struct RegisterOutputFileResponse: Codable {
+    public let data_id: String
+
+    public init(data_id: String) {
+        self.data_id = data_id
+    }
 }
 
-struct DataMap: Codable {
-    let data_name: String
-    let data_id: String
+public struct DataMap: Codable {
+    public let data_name: String
+    public let data_id: String
+
+    public init(data_name: String, data_id: String) {
+        self.data_name = data_name
+        self.data_id = data_id
+    }
 }
 
-struct AssignDataRequest: Encodable {
-    let request: String = "assign_data"
-    let task_id: String
-    let inputs: Array<DataMap>
-    let outputs: Array<DataMap>
+public struct AssignDataRequest: Encodable {
+    public let request: String = "assign_data"
+    public let task_id: String
+    public let inputs: [DataMap]
+    public let outputs: [DataMap]
+
+    public init(task_id: String, inputs: [DataMap], outputs: [DataMap]) {
+        self.task_id = task_id
+        self.inputs = inputs
+        self.outputs = outputs
+    }
 }
 
-struct ApproveTaskRequest: Encodable {
-    let request: String = "approve_task"
-    let task_id: String
+public struct ApproveTaskRequest: Encodable {
+    public let request: String = "approve_task"
+    public let task_id: String
+
+    public init(task_id: String) {
+        self.task_id = task_id
+    }
 }
 
-class AuthenticationClient {
+public class AuthenticationClient {
     internal let cClient: OpaquePointer
 
-    init?(address: String, enclave_info_path: String, as_root_ca_cert_path: String) {
+    public init?(address: String, enclave_info_path: String, as_root_ca_cert_path: String) {
         let address_c_string = address.cString(using: .ascii)
         let enclave_info_path_address_c_string = enclave_info_path.cString(using: .ascii)
         let as_root_ca_cert_c_string = as_root_ca_cert_path.cString(using: .ascii)
@@ -127,7 +199,7 @@ class AuthenticationClient {
         self.cClient = client
     }
 
-    func register(id: String, password: String) -> Result<(), TeaclaveClientError> {
+    public func register(id: String, password: String) -> Result<Void, TeaclaveClientError> {
         let id_c_string = id.cString(using: .ascii)
         let password_c_string = password.cString(using: .ascii)
 
@@ -138,7 +210,7 @@ class AuthenticationClient {
         return Result.success(())
     }
 
-    func login(id: String, password: String) -> Result<String, TeaclaveClientError> {
+    public func login(id: String, password: String) -> Result<String, TeaclaveClientError> {
         let id_c_string = id.cString(using: .ascii)
         let password_c_string = password.cString(using: .ascii)
         let token_c_string = UnsafeMutablePointer<CChar>.allocate(capacity: 1024)
@@ -150,7 +222,7 @@ class AuthenticationClient {
             token_len.deallocate()
             return Result.failure(.userLoginError)
         }
-        let token =  String(cString: token_c_string)
+        let token = String(cString: token_c_string)
         token_c_string.deallocate()
         token_len.deallocate()
 
@@ -162,10 +234,10 @@ class AuthenticationClient {
     }
 }
 
-class FrontendClient {
+public class FrontendClient {
     internal let cClient: OpaquePointer
 
-    init?(address: String, enclave_info_path: String, as_root_ca_cert_path: String) {
+    public init?(address: String, enclave_info_path: String, as_root_ca_cert_path: String) {
         let address_c_string = address.cString(using: .ascii)
         let enclave_info_path_address_c_string = enclave_info_path.cString(using: .ascii)
         let as_root_ca_cert_c_string = as_root_ca_cert_path.cString(using: .ascii)
@@ -180,7 +252,7 @@ class FrontendClient {
         teaclave_close_frontend_service(cClient)
     }
 
-    func set_credential(id: String, token: String) -> Result<(), TeaclaveClientError> {
+    public func set_credential(id: String, token: String) -> Result<Void, TeaclaveClientError> {
         let id_c_string = id.cString(using: .ascii)
         let token_c_string = token.cString(using: .ascii)
 
@@ -191,7 +263,7 @@ class FrontendClient {
         return Result.success(())
     }
 
-    func register_function(with request: RegisterFunctionRequest) -> Result<RegisterFunctionResponse, TeaclaveClientError> {
+    public func register_function(with request: RegisterFunctionRequest) -> Result<RegisterFunctionResponse, TeaclaveClientError> {
         let data = try! JSONEncoder().encode(request)
         let json_string = String(data: data, encoding: .ascii)!
 
@@ -210,7 +282,7 @@ class FrontendClient {
         return Result.success(response)
     }
 
-    func create_task(with request: CreateTaskRequest) -> Result<CreateTaskResponse, TeaclaveClientError> {
+    public func create_task(with request: CreateTaskRequest) -> Result<CreateTaskResponse, TeaclaveClientError> {
         let data = try! JSONEncoder().encode(request)
         let json_string = String(data: data, encoding: .ascii)!
 
@@ -230,7 +302,7 @@ class FrontendClient {
         return Result.success(response)
     }
 
-    func register_input_file(with request: RegisterInputFileRequest) -> Result<RegisterInputFileResponse, TeaclaveClientError> {
+    public func register_input_file(with request: RegisterInputFileRequest) -> Result<RegisterInputFileResponse, TeaclaveClientError> {
         let data = try! JSONEncoder().encode(request)
         let json_string = String(data: data, encoding: .ascii)!
 
@@ -250,7 +322,7 @@ class FrontendClient {
         return Result.success(response)
     }
 
-    func register_output_file(with request: RegisterOutputFileRequest) -> Result<RegisterOutputFileResponse, TeaclaveClientError> {
+    public func register_output_file(with request: RegisterOutputFileRequest) -> Result<RegisterOutputFileResponse, TeaclaveClientError> {
         let data = try! JSONEncoder().encode(request)
         let json_string = String(data: data, encoding: .ascii)!
 
@@ -270,7 +342,7 @@ class FrontendClient {
         return Result.success(response)
     }
 
-    func assign_data(with request: AssignDataRequest) -> Result<(), TeaclaveClientError> {
+    public func assign_data(with request: AssignDataRequest) -> Result<Void, TeaclaveClientError> {
         let data = try! JSONEncoder().encode(request)
         let json_string = String(data: data, encoding: .ascii)!
 
@@ -286,7 +358,7 @@ class FrontendClient {
         return Result.success(())
     }
 
-    func invoke_task(task_id: String) -> Result<(), TeaclaveClientError> {
+    public func invoke_task(task_id: String) -> Result<Void, TeaclaveClientError> {
         let task_id_c_string = task_id.cString(using: .ascii)
         let ret = teaclave_invoke_task(cClient, task_id_c_string)
         guard ret == 0 else {
@@ -296,7 +368,7 @@ class FrontendClient {
         return Result.success(())
     }
 
-    func approve_task(task_id: String) -> Result<(), TeaclaveClientError> {
+    public func approve_task(task_id: String) -> Result<Void, TeaclaveClientError> {
         let request = ApproveTaskRequest(task_id: task_id)
         let data = try! JSONEncoder().encode(request)
         let json_string = String(data: data, encoding: .ascii)!
@@ -312,7 +384,7 @@ class FrontendClient {
         return Result.success(())
     }
 
-    func get_task_result(task_id: String) -> Result<String, TeaclaveClientError> {
+    public func get_task_result(task_id: String) -> Result<String, TeaclaveClientError> {
         let task_id_c_string = task_id.cString(using: .ascii)
         let response_c_string = UnsafeMutablePointer<CChar>.allocate(capacity: 10240)
         let response_len = UnsafeMutablePointer<Int>.allocate(capacity: 1)
