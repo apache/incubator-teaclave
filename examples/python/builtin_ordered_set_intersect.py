@@ -36,7 +36,7 @@ class UserData:
                  password,
                  input_url="",
                  output_url="",
-                 input_cmac="",
+                 input_cmac=[],
                  key=[]):
         self.user_id = user_id
         self.password = password
@@ -51,15 +51,17 @@ OUTPUT_FILE_URL_PREFIX = "http://localhost:6789/fixtures/functions/ordered_set_i
 
 USER_DATA_0 = UserData("user0", "password",
                        INPUT_FILE_URL_PREFIX + "psi0.txt.enc",
-                       OUTPUT_FILE_URL_PREFIX + "output_psi0.enc",
-                       "e08adeb021e876ffe82234445e632121",
-                       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+                       OUTPUT_FILE_URL_PREFIX + "output_psi0.enc", [
+                           0xe0, 0x8a, 0xde, 0xb0, 0x21, 0xe8, 0x76, 0xff,
+                           0xe8, 0x22, 0x34, 0x44, 0x5e, 0x63, 0x21, 0x21
+                       ], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
 USER_DATA_1 = UserData("user1", "password",
                        INPUT_FILE_URL_PREFIX + "psi1.txt.enc",
-                       OUTPUT_FILE_URL_PREFIX + "output_psi1.enc",
-                       "538dafbf7802d962bb01e2389b4e943a",
-                       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+                       OUTPUT_FILE_URL_PREFIX + "output_psi1.enc", [
+                           0x53, 0x8d, 0xaf, 0xbf, 0x78, 0x02, 0xd9, 0x62,
+                           0xbb, 0x01, 0xe2, 0x38, 0x9b, 0x4e, 0x94, 0x3a
+                       ], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
 
 class DataList:

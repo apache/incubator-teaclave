@@ -39,7 +39,7 @@ typedef struct UserData {
     char *password;
     char *input_url;
     char *output_url;
-    char *input_cmac;
+    char input_cmac[16];
     char key[16];
 } UserData;
 
@@ -48,7 +48,7 @@ struct UserData user0_data = {
     .password = "password",
     .input_url = "http://localhost:6789/fixtures/functions/ordered_set_intersect/psi0.txt.enc",
     .output_url = "http://localhost:6789/fixtures/functions/ordered_set_intersect/output_psi0.enc",
-    .input_cmac = "e08adeb021e876ffe82234445e632121",
+    .input_cmac = {0xe0, 0x8a, 0xde, 0xb0, 0x21, 0xe8, 0x76, 0xff, 0xe8, 0x22, 0x34, 0x44, 0x5e, 0x63, 0x21, 0x21},
     .key = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
 
 struct UserData user1_data = {
@@ -56,7 +56,7 @@ struct UserData user1_data = {
     .password = "password",
     .input_url = "http://localhost:6789/fixtures/functions/ordered_set_intersect/psi1.txt.enc",
     .output_url = "http://localhost:6789/fixtures/functions/ordered_set_intersect/output_psi1.enc",
-    .input_cmac = "538dafbf7802d962bb01e2389b4e943a",
+    .input_cmac = {0x53, 0x8d, 0xaf, 0xbf, 0x78, 0x02, 0xd9, 0x62, 0xbb, 0x01, 0xe2, 0x38, 0x9b, 0x4e, 0x94, 0x3a},
     .key = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
 
 const char *register_function_request_serialized = QUOTE(
@@ -98,7 +98,7 @@ const char *register_input_serialized= QUOTE(
 {
     "request": "register_input_file",
     "url": "%s",
-    "cmac": "%s",
+    "cmac": %s,
     "crypto_info": {
         "schema": "teaclave-file-128",
         "key": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -236,6 +236,17 @@ int set_task(struct FrontendClient *frontend_client, char *serialized_response, 
     return ret;
 }
 
+char *format_cmac_to_string(UserData user_data){
+    static char cmac[128] = {0};
+    int n = 0;
+    n += sprintf (&cmac[n], "[%hhu", user_data.input_cmac[0]);
+    for (int i = 1; i < 16; i++) {
+        n += sprintf (&cmac[n], ",%hhu", user_data.input_cmac[i]);
+    }
+    sprintf (&cmac[n], "]");
+    return cmac;
+}
+
 int main()
 {
     int ret = 0;
@@ -280,7 +291,7 @@ int main()
     /* User0 register input data. */
     printf("[+] %s register input data\n", user0_data.user_id);
     snprintf(user0_serialized_input_request, BUFFER_SIZE, register_input_serialized, user0_data.input_url,
-             user0_data.input_cmac);
+         format_cmac_to_string(user0_data));
     memset(serialized_response, 0, BUFFER_SIZE);
     serialized_response_len = BUFFER_SIZE;
     ret = teaclave_register_input_file_serialized(client0, user0_serialized_input_request, serialized_response,
@@ -320,7 +331,7 @@ int main()
     /* User1 register input data. */
     printf("[+] %s register input data\n", user1_data.user_id);
     snprintf(user1_serialized_input_request, BUFFER_SIZE, register_input_serialized, user1_data.input_url,
-             user1_data.input_cmac);
+         format_cmac_to_string(user1_data));
     memset(serialized_response, 0, BUFFER_SIZE);
     serialized_response_len = BUFFER_SIZE;
     ret = teaclave_register_input_file_serialized(client1, user1_serialized_input_request, serialized_response,
@@ -409,7 +420,6 @@ int main()
     }
     printf("[+] %s task result in string: %s\n", user1_data.user_id, user1_task_result);
 
-bail:
     printf("close client - 0\n");
     ret = teaclave_close_frontend_service(client0);
     if (ret != 0) {
@@ -421,4 +431,17 @@ bail:
         fprintf(stderr, "[-] Failed to close the frontend service client.\n");
     }
     return ret;
+
+bail:
+    printf("close client - 0\n");
+    ret = teaclave_close_frontend_service(client0);
+    if (ret != 0) {
+        fprintf(stderr, "[-] Failed to close the frontend service client.\n");
+    }
+    printf("close client - 1\n");
+    ret = teaclave_close_frontend_service(client1);
+    if (ret != 0) {
+        fprintf(stderr, "[-] Failed to close the frontend service client.\n");
+    }
+    exit(-1);
 }

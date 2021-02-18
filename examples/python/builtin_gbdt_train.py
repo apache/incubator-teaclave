@@ -66,7 +66,10 @@ class BuiltinGbdtExample:
 
         print("[+] registering input file")
         url = "http://localhost:6789/fixtures/functions/gbdt_training/train.enc"
-        cmac = "881adca6b0524472da0a9d0bb02b9af9"
+        cmac = [
+            0x88, 0x1a, 0xdc, 0xa6, 0xb0, 0x52, 0x44, 0x72, 0xda, 0x0a, 0x9d,
+            0x0b, 0xb0, 0x2b, 0x9a, 0xf9
+        ]
         schema = "teaclave-file-128"
         key = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         iv = []

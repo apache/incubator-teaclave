@@ -165,12 +165,12 @@ impl OutputsTags {
     }
 }
 
-impl std::convert::TryFrom<HashMap<String, String>> for OutputsTags {
+impl std::convert::TryFrom<HashMap<String, Vec<u8>>> for OutputsTags {
     type Error = anyhow::Error;
-    fn try_from(input: HashMap<String, String>) -> Result<Self> {
+    fn try_from(input: HashMap<String, Vec<u8>>) -> Result<Self> {
         let mut ret = HashMap::with_capacity(input.len());
         for (k, v) in input.iter() {
-            let tag = FileAuthTag::from_hex(v)?;
+            let tag = FileAuthTag::from_bytes(&v)?;
             ret.insert(k.to_string(), tag);
         }
         Ok(OutputsTags::new(ret))
@@ -178,11 +178,11 @@ impl std::convert::TryFrom<HashMap<String, String>> for OutputsTags {
 }
 
 impl<S: std::default::Default + std::hash::BuildHasher> std::convert::From<OutputsTags>
-    for HashMap<String, String, S>
+    for HashMap<String, Vec<u8>, S>
 {
-    fn from(tags: OutputsTags) -> HashMap<String, String, S> {
+    fn from(tags: OutputsTags) -> HashMap<String, Vec<u8>, S> {
         tags.iter()
-            .map(|(k, v)| (k.to_string(), v.to_hex()))
+            .map(|(k, v)| (k.to_string(), v.to_bytes()))
             .collect()
     }
 }
