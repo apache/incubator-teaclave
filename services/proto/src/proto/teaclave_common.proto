@@ -14,7 +14,7 @@ message FileCryptoInfo {
 
 message TaskOutputs {
   bytes return_value = 1;
-  map<string, string> tags_map = 2;
+  map<string, bytes> tags_map = 2;
 }
 
 message TaskFailure {

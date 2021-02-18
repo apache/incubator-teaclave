@@ -47,7 +47,7 @@ class UserClient:
 class InputData:
     def __init__(self,
                  input_url="",
-                 input_cmac="",
+                 input_cmac=[],
                  key=[],
                  label="input_data_0",
                  schema="teaclave-file-128",
@@ -205,9 +205,10 @@ USER = UserClient("user0", "password")
 fo_test = "http://localhost:6789/fixtures/functions/py_logistic_reg/testa.out"
 
 train_inputs = [
-    InputData(train,
-              "057baff3598121d05cec6c5e9ce2aa39",
-              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    InputData(train, [
+        0x05, 0x7b, 0xaf, 0xf3, 0x59, 0x81, 0x21, 0xd0, 0x5c, 0xec, 0x6c, 0x5e,
+        0x9c, 0xe2, 0xaa, 0x39
+    ], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
               label="input_train")
 ]
 train_outputs = [
@@ -252,9 +253,10 @@ def main():
     output_scaler_cmac = tc.get_output_cmac_by_tag(train_task_id,
                                                    "output_scaler")
     predict_inputs = [
-        InputData(predict,
-                  "ae168afac768fd53e5d90d8e4b594d27",
-                  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        InputData(predict, [
+            0xae, 0x16, 0x8a, 0xfa, 0xc7, 0x68, 0xfd, 0x53, 0xe5, 0xd9, 0x0d,
+            0x8e, 0x4b, 0x59, 0x4d, 0x27
+        ], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                   label="input_predict"),
         InputData(params,
                   output_params_cmac,

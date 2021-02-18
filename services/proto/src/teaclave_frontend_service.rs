@@ -545,7 +545,7 @@ impl std::convert::TryFrom<proto::RegisterInputFileRequest> for RegisterInputFil
 
     fn try_from(proto: proto::RegisterInputFileRequest) -> Result<Self> {
         let url = Url::parse(&proto.url)?;
-        let cmac = FileAuthTag::from_hex(proto.cmac)?;
+        let cmac = FileAuthTag::from_bytes(&proto.cmac)?;
         let crypto_info = proto
             .crypto_info
             .ok_or_else(|| anyhow!("missing crypto_info"))?
@@ -562,7 +562,7 @@ impl From<RegisterInputFileRequest> for proto::RegisterInputFileRequest {
     fn from(request: RegisterInputFileRequest) -> Self {
         Self {
             url: request.url.into_string(),
-            cmac: request.cmac.to_hex(),
+            cmac: request.cmac.to_bytes(),
             crypto_info: Some(request.crypto_info.into()),
         }
     }
@@ -805,7 +805,7 @@ impl std::convert::TryFrom<proto::GetInputFileResponse> for GetInputFileResponse
     fn try_from(proto: proto::GetInputFileResponse) -> Result<Self> {
         Ok(Self {
             owner: OwnerList::new(proto.owner),
-            cmac: FileAuthTag::from_hex(proto.cmac)?,
+            cmac: FileAuthTag::from_bytes(&proto.cmac)?,
         })
     }
 }
@@ -814,7 +814,7 @@ impl From<GetInputFileResponse> for proto::GetInputFileResponse {
     fn from(request: GetInputFileResponse) -> Self {
         Self {
             owner: request.owner.into(),
-            cmac: request.cmac.to_hex(),
+            cmac: request.cmac.to_bytes(),
         }
     }
 }
@@ -846,7 +846,7 @@ impl std::convert::TryFrom<proto::GetOutputFileResponse> for GetOutputFileRespon
             if proto.cmac.is_empty() {
                 None
             } else {
-                Some(FileAuthTag::from_hex(&proto.cmac)?)
+                Some(FileAuthTag::from_bytes(&proto.cmac)?)
             }
         };
 
@@ -861,7 +861,7 @@ impl From<GetOutputFileResponse> for proto::GetOutputFileResponse {
     fn from(request: GetOutputFileResponse) -> Self {
         Self {
             owner: request.owner.into(),
-            cmac: request.cmac.map_or_else(String::new, |cmac| cmac.to_hex()),
+            cmac: request.cmac.map_or_else(Vec::new, |cmac| cmac.to_bytes()),
         }
     }
 }

@@ -274,7 +274,7 @@ class RegisterFunctionRequest:
 
 
 class RegisterInputFileRequest:
-    def __init__(self, metadata: Metadata, url: str, cmac: str,
+    def __init__(self, metadata: Metadata, url: str, cmac: List[int],
                  crypto_info: CryptoInfo):
         self.request = "register_input_file"
         self.metadata = metadata
@@ -374,7 +374,7 @@ class FrontendClient:
         return response["content"]["function_id"]
 
     def register_input_file(self, url: str, schema: str, key: List[int],
-                            iv: List[int], cmac: str):
+                            iv: List[int], cmac: List[int]):
         request = RegisterInputFileRequest(self.metadata, url, cmac,
                                            CryptoInfo(schema, key, iv))
         _write_message(self.channel, request)

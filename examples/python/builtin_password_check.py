@@ -36,7 +36,7 @@ class UserData:
                  password,
                  input_url="",
                  encryption_algorithm="teaclave-file-128",
-                 input_cmac="",
+                 input_cmac=[],
                  iv=[],
                  key=[]):
         self.user_id = user_id
@@ -56,15 +56,20 @@ USER_DATA_0 = UserData(
     "password",
     "data:text/plain;base64,c+mpvRfZ0fboR0j3rTgOGDBiubSzlCt9",  # base64 of encrypted string "password"
     "aes-gcm-128",
-    "e84748f7ad380e183062b9b4b3942b7d",
+    [
+        0xe8, 0x47, 0x48, 0xf7, 0xad, 0x38, 0x0e, 0x18, 0x30, 0x62, 0xb9, 0xb4,
+        0xb3, 0x94, 0x2b, 0x7d
+    ],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
 # Data provider
 USER_DATA_1 = UserData("user1", "password",
                        INPUT_FILE_URL_PREFIX + "exposed_passwords.txt.enc",
-                       "teaclave-file-128", "42b16c29edeb9ee0e4d219f3b5395946",
-                       [], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+                       "teaclave-file-128", [
+                           0x42, 0xb1, 0x6c, 0x29, 0xed, 0xeb, 0x9e, 0xe0,
+                           0xe4, 0xd2, 0x19, 0xf3, 0xb5, 0x39, 0x59, 0x46
+                       ], [], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
 
 class DataList:

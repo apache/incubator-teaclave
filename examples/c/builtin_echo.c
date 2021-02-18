@@ -181,11 +181,18 @@ int main() {
 
     printf("[+] Task result in string: %s\n", task_result);
 
-bail:
     ret = teaclave_close_frontend_service(frontend_client);
     if (ret != 0) {
         fprintf(stderr, "[-] Failed to close the frontend service client.\n");
     }
 
     return ret;
+
+bail:
+    ret = teaclave_close_frontend_service(frontend_client);
+    if (ret != 0) {
+        fprintf(stderr, "[-] Failed to close the frontend service client.\n");
+    }
+
+    exit(-1);
 }

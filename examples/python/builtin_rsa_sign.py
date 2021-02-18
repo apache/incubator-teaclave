@@ -56,7 +56,10 @@ def register_input_file(client):
         --print-cmac
     """
     url = "http://localhost:6789/fixtures/functions/rsa_sign/rsakey.enc"
-    cmac = "4de3bb77327c82923640835c6e5ada66"
+    cmac = [
+        0x4d, 0xe3, 0xbb, 0x77, 0x32, 0x7c, 0x82, 0x92, 0x36, 0x40, 0x83, 0x5c,
+        0x6e, 0x5a, 0xda, 0x66
+    ]
     schema = "teaclave-file-128"
     key = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3]
     iv = []

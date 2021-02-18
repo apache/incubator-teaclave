@@ -53,6 +53,10 @@ impl FileAuthTag {
         hex::encode(&self.tag)
     }
 
+    pub fn to_bytes(&self) -> Vec<u8> {
+        self.tag.to_vec()
+    }
+
     #[cfg(test_mode)]
     pub fn mock() -> Self {
         Self {

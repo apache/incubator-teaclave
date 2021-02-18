@@ -36,7 +36,7 @@ class UserData:
                  password,
                  input_url="",
                  output_url="",
-                 input_cmac="",
+                 input_cmac=[],
                  key=[]):
         self.user_id = user_id
         self.password = password
@@ -51,21 +51,24 @@ OUTPUT_FILE_URL_PREFIX = "http://localhost:6789/fixtures/functions/private_join_
 
 USER_DATA_0 = UserData("user0", "password",
                        INPUT_FILE_URL_PREFIX + "bank_a.enc",
-                       OUTPUT_FILE_URL_PREFIX + "user0_output.enc",
-                       "7884a62894e7be50b9795ba22ce5ee7f",
-                       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+                       OUTPUT_FILE_URL_PREFIX + "user0_output.enc", [
+                           0x78, 0x84, 0xa6, 0x28, 0x94, 0xe7, 0xbe, 0x50,
+                           0xb9, 0x79, 0x5b, 0xa2, 0x2c, 0xe5, 0xee, 0x7f
+                       ], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
 USER_DATA_1 = UserData("user1", "password",
                        INPUT_FILE_URL_PREFIX + "bank_b.enc",
-                       OUTPUT_FILE_URL_PREFIX + "user1_output.enc",
-                       "75b8e931887bd57564d93df31c282bb9",
-                       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+                       OUTPUT_FILE_URL_PREFIX + "user1_output.enc", [
+                           0x75, 0xb8, 0xe9, 0x31, 0x88, 0x7b, 0xd5, 0x75,
+                           0x64, 0xd9, 0x3d, 0xf3, 0x1c, 0x28, 0x2b, 0xb9
+                       ], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
 USER_DATA_2 = UserData("user2", "password",
                        INPUT_FILE_URL_PREFIX + "bank_c.enc",
-                       OUTPUT_FILE_URL_PREFIX + "user2_output.enc",
-                       "35acf29139485067d1ae6212c0577b43",
-                       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+                       OUTPUT_FILE_URL_PREFIX + "user2_output.enc", [
+                           0x35, 0xac, 0xf2, 0x91, 0x39, 0x48, 0x50, 0x67,
+                           0xd1, 0xae, 0x62, 0x12, 0xc0, 0x57, 0x7b, 0x43
+                       ], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
 USER_DATA_3 = UserData("user3", "password")
 
