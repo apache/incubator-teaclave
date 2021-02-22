@@ -119,7 +119,7 @@ class TeaclaveClientSDKTests: XCTestCase {
         let key = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         let register_input_file_request = RegisterInputFileRequest(
             url: "data:text/plain;base64,c+mpvRfZ0fboR0j3rTgOGDBiubSzlCt9",
-            cmac: "e84748f7ad380e183062b9b4b3942b7d",
+            cmac: [0xe8, 0x47, 0x48, 0xf7, 0xad, 0x38, 0x0e, 0x18, 0x30, 0x62, 0xb9, 0xb4, 0xb3, 0x94, 0x2b, 0x7d],
             crypto_info: CryptoInfo(schema: "aes-gcm-128", key: key, iv: iv)
         )
         let user0_data_id = try user0_frontend_client.register_input_file(with: register_input_file_request).get().data_id
@@ -149,7 +149,7 @@ class TeaclaveClientSDKTests: XCTestCase {
 
         let user1_register_input_file_request = RegisterInputFileRequest(
             url: "http://teaclave-file-service:6789/fixtures/functions/password_check/exposed_passwords.txt.enc",
-            cmac: "42b16c29edeb9ee0e4d219f3b5395946",
+            cmac: [0x42, 0xb1, 0x6c, 0x29, 0xed, 0xeb, 0x9e, 0xe0, 0xe4, 0xd2, 0x19, 0xf3, 0xb5, 0x39, 0x59, 0x46],
             crypto_info: CryptoInfo(schema: "teaclave-file-128", key: key, iv: [])
         )
         let user1_data_id = try user1_frontend_client.register_input_file(with: user1_register_input_file_request).get().data_id
