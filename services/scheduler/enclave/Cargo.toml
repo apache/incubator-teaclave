@@ -1,6 +1,6 @@
 [package]
 name = "teaclave_scheduler_service_enclave"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
 description = "Teaclave Scheduler Service"
 license = "Apache-2.0"

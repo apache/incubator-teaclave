@@ -1,6 +1,6 @@
 [package]
 name = "teaclave_file_agent"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
 description = "Teaclave file agent for worker"
 license = "Apache-2.0"
