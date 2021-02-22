@@ -114,10 +114,10 @@ public struct CryptoInfo: Codable {
 public struct RegisterInputFileRequest: Encodable {
     public let request: String = "register_input_file"
     public let url: String
-    public let cmac: String
+    public let cmac: [Int]
     public let crypto_info: CryptoInfo
 
-    public init(url: String, cmac: String, crypto_info: CryptoInfo) {
+    public init(url: String, cmac: [Int], crypto_info: CryptoInfo) {
         self.url = url
         self.cmac = cmac
         self.crypto_info = crypto_info
@@ -135,10 +135,10 @@ public struct RegisterInputFileResponse: Codable {
 public struct RegisterOutputFileRequest: Encodable {
     public let request: String = "register_output_file"
     public let url: String
-    public let cmac: String
+    public let cmac: [Int]
     public let crypto_info: CryptoInfo
 
-    public init(url: String, cmac: String, crypto_info: CryptoInfo) {
+    public init(url: String, cmac: [Int], crypto_info: CryptoInfo) {
         self.url = url
         self.cmac = cmac
         self.crypto_info = crypto_info
