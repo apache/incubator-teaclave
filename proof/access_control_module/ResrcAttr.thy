@@ -1,26 +1,25 @@
 (*
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
-*)
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *)
 
 theory ResrcAttr
   imports Main UsrAttr TrustLevel ResrcType InfoType
 begin
-
 
 locale ResrcAttr=gid:SysId nogid valid_gid +
                  iid:SysId noiid valid_iid +
@@ -115,7 +114,6 @@ locale SubjAttr=ResrcAttr nogid valid_gid noiid valid_iid trusted untrusted
   assumes SUBJATTRHLR5:"subjattr_participants(subj_attr uattr conf attr)=conf"
   assumes SUBJATTRHLR6:"subjattr_resrcattr(subj_attr uattr conf attr)=attr"
   assumes SUBJATTRHLR7:"\<exists>uattr conf attr. x=subj_attr uattr conf attr\<or>x=nosubjattr"
- 
 
 print_locale! SubjAttr
 
@@ -222,8 +220,5 @@ locale InfoAttr=ResrcAttr nogid valid_gid noiid valid_iid trusted untrusted
   assumes INFOATTRHLR5:"\<exists>conf attr. x=info_attr conf attr\<or>x=noinfoattr"
 
 print_locale! InfoAttr
-
-
-  
 
 end

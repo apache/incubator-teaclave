@@ -1,27 +1,25 @@
 (*
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
-*)
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *)
 
 theory I_AttrConf
   imports Main "../AttrConf" I_UsrAttr
 begin
-
-
 
 datatype UsrAttrConf = nousrattrconf |
                        is_usrattrconf:usrattr_conf UsrAttrConf UsrAttr
@@ -263,75 +261,28 @@ next
   show "rel_subset_usr confx conf \<and> find_usrid conf attr \<Longrightarrow>
        find_usrid confx attr"
   proof (induct conf)
-case nousrattrconf
-then show ?case by auto
-next
-case (usrattr_conf conf x2)
-  then show ?case
-  proof (auto)
-    show "(rel_subset_usr confx conf \<and> find_usrid conf attr \<Longrightarrow>
-     find_usrid confx attr) \<Longrightarrow>
-    if conf = nousrattrconf \<and> find_usrid confx x2 then True
-    else if conf \<noteq> nousrattrconf \<and> find_usrid confx x2
-         then rel_subset_usr confx conf else False \<Longrightarrow>
-    if usrattr_id x2 = usrattr_id attr \<and> usrattr_id attr \<noteq> nousrid
-    then True else find_usrid conf attr \<Longrightarrow>
-    find_usrid confx attr"
-    proof (split if_split_asm)
-      show "if usrattr_id x2 = usrattr_id attr \<and> usrattr_id attr \<noteq> nousrid
-    then True else find_usrid conf attr \<Longrightarrow>
-    (rel_subset_usr confx conf \<and> find_usrid conf attr \<Longrightarrow>
-     find_usrid confx attr) \<Longrightarrow>
-    conf = nousrattrconf \<Longrightarrow>
-    find_usrid confx x2 \<Longrightarrow> True \<Longrightarrow> find_usrid confx attr"
+    case nousrattrconf
+    then show ?case by auto
+  next
+    case (usrattr_conf conf x2)
+    then show ?case
+    proof (auto)
+      show "(rel_subset_usr confx conf \<and> find_usrid conf attr \<Longrightarrow>
+           find_usrid confx attr) \<Longrightarrow>
+           if conf = nousrattrconf \<and> find_usrid confx x2 then True
+           else if conf \<noteq> nousrattrconf \<and> find_usrid confx x2
+           then rel_subset_usr confx conf else False \<Longrightarrow>
+           if usrattr_id x2 = usrattr_id attr \<and> usrattr_id attr \<noteq> nousrid
+           then True else find_usrid conf attr \<Longrightarrow>
+           find_usrid confx attr"
       proof (split if_split_asm)
-        assume 0:"find_usrid confx x2"
-        assume 1:"usrattr_id x2 = usrattr_id attr"
-        from 0 1 show "find_usrid confx attr"
-        proof (induct confx)
-          case nousrattrconf
-          then show ?case by auto
-        next
-          case (usrattr_conf confx x2)
-          then show ?case by auto
-        qed
-      next
-        show "(rel_subset_usr confx conf \<and> find_usrid conf attr \<Longrightarrow>
-     find_usrid confx attr) \<Longrightarrow>
-    conf = nousrattrconf \<Longrightarrow>
-    find_usrid confx x2 \<Longrightarrow>
-    True \<Longrightarrow>
-    \<not> (usrattr_id x2 = usrattr_id attr \<and>
-        usrattr_id attr \<noteq> nousrid) \<Longrightarrow>
-    find_usrid conf attr \<Longrightarrow> find_usrid confx attr " by auto
-      qed
-    next
-      show "if usrattr_id x2 = usrattr_id attr \<and> usrattr_id attr \<noteq> nousrid
-    then True else find_usrid conf attr \<Longrightarrow>
-    (rel_subset_usr confx conf \<and> find_usrid conf attr \<Longrightarrow>
-     find_usrid confx attr) \<Longrightarrow>
-    \<not> (conf = nousrattrconf \<and> find_usrid confx x2) \<Longrightarrow>
-    if conf \<noteq> nousrattrconf \<and> find_usrid confx x2
-    then rel_subset_usr confx conf else False \<Longrightarrow>
-    find_usrid confx attr"
-      proof (split if_split_asm)
-        show "(rel_subset_usr confx conf \<and> find_usrid conf attr \<Longrightarrow>
-     find_usrid confx attr) \<Longrightarrow>
-    \<not> (conf = nousrattrconf \<and> find_usrid confx x2) \<Longrightarrow>
-    if conf \<noteq> nousrattrconf \<and> find_usrid confx x2
-    then rel_subset_usr confx conf else False \<Longrightarrow>
-    usrattr_id x2 = usrattr_id attr \<Longrightarrow>
-    usrattr_id attr \<noteq> nousrid \<Longrightarrow> True \<Longrightarrow> find_usrid confx attr"
+        show "if usrattr_id x2 = usrattr_id attr \<and> usrattr_id attr \<noteq> nousrid
+             then True else find_usrid conf attr \<Longrightarrow>
+             (rel_subset_usr confx conf \<and> find_usrid conf attr \<Longrightarrow>
+             find_usrid confx attr) \<Longrightarrow>
+             conf = nousrattrconf \<Longrightarrow>
+             find_usrid confx x2 \<Longrightarrow> True \<Longrightarrow> find_usrid confx attr"
         proof (split if_split_asm)
-          show "usrattr_id x2 = usrattr_id attr \<Longrightarrow>
-    usrattr_id attr \<noteq> nousrid \<Longrightarrow>
-    True \<Longrightarrow>
-    (rel_subset_usr confx conf \<and> find_usrid conf attr \<Longrightarrow>
-     find_usrid confx attr) \<Longrightarrow>
-    \<not> (conf = nousrattrconf \<and> find_usrid confx x2) \<Longrightarrow>
-    \<not> (conf \<noteq> nousrattrconf \<and> find_usrid confx x2) \<Longrightarrow>
-    False \<Longrightarrow> find_usrid confx attr" by auto
-        next
           assume 0:"find_usrid confx x2"
           assume 1:"usrattr_id x2 = usrattr_id attr"
           from 0 1 show "find_usrid confx attr"
@@ -342,42 +293,87 @@ case (usrattr_conf conf x2)
             case (usrattr_conf confx x2)
             then show ?case by auto
           qed
+        next
+          show "(rel_subset_usr confx conf \<and> find_usrid conf attr \<Longrightarrow>
+               find_usrid confx attr) \<Longrightarrow>
+               conf = nousrattrconf \<Longrightarrow>
+               find_usrid confx x2 \<Longrightarrow>
+               True \<Longrightarrow>
+               \<not> (usrattr_id x2 = usrattr_id attr \<and>
+               usrattr_id attr \<noteq> nousrid) \<Longrightarrow>
+               find_usrid conf attr \<Longrightarrow> find_usrid confx attr " by auto
         qed
+    next
+      show "if usrattr_id x2 = usrattr_id attr \<and> usrattr_id attr \<noteq> nousrid
+           then True else find_usrid conf attr \<Longrightarrow>
+           (rel_subset_usr confx conf \<and> find_usrid conf attr \<Longrightarrow>
+           find_usrid confx attr) \<Longrightarrow>
+           \<not> (conf = nousrattrconf \<and> find_usrid confx x2) \<Longrightarrow>
+           if conf \<noteq> nousrattrconf \<and> find_usrid confx x2
+           then rel_subset_usr confx conf else False \<Longrightarrow>
+           find_usrid confx attr"
+      proof (split if_split_asm)
+        show "(rel_subset_usr confx conf \<and> find_usrid conf attr \<Longrightarrow>
+             find_usrid confx attr) \<Longrightarrow>
+             \<not> (conf = nousrattrconf \<and> find_usrid confx x2) \<Longrightarrow>
+             if conf \<noteq> nousrattrconf \<and> find_usrid confx x2
+             then rel_subset_usr confx conf else False \<Longrightarrow>
+             usrattr_id x2 = usrattr_id attr \<Longrightarrow>
+             usrattr_id attr \<noteq> nousrid \<Longrightarrow> True \<Longrightarrow> find_usrid confx attr"
+          proof (split if_split_asm)
+            show "usrattr_id x2 = usrattr_id attr \<Longrightarrow>
+                 usrattr_id attr \<noteq> nousrid \<Longrightarrow>
+                 True \<Longrightarrow>
+                 (rel_subset_usr confx conf \<and> find_usrid conf attr \<Longrightarrow>
+                 find_usrid confx attr) \<Longrightarrow>
+                 \<not> (conf = nousrattrconf \<and> find_usrid confx x2) \<Longrightarrow>
+                 \<not> (conf \<noteq> nousrattrconf \<and> find_usrid confx x2) \<Longrightarrow>
+                 False \<Longrightarrow> find_usrid confx attr" by auto
+          next
+            assume 0:"find_usrid confx x2"
+            assume 1:"usrattr_id x2 = usrattr_id attr"
+            from 0 1 show "find_usrid confx attr"
+            proof (induct confx)
+              case nousrattrconf
+              then show ?case by auto
+            next
+              case (usrattr_conf confx x2)
+              then show ?case by auto
+            qed
+          qed
       next
         show "(rel_subset_usr confx conf \<and> find_usrid conf attr \<Longrightarrow>
-     find_usrid confx attr) \<Longrightarrow>
-    \<not> (conf = nousrattrconf \<and> find_usrid confx x2) \<Longrightarrow>
-    if conf \<noteq> nousrattrconf \<and> find_usrid confx x2
-    then rel_subset_usr confx conf else False \<Longrightarrow>
-    \<not> (usrattr_id x2 = usrattr_id attr \<and>
-        usrattr_id attr \<noteq> nousrid) \<Longrightarrow>
-    find_usrid conf attr \<Longrightarrow> find_usrid confx attr"
+             find_usrid confx attr) \<Longrightarrow>
+             \<not> (conf = nousrattrconf \<and> find_usrid confx x2) \<Longrightarrow>
+             if conf \<noteq> nousrattrconf \<and> find_usrid confx x2
+             then rel_subset_usr confx conf else False \<Longrightarrow>
+             \<not> (usrattr_id x2 = usrattr_id attr \<and>
+             usrattr_id attr \<noteq> nousrid) \<Longrightarrow>
+             find_usrid conf attr \<Longrightarrow> find_usrid confx attr"
         proof (split if_split_asm)
           show " \<not> (usrattr_id x2 = usrattr_id attr \<and>
-        usrattr_id attr \<noteq> nousrid) \<Longrightarrow>
-    find_usrid conf attr \<Longrightarrow>
-    (rel_subset_usr confx conf \<and> find_usrid conf attr \<Longrightarrow>
-     find_usrid confx attr) \<Longrightarrow>
-    \<not> (conf = nousrattrconf \<and> find_usrid confx x2) \<Longrightarrow>
-    conf \<noteq> nousrattrconf \<Longrightarrow>
-    find_usrid confx x2 \<Longrightarrow>
-    rel_subset_usr confx conf \<Longrightarrow> find_usrid confx attr" by auto
+               usrattr_id attr \<noteq> nousrid) \<Longrightarrow>
+               find_usrid conf attr \<Longrightarrow>
+               (rel_subset_usr confx conf \<and> find_usrid conf attr \<Longrightarrow>
+               find_usrid confx attr) \<Longrightarrow>
+               \<not> (conf = nousrattrconf \<and> find_usrid confx x2) \<Longrightarrow>
+               conf \<noteq> nousrattrconf \<Longrightarrow>
+               find_usrid confx x2 \<Longrightarrow>
+               rel_subset_usr confx conf \<Longrightarrow> find_usrid confx attr" by auto
         next
           show "\<not> (usrattr_id x2 = usrattr_id attr \<and>
-        usrattr_id attr \<noteq> nousrid) \<Longrightarrow>
-    find_usrid conf attr \<Longrightarrow>
-    (rel_subset_usr confx conf \<and> find_usrid conf attr \<Longrightarrow>
-     find_usrid confx attr) \<Longrightarrow>
-    \<not> (conf = nousrattrconf \<and> find_usrid confx x2) \<Longrightarrow>
-    \<not> (conf \<noteq> nousrattrconf \<and> find_usrid confx x2) \<Longrightarrow>
-    False \<Longrightarrow> find_usrid confx attr" by auto
+               usrattr_id attr \<noteq> nousrid) \<Longrightarrow>
+               find_usrid conf attr \<Longrightarrow>
+               (rel_subset_usr confx conf \<and> find_usrid conf attr \<Longrightarrow>
+               find_usrid confx attr) \<Longrightarrow>
+               \<not> (conf = nousrattrconf \<and> find_usrid confx x2) \<Longrightarrow>
+               \<not> (conf \<noteq> nousrattrconf \<and> find_usrid confx x2) \<Longrightarrow>
+               False \<Longrightarrow> find_usrid confx attr" by auto
+          qed
         qed
       qed
     qed
   qed
-qed
-
-
 qed
 
 end

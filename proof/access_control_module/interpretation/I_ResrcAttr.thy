@@ -1,21 +1,21 @@
 (*
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
-*)
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *)
 
 theory I_ResrcAttr
   imports Main "../ResrcAttr" I_AttrConf I_TrustLevel I_ResrcType I_InfoType
@@ -104,17 +104,7 @@ next
                         (info_type x) \<or> x = noresrcattr" by(auto simp: resrc_attr_def)
   qed
 qed
-(*
-datatype SubjAttr = nosubjattr |
-                    is_subjattr:subj_attr 
-                              (subj_callerattr:UsrAttr) 
-                              (subj_participants:UsrAttrConf) 
-                              (subj_resrcattr:ResrcAttr)
-                    where
-                    "subj_callerattr nosubjattr=nousrattr" |
-                    "subj_participants nosubjattr=nousrattrconf" |
-                    "subj_resrcattr nosubjattr=noresrcattr"
-*)
+
 record SubjAttr=
   subj_callerattr::UsrAttr
   subj_participants::UsrAttrConf
@@ -209,15 +199,7 @@ next
          x = noobjattr" by (auto simp:obj_attr_def)
   qed
 qed
-(*
-datatype InfoAttr = noinfoattr |
-                    is_infoattr:info_attr 
-                              (info_owners:UsrAttrConf) 
-                              (info_resrcattr:ResrcAttr)
-                    where
-                    "info_owners noinfoattr=nousrattrconf" |
-                    "info_resrcattr noinfoattr=noresrcattr"
-*)
+
 record InfoAttr=
   info_owners::UsrAttrConf
   info_resrcattr::ResrcAttr
@@ -258,7 +240,5 @@ next
       by (auto simp:info_attr_def)
   qed
 qed
-
-
 
 end

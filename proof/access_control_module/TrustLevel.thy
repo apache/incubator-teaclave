@@ -41,7 +41,4 @@ end
 
 print_locale! TrustLevel
 
-
-
-
 end

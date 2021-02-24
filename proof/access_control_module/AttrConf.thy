@@ -1,21 +1,21 @@
 (*
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
-*)
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *)
 
 theory AttrConf
   imports Main
@@ -60,7 +60,6 @@ locale AttrConf=
                         (conf\<noteq>noattrconf\<and>
                         find_elem conf attr))\<Longrightarrow>
                         \<not>find_elem(attr_conf conf attrx) attr"
-
   assumes ATTRCONFHLR11:"delete_attr noattrconf attr=noattrconf"
   assumes ATTRCONFHLR12:"attr_elem attrx=attr_elem attr\<and>
                         attr_elem attr\<noteq>noelem\<Longrightarrow>
@@ -71,7 +70,6 @@ locale AttrConf=
                         attr_elem attr\<noteq>noelem\<Longrightarrow>
                         delete_attr(attr_conf conf attrx) attr=
                         attr_conf(delete_attr conf attr) attrx"
-
   assumes ATTRCONFHLR15:"get_attr noattrconf elem=noattr"
   assumes ATTRCONFHLR16:"elem\<noteq>noelem\<and>
                         attr_elem attr=elem\<Longrightarrow>
@@ -81,7 +79,6 @@ locale AttrConf=
   assumes ATTRCONFHLR18:"elem\<noteq>noelem\<and>
                         attr_elem attr\<noteq>elem\<Longrightarrow>
                         get_attr(attr_conf conf attr) elem=get_attr conf elem"
-
   assumes ATTRCONFHLR19:"\<not>valid_attrconf noattrconf"
   assumes ATTRCONFHLR20:"conf=noattrconf\<and>
                         \<not>find_elem conf attr\<Longrightarrow>
@@ -96,10 +93,6 @@ locale AttrConf=
                         \<not>find_elem conf attr\<and>
                         valid_attrconf conf))\<Longrightarrow>
                         \<not>valid_attrconf(attr_conf conf attr)"
-
-
-
-
 begin
 
 lemma ATTRCONFHLR23:"noattrconf\<noteq>attr_conf conf attr"
@@ -132,9 +125,7 @@ proof -
   from this show "\<not>find_elem(attr_conf conf attrx) attr" by (rule ATTRCONFHLR10)
 qed
 
-
 end
-
 
 print_locale! AttrConf
 
@@ -167,15 +158,7 @@ locale AttrConfRel=AttrConf noelem noattr noattrconf attr_conf is_attrconf attr_
                           \<not>rel_subset confx (attr_conf conf attr)"
   assumes ATTRCONFRELHLR5:"rel_subset confx conf\<and>find_elem conf attr\<Longrightarrow>find_elem confx attr"
 
-begin
-
-
-
-end
-
-
 print_locale! AttrConfRel
-
 
 locale AttrConfDisj = arg1:AttrConf noelem noattr_arg1 noattrconf_arg1 attr_conf_arg1 is_attrconf_arg1 
                                     attr_elem_arg1 find_elem_arg1 delete_attr_arg1 get_attr_arg1

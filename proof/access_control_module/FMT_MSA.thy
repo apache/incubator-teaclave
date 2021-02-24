@@ -1,21 +1,21 @@
 (*
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
-*)
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *)
 
 theory FMT_MSA
   imports Main ResrcAttr
@@ -120,7 +120,6 @@ locale SubjAttrConf=SubjAttr nogid valid_gid noiid valid_iid trusted untrusted
                            \<not>subjattrconf_uniq conf\<Longrightarrow>
                            \<not>valid_subjattrconf(subjattr_conf conf sattr)"
 
-
 print_locale! SubjAttrConf
 
 locale ObjAttrConf=ObjAttr nogid valid_gid noiid valid_iid trusted untrusted
@@ -179,7 +178,6 @@ locale ObjAttrConf=ObjAttr nogid valid_gid noiid valid_iid trusted untrusted
     and get_objattr::"'objattrconf\<Rightarrow>'gid\<Rightarrow>'objattr"
     and valid_objattrconf::"'objattrconf\<Rightarrow>bool" +    
   assumes OBJATTRCONFHLR1:"objattr_objid oattr=resrcattr_presrcid(objattr_resrcattr oattr)"
-
 
 print_locale! ObjAttrConf
 
