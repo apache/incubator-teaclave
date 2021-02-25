@@ -92,8 +92,8 @@ locale FdpAcf1=SubjAttr nogid valid_gid noiid valid_iid trusted untrusted
                       resrcattr_infotype(objattr_resrcattr oattr)=func\<Longrightarrow>
                       \<not>task_access_function sattr oattr"
   assumes FDPACF1HLR3:"rel_subset(subjattr_participants sattr) (objattr_owners oattr)\<and>
-                      \<not>resrcattr_infotype(objattr_resrcattr oattr)\<noteq>func\<Longrightarrow>
-                      task_access_function sattr oattr"  
+                      resrcattr_infotype(objattr_resrcattr oattr)\<noteq>func\<Longrightarrow>
+                      \<not>task_access_function sattr oattr"  
   assumes FDPACF1HLR4:"find_usrid(objattr_owners oattr) uattr \<and>
                       (resrcattr_infotype(objattr_resrcattr oattr)=func)\<Longrightarrow>
                       user_access_function uattr oattr"

@@ -84,8 +84,8 @@ next
   fix oattr
   show "rel_subset_usr (subj_participants sattr)
        (obj_owners oattr) \<and>
-       \<not> info_type (obj_resrcattr oattr) \<noteq> InfoType.Func \<Longrightarrow>
-       task_access_function sattr oattr" by (auto simp:task_access_function_def)
+       info_type (obj_resrcattr oattr) \<noteq> InfoType.Func \<Longrightarrow>
+       \<not>task_access_function sattr oattr" by (auto simp:task_access_function_def)
 next
   fix oattr
   fix uattr
