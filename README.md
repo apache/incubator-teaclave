@@ -1,7 +1,9 @@
 # Teaclave: A Universal Secure Computing Platform
 
 [![License](https://img.shields.io/badge/license-Apache-green.svg)](LICENSE)
+[![Release](https://img.shields.io/github/v/tag/apache/incubator-teaclave?label=release&sort=semver)](https://github.com/apache/incubator-teaclave/releases)
 [![Coverage Status](https://coveralls.io/repos/github/apache/incubator-teaclave/badge.svg?branch=master)](https://coveralls.io/github/apache/incubator-teaclave?branch=master)
+[![Homepage](https://img.shields.io/badge/site-homepage-blue)](https://teaclave.apache.org/)
 
 Apache Teaclave (incubating) is an open source ***universal secure computing***
 platform, making computation on privacy-sensitive data safe and simple.
@@ -24,11 +26,11 @@ platform, making computation on privacy-sensitive data safe and simple.
   Teaclave builds its components in containers, therefore, it supports
   deployment both locally and within cloud infrastructures. Teaclave also
   provides convenient endpoint APIs, client SDKs and command line tools.
-- **Flexibility**:
-  Components in Teaclave are designed in modular, and some like remote
+- **Flexible**:
+  Components in Teaclave are designed in modular, and features like remote
   attestation can be easily embedded in other projects. In addition, Teaclave
-  SGX SDK can also be used separately to write standalone SGX enclaves for other
-  purposes.
+  SGX SDK and Teaclave TrustZone SDK can also be used separately to write TEE
+  apps for other purposes.
 
 ## Getting Started
 
@@ -84,6 +86,14 @@ platform, making computation on privacy-sensitive data safe and simple.
 - [Teaclave Client SDK (Python)](https://teaclave.apache.org/api-docs/client-sdk-python/)
 - [Crates in Teaclave (Enclave)](https://teaclave.apache.org/api-docs/crates-enclave/)
 - [Crates in Teaclave (App)](https://teaclave.apache.org/api-docs/crates-app/)
+
+## Teaclave Projects
+
+This is the main repository for the Teaclave FaaS platform. There are several
+sub-projects under Teaclave:
+
+- [Teaclave SGX SDK](https://github.com/apache/incubator-teaclave-sgx-sdk)
+- [Teaclave TrustZone SDK](https://github.com/apache/incubator-teaclave-trustzone-sdk)
 
 ## Contributing
 
