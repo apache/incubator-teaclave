@@ -84,6 +84,7 @@ platform, making computation on privacy-sensitive data safe and simple.
 
 - [Teaclave SGX SDK](https://teaclave.apache.org/api-docs/sgx-sdk/)
 - [Teaclave Client SDK (Python)](https://teaclave.apache.org/api-docs/client-sdk-python/)
+- [Teaclave Client SDK (Rust)](https://teaclave.apache.org/api-docs/client-sdk-rust/)
 - [Crates in Teaclave (Enclave)](https://teaclave.apache.org/api-docs/crates-enclave/)
 - [Crates in Teaclave (App)](https://teaclave.apache.org/api-docs/crates-app/)
 
