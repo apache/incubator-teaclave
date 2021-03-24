@@ -107,4 +107,4 @@ learn more about how to contribute. Thanks to our [contributors](CONTRIBUTORS.md
 
 - Join us on our [mailing list](https://lists.apache.org/list.html?dev@teaclave.apache.org).
 - Follow us at [@ApacheTeaclave](https://twitter.com/ApacheTeaclave).
-- See [more](COMMUNITY.md).
+- See [more](https://teaclave.apache.org/community/).
