@@ -35,8 +35,8 @@ while true; do
         shift; shift ;;
     -d | --build_type) 
         case "$2" in 
-            Release) BUILD_TYPE="--config Release";;
-            Debug) BUILD_TYPE="--config Debug";;
+            Release) BUILD_TYPE="-DCMAKE_BUILD_TYPE=Release";;
+            Debug) BUILD_TYPE="-DCMAKE_BUILD_TYPE=Debug";;
             *) echo "Invalid build_type provided!";;
         esac
         shift; shift ;;
@@ -57,4 +57,4 @@ cd "${BUILD_DIR}"
 cmake ${TARGET_FLAGS} ${MODE} ${BUILD_TYPE} "${SOURCE_DIR}"
 
 # We need to force build with -j1 here.
-MAKEFLAGS=-j1 cmake --build . ${BUILD_TYPE}
+MAKEFLAGS=-j1 cmake --build .
