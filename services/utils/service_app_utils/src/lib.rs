@@ -19,12 +19,13 @@ use anyhow::{bail, Context, Result};
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::thread;
 use teaclave_binder::proto::{ECallCommand, StartServiceInput, StartServiceOutput};
 use teaclave_binder::TeeBinder;
 use teaclave_config::RuntimeConfig;
 use teaclave_types::TeeServiceResult;
 
-pub struct TeaclaveServiceLauncher {
+struct TeaclaveServiceLauncher {
     tee: TeeBinder,
     config: RuntimeConfig,
 }
@@ -61,7 +62,39 @@ impl TeaclaveServiceLauncher {
     }
 }
 
-pub fn register_signals(term: Arc<AtomicBool>) -> Result<()> {
+pub fn launch_teaclave_service(host_package_name: &str) -> Result<()> {
+    env_logger::init_from_env(
+        env_logger::Env::new()
+            .filter_or("TEACLAVE_LOG", "RUST_LOG")
+            .write_style_or("TEACLAVE_LOG_STYLE", "RUST_LOG_STYLE"),
+    );
+
+    let launcher = Arc::new(TeaclaveServiceLauncher::new(
+        host_package_name,
+        "runtime.config.toml",
+    )?);
+    let launcher_ref = launcher.clone();
+    thread::spawn(move || {
+        let _ = launcher_ref.start();
+        unsafe { libc::raise(signal_hook::SIGTERM) }
+    });
+
+    let term = Arc::new(AtomicBool::new(false));
+    register_signals(term.clone()).context("Failed to register signal handler")?;
+
+    while !term.load(Ordering::Relaxed) {
+        thread::park();
+    }
+
+    launcher.finalize();
+    unsafe {
+        launcher.destroy(); // force to destroy the enclave
+    }
+
+    Ok(())
+}
+
+fn register_signals(term: Arc<AtomicBool>) -> Result<()> {
     for signal in &[
         signal_hook::SIGTERM,
         signal_hook::SIGINT,
