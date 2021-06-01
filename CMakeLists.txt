@@ -151,6 +151,13 @@ set(MESAPY_OUTPUTS
   ${TEACLAVE_OUT_DIR}/libsgx_ulibc.a
   ${TEACLAVE_OUT_DIR}/ffi.o
 )
+
+# WAMR library
+
+set(WAMR_OUTPUTS
+  ${TEACLAVE_OUT_DIR}/libvmlib.a
+)
+
 if(USE_PREBUILT_MESAPY)
 add_custom_command(
   OUTPUT ${MESAPY_OUTPUTS}
@@ -172,8 +179,28 @@ else()
         ${TEACLAVE_OUT_DIR}
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/third_party/mesapy)
 endif()
+
+ExternalProject_Add(wamr_teaclave
+  SOURCE_DIR ${WAMR_TEACLAVE_ROOT_DIR}
+  BINARY_DIR ${WAMR_TEACLAVE_ROOT_DIR}/build
+  INSTALL_COMMAND ""
+  LOG_BUILD 1
+)
+
+add_custom_command(
+  OUTPUT ${WAMR_OUTPUTS}
+  DEPENDS wamr_teaclave
+  COMMAND
+    cp ${WAMR_TEACLAVE_ROOT_DIR}/build/libvmlib.a ${TEACLAVE_OUT_DIR}
+  WORKING_DIRECTORY ${WAMR_TEACLAVE_ROOT_DIR}/build
+  )
+
 add_custom_target(mesapy
   DEPENDS ${MESAPY_OUTPUTS}
+  )
+
+add_custom_target(wamr
+  DEPENDS $(WAMR_TEACLAVE_ROOT_DIR)/CMakeLists.txt ${WAMR_OUTPUTS}
   )
 
 # mesapy components
@@ -213,6 +240,7 @@ foreach(_i RANGE ${SGX_LIB_LAST_INDEX})
     DEPENDS
     prep
     mesapy
+    wamr
     pycomponent
     INSTALL_DIR
     ${TEACLAVE_INSTALL_DIR}/${_category}

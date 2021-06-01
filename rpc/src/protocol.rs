@@ -103,7 +103,7 @@ where
         let buf_len = send_buf.len() as u64;
         let header = buf_len.to_be_bytes();
 
-        self.transport.write(&header)?;
+        self.transport.write_all(&header)?;
         self.transport.write_all(&send_buf)?;
         self.transport.flush()?;
 

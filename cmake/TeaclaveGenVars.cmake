@@ -42,6 +42,9 @@ set(THIRD_PARTY_DIR ${PROJECT_SOURCE_DIR}/third_party)
 set(UNTRUSTED_TARGET_DIR ${TEACLAVE_TARGET_DIR}/untrusted)
 set(UNIX_TARGET_DIR ${TEACLAVE_TARGET_DIR}/unix)
 set(TRUSTED_TARGET_DIR ${TEACLAVE_TARGET_DIR}/trusted)
+set(WAMR_TEACLAVE_ROOT_DIR
+  ${PROJECT_SOURCE_DIR}/third_party/wasm-micro-runtime/product-mini/platforms/teaclave-sgx
+)
 # build.rs will read ENV{ENCLAVE_OUT_DIR} for linking
 set(ENCLAVE_OUT_DIR ${TEACLAVE_OUT_DIR})
 set(RUST_SGX_SDK ${PROJECT_SOURCE_DIR}/third_party/rust-sgx-sdk)

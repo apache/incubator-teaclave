@@ -1,0 +1,651 @@
+diff --git a/core/shared/platform/teaclave-sgx/platform_internal.h b/core/shared/platform/teaclave-sgx/platform_internal.h
+new file mode 100644
+index 0000000..93417b4
+--- /dev/null
++++ b/core/shared/platform/teaclave-sgx/platform_internal.h
+@@ -0,0 +1,58 @@
++/*
++ * Copyright (C) 2019 Intel Corporation.  All rights reserved.
++ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++ */
++
++#ifndef _PLATFORM_INTERNAL_H
++#define _PLATFORM_INTERNAL_H
++
++#include <inttypes.h>
++#include <stdbool.h>
++#include <assert.h>
++#include <time.h>
++#include <string.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <math.h>
++#include <unistd.h>
++#include <stdarg.h>
++#include <ctype.h>
++#include <limits.h>
++#include <errno.h>
++#include <sgx_thread.h>
++#include <pthread.h>
++
++#include "sgx_error.h"
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++#ifndef BH_PLATFORM_LINUX_SGX
++#define BH_PLATFORM_LINUX_SGX
++#endif
++
++#define _STACK_SIZE_ADJUSTMENT (32 * 1024)
++
++/* Stack size of applet threads's native part.  */
++#define BH_APPLET_PRESERVED_STACK_SIZE      (8 * 1024 + _STACK_SIZE_ADJUSTMENT)
++
++/* Default thread priority */
++#define BH_THREAD_DEFAULT_PRIORITY 0
++
++typedef pthread_t korp_thread;
++typedef pthread_t korp_tid;
++typedef pthread_mutex_t korp_mutex;
++typedef pthread_cond_t korp_cond;
++
++typedef void (*os_print_function_t)(const char* message);
++void os_set_print_function(os_print_function_t pf);
++
++char *strcpy(char *dest, const char *src);
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* end of _PLATFORM_INTERNAL_H */
++
+diff --git a/core/shared/platform/teaclave-sgx/sgx_platform.c b/core/shared/platform/teaclave-sgx/sgx_platform.c
+new file mode 100644
+index 0000000..e819f26
+--- /dev/null
++++ b/core/shared/platform/teaclave-sgx/sgx_platform.c
+@@ -0,0 +1,172 @@
++/*
++ * Copyright (C) 2019 Intel Corporation.  All rights reserved.
++ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++ */
++
++#include "platform_api_vmcore.h"
++#include "platform_api_extension.h"
++#include "sgx_rsrv_mem_mngr.h"
++
++#define FIXED_BUFFER_SIZE (1<<9)
++
++static os_print_function_t print_function = NULL;
++
++int bh_platform_init()
++{
++    return 0;
++}
++
++void
++bh_platform_destroy()
++{
++}
++
++void *
++os_malloc(unsigned size)
++{
++    return malloc(size);
++}
++
++void *
++os_realloc(void *ptr, unsigned size)
++{
++    return realloc(ptr, size);
++}
++
++void
++os_free(void *ptr)
++{
++    free(ptr);
++}
++
++int putchar(int c)
++{
++    return 0;
++}
++
++int puts(const char *s)
++{
++    return 0;
++}
++
++void os_set_print_function(os_print_function_t pf)
++{
++    print_function = pf;
++}
++
++int os_printf(const char *message, ...)
++{
++    if (print_function != NULL) {
++        char msg[FIXED_BUFFER_SIZE] = { '\0' };
++        va_list ap;
++        va_start(ap, message);
++        vsnprintf(msg, FIXED_BUFFER_SIZE, message, ap);
++        va_end(ap);
++        print_function(msg);
++    }
++
++    return 0;
++}
++
++int os_vprintf(const char * format, va_list arg)
++{
++    if (print_function != NULL) {
++        char msg[FIXED_BUFFER_SIZE] = { '\0' };
++        vsnprintf(msg, FIXED_BUFFER_SIZE, format, arg);
++        print_function(msg);
++    }
++
++    return 0;
++}
++
++char *strcpy(char *dest, const char *src)
++{
++    const unsigned char *s = src;
++    unsigned char *d = dest;
++
++    while ((*d++ = *s++));
++    return dest;
++}
++
++void* os_mmap(void *hint, size_t size, int prot, int flags)
++{
++    int mprot = 0;
++    uint64 aligned_size, page_size;
++    void* ret = NULL;
++    sgx_status_t st = 0;
++
++    page_size = getpagesize();
++    aligned_size = (size + page_size - 1) & ~(page_size - 1);
++
++    if (aligned_size >= UINT32_MAX)
++        return NULL;
++
++    ret = sgx_alloc_rsrv_mem(aligned_size);
++    if (ret == NULL) {
++        os_printf("os_mmap(size=%u, aligned size=%lu, prot=0x%x) failed.",
++                  size, aligned_size, prot);
++        return NULL;
++    }
++
++    if (prot & MMAP_PROT_READ)
++        mprot |= SGX_PROT_READ;
++    if (prot & MMAP_PROT_WRITE)
++        mprot |= SGX_PROT_WRITE;
++    if (prot & MMAP_PROT_EXEC)
++        mprot |= SGX_PROT_EXEC;
++
++    st = sgx_tprotect_rsrv_mem(ret, aligned_size, mprot);
++    if (st != SGX_SUCCESS) {
++        os_printf("os_mmap(size=%u, prot=0x%x) failed to set protect.",
++                  size, prot);
++        sgx_free_rsrv_mem(ret, aligned_size);
++        return NULL;
++    }
++
++    return ret;
++}
++
++void os_munmap(void *addr, size_t size)
++{
++    uint64 aligned_size, page_size;
++
++    page_size = getpagesize();
++    aligned_size = (size + page_size - 1) & ~(page_size - 1);
++    sgx_free_rsrv_mem(addr, aligned_size);
++}
++
++int os_mprotect(void *addr, size_t size, int prot)
++{
++    int mprot = 0;
++    sgx_status_t st = 0;
++    uint64 aligned_size, page_size;
++
++    page_size = getpagesize();
++    aligned_size = (size + page_size - 1) & ~(page_size - 1);
++
++    if (prot & MMAP_PROT_READ)
++        mprot |= SGX_PROT_READ;
++    if (prot & MMAP_PROT_WRITE)
++        mprot |= SGX_PROT_WRITE;
++    if (prot & MMAP_PROT_EXEC)
++        mprot |= SGX_PROT_EXEC;
++    st = sgx_tprotect_rsrv_mem(addr, aligned_size, mprot);
++    if (st != SGX_SUCCESS)
++        os_printf("os_mprotect(addr=0x%"PRIx64", size=%u, prot=0x%x) failed.",
++                  (uintptr_t)addr, size, prot);
++
++    return (st == SGX_SUCCESS? 0:-1);
++}
++
++uint64
++os_time_get_boot_microsecond()
++{
++    /* TODO */
++    return 0;
++}
++
++void
++os_dcache_flush(void)
++{
++}
++
+diff --git a/core/shared/platform/teaclave-sgx/sgx_rsrv_mem_mngr.h b/core/shared/platform/teaclave-sgx/sgx_rsrv_mem_mngr.h
+new file mode 100644
+index 0000000..b32a68b
+--- /dev/null
++++ b/core/shared/platform/teaclave-sgx/sgx_rsrv_mem_mngr.h
+@@ -0,0 +1,90 @@
++/*
++ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ *   * Redistributions of source code must retain the above copyright
++ *     notice, this list of conditions and the following disclaimer.
++ *   * Redistributions in binary form must reproduce the above copyright
++ *     notice, this list of conditions and the following disclaimer in
++ *     the documentation and/or other materials provided with the
++ *     distribution.
++ *   * Neither the name of Intel Corporation nor the names of its
++ *     contributors may be used to endorse or promote products derived
++ *     from this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ *
++ */
++
++/*
++ * This file is copied from https://github.com/intel/linux-sgx/blob/4589daddd58bec7367a6a9de3fe301e6de17671a/common/inc/internal/sgx_rsrv_mem_mngr.h
++ * The reason we copied here is that the official SGX SDK release has
++ * not included this header file yet.
++ */
++
++#pragma once
++
++#ifndef _SGX_RSRV_MEM_MNGR_H_
++#define _SGX_RSRV_MEM_MNGR_H_
++
++#include "stdint.h"
++#include "sgx_error.h"
++
++#define SGX_PROT_READ	0x1		/* page can be read */
++#define SGX_PROT_WRITE	0x2		/* page can be written */
++#define SGX_PROT_EXEC	0x4		/* page can be executed */
++#define SGX_PROT_NONE	0x0		/* page can not be accessed */
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++    /* Allocate a range of EPC memory from the reserved memory area with RW permission
++     *
++     * Parameters:
++     * Inputs: length [in]: Size of region to be allocated in bytes. Page aligned
++     * Return: Starting address of the new allocated memory area on success; otherwise NULL
++     */
++    void * sgx_alloc_rsrv_mem(size_t length);
++
++
++    /* Free a range of EPC memory from the reserved memory area
++     *
++     * Parameters:
++     * Inputs: addr[in]: Starting address of region to be freed. Page aligned.
++     *         length[in]: The length of the memory to be freed in bytes.  Page aligned
++     * Return: 0 on success; otherwise -1
++     */
++    int sgx_free_rsrv_mem(void * addr, size_t length);
++
++
++    /* Modify the access permissions of the pages in the reserved memory area.
++     *
++     * Parameters: 
++     * Inputs: addr[in]: Starting address of region which needs to change access permission. Page aligned.
++     *         length[in]: The length of the memory to be manipulated in bytes. Page aligned.
++     *         prot[in]: The target memory protection.
++     * Return: sgx_status_t - SGX_SUCCESS or failure as defined in sgx_error.h
++     */
++    sgx_status_t sgx_tprotect_rsrv_mem(void *addr, size_t len, int prot);
++
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif
++
+diff --git a/core/shared/platform/teaclave-sgx/sgx_thread.c b/core/shared/platform/teaclave-sgx/sgx_thread.c
+new file mode 100644
+index 0000000..d1503b4
+--- /dev/null
++++ b/core/shared/platform/teaclave-sgx/sgx_thread.c
+@@ -0,0 +1,180 @@
++/*
++ * Copyright (C) 2019 Intel Corporation.  All rights reserved.
++ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++ */
++
++#include "platform_api_vmcore.h"
++#include "platform_api_extension.h"
++
++#ifndef SGX_DISABLE_PTHREAD
++typedef struct {
++    thread_start_routine_t start;
++    void *arg;
++} thread_wrapper_arg;
++
++static void *os_thread_wrapper(void *arg)
++{
++    thread_wrapper_arg * targ = arg;
++    thread_start_routine_t start_func = targ->start;
++    void *thread_arg = targ->arg;
++    os_printf("THREAD CREATED %p\n", &targ);
++    BH_FREE(targ);
++    start_func(thread_arg);
++    return NULL;
++}
++
++int os_thread_create_with_prio(korp_tid *tid, thread_start_routine_t start,
++                               void *arg, unsigned int stack_size, int prio)
++{
++    thread_wrapper_arg *targ;
++
++    assert(tid);
++    assert(start);
++
++    targ = (thread_wrapper_arg *) BH_MALLOC(sizeof(*targ));
++    if (!targ) {
++        return BHT_ERROR;
++    }
++
++    targ->start = start;
++    targ->arg = arg;
++
++    if (pthread_create(tid, NULL, os_thread_wrapper, targ) != 0) {
++        BH_FREE(targ);
++        return BHT_ERROR;
++    }
++
++    return BHT_OK;
++}
++
++int os_thread_create(korp_tid *tid, thread_start_routine_t start, void *arg,
++                     unsigned int stack_size)
++{
++    return os_thread_create_with_prio(tid, start, arg, stack_size,
++                                      BH_THREAD_DEFAULT_PRIORITY);
++}
++#endif
++
++korp_tid os_self_thread()
++{
++#ifndef SGX_DISABLE_PTHREAD
++    return pthread_self();
++#else
++    return 0;
++#endif
++}
++
++int os_mutex_init(korp_mutex *mutex)
++{
++#ifndef SGX_DISABLE_PTHREAD
++    pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
++    *mutex = m;
++#endif
++    return BHT_OK;
++}
++
++int os_mutex_destroy(korp_mutex *mutex)
++{
++#ifndef SGX_DISABLE_PTHREAD
++    pthread_mutex_destroy(mutex);
++#endif
++    return BHT_OK;
++}
++
++int os_mutex_lock(korp_mutex *mutex)
++{
++#ifndef SGX_DISABLE_PTHREAD
++    return pthread_mutex_lock(mutex);
++#else
++    return 0;
++#endif
++}
++
++int os_mutex_unlock(korp_mutex *mutex)
++{
++#ifndef SGX_DISABLE_PTHREAD
++    return pthread_mutex_unlock(mutex);
++#else
++    return 0;
++#endif
++}
++
++int os_cond_init(korp_cond *cond)
++{
++#ifndef SGX_DISABLE_PTHREAD
++    pthread_cond_t c = PTHREAD_COND_INITIALIZER;
++    *cond = c;
++#endif
++    return BHT_OK;
++}
++
++int os_cond_destroy(korp_cond *cond)
++{
++#ifndef SGX_DISABLE_PTHREAD
++    pthread_cond_destroy(cond);
++#endif
++    return BHT_OK;
++}
++
++int os_cond_wait(korp_cond *cond, korp_mutex *mutex)
++{
++#ifndef SGX_DISABLE_PTHREAD
++    assert(cond);
++    assert(mutex);
++
++    if (pthread_cond_wait(cond, mutex) != BHT_OK)
++        return BHT_ERROR;
++
++#endif
++    return BHT_OK;
++}
++
++int os_cond_reltimedwait(korp_cond *cond, korp_mutex *mutex, uint64 useconds)
++{
++    os_printf("warning: SGX pthread_cond_timedwait isn't supported, "
++              "calling pthread_cond_wait instead!\n");
++    return BHT_ERROR;
++}
++
++int os_cond_signal(korp_cond *cond)
++{
++#ifndef SGX_DISABLE_PTHREAD
++    assert(cond);
++
++    if (pthread_cond_signal(cond) != BHT_OK)
++        return BHT_ERROR;
++
++#endif
++    return BHT_OK;
++}
++
++int os_thread_join(korp_tid thread, void **value_ptr)
++{
++#ifndef SGX_DISABLE_PTHREAD
++    return pthread_join(thread, value_ptr);
++#else
++    return 0;
++#endif
++}
++
++int os_thread_detach(korp_tid thread)
++{
++    /* SGX pthread_detach isn't provided, return directly. */
++    return 0;
++}
++
++void os_thread_exit(void *retval)
++{
++#ifndef SGX_DISABLE_PTHREAD
++    pthread_exit(retval);
++#else
++    return;
++#endif
++}
++
++uint8 *os_thread_get_stack_boundary()
++{
++    /* TODO: get sgx stack boundary */
++    return NULL;
++}
++
+diff --git a/core/shared/platform/teaclave-sgx/shared_platform.cmake b/core/shared/platform/teaclave-sgx/shared_platform.cmake
+new file mode 100644
+index 0000000..fa3a7aa
+--- /dev/null
++++ b/core/shared/platform/teaclave-sgx/shared_platform.cmake
+@@ -0,0 +1,33 @@
++# Copyright (C) 2019 Intel Corporation.  All rights reserved.
++# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++
++set (PLATFORM_SHARED_DIR ${CMAKE_CURRENT_LIST_DIR})
++
++add_definitions(-DBH_PLATFORM_LINUX_SGX)
++
++include_directories(${PLATFORM_SHARED_DIR})
++include_directories(${PLATFORM_SHARED_DIR}/../include)
++
++if ("$ENV{SGX_SDK}" STREQUAL "")
++  set (SGX_SDK_DIR "/opt/intel/sgxsdk")
++else()
++  set (SGX_SDK_DIR $ENV{SGX_SDK})
++endif()
++
++include_directories (${SGX_SDK_DIR}/include)
++if (NOT BUILD_UNTRUST_PART EQUAL 1)
++  include_directories (${SGX_SDK_DIR}/include/tlibc
++                       ${SGX_SDK_DIR}/include/libcxx)
++endif ()
++
++if (NOT WAMR_BUILD_LIBC_WASI EQUAL 1)
++  add_definitions(-DSGX_DISABLE_WASI)
++endif ()
++
++if (NOT WAMR_BUILD_THREAD_MGR EQUAL 1)
++  add_definitions(-DSGX_DISABLE_PTHREAD)
++endif ()
++
++file (GLOB source_all ${PLATFORM_SHARED_DIR}/*.c)
++
++set (PLATFORM_SHARED_SOURCE ${source_all})
+diff --git a/product-mini/platforms/teaclave-sgx/CMakeLists.txt b/product-mini/platforms/teaclave-sgx/CMakeLists.txt
+new file mode 100644
+index 0000000..d4c71d8
+--- /dev/null
++++ b/product-mini/platforms/teaclave-sgx/CMakeLists.txt
+@@ -0,0 +1,82 @@
++# Copyright (C) 2019 Intel Corporation.  All rights reserved.
++# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++
++cmake_minimum_required (VERSION 2.8)
++
++project (iwasm)
++
++set (WAMR_BUILD_PLATFORM "teaclave-sgx")
++
++# Reset default linker flags
++set (CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
++set (CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "")
++
++# Set WAMR_BUILD_TARGET
++if (NOT DEFINED WAMR_BUILD_TARGET)
++  if (CMAKE_SIZEOF_VOID_P EQUAL 8)
++    # Build as X86_64 by default in 64-bit platform
++    set (WAMR_BUILD_TARGET "X86_64")
++  else ()
++    # Build as X86_32 by default in 32-bit platform
++    set (WAMR_BUILD_TARGET "X86_32")
++  endif ()
++endif ()
++
++if (NOT CMAKE_BUILD_TYPE)
++  set(CMAKE_BUILD_TYPE Release)
++endif ()
++
++if (NOT DEFINED WAMR_BUILD_INTERP)
++  # Enable Interpreter by default
++  set (WAMR_BUILD_INTERP 1)
++endif ()
++
++if (NOT DEFINED WAMR_BUILD_AOT)
++  # Enable AOT by default
++  # Please install Intel SGX SDKv2.8 or later.
++  set (WAMR_BUILD_AOT 0)
++endif ()
++
++if (NOT DEFINED WAMR_BUILD_JIT)
++  # Disable JIT by default.
++  set (WAMR_BUILD_JIT 0)
++endif ()
++
++if (NOT DEFINED WAMR_BUILD_LIBC_BUILTIN)
++  # Enable libc builtin support by default
++  set (WAMR_BUILD_LIBC_BUILTIN 0)
++endif ()
++
++if (NOT DEFINED WAMR_BUILD_LIBC_WASI)
++  # Enable libc wasi support by default
++  set (WAMR_BUILD_LIBC_WASI 0)
++endif ()
++
++if (NOT DEFINED WAMR_BUILD_FAST_INTERP)
++  # Enable fast interpreter
++  set (WAMR_BUILD_FAST_INTERP 0)
++endif ()
++
++if (NOT DEFINED WAMR_BUILD_MULTI_MODULE)
++  # Enable multiple modules
++  set (WAMR_BUILD_MULTI_MODULE 0)
++endif ()
++
++if (NOT DEFINED WAMR_BUILD_LIB_PTHREAD)
++  # Enable pthread library by default
++  set (WAMR_BUILD_LIB_PTHREAD 0)
++endif ()
++
++if (COLLECT_CODE_COVERAGE EQUAL 1)
++  set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-arcs -ftest-coverage")
++endif ()
++
++set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--gc-sections")
++set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -ffunction-sections -fdata-sections \
++                                     -Wall -Wno-unused-parameter -Wno-pedantic \
++                                     -nostdinc -fvisibility=hidden -fpie" )
++
++set (WAMR_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../..)
++
++include (${WAMR_ROOT_DIR}/build-scripts/runtime_lib.cmake)
++add_library(vmlib ${WAMR_RUNTIME_LIB_SOURCE})

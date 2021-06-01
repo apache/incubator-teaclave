@@ -57,13 +57,23 @@ function(init_submodules)
             "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules"
         )
       endif()
+      # Patch WAMR after pulling
+      if(NOT EXISTS "${PROJECT_SOURCE_DIR}/third_party/wasm-micro-runtime/product-mini/platforms/teaclave/CMakeLists.txt")
+        execute_process(
+          COMMAND 
+            patch -N -p1
+          INPUT_FILE "../wamr.patch"
+          WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/third_party/wasm-micro-runtime
+          )
+      endif()
     endif()
   endif()
 
   if(NOT EXISTS "${PROJECT_SOURCE_DIR}/third_party/crates-io"
      OR NOT EXISTS "${PROJECT_SOURCE_DIR}/third_party/crates-sgx"
      OR NOT EXISTS "${PROJECT_SOURCE_DIR}/third_party/mesapy"
-     OR NOT EXISTS "${PROJECT_SOURCE_DIR}/third_party/rust-sgx-sdk")
+     OR NOT EXISTS "${PROJECT_SOURCE_DIR}/third_party/rust-sgx-sdk"
+     OR NOT EXISTS "${PROJECT_SOURCE_DIR}/third_party/wasm-micro-runtime")
     message(
       FATAL_ERROR
         "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again."
