@@ -163,7 +163,7 @@ fn prepare_task(task: &StagedTask, file_mgr: &TaskFileManager) -> Result<StagedF
         .executor(task.executor)
         .name(&task.function_name)
         .arguments(task.function_arguments.clone())
-        .payload(function_payload)
+        .payload(task.function_payload.clone())
         .input_files(input_files)
         .output_files(output_files)
         .runtime_name("default");

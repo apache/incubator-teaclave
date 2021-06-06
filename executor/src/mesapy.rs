@@ -47,7 +47,7 @@ impl TeaclaveExecutor for MesaPy {
         &self,
         _name: String,
         arguments: FunctionArguments,
-        payload: Vec<u8>,
+        mut payload: Vec<u8>,
         runtime: FunctionRuntime,
     ) -> anyhow::Result<String> {
         let py_argv = arguments.into_vec();
@@ -169,7 +169,7 @@ def entrypoint(argv):
 
         let function = MesaPy::default();
         let summary = function
-            .execute("".to_string(), py_args, py_payload.into_bytes(), runtime)
+            .execute("".to_string(), py_args, py_payload.as_bytes().to_vec(), runtime)
             .unwrap();
         assert_eq!(summary, "");
     }

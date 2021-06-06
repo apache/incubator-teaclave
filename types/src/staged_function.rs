@@ -108,7 +108,7 @@ impl FunctionArguments {
 pub struct StagedFunction {
     pub name: String,
     pub arguments: FunctionArguments,
-    pub payload: String,
+    pub payload: Vec<u8>,
     pub input_files: StagedFiles,
     pub output_files: StagedFiles,
     pub executor_type: ExecutorType,
@@ -132,9 +132,9 @@ impl StagedFunction {
         Self { executor, ..self }
     }
 
-    pub fn payload(self, payload: impl ToString) -> Self {
+    pub fn payload(self, payload:Vec<u8> ) -> Self {
         Self {
-            payload: payload.to_string(),
+            payload: payload,
             ..self
         }
     }
@@ -145,7 +145,7 @@ impl StagedFunction {
 
     pub fn input_files(self, input_files: StagedFiles) -> Self {
         Self {
-            input_files,
+            input_files,    
             ..self
         }
     }
