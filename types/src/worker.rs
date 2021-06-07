@@ -32,7 +32,7 @@ pub trait TeaclaveExecutor {
         &self,
         name: String,
         arguments: FunctionArguments,
-        payload: String,
+        payload: Vec<u8>,
         runtime: FunctionRuntime,
     ) -> anyhow::Result<String>;
 }

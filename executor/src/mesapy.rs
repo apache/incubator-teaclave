@@ -47,7 +47,7 @@ impl TeaclaveExecutor for MesaPy {
         &self,
         _name: String,
         arguments: FunctionArguments,
-        payload: String,
+        mut payload: Vec<u8>,
         runtime: FunctionRuntime,
     ) -> anyhow::Result<String> {
         let py_argv = arguments.into_vec();
@@ -56,8 +56,7 @@ impl TeaclaveExecutor for MesaPy {
             .map(|arg| CString::new(arg.as_str()).unwrap())
             .collect();
 
-        let mut script_bytes = payload.into_bytes();
-        script_bytes.push(0u8);
+        payload.push(0u8);
 
         let mut p_argv: Vec<_> = cstr_argv
             .iter() // do NOT into_iter()
@@ -72,7 +71,7 @@ impl TeaclaveExecutor for MesaPy {
 
         let result = unsafe {
             mesapy_exec(
-                script_bytes.as_ptr(),
+                payload.as_ptr(),
                 p_argv.len() - 1,
                 p_argv.as_ptr(),
                 &mut py_result as *mut _ as *mut u8,
@@ -169,7 +168,12 @@ def entrypoint(argv):
 
         let function = MesaPy::default();
         let summary = function
-            .execute("".to_string(), py_args, py_payload.to_string(), runtime)
+            .execute(
+                "".to_string(),
+                py_args,
+                py_payload.as_bytes().to_vec(),
+                runtime,
+            )
             .unwrap();
         assert_eq!(summary, "");
     }

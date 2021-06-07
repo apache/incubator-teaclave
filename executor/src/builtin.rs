@@ -35,7 +35,7 @@ impl TeaclaveExecutor for BuiltinFunctionExecutor {
         &self,
         name: String,
         arguments: FunctionArguments,
-        _payload: String,
+        _payload: Vec<u8>,
         runtime: FunctionRuntime,
     ) -> Result<String> {
         match name.as_str() {
