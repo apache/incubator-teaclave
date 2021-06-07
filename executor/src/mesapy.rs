@@ -56,7 +56,6 @@ impl TeaclaveExecutor for MesaPy {
             .map(|arg| CString::new(arg.as_str()).unwrap())
             .collect();
 
-        // let mut script_bytes = payload.into_bytes();
         payload.push(0u8);
 
         let mut p_argv: Vec<_> = cstr_argv

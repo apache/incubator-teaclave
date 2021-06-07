@@ -156,7 +156,6 @@ impl TeaclaveExecutionService {
 fn prepare_task(task: &StagedTask, file_mgr: &TaskFileManager) -> Result<StagedFunction> {
     let input_files = file_mgr.prepare_staged_inputs()?;
     let output_files = file_mgr.prepare_staged_outputs()?;
-    // let function_payload = String::from_utf8_lossy(&task.function_payload).to_string();
 
     let staged_function = StagedFunction::new()
         .executor_type(task.executor_type)

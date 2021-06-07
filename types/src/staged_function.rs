@@ -132,7 +132,7 @@ impl StagedFunction {
         Self { executor, ..self }
     }
 
-    pub fn payload(self, payload:Vec<u8> ) -> Self {
+    pub fn payload(self, payload:Vec<u8>) -> Self {
         Self {
             payload: payload,
             ..self
@@ -145,7 +145,7 @@ impl StagedFunction {
 
     pub fn input_files(self, input_files: StagedFiles) -> Self {
         Self {
-            input_files,    
+            input_files,
             ..self
         }
     }
