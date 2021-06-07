@@ -168,7 +168,12 @@ def entrypoint(argv):
 
         let function = MesaPy::default();
         let summary = function
-            .execute("".to_string(), py_args, py_payload.as_bytes().to_vec(), runtime)
+            .execute(
+                "".to_string(),
+                py_args,
+                py_payload.as_bytes().to_vec(),
+                runtime,
+            )
             .unwrap();
         assert_eq!(summary, "");
     }

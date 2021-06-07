@@ -132,11 +132,8 @@ impl StagedFunction {
         Self { executor, ..self }
     }
 
-    pub fn payload(self, payload:Vec<u8>) -> Self {
-        Self {
-            payload: payload,
-            ..self
-        }
+    pub fn payload(self, payload: Vec<u8>) -> Self {
+        Self { payload, ..self }
     }
 
     pub fn arguments(self, arguments: FunctionArguments) -> Self {
