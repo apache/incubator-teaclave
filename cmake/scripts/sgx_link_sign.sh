@@ -52,7 +52,7 @@ ${CMAKE_C_COMPILER} "lib${edl_lib_name}.o" -o \
     -Wl,--no-whole-archive -Wl,--start-group \
     -l${Service_Library_Name} -lsgx_tprotected_fs -lsgx_tkey_exchange \
     -lsgx_tstdc -lsgx_tcxx -lsgx_tservice -lsgx_tcrypto \
-    -L${TEACLAVE_OUT_DIR} -lpycomponent ffi.o -lpypy-c -lsgx_tlibc_ext -lffi \
+    -L${TEACLAVE_OUT_DIR} -lpycomponent ffi.o -lpypy-c -lsgx_tlibc_ext -lffi -lvmlib\
     -L${TRUSTED_TARGET_DIR}/${TARGET} -l${CUR_PKG_NAME} -Wl,--end-group \
     -Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefined \
     -Wl,-pie,-eenclave_entry -Wl,--export-dynamic  \

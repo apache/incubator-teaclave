@@ -15,9 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use askama;
 use askama::Template;
-use prost_build;
 use std::path;
 use structopt::StructOpt;
 

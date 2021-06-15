@@ -13,3 +13,6 @@
 	path = third_party/crates-io
 	url = https://github.com/mesalock-linux/crates-io.git
 	ignore = dirty
+[submodule "third_party/wasm-micro-runtime"]
+	path = third_party/wasm-micro-runtime
+	url = https://github.com/bytecodealliance/wasm-micro-runtime

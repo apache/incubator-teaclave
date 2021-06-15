@@ -230,6 +230,7 @@ run_examples() {
   python3 builtin_rsa_sign.py
   python3 builtin_face_detection.py
   python3 builtin_password_check.py
+  python3 wasm_simple_add.py
   popd
 
   pushd ${TEACLAVE_PROJECT_ROOT}/examples/c

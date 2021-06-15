@@ -190,6 +190,7 @@ impl FrontendClient {
         Ok(response)
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn register_function(
         &mut self,
         name: &str,

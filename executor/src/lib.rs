@@ -28,9 +28,11 @@ extern crate log;
 mod builtin;
 mod context;
 mod mesapy;
+mod wamr;
 
 pub use builtin::BuiltinFunctionExecutor;
 pub use mesapy::MesaPy;
+pub use wamr::WAMicroRuntime;
 
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
@@ -42,6 +44,7 @@ pub mod tests {
             context::tests::run_tests(),
             mesapy::tests::run_tests(),
             builtin::tests::run_tests(),
+            wamr::tests::run_tests(),
         )
     }
 }

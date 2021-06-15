@@ -29,8 +29,6 @@ jobs:
     container: teaclave/teaclave-build-ubuntu-1804-sgx-2.9.1:0.1.2
     steps:
       - uses: actions/checkout@v2
-        with:
-          submodules: 'true'
       - name: Setting up $HOME
         run: |
           cp /root/.bashrc $HOME/.bashrc &&
@@ -45,6 +43,7 @@ jobs:
           cmake -DCMAKE_BUILD_TYPE=Debug -DSGX_SIM_MODE=ON -DTEST_MODE=ON ..
       - name: Building
         run: |
+          . /opt/sgxsdk/environment &&
           . ~/.cargo/env &&
           cd build &&
           make VERBOSE=1
@@ -63,8 +62,6 @@ jobs:
     container: teaclave/teaclave-build-ubuntu-1804-sgx-2.9.1:0.1.2
     steps:
       - uses: actions/checkout@v2
-        with:
-          submodules: 'true'
       - name: Setting up $HOME
         run: |
           cp /root/.bashrc $HOME/.bashrc &&
@@ -86,8 +83,6 @@ jobs:
     container: teaclave/teaclave-build-ubuntu-1804-sgx-2.9.1:0.1.2
     steps:
       - uses: actions/checkout@v2
-        with:
-          submodules: 'true'
       - name: Setting up $HOME
         run: |
           cp /root/.bashrc $HOME/.bashrc &&
@@ -102,5 +97,6 @@ jobs:
           cmake -DRUSTFLAGS="-D warnings" -DTEST_MODE=ON ..
       - name: Code linting with Clippy
         run: |
+          . /opt/sgxsdk/environment &&
           . /root/.cargo/env &&
           cd build && make CLP=1

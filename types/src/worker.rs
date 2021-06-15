@@ -41,6 +41,7 @@ pub trait TeaclaveExecutor {
 pub enum ExecutorType {
     Builtin,
     Python,
+    WAMicroRuntime,
 }
 
 impl std::default::Default for ExecutorType {
@@ -56,6 +57,7 @@ impl std::convert::TryFrom<&str> for ExecutorType {
         let executor_type = match selector {
             "python" => ExecutorType::Python,
             "builtin" => ExecutorType::Builtin,
+            "wamr" => ExecutorType::WAMicroRuntime,
             _ => anyhow::bail!("Invalid executor type: {}", selector),
         };
         Ok(executor_type)
@@ -81,6 +83,7 @@ impl std::fmt::Display for ExecutorType {
         match self {
             ExecutorType::Builtin => write!(f, "builtin"),
             ExecutorType::Python => write!(f, "python"),
+            ExecutorType::WAMicroRuntime => write!(f, "wamr"),
         }
     }
 }
@@ -89,6 +92,7 @@ impl std::fmt::Display for ExecutorType {
 pub enum Executor {
     MesaPy,
     Builtin,
+    WAMicroRuntime,
 }
 
 impl std::default::Default for Executor {
@@ -104,6 +108,7 @@ impl std::convert::TryFrom<&str> for Executor {
         let executor = match selector {
             "mesapy" => Executor::MesaPy,
             "builtin" => Executor::Builtin,
+            "wamr" => Executor::WAMicroRuntime,
             _ => anyhow::bail!("Unsupported executor: {}", selector),
         };
         Ok(executor)
@@ -123,6 +128,7 @@ impl std::fmt::Display for Executor {
         match self {
             Executor::MesaPy => write!(f, "mesapy"),
             Executor::Builtin => write!(f, "builtin"),
+            Executor::WAMicroRuntime => write!(f, "wamr"),
         }
     }
 }

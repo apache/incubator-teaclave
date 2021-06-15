@@ -23,7 +23,7 @@ use std::format;
 
 use teaclave_types::{Executor, ExecutorType, StagedFiles, StagedFunction};
 
-use teaclave_executor::{BuiltinFunctionExecutor, MesaPy};
+use teaclave_executor::{BuiltinFunctionExecutor, MesaPy, WAMicroRuntime};
 use teaclave_runtime::DefaultRuntime;
 use teaclave_types::{TeaclaveExecutor, TeaclaveRuntime};
 
@@ -58,6 +58,10 @@ impl Default for Worker {
         worker.register_executor((ExecutorType::Builtin, Executor::Builtin), || {
             Box::new(BuiltinFunctionExecutor::default())
         });
+        worker.register_executor(
+            (ExecutorType::WAMicroRuntime, Executor::WAMicroRuntime),
+            || Box::new(WAMicroRuntime::default()),
+        );
 
         worker
     }
