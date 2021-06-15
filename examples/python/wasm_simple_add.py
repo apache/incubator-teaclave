@@ -32,7 +32,7 @@ class WASMAddExample:
         self.user_password = user_password
 
     def add(self,
-            payload_file="../webassembly/simple_add.wasm",
+            payload_file="wasm_simple_add_payload/simple_add.wasm",
             adder1="3",
             adder2="4"):
         client = AuthenticationService(

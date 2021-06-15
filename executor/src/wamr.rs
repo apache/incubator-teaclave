@@ -181,7 +181,8 @@ pub mod tests {
         args.insert("adder 2".to_string(), "4".to_string());
         let args = FunctionArguments::from(args);
 
-        let wa_payload = include_bytes!("../../examples/webassembly/simple_add.wasm");
+        let wa_payload =
+            include_bytes!("../../examples/python/wasm_simple_add_payload/simple_add.wasm");
 
         let wa_payload = wa_payload.to_vec();
 
