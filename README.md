@@ -48,6 +48,7 @@ platform, making computation on privacy-sensitive data safe and simple.
 - [Access Control](docs/access-control.md)
 - [Build System](docs/build-system.md)
 - [Teaclave Service Internals](docs/service-internals.md)
+- [Adding Executors](docs/adding-executors.md)
 - [Papers, Talks, and Related Articles](docs/papers-talks.md)
 
 ### Contribute to Teaclave

@@ -18,6 +18,7 @@ permalink: /docs/
 - [Mutual Attestation: Why and How](mutual-attestation.md)
 - [Threat Model](threat-model.md)
 - [Teaclave Service Internals](service-internals.md)
+- [Adding Executors](adding-executors.md)
 - [Papers, Talks, and Related Articles](papers-talks.md)
 
 ## Contribute
