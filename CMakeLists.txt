@@ -200,7 +200,7 @@ add_custom_target(mesapy
   )
 
 add_custom_target(wamr
-  DEPENDS $(WAMR_TEACLAVE_ROOT_DIR)/CMakeLists.txt ${WAMR_OUTPUTS}
+  DEPENDS ${WAMR_TEACLAVE_ROOT_DIR}/CMakeLists.txt ${WAMR_OUTPUTS}
   )
 
 # mesapy components
