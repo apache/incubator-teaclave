@@ -3,12 +3,12 @@ permalink: /docs/access-control
 ---
 
 # Access Control in Teaclave
-Access control in multi-party computation, by its nature, is set-centric.
-Unlike in traditional settings where only one entitiy, group, or role is
-involved in an action, in multi-party computation tasks an access is aproved or
-denified by combinging the decisions of all stakeholders. Ownership is also
-set-like, because the result of a joint computation task very likely belongs to
-all parties that have provided data.
+Access control in multi-party computation, by its nature, is set-centric. Unlike
+in traditional settings where only one entity, group, or role is involved in an
+action, in multi-party computation tasks an access is approved or denied by
+combining the decisions of all stakeholders. Ownership is also set-like, because
+the result of a joint computation task very likely belongs to all parties that
+have provided data.
 
 We found that access control models in conventional systems like RBAC and ABAC
 are not powerful enough to govern data usages in Teaclave. Therefore, we
@@ -24,9 +24,9 @@ The file has three sections:
 
 Before diving into the details about how our access control model works, we
 recommend readers learn about [logic programming](https://en.wikipedia.org/wiki/Logic_programming)
-first, because
-our model configuration language is actually a home-baked tiny logic
-programming language.
+first, because our
+model configuration language is actually a home-baked tiny logic programming
+language.
 
 ### request
 A request is a query that should be answered by the access control service. The
