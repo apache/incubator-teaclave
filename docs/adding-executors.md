@@ -6,7 +6,7 @@ permalink: /docs/adding-executors
 
 Teaclave supports several function executors currently: `builtin`, `mesapy` and
 `wamr` (WebAssembly Micro Runtime). For more information about current function
-executors, please check [this link](executor).
+executors, please check [this link](../executor/README.md).
 
 However, sometimes platform providers may found current executors built in
 Teaclave are not applicable for hosting some services, and they want to use
