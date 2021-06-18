@@ -58,7 +58,7 @@ function(init_submodules)
         )
       endif()
       # Patch WAMR after pulling
-      if(NOT EXISTS "${PROJECT_SOURCE_DIR}/third_party/wasm-micro-runtime/product-mini/platforms/teaclave/CMakeLists.txt")
+      if(NOT EXISTS "${PROJECT_SOURCE_DIR}/third_party/wasm-micro-runtime/product-mini/platforms/teaclave-sgx/CMakeLists.txt")
         execute_process(
           COMMAND 
             patch -N -p1
