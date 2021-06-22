@@ -20,14 +20,27 @@ use std::prelude::v1::*;
 use crate::context::reset_thread_context;
 use crate::context::set_thread_context;
 use crate::context::Context;
+use crate::context::{
+    wasm_close_file, wasm_create_output, wasm_open_input, wasm_read_file, wasm_write_file,
+};
 
-use std::ffi::{c_void, CString};
+use std::ffi::{c_void, CStr, CString};
+use std::os::raw::{c_char, c_int};
 
 use teaclave_types::{FunctionArguments, FunctionRuntime, TeaclaveExecutor};
 
 const DEFAULT_HEAP_SIZE: u32 = 8092;
 const DEFAULT_STACK_SIZE: u32 = 8092;
 const DEFAULT_ERROR_BUF_SIZE: usize = 128;
+
+#[repr(C)]
+#[derive(Debug)]
+struct NativeSymbol {
+    symbol: *const c_char,
+    func_ptr: *const c_void,
+    signature: *const c_char,
+    attachment: *const c_void,
+}
 
 extern "C" {
 
@@ -50,7 +63,7 @@ extern "C" {
 
     fn wasm_runtime_lookup_function(
         module_inst: *const c_void,
-        name: *const i8,
+        name: *const c_char,
         signature: *const u8,
     ) -> *const c_void;
 
@@ -66,6 +79,15 @@ extern "C" {
     fn wasm_runtime_module_dup_data(module_inst: *const c_void, src: *const u8, size: u32) -> u32;
 
     fn wasm_runtime_module_free(module_inst: *const c_void, ptr: u32);
+
+    fn wasm_runtime_register_natives(
+        module_name: *const c_char,
+        native_symbols: *const NativeSymbol,
+        n_native_symbols: u32,
+    ) -> bool;
+
+    fn wasm_runtime_get_exception(module_inst: *const c_void) -> *const c_char;
+
 }
 
 #[derive(Default)]
@@ -87,6 +109,51 @@ impl TeaclaveExecutor for WAMicroRuntime {
         set_thread_context(Context::new(runtime))?;
 
         unsafe { wasm_runtime_init() };
+
+        // export native function
+
+        let export_symbols: [NativeSymbol; 5] = [
+            NativeSymbol {
+                symbol: b"teaclave_open_input\0".as_ptr() as _,
+                func_ptr: wasm_open_input as *const c_void,
+                signature: b"($)i\0".as_ptr() as _,
+                attachment: std::ptr::null(),
+            },
+            NativeSymbol {
+                symbol: b"teaclave_create_output\0".as_ptr() as _,
+                func_ptr: wasm_create_output as *const c_void,
+                signature: b"($)i\0".as_ptr() as _,
+                attachment: std::ptr::null(),
+            },
+            NativeSymbol {
+                symbol: b"teaclave_read_file\0".as_ptr() as _,
+                func_ptr: wasm_read_file as *const c_void,
+                signature: b"(i*~)i\0".as_ptr() as _,
+                attachment: std::ptr::null(),
+            },
+            NativeSymbol {
+                symbol: b"teaclave_write_file\0".as_ptr() as _,
+                func_ptr: wasm_write_file as *const c_void,
+                signature: b"(i*~)i\0".as_ptr() as _,
+                attachment: std::ptr::null(),
+            },
+            NativeSymbol {
+                symbol: b"teaclave_close_file\0".as_ptr() as _,
+                func_ptr: wasm_close_file as *const c_void,
+                signature: b"(i)i\0".as_ptr() as _,
+                attachment: std::ptr::null(),
+            },
+        ];
+
+        let register_succeeded = unsafe {
+            wasm_runtime_register_natives(
+                b"env\0".as_ptr() as _,
+                export_symbols.as_ptr(),
+                export_symbols.len() as u32,
+            )
+        };
+        assert!(register_succeeded);
+
         let module = unsafe {
             wasm_runtime_load(
                 payload.as_ptr(),
@@ -111,7 +178,11 @@ impl TeaclaveExecutor for WAMicroRuntime {
         assert!((module_instance as usize) != 0);
 
         let entry_func = unsafe {
-            wasm_runtime_lookup_function(module_instance, entry_name.as_ptr(), std::ptr::null())
+            wasm_runtime_lookup_function(
+                module_instance,
+                entry_name.as_ptr() as _,
+                std::ptr::null(),
+            )
         };
         assert!((entry_func as usize) != 0);
 
@@ -144,20 +215,27 @@ impl TeaclaveExecutor for WAMicroRuntime {
         };
         let wasm_argv: [u32; 2] = [p_argv.len() as u32, func_argv];
 
-        if unsafe { wasm_runtime_call_wasm(exec_env, entry_func, wasm_argc, wasm_argv.as_ptr()) } {
-            reset_thread_context()?;
+        let result =
+            unsafe { wasm_runtime_call_wasm(exec_env, entry_func, wasm_argc, wasm_argv.as_ptr()) };
+        reset_thread_context()?;
+
+        // clean WAMR allocated memory
+        let _ = p_argv
+            .iter()
+            .map(|addr| unsafe { wasm_runtime_module_free(module_instance, *addr) });
+        unsafe { wasm_runtime_module_free(module_instance, func_argv) };
+
+        if result {
+            let rv = wasm_argv[0] as c_int;
             log::debug!(
                 "IN WAMicroRuntime::execute after `wasm_runtime_call_wasm`, {:?}",
-                wasm_argv[0]
+                rv
             );
-            // clean WAMR allocated memory
-            let _ = p_argv
-                .iter()
-                .map(|addr| unsafe { wasm_runtime_module_free(module_instance, *addr) });
-            unsafe { wasm_runtime_module_free(module_instance, func_argv) };
-            Ok(wasm_argv[0].to_string())
+            Ok(rv.to_string())
         } else {
-            Ok("WAMR Error".to_string())
+            let error = unsafe { CStr::from_ptr(wasm_runtime_get_exception(module_instance)) };
+            log::debug!("WAMR ERROR: {:?}", error);
+            Ok(error.to_str().unwrap().to_string())
         }
     }
 }
@@ -166,6 +244,8 @@ impl TeaclaveExecutor for WAMicroRuntime {
 pub mod tests {
     use super::*;
     use std::collections::HashMap;
+    use std::untrusted::fs;
+    use teaclave_crypto::*;
     use teaclave_runtime::*;
     use teaclave_test_utils::*;
     use teaclave_types::*;
@@ -177,17 +257,30 @@ pub mod tests {
     fn test_wamr() {
         let mut args = HashMap::new();
 
-        args.insert("adder 1".to_string(), "3".to_string());
-        args.insert("adder 2".to_string(), "4".to_string());
+        args.insert("input_file_id1".to_string(), "pf_in_a".to_string());
+        args.insert("input_file_id2".to_string(), "pf_in_b".to_string());
+        args.insert("output_file_id".to_string(), "pf_out".to_string());
         let args = FunctionArguments::from(args);
 
         let wa_payload =
-            include_bytes!("../../examples/python/wasm_simple_add_payload/simple_add.wasm");
+            include_bytes!("../../examples/python/wasm_teaclave_pf_payload/teaclave_pf.wasm");
 
         let wa_payload = wa_payload.to_vec();
+        let input_a = "fixtures/functions/wamr/input_a.txt";
+        let input_b = "fixtures/functions/wamr/input_b.txt";
+        let output = "fixtures/functions/wamr/output.txt";
+        let expected_output = "fixtures/functions/wamr/expected_output.txt";
 
-        let input_files = StagedFiles::default();
-        let output_files = StagedFiles::default();
+        let input_a_info =
+            StagedFileInfo::new(input_a, TeaclaveFile128Key::random(), FileAuthTag::mock());
+        let input_b_info =
+            StagedFileInfo::new(input_b, TeaclaveFile128Key::random(), FileAuthTag::mock());
+        let output_info =
+            StagedFileInfo::new(output, TeaclaveFile128Key::random(), FileAuthTag::mock());
+
+        let input_files =
+            StagedFiles::new(hashmap!("pf_in_a" => input_a_info, "pf_in_b" => input_b_info));
+        let output_files = StagedFiles::new(hashmap!("pf_out" => output_info));
 
         let runtime = Box::new(RawIoRuntime::new(input_files, output_files));
 
@@ -198,5 +291,9 @@ pub mod tests {
         log::debug!("IN TEST test_wamr: AFTER execution, summary: {:?}", summary);
 
         assert_eq!(summary, "7");
+
+        let output = fs::read_to_string(&output).unwrap();
+        let expected = fs::read_to_string(&expected_output).unwrap();
+        assert_eq!(&output[..], &expected[..]);
     }
 }

@@ -29,8 +29,11 @@ use std::format;
 
 use teaclave_types::TeaclaveRuntime;
 
+use std::ffi::c_void;
+
 const FFI_OK: c_uint = 0;
 const FFI_FILE_ERROR: c_uint = 1;
+const FFI_FILE_ERROR_WASM: c_int = -1;
 
 pub struct Context {
     runtime: Box<dyn TeaclaveRuntime + Send + Sync>,
@@ -298,9 +301,7 @@ use std::ffi::CStr;
 
 /*
  * uint c_open_input(char* file_id, int* out_fd);
- *
  */
-
 #[allow(unused)]
 #[no_mangle]
 extern "C" fn c_open_input(fid: *mut c_char, out_handle: *mut c_int) -> c_uint {
@@ -321,8 +322,24 @@ extern "C" fn c_open_input(fid: *mut c_char, out_handle: *mut c_int) -> c_uint {
 }
 
 /*
+ * int teaclave_open_input(char* file_id);
+ */
+#[allow(unused)]
+#[no_mangle]
+pub extern "C" fn wasm_open_input(_exec_env: *const c_void, fid: *mut c_char) -> c_int {
+    debug!("wasm_open_input");
+    let fid = unsafe { CStr::from_ptr(fid).to_string_lossy().into_owned() };
+    match rtc_open_input(&fid) {
+        Ok(handle) => handle as i32,
+        Err(e) => {
+            error!("wasm_open_input: {:?}", e);
+            FFI_FILE_ERROR_WASM
+        }
+    }
+}
+
+/*
  * uint c_create_output(char* file_id, int* out_fd);
- *
  */
 #[allow(unused)]
 #[no_mangle]
@@ -344,10 +361,27 @@ extern "C" fn c_create_output(fid: *mut c_char, out_handle: *mut c_int) -> c_uin
 }
 
 /*
- * uint c_read_file(int fd, void* out_buf, size_t buf_size, size_t* out_size_read);
+ * int teaclave_create_output(char* file_id);
  *
  */
 
+#[allow(unused)]
+#[no_mangle]
+pub extern "C" fn wasm_create_output(_exec_env: *const c_void, fid: *mut c_char) -> c_int {
+    debug!("wasm_create_output");
+    let fid = unsafe { CStr::from_ptr(fid).to_string_lossy().into_owned() };
+    match rtc_create_output(&fid) {
+        Ok(handle) => handle as i32,
+        Err(e) => {
+            error!("wasm_create_output: {:?}", e);
+            FFI_FILE_ERROR_WASM
+        }
+    }
+}
+
+/*
+ * uint c_read_file(int fd, void* out_buf, size_t buf_size, size_t* out_size_read);
+ */
 #[allow(unused)]
 #[no_mangle]
 extern "C" fn c_read_file(
@@ -369,6 +403,29 @@ extern "C" fn c_read_file(
         Err(e) => {
             error!("c_read_file: {:?}", e);
             FFI_FILE_ERROR
+        }
+    }
+}
+
+/*
+ * int teaclave_read_file(int fd, void* out_buf, int buf_size);
+ */
+#[allow(unused)]
+#[no_mangle]
+pub extern "C" fn wasm_read_file(
+    _exec_env: *const c_void,
+    handle: c_int,
+    out_buf: *mut c_uchar,
+    buf_size: c_int,
+) -> c_int {
+    debug!("wasm_read_file");
+    let out: &mut [u8] = unsafe { slice::from_raw_parts_mut(out_buf, buf_size as usize) };
+
+    match rtc_read_handle(handle, out) {
+        Ok(size) => size as i32,
+        Err(e) => {
+            error!("wasm_read_file: {:?}", e);
+            FFI_FILE_ERROR_WASM
         }
     }
 }
@@ -402,6 +459,29 @@ extern "C" fn c_write_file(
 }
 
 /*
+ * int teaclave_write_file(int fd, void* buf, size_t buf_size);
+ */
+#[allow(unused)]
+#[no_mangle]
+pub extern "C" fn wasm_write_file(
+    _exec_env: *const c_void,
+    handle: c_int,
+    in_buf: *mut c_uchar,
+    buf_size: c_int,
+) -> c_int {
+    debug!("wasm_write_file");
+    let in_buf: &[u8] = unsafe { slice::from_raw_parts_mut(in_buf, buf_size as usize) };
+
+    match rtc_write_handle(handle, in_buf) {
+        Ok(size) => size as i32,
+        Err(e) => {
+            error!("wasm_write_file: {:?}", e);
+            FFI_FILE_ERROR_WASM
+        }
+    }
+}
+
+/*
  * uint c_close_file(int fd);
  */
 #[allow(unused)]
@@ -413,6 +493,22 @@ extern "C" fn c_close_file(handle: c_int) -> c_uint {
         Err(e) => {
             error!("c_close_file: {:?}", e);
             FFI_FILE_ERROR
+        }
+    }
+}
+
+/*
+ * int teaclave_close_file(int fd);
+ */
+#[allow(unused)]
+#[no_mangle]
+pub extern "C" fn wasm_close_file(_exec_env: *const c_void, handle: c_int) -> c_int {
+    debug!("wasm_close_file");
+    match rtc_close_handle(handle) {
+        Ok(size) => FFI_OK as i32,
+        Err(e) => {
+            error!("wasm_close_file: {:?}", e);
+            FFI_FILE_ERROR_WASM
         }
     }
 }
