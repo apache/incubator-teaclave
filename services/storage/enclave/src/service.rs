@@ -102,13 +102,14 @@ impl<'a> DBQueue<'a> {
     }
 
     pub fn enqueue(&mut self, value: &[u8]) -> TeaclaveServiceResponseResult<()> {
-        let mut tail_index = self.get_tail();
+        let tail_index = self.get_tail();
         // put element
         self.database
             .put(&self.get_element_key(tail_index), value)
             .map_err(TeaclaveStorageError::LevelDb)?;
-        // tail + 1
-        tail_index += 1;
+
+        // update tail
+        let tail_index = tail_index.wrapping_add(1);
         self.database
             .put(&self.get_tail_key(), &tail_index.to_le_bytes())
             .map_err(TeaclaveStorageError::LevelDb)?;
@@ -116,10 +117,10 @@ impl<'a> DBQueue<'a> {
     }
 
     pub fn dequeue(&mut self) -> TeaclaveServiceResponseResult<Vec<u8>> {
-        let mut head_index = self.get_head();
+        let head_index = self.get_head();
         let tail_index = self.get_tail();
         // check whether the queue is empty
-        if head_index >= tail_index {
+        if head_index == tail_index {
             Err(TeaclaveStorageError::None.into())
         } else {
             let element_key = self.get_element_key(head_index);
@@ -127,8 +128,9 @@ impl<'a> DBQueue<'a> {
                 Some(value) => value,
                 None => bail!(TeaclaveStorageError::None),
             };
+
             // update head
-            head_index += 1;
+            let head_index = head_index.wrapping_add(1);
             self.database
                 .put(&self.get_head_key(), &head_index.to_le_bytes())
                 .map_err(TeaclaveStorageError::LevelDb)?;
@@ -140,7 +142,14 @@ impl<'a> DBQueue<'a> {
 
     #[allow(unused)]
     pub fn len(&mut self) -> u32 {
-        self.get_tail() - self.get_head()
+        let head_index = self.get_head();
+        let tail_index = self.get_tail();
+
+        if tail_index >= head_index {
+            tail_index - head_index
+        } else {
+            u32::MAX - head_index + tail_index + 1
+        }
     }
 }
 
