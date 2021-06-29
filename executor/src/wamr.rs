@@ -262,14 +262,15 @@ pub mod tests {
         args.insert("output_file_id".to_string(), "pf_out".to_string());
         let args = FunctionArguments::from(args);
 
-        let wa_payload =
-            include_bytes!("../../examples/python/wasm_teaclave_pf_payload/teaclave_pf.wasm");
+        let wa_payload = include_bytes!(
+            "../../tests/fixtures/functions/wamr_c_millionaire_problem/millionaire_problem.wasm"
+        );
 
         let wa_payload = wa_payload.to_vec();
-        let input_a = "fixtures/functions/wamr/input_a.txt";
-        let input_b = "fixtures/functions/wamr/input_b.txt";
-        let output = "fixtures/functions/wamr/output.txt";
-        let expected_output = "fixtures/functions/wamr/expected_output.txt";
+        let input_a = "fixtures/functions/wamr_c_millionaire_problem/input_a.txt";
+        let input_b = "fixtures/functions/wamr_c_millionaire_problem/input_b.txt";
+        let output = "fixtures/functions/wamr_c_millionaire_problem/output.txt";
+        let expected_output = "fixtures/functions/wamr_c_millionaire_problem/expected_output.txt";
 
         let input_a_info =
             StagedFileInfo::new(input_a, TeaclaveFile128Key::random(), FileAuthTag::mock());

@@ -1,0 +1,17 @@
+[package]
+name = "wasm_rust_psi_payload"
+version = "0.1.0"
+authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
+description = "Teaclave WAMR example payload to solve Private Set Intersection"
+license = "Apache-2.0"
+edition = "2018"
+
+[dependencies]
+teaclave_context = {path = "../../../sdk/payload/wasm/teaclave_context/"}
+
+[lib]
+crate-type = ["cdylib"]
+
+[profile.release]
+lto = true
+opt-level = "s"

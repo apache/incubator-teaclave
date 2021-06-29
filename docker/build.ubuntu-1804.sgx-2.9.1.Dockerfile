@@ -54,6 +54,8 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y   &&
     . $HOME/.cargo/env                                                        && \
     rustup default $RUST_TOOLCHAIN                                            && \
     rustup component add rust-src rls rust-analysis clippy rustfmt            && \
+    rustup target add wasm32-unknown-unknown                                  && \
+    cargo install wasm-gc                                                     && \
     echo 'source $HOME/.cargo/env' >> ~/.bashrc                               && \
     rm -rf /root/.cargo/registry && rm -rf /root/.cargo/git
 

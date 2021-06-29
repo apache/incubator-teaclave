@@ -1,0 +1,9 @@
+[package]
+name = "teaclave_context"
+version = "0.1.0"
+edition = "2018"
+authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
+description = "Teaclave Contex File interfaces for WASM payloads"
+license = "Apache-2.0"
+
+[dependencies]

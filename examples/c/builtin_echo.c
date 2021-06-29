@@ -18,7 +18,6 @@
  *
  */
 
-
 #include "teaclave_client_sdk.h"
 #include <stdio.h>
 #include <string.h>
@@ -37,27 +36,25 @@ const char *as_root_ca_cert_path = "../../keys/ias_root_ca_cert.pem";
 const char *user_id = "test_id";
 const char *user_password = "test_password";
 
-const char *register_function_request_serialized = QUOTE(
-{
-    "request": "register_function",
-    "name": "builtin-echo",
-    "description": "Native Echo Function",
-    "executor_type": "builtin",
-    "public": true,
-    "payload": [],
-    "arguments": ["message"],
-    "inputs": [],
-    "outputs": []
+const char *register_function_request_serialized = QUOTE({
+    "request" : "register_function",
+    "name" : "builtin-echo",
+    "description" : "Native Echo Function",
+    "executor_type" : "builtin",
+    "public" : true,
+    "payload" : [],
+    "arguments" : ["message"],
+    "inputs" : [],
+    "outputs" : []
 });
 
-const char *create_task_request_serialized = QUOTE(
-{
-    "request": "create_task",
-    "function_id": "%s",
-    "function_arguments": "{\"message\": \"Hello, Teaclave!\"}",
-    "executor": "builtin",
-    "inputs_ownership": [],
-    "outputs_ownership": []
+const char *create_task_request_serialized = QUOTE({
+    "request" : "create_task",
+    "function_id" : "%s",
+    "function_arguments" : "{\"message\": \"Hello, Teaclave!\"}",
+    "executor" : "builtin",
+    "inputs_ownership" : [],
+    "outputs_ownership" : []
 });
 
 int login(char *token, size_t *token_len) {
@@ -90,8 +87,9 @@ int login(char *token, size_t *token_len) {
 
 bail:
     if (authentication_client) {
-        ret = teaclave_close_authentication_service(authentication_client);
-        if (ret != 0) {
+        int teaclave_close_rv =
+            teaclave_close_authentication_service(authentication_client);
+        if (teaclave_close_rv != 0) {
             fprintf(stderr,
                     "[-] Failed to close the authentication service client.\n");
         }

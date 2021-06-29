@@ -90,18 +90,7 @@ class BuiltinFaceDetectionExample:
 
 
 def main():
-    img_file_name = 'in.jpg'
-
-    if not os.path.isfile(img_file_name):
-        image_url = 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Solvay_conference_1927.jpg/1400px-Solvay_conference_1927.jpg'
-        print("[+] retrieving image from url:", image_url)
-
-        response = requests.get(image_url).content
-        with open(img_file_name, 'wb') as file:
-            file.write(response)
-        print("[+] image saved to", img_file_name)
-    else:
-        print("[+] using cached file", img_file_name)
+    img_file_name = '../../tests/fixtures/functions/face_detection/input.jpg'
 
     with open(img_file_name, 'rb') as fin:
         image_data = fin.read()

@@ -18,14 +18,7 @@
  *
  */
 
-/** Compilation flags:
- * -nostdlib \
- * -Wl,--export-all \
- * -Wl,--no-entry \
- * -Wl,--allow-undefined \
- */
-
-#include "teaclave_pf.h"
+#include "teaclave_context.h"
 
 int strlen(const char *str)
 {

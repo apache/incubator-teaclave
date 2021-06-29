@@ -200,6 +200,7 @@ run_examples() {
                  --public-keys $(find ../examples -name "*.public.pem") \
                  --signatures $(find ../examples -name "*.sign.sha256")
   popd
+
   pushd ${TEACLAVE_SERVICE_INSTALL_DIR}
   ./teaclave_authentication_service &
   ./teaclave_storage_service &
@@ -218,6 +219,11 @@ run_examples() {
   sleep 3    # wait for execution services
   popd
 
+  # Generate WASM file for WAMR Rust example21
+  pushd ${TEACLAVE_PROJECT_ROOT}/examples/python/wasm_rust_psi_payload
+  make
+  popd
+
   pushd ${TEACLAVE_PROJECT_ROOT}/examples/python
   export PYTHONPATH=${TEACLAVE_PROJECT_ROOT}/sdk/python
   python3 builtin_echo.py
@@ -230,7 +236,8 @@ run_examples() {
   python3 builtin_rsa_sign.py
   python3 builtin_face_detection.py
   python3 builtin_password_check.py
-  python3 wasm_simple_add.py
+  python3 wasm_c_simple_add.py
+  python3 wasm_rust_psi.py
   popd
 
   pushd ${TEACLAVE_PROJECT_ROOT}/examples/c
