@@ -26,7 +26,7 @@ jobs:
           cd sdk/swift/TeaclaveClientSDK && xcodebuild -scheme TeaclaveClientSDK
   sim-debug-ubuntu-1804:
     runs-on: ubuntu-18.04
-    container: teaclave/teaclave-build-ubuntu-1804-sgx-2.9.1:0.1.2
+    container: teaclave/teaclave-build-ubuntu-1804-sgx-2.9.1:0.1.3
     steps:
       - uses: actions/checkout@v2
       - name: Setting up $HOME
@@ -59,7 +59,7 @@ jobs:
 
   format:
     runs-on: ubuntu-18.04
-    container: teaclave/teaclave-build-ubuntu-1804-sgx-2.9.1:0.1.2
+    container: teaclave/teaclave-build-ubuntu-1804-sgx-2.9.1:0.1.3
     steps:
       - uses: actions/checkout@v2
       - name: Setting up $HOME
@@ -80,7 +80,7 @@ jobs:
           cd build && make check
   lint:
     runs-on: ubuntu-18.04
-    container: teaclave/teaclave-build-ubuntu-1804-sgx-2.9.1:0.1.2
+    container: teaclave/teaclave-build-ubuntu-1804-sgx-2.9.1:0.1.3
     steps:
       - uses: actions/checkout@v2
       - name: Setting up $HOME
