@@ -40,6 +40,7 @@ platform, making computation on privacy-sensitive data safe and simple.
 - [Write Functions in Python](docs/functions-in-python.md)
 - [How to Add Built-in Functions](docs/builtin-functions.md)
 - [Deploying Teaclave on Azure Confidential Computing VM](docs/azure-confidential-computing.md)
+- [Executing WebAssembly in Teaclave](docs/executing-wasm.md)
 
 ### Design
 
