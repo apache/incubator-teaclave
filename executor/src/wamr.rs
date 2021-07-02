@@ -88,6 +88,8 @@ extern "C" {
 
     fn wasm_runtime_get_exception(module_inst: *const c_void) -> *const c_char;
 
+    fn wasm_runtime_deinstantiate(module_inst: *const c_void);
+
 }
 
 #[derive(Default)]
@@ -225,7 +227,7 @@ impl TeaclaveExecutor for WAMicroRuntime {
             .map(|addr| unsafe { wasm_runtime_module_free(module_instance, *addr) });
         unsafe { wasm_runtime_module_free(module_instance, func_argv) };
 
-        if result {
+        let result = if result {
             let rv = wasm_argv[0] as c_int;
             log::debug!(
                 "IN WAMicroRuntime::execute after `wasm_runtime_call_wasm`, {:?}",
@@ -236,7 +238,11 @@ impl TeaclaveExecutor for WAMicroRuntime {
             let error = unsafe { CStr::from_ptr(wasm_runtime_get_exception(module_instance)) };
             log::debug!("WAMR ERROR: {:?}", error);
             Ok(error.to_str().unwrap().to_string())
-        }
+        };
+
+        unsafe { wasm_runtime_deinstantiate(module_instance) };
+
+        result
     }
 }
 

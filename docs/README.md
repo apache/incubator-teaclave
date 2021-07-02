@@ -10,6 +10,7 @@ permalink: /docs/
 - [Function in Python](functions-in-python.md)
 - [How to Add Built-in Functions](builtin-functions.md)
 - [Deploying Teaclave on Azure Confidential Computing VM](azure-confidential-computing.md)
+- [Executing WebAssembly in Teaclave](executing-wasm.md)
 
 ## Design
 
