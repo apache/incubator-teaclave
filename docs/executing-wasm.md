@@ -46,7 +46,8 @@ bytecode. Remember to add following options while compiling:
 You can also use `clang` provided by
 [wasi-sdk](https://github.com/WebAssembly/wasi-sdk), and the option
 `--target=wasm32` is not needed for this version. We also provide an [example
-payload written in C](../examples/python/wasm_c_millionaire_problem_payload).
+payload written in
+C](https://github.com/apache/incubator-teaclave/tree/master/examples/python/wasm_c_millionaire_problem_payload).
 
 ## From Rust
 
@@ -71,7 +72,7 @@ wasm-gc target/wasm32-unknown-unknown/release/[WASM FILENAME]
 ```
 
 For detailed optimization options and function signature, please refer to the
-[example payload](../examples/python/wasm_rust_psi_payload).
+[example payload](https://github.com/apache/incubator-teaclave/tree/master/examples/python/wasm_rust_psi_payload).
 
 ## References
 
