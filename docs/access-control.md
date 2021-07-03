@@ -39,7 +39,7 @@ task_access_data = task, data
 ```
 
 defines a request called `task_access_data` which contains two fields named
-`usr` and `data`. This request can mean a task with the id `task` wants to
+`task` and `data`. This request can mean a task with the id `task` wants to
 access a piece of data hosted by Teaclave whose id is `data`.
 
 ### term
