@@ -172,6 +172,6 @@ pub mod tests {
 
         let result = FaceDetection::new().run(arguments, runtime).unwrap();
         let json_result: serde_json::Value = serde_json::from_str(&result).unwrap();
-        assert_eq!(json_result.as_array().unwrap().len(), 28);
+        assert_eq!(json_result.as_array().unwrap().len(), 29);
     }
 }

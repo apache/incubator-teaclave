@@ -14,7 +14,7 @@ hex = { version = "0.4.0" }
 teaclave_types = { path = "../types" }
 teaclave_attestation = { path = "../attestation" }
 env_logger = { version = "0.7.1" }
-webpki-roots     = { version = "0.19.0" }
+webpki-roots     = { version = "0.21.0" }
 webpki     = { version = "0.21.0" }
 rustls     = { version = "0.16.0", features = ["dangerous_configuration"] }
 http       = { version = "0.2" }

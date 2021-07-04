@@ -92,7 +92,8 @@ impl UserInfo {
         };
         let mut header = jwt::Header::default();
         header.alg = JWT_ALG;
-        let token = jwt::encode(&header, &claims, secret)?;
+        let secret = jwt::EncodingKey::from_secret(secret);
+        let token = jwt::encode(&header, &claims, &secret)?;
         Ok(token)
     }
 
@@ -101,6 +102,7 @@ impl UserInfo {
         let mut validation = jwt::Validation::new(JWT_ALG);
         validation.iss = Some(iss);
         validation.sub = Some(self.id.to_string());
-        jwt::decode::<Claims>(token, secret, &validation).is_ok()
+        let secret = jwt::DecodingKey::from_secret(secret);
+        jwt::decode::<Claims>(token, &secret, &validation).is_ok()
     }
 }

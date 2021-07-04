@@ -49,6 +49,6 @@ teaclave_crypto                = { path = "../../../crypto" }
 teaclave_worker                = { path = "../../../worker" }
 teaclave_test_utils            = { path = "../../../tests/utils" , optional = true }
 
-sgx_cov       = { version = "1.1.2", optional = true }
-sgx_tstd      = { version = "1.1.2", features = ["net", "thread", "backtrace"], optional = true }
-sgx_types     = { version = "1.1.2" }
+sgx_cov       = { version = "1.1.3", optional = true }
+sgx_tstd      = { version = "1.1.3", features = ["net", "thread", "backtrace"], optional = true }
+sgx_types     = { version = "1.1.3" }

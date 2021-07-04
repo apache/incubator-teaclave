@@ -21,7 +21,7 @@ enclave_unit_test = ["teaclave_test_utils/mesalock_sgx"]
 [dependencies]
 log           = { version = "0.4.6", features = ["release_max_level_info"] }
 anyhow       = { version = "1.0.26" }
-sgx_types    = { version = "1.1.2" }
+sgx_types    = { version = "1.1.3" }
 rand         = { version = "0.7.0" }
 hex          = { version = "0.4.0" }
 serde        = { version = "1.0.92", features = ["derive"] }
@@ -36,4 +36,4 @@ protected_fs_rs  = { path = "../common/protected_fs_rs" }
 teaclave_test_utils = { path = "../tests/utils", optional = true }
 teaclave_crypto = { path = "../crypto" }
 
-sgx_tstd = { version = "1.1.2", features = ["net", "backtrace"], optional = true }
+sgx_tstd = { version = "1.1.3", features = ["net", "backtrace"], optional = true }

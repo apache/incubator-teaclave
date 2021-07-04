@@ -16,4 +16,4 @@ structopt  = { version = "0.3" }
 teaclave_binder            = { path = "../../../binder", features = ["app"] }
 teaclave_types             = { path = "../../../types" }
 
-sgx_types = { version = "1.1.2" }
+sgx_types = { version = "1.1.3" }

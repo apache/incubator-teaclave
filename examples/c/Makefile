@@ -40,3 +40,4 @@ run: builtin_echo builtin_ordered_set_intersect
 clean:
 	@rm -rf target
 	@rm builtin_echo
+	@rm builtin_ordered_set_intersect

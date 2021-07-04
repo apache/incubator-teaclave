@@ -196,7 +196,8 @@ pub mod tests {
     fn gen_token(claim: Claims, bad_alg: Option<jsonwebtoken::Algorithm>, secret: &[u8]) -> String {
         let mut header = jsonwebtoken::Header::default();
         header.alg = bad_alg.unwrap_or(JWT_ALG);
-        jsonwebtoken::encode(&header, &claim, secret).unwrap()
+        let secret = jsonwebtoken::EncodingKey::from_secret(secret);
+        jsonwebtoken::encode(&header, &claim, &secret).unwrap()
     }
 
     fn get_authenticate_response(
@@ -220,6 +221,7 @@ pub mod tests {
             algorithms: vec![JWT_ALG],
             ..Default::default()
         };
-        jsonwebtoken::decode::<crate::user_info::Claims>(token, secret, &validation)
+        let secret = jsonwebtoken::DecodingKey::from_secret(secret);
+        jsonwebtoken::decode::<crate::user_info::Claims>(token, &secret, &validation)
     }
 }

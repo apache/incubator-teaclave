@@ -21,20 +21,20 @@ exclude = [
 # Patched sgx crates to vendored, uncomment below crate when needed.
 
 # Rust SGX SDK
-sgx_alloc         = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.2" }
-sgx_build_helper  = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.2" }
-sgx_cov           = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.2" }
-sgx_libc          = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.2" }
-sgx_rand          = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.2" }
-sgx_tcrypto       = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.2" }
-sgx_tprotected_fs = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.2" }
-sgx_trts          = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.2" }
-sgx_tse           = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.2" }
-sgx_tstd          = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.2" }
-# sgx_tunittest     = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.2" }
-sgx_types         = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.2" }
-sgx_unwind        = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.2" }
-sgx_urts          = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.2" }
+sgx_alloc         = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.3" }
+sgx_build_helper  = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.3" }
+sgx_cov           = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.3" }
+sgx_libc          = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.3" }
+sgx_rand          = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.3" }
+sgx_tcrypto       = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.3" }
+sgx_tprotected_fs = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.3" }
+sgx_trts          = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.3" }
+sgx_tse           = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.3" }
+sgx_tstd          = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.3" }
+# sgx_tunittest     = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.3" }
+sgx_types         = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.3" }
+sgx_unwind        = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.3" }
+sgx_urts          = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.3" }
 
 # SGX crates
 # adler32           = { git = "https://github.com/mesalock-linux/adler32-rs-sgx" }
@@ -64,7 +64,7 @@ percent-encoding  = { git = "https://github.com/mesalock-linux/rust-url-sgx" }
 profiler_builtins = { git = "https://github.com/mesalock-linux/sgx-fake-profiler-builtins" }
 prost             = { git = "https://github.com/mesalock-linux/prost-sgx" }
 quick-error       = { git = "https://github.com/mesalock-linux/quick-error-sgx" }
-rand              = { git = "https://github.com/mesalock-linux/rand-sgx", tag = "v0.7.3_sgx1.1.2" }
+rand              = { git = "https://github.com/mesalock-linux/rand-sgx", tag = "v0.7.3_sgx1.1.3" }
 regex             = { git = "https://github.com/mesalock-linux/regex-sgx" }
 ring              = { git = "https://github.com/mesalock-linux/ring-sgx", tag = "v0.16.5" }
 rustls            = { git = "https://github.com/mesalock-linux/rustls", branch = "mesalock_sgx-client-cert-verifier-patch" }

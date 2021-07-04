@@ -20,4 +20,4 @@ teaclave_binder            = { path = "../../../binder", features = ["app"] }
 teaclave_types             = { path = "../../../types" }
 teaclave_test_utils        = { path = "../../../tests/utils" }
 
-sgx_types = { version = "1.1.2" }
+sgx_types = { version = "1.1.3" }

@@ -47,5 +47,5 @@ teaclave_service_enclave_utils = { path = "../../utils/service_enclave_utils" }
 teaclave_types                 = { path = "../../../types" }
 teaclave_test_utils            = { path = "../../../tests/utils", optional = true }
 
-sgx_tstd      = { version = "1.1.2", features = ["net", "thread", "backtrace"], optional = true }
-sgx_types     = { version = "1.1.2" }
+sgx_tstd      = { version = "1.1.3", features = ["net", "thread", "backtrace"], optional = true }
+sgx_types     = { version = "1.1.3" }
