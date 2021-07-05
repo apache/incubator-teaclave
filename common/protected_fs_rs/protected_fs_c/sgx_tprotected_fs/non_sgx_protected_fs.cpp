@@ -102,8 +102,14 @@ sgx_status_t read_rand(uint8_t *buf, size_t size)
     if (fd == -1) {
         return SGX_ERROR_UNEXPECTED; 
     }
-    read(fd, buf, size);
-    close(fd);
+    ssize_t ret = read(fd, buf, size);
+    if (ret == -1) {
+        return SGX_ERROR_UNEXPECTED; 
+    }
+    ret = close(fd);
+    if (ret == -1) {
+        return SGX_ERROR_UNEXPECTED; 
+    }
     return SGX_SUCCESS;
 }
 
