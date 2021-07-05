@@ -35,6 +35,8 @@ RUN apt-get update && apt-get install -y -f \
     libsgx-dcap-default-qpl=$DCAP_VERSION \
     libsgx-dcap-ql-dbgsym=$DCAP_VERSION \
     libsgx-dcap-default-qpl-dbgsym=$DCAP_VERSION \
+    libsgx-dcap-quote-verify=$DCAP_VERSION \
+    libsgx-dcap-quote-verify-dev=$DCAP_VERSION \
     libsgx-urts=$VERSION \
     libsgx-enclave-common=$VERSION \
     libsgx-enclave-common-dev=$VERSION \

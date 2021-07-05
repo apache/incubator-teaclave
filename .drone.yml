@@ -61,27 +61,27 @@ name: sgx-dcap-debug-ubuntu-1804
 
 steps:
 - name: prepare
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-dcap-1.9:0.2.0
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-dcap-1.9:0.2.1
   commands:
   - . /root/.cargo/env
   - . /opt/sgxsdk/environment
   - mkdir -p build
   - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DTEST_MODE=ON -DDCAP=ON ..
 - name: check
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-dcap-1.9:0.2.0
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-dcap-1.9:0.2.1
   commands:
   - . /root/.cargo/env
   - . /opt/sgxsdk/environment
   - cd build && make check
 - name: compile
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-dcap-1.9:0.2.0
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-dcap-1.9:0.2.1
   commands:
   - . /root/.cargo/env
   - . /opt/sgxsdk/environment
   - sed -i 's/ias_root_ca_cert/dcap_root_ca_cert/' config/build.config.toml
   - cd build && make VERBOSE=1 -j2
 - name: test
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-dcap-1.9:0.2.0
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-dcap-1.9:0.2.1
   environment:
     AS_ALGO: sgx_ecdsa
     AS_URL: https://localhost:8080
