@@ -13,11 +13,13 @@ steps:
   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.12:0.2.0
   commands:
   - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
   - cd build && make check
 - name: compile
   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.12:0.2.0
   commands:
   - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
   - cd build && make VERBOSE=1 -j2
 - name: test
   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.12:0.2.0
@@ -36,6 +38,7 @@ steps:
     path: /var/run/aesmd/aesm.socket
   commands:
   - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
   - (cd release/tool && ./teaclave_sgx_tool status)
   - (cd release/tool && ./teaclave_sgx_tool attestation --key $AS_KEY --spid $AS_SPID)
   - cd build && make run-tests
@@ -68,6 +71,7 @@ steps:
   image: teaclave/teaclave-build-ubuntu-1804-sgx-dcap-1.9:0.2.0
   commands:
   - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
   - cd build && make check
 - name: compile
   image: teaclave/teaclave-build-ubuntu-1804-sgx-dcap-1.9:0.2.0
@@ -98,6 +102,7 @@ steps:
   commands:
   - echo "$(ip route | awk 'NR==1 {print $3}') pccs-server" >> /etc/hosts
   - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
   - (cd release/dcap && ./teaclave_dcap_ref_as &)
   - cd build && make run-tests
 
@@ -135,11 +140,13 @@ steps:
   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.12:0.2.0
   commands:
   - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
   - cd build && make check
 - name: compile
   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.12:0.2.0
   commands:
   - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
   - cd build && make VERBOSE=1 -j2
 - name: test
   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.12:0.2.0
@@ -158,6 +165,7 @@ steps:
     path: /var/run/aesmd/aesm.socket
   commands:
   - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
   - cd build && make run-examples
 
 volumes:
@@ -188,11 +196,13 @@ steps:
   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.12:0.2.0
   commands:
   - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
   - cd build && make check
 - name: compile
   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.12:0.2.0
   commands:
   - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
   - cd build && make VERBOSE=1 -j2
 - name: test
   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.12:0.2.0
@@ -205,6 +215,7 @@ steps:
       from_secret: V5_SPID
   commands:
   - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
   - cd build && make run-tests
 
 node:
@@ -227,16 +238,19 @@ steps:
   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.12:0.2.0
   commands:
   - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
   - cd build && make check
 - name: compile
   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.12:0.2.0
   commands:
   - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
   - cd build && make VERBOSE=1 -j2
 - name: test
   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.12:0.2.0
   commands:
   - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
   - cd build && make run-examples
 
 node:
@@ -259,11 +273,13 @@ steps:
   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.12:0.2.0
   commands:
   - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
   - cd build && make check
 - name: clippy
   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.12:0.2.0
   commands:
   - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
   - cd build && make CLP=1
 
 node:
