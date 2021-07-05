@@ -99,7 +99,7 @@ impl EndorsedAttestationReport {
 fn new_tls_stream(url: &url::Url) -> Result<rustls::StreamOwned<rustls::ClientSession, TcpStream>> {
     let host_str = url
         .host_str()
-        .ok_or_else(|| AttestationServiceError::InvalidAddress)?;
+        .ok_or(AttestationServiceError::InvalidAddress)?;
     let dns_name = webpki::DNSNameRef::try_from_ascii_str(host_str)?;
     let mut config = rustls::ClientConfig::new();
     #[cfg(dcap)]
@@ -134,7 +134,7 @@ fn get_report(
     let encoded_json = json!({ "isvEnclaveQuote": encoded_quote }).to_string();
     let host_str = url
         .host_str()
-        .ok_or_else(|| AttestationServiceError::InvalidAddress)?;
+        .ok_or(AttestationServiceError::InvalidAddress)?;
 
     let request = format!(
         "POST {} HTTP/1.1\r\n\

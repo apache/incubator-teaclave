@@ -36,7 +36,7 @@ fn test_execute_function() {
 
     let staged_task = StagedTask::new()
         .task_id(task_id)
-        .function_id(function_id.clone())
+        .function_id(function_id)
         .function_name("builtin-echo")
         .executor(Executor::Builtin)
         .function_arguments(hashmap!(

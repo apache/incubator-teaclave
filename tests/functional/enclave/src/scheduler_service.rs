@@ -30,7 +30,7 @@ fn test_pull_task() {
     let staged_task = StagedTask::new()
         .task_id(Uuid::new_v4())
         .function_name("builtin-echo")
-        .function_id(function_id.clone())
+        .function_id(function_id)
         .executor(Executor::Builtin);
 
     let mut storage_client = get_storage_client();
@@ -54,7 +54,7 @@ fn test_update_task_status_result() {
     let function_id = Uuid::new_v4();
 
     let staged_task = StagedTask::new()
-        .task_id(task_id.clone())
+        .task_id(task_id)
         .function_name("builtin-echo")
         .function_id(function_id)
         .executor(Executor::Builtin);

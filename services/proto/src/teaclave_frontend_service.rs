@@ -561,7 +561,7 @@ impl std::convert::TryFrom<proto::RegisterInputFileRequest> for RegisterInputFil
 impl From<RegisterInputFileRequest> for proto::RegisterInputFileRequest {
     fn from(request: RegisterInputFileRequest) -> Self {
         Self {
-            url: request.url.into_string(),
+            url: request.url.as_str().to_string(),
             cmac: request.cmac.to_bytes(),
             crypto_info: Some(request.crypto_info.into()),
         }
@@ -583,7 +583,7 @@ impl From<UpdateInputFileRequest> for proto::UpdateInputFileRequest {
     fn from(request: UpdateInputFileRequest) -> Self {
         Self {
             data_id: request.data_id.to_string(),
-            url: request.url.into_string(),
+            url: request.url.as_str().to_string(),
         }
     }
 }
@@ -641,7 +641,7 @@ impl std::convert::TryFrom<proto::RegisterOutputFileRequest> for RegisterOutputF
 impl From<RegisterOutputFileRequest> for proto::RegisterOutputFileRequest {
     fn from(request: RegisterOutputFileRequest) -> Self {
         Self {
-            url: request.url.into_string(),
+            url: request.url.as_str().to_string(),
             crypto_info: Some(request.crypto_info.into()),
         }
     }
@@ -664,7 +664,7 @@ impl From<UpdateOutputFileRequest> for proto::UpdateOutputFileRequest {
     fn from(request: UpdateOutputFileRequest) -> Self {
         Self {
             data_id: request.data_id.to_string(),
-            url: request.url.into_string(),
+            url: request.url.as_str().to_string(),
         }
     }
 }

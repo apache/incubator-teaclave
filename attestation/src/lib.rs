@@ -19,6 +19,8 @@
 //! supporting both EPID and ECDSA attestation. By default, Intel Attestation
 //! Service is used for RA.
 
+#![allow(clippy::nonstandard_macro_braces)]
+#![allow(clippy::unknown_clippy_lints)]
 #![cfg_attr(feature = "mesalock_sgx", no_std)]
 #[cfg(feature = "mesalock_sgx")]
 #[macro_use]

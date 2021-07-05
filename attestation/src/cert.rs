@@ -18,6 +18,7 @@
 //! This module provides a X.509 certificate parser.
 
 #![allow(clippy::unused_unit)]
+#![allow(clippy::needless_lifetimes)]
 
 use std::prelude::v1::*;
 

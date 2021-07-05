@@ -15,6 +15,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
+#![allow(clippy::nonstandard_macro_braces)]
+#![allow(clippy::unknown_clippy_lints)]
+
 use std::fmt;
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;

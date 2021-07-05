@@ -542,7 +542,7 @@ impl TeaclaveManagementService {
     ) -> TeaclaveServiceResponseResult<UserID> {
         let user_id = meta
             .get("id")
-            .ok_or_else(|| TeaclaveManagementServiceError::InvalidRequest)?;
+            .ok_or(TeaclaveManagementServiceError::InvalidRequest)?;
         Ok(user_id.to_string().into())
     }
 

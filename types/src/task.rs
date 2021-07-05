@@ -292,10 +292,7 @@ pub enum TaskResult {
 
 impl TaskResult {
     pub fn is_ok(&self) -> bool {
-        match self {
-            TaskResult::Ok(_) => true,
-            _ => false,
-        }
+        matches!(self, TaskResult::Ok(_))
     }
 
     #[cfg(test_mode)]
