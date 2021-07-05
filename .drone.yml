@@ -93,6 +93,10 @@ steps:
   volumes:
   - name: sgx
     path: /dev/sgx
+  - name: sgx_enclave
+    path: /dev/sgx_enclave
+  - name: sgx_provision
+    path: /dev/sgx_provision
   - name: aesmd
     path: /var/run/aesmd/aesm.socket
   - name: aesmd-conf
@@ -110,6 +114,12 @@ volumes:
 - name: sgx
   host:
     path: /dev/sgx
+- name: sgx_enclave
+  host:
+    path: /dev/sgx_enclave
+- name: sgx_provision
+  host:
+    path: /dev/sgx_provision
 - name: aesmd
   host:
     path: /var/run/aesmd/aesm.socket
