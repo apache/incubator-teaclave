@@ -7,14 +7,30 @@ on:
     - cron: '36 22 * * 3'
 
 jobs:
-  analyze:
-    name: Analyze
+  analyze-cpp:
+    name: Analyze cpp
     runs-on: ubuntu-latest
 
-    strategy:
-      fail-fast: false
-      matrix:
-        language: [ 'cpp', 'python' ]
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with:
+        submodules: 'true'
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v1
+      with:
+        languages: cpp
+
+    - name: Build C projects
+      run: cd examples/c && make
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v1
+
+  analyze-python:
+    name: Analyze python
+    runs-on: ubuntu-latest
 
     steps:
     - name: Checkout repository
@@ -23,11 +39,7 @@ jobs:
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v1
       with:
-        languages: ${{ matrix.language }}
-
-    - name: Build C projects
-      run: cd examples/c && make
-      if: matrix.language == 'cpp'
+        languages: python
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
