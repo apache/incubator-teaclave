@@ -1,4 +1,3 @@
-**/Cargo.lock
 **/target
 **/*.o
 **/*.pyc
@@ -13,4 +12,3 @@ cov_report
 # ignore the build dir which usually for cmake
 /build
 /release
-/Cargo.toml
