@@ -31,7 +31,6 @@ member of regular committers or PPMC of Teaclave.
 
 - [Mingshen Sun](https://github.com/mssun) (PPMC)
 - [Pei Wang](https://github.com/uraj) (PPMC)
-- [Ran Duan](https://github.com/volcano0dr/)
 - [Rundong Zhou](https://github.com/rdzhou) (PPMC)
 - [Tao Wei](https://github.com/LenxWei) (PPMC)
 - [Tongxin Li](https://github.com/litongxin1991) (PPMC)
@@ -39,6 +38,8 @@ member of regular committers or PPMC of Teaclave.
 - [Yu Ding](https://github.com/dingelish) (PPMC)
 - [Yulong Zhang](https://github.com/yulongzhang) (PPMC)
 - [Zhaofeng Chen](https://github.com/m4sterchain) (PPMC)
+- [Hongbo Chen](https://github.com/ya0guang)
+- [Ran Duan](https://github.com/volcano0dr/)
 
 ## Contributors
 
@@ -58,7 +59,6 @@ TrustZone SDK (in alphabetical order):
   - [Greg Kapka](https://github.com/gskapka)
   - [He Sun](https://github.com/henrysun007)
   - [Hongbin Mao](https://github.com/hello2mao)
-  - [Hongbo](https://github.com/ya0guang)
   - [Jackson Owens](https://github.com/jbowens)
   - [Jimmy Casey](https://github.com/jimmycasey)
   - [Jun Jiang](https://github.com/jasl)
