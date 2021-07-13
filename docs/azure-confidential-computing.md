@@ -52,7 +52,7 @@ Build Teaclave.
 $ git clone https://github.com/apache/incubator-teaclave.git
 $ cd incubator-teaclave
 $ docker run --rm -v $(pwd):/teaclave -w /teaclave \
-  -it teaclave/teaclave-build-ubuntu-1804-sgx-2.12:latest \
+  -it teaclave/teaclave-build-ubuntu-1804-sgx-2.14:latest \
    bash -c ". /root/.cargo/env && \
      . /opt/sgxsdk/environment && \
      mkdir -p build && cd build && \

@@ -18,6 +18,9 @@
 use sgx_types::*;
 use std::ptr;
 
+#[cfg(sgx_sim)]
+#[link(name = "sgx_quote_ex_sim")]
+#[cfg(not(sgx_sim))]
 #[link(name = "sgx_quote_ex")]
 extern "C" {
     fn sgx_select_att_key_id(
