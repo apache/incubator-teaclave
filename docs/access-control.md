@@ -93,7 +93,7 @@ of `data_owner(task_access_data.data, _)` is a subset of the `usr` domain,
 where each value `u` in the fact meets the condition that
 
 ```
-data_owern task_access_data.data u
+data_owner task_access_data.data u
 ```
 
 is in the terms database. `_` is called the query wild card and `<=` is the
