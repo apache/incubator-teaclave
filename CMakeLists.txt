@@ -217,7 +217,7 @@ add_library(pycomponent STATIC ${TEACLAVE_OUT_DIR}/acs_py_enclave.c)
 set_target_properties(pycomponent PROPERTIES ARCHIVE_OUTPUT_DIRECTORY
                                              ${TEACLAVE_OUT_DIR})
 target_compile_definitions(pycomponent PUBLIC SGX)
-if(NOT EXISTS "/usr/lib/pypy/include")
+if(NOT EXISTS "/usr/lib/pypy/include/Python.h")
   message(
     FATAL_ERROR
       "pypy development package not found\nFor Ubuntu, please run `apt-get install pypy-dev`"
