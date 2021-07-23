@@ -35,7 +35,7 @@ crate to configure the display of *debug logs* via environment variables.
 
 Logging is controlled via the `TEACLAVE_LOG` environment variables and the value
 of this variable is a comma-separated list of logging directives in the
-`parth::to::module=level` form. For example, you can set the environment
+`path::to::module=level` form. For example, you can set the environment
 `TEACLAVE_LOG=attestation=debug` before launching a service to print the debug
 level (and higher-level) logs in the `attestation` module to stdout/stderr.
 There are five logging levels: `error`, `warn`, `info`, `debug` and `trace`
