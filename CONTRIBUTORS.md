@@ -15,6 +15,7 @@ following mentors.
 
 - Felix Cheung
 - Furkan Kamaci
+- [Gordon King](https://github.com/bigdata-memory)
 - Jianyong Dai
 - Luciano Resende (Retired)
 - Matt Sicker
