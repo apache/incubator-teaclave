@@ -238,6 +238,7 @@ run_examples() {
   python3 builtin_password_check.py
   python3 wasm_c_simple_add.py
   python3 wasm_rust_psi.py
+  python3 wasm_tvm_mnist.py
   popd
 
   pushd ${TEACLAVE_PROJECT_ROOT}/examples/c

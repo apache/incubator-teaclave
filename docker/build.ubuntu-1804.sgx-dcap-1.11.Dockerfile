@@ -90,6 +90,20 @@ RUN apt-get update && apt-get install -q -y \
 
 RUN pip3 install pyopenssl toml cryptography yapf requests Pillow
 
+# install TVM dependencies
+RUN apt-get install -q -y \
+    lvm-10 \
+    clang-10 \
+    protobuf-compiler \
+    libprotoc-dev \
+    libtinfo-dev \
+    zlib1g-dev \
+    libedit-dev \
+    libxml2-dev
+
+# TVM Python builder dependencies
+RUN pip3 install onnx==1.9.0 numpy decorator attrs spicy
+
 # clean up apt caches
 
 RUN apt-get clean && \
