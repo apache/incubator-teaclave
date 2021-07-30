@@ -19,7 +19,8 @@ RUN curl -fsSL  https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.
 RUN apt-get update && apt-get install -q -y \
     libsgx-launch=$VERSION \
     libsgx-urts=$VERSION \
-    libsgx-quote-ex=$VERSION
+    libsgx-quote-ex=$VERSION \
+    libsgx-uae-service=$VERSION
 RUN mkdir /etc/init
 
 # Install Intel SGX SDK for libsgx_urts_sim.so
