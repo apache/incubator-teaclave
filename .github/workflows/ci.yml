@@ -36,6 +36,21 @@ jobs:
           cp /root/.bashrc $HOME/.bashrc &&
           ln -sf /root/.rustup ~/.rustup &&
           ln -sf /root/.cargo ~/.cargo
+      - name: Prepare TVM example building environment and TVM example
+        run: |
+          git clone https://github.com/apache/tvm /tvm &&
+          cd /tvm &&
+          git checkout df06c5848f59108a8e6e7dffb997b4b659b573a7 &&
+          git submodule init &&
+          git submodule update &&
+          mkdir build &&
+          cd build &&
+          cp ../cmake/config.cmake ./ &&
+          sed -i '/set(USE_LLVM OFF)/c\set(USE_LLVM ON)' config.cmake &&
+          cmake -DUSE_LLVM=ON .. &&
+          make -j4 &&
+          cd ${GITHUB_WORKSPACE}/examples/python/wasm_tvm_mnist_payload &&
+          make
       - name: Preparing build system
         run: |
           . ~/.cargo/env &&
@@ -49,19 +64,6 @@ jobs:
           . ~/.cargo/env &&
           cd build &&
           make VERBOSE=1
-      - name: Prepare TVM example building environment
-        run: |
-          git clone https://github.com/apache/tvm /tvm &&
-          cd /tvm &&
-          git checkout df06c5848f59108a8e6e7dffb997b4b659b573a7 &&
-          git submodule init &&
-          git submodule update &&
-          mkdir build &&
-          cd build &&
-          cp ../cmake/config.cmake ./ &&
-          sed -i '/set(USE_LLVM OFF)/c\set(USE_LLVM ON)' config.cmake &&
-          cmake -DUSE_LLVM=ON .. &&
-          make -j4
       - name: Run tests and examples
         run: |
           export AS_SPID="00000000000000000000000000000000" &&

@@ -225,9 +225,9 @@ run_examples() {
   popd
 
   # Generate WASM file for WAMR TVM example
-  pushd ${TEACLAVE_PROJECT_ROOT}/examples/python/wasm_tvm_mnist_payload
-  make
-  popd
+  # pushd ${TEACLAVE_PROJECT_ROOT}/examples/python/wasm_tvm_mnist_payload
+  # make
+  # popd
 
   pushd ${TEACLAVE_PROJECT_ROOT}/examples/python
   export PYTHONPATH=${TEACLAVE_PROJECT_ROOT}/sdk/python

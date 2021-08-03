@@ -19,6 +19,7 @@ export TVM_HOME = /tvm
 export PYTHONPATH = $(shell printenv PYTHONPATH):${TVM_HOME}/python
 
 all:
+	@rustup  default 1.54
 	@./build_lib.py
 	@rustup +stable target add wasm32-unknown-unknown
 	@cargo +stable build --release
