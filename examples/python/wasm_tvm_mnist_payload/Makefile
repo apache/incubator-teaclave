@@ -15,13 +15,14 @@
 # specific language governing permissions and limitations
 # under the License.
 
-TVM_HOME = /tvm
-PYTHONPATH = $(shell printenv PYTHONPATH):${TVM_HOME}/python
+export TVM_HOME = /tvm
+export PYTHONPATH = $(shell printenv PYTHONPATH):${TVM_HOME}/python
 
 all:
 	@./build_lib.py
-	@cargo build 
-	@wasm-gc target/wasm32-unknown-unknown/release/wasm_rust_psi_payload.wasm
+	@cargo build --release
+#	@wasm-gc target/wasm32-unknown-unknown/release/mnist.wasm
 
 clean:
 	@cargo clean
+	@rm ./outlib/*

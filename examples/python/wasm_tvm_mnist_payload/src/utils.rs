@@ -59,7 +59,7 @@ fn data_preprocess(img: image::DynamicImage) -> Tensor {
         .resize_exact(IMG_HEIGHT as u32, IMG_WIDTH as u32, FilterType::Nearest)
         .grayscale();
 
-    let mut pixels = img.raw_pixels();
+    let pixels = img.raw_pixels();
 
     let mut averaged = vec![];
     for p in pixels {

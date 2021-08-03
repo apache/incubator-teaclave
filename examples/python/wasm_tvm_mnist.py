@@ -27,7 +27,7 @@ from utils import (AUTHENTICATION_SERVICE_ADDRESS, FRONTEND_SERVICE_ADDRESS,
 
 # If you're using `docker-compose` to start the Teaclave server containers,
 # please change `localhost` to `teaclave-file-service`
-INPUT_FILE_URL_PREFIX = "http://localhost:6789/fixtures/functions/wamr_tvm_mnist/"
+INPUT_FILE_URL_PREFIX = "http://teaclave-file-service:6789/fixtures/functions/wamr_tvm_mnist/"
 INPUT_FILENAME = "img_10.jpg.enc"
 INPUT_URL = INPUT_FILE_URL_PREFIX + INPUT_FILENAME
 INPUT_CMAC = [
@@ -38,6 +38,7 @@ INPUT_KEY = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 USER_ID = "user_mnist"
 USER_PASSWORD = "password_mnist"
 PAYLOAD_FILE = "wasm_tvm_mnist_payload/target/wasm32-unknown-unknown/release/mnist.wasm"
+# PAYLOAD_FILE = "wasm_tvm_mnist_payload/mnist.wasm"
 
 
 def main():

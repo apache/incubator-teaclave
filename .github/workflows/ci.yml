@@ -51,8 +51,11 @@ jobs:
           make VERBOSE=1
       - name: Prepare TVM example building environment
         run: |
-          git clone --recursive https://github.com/apache/tvm /tvm &&
+          git clone https://github.com/apache/tvm /tvm &&
           cd /tvm &&
+          git checkout df06c5848f59108a8e6e7dffb997b4b659b573a7 &&
+          git submodule init &&
+          git submodule update &&
           mkdir build &&
           cd build &&
           cp ../cmake/config.cmake ./ &&
