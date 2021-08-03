@@ -67,8 +67,7 @@ lazy_static! {
     };
 }
 
-#[no_mangle]
-pub extern "C" fn run(input_file: &str) -> i32 {
+fn run(input_file: &str) -> i32 {
     let in_tensor = utils::load_input(input_file);
     let input: TVMTensor = in_tensor.as_dltensor().into();
 

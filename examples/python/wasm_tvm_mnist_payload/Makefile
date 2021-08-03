@@ -20,7 +20,8 @@ export PYTHONPATH = $(shell printenv PYTHONPATH):${TVM_HOME}/python
 
 all:
 	@./build_lib.py
-	@cargo build --release
+	@rustup +stable target add wasm32-unknown-unknown
+	@cargo +stable build --release
 #	@wasm-gc target/wasm32-unknown-unknown/release/mnist.wasm
 
 clean:

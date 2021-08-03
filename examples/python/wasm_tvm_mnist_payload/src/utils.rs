@@ -18,12 +18,9 @@
  */
 
 use super::types::*;
-use image::{imageops::FilterType, GenericImageView};
+use image::imageops::FilterType;
 use ndarray::Array;
-use std::collections::HashMap;
-use std::fs::File;
 use std::io::{BufReader, Read};
-use std::ptr;
 use teaclave_context::*;
 
 const IMG_HEIGHT: usize = 28;
@@ -34,7 +31,7 @@ pub fn load_input(in_filename: &str) -> Tensor {
 
     let mut reader = BufReader::new(img_file);
     let mut buf = vec![];
-    reader.read_to_end(&mut buf);
+    let _ = reader.read_to_end(&mut buf);
 
     let img = image::load_from_memory(&buf).unwrap();
 
