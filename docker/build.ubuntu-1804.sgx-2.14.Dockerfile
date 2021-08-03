@@ -84,7 +84,7 @@ RUN pip3 install pyopenssl toml cryptography yapf requests Pillow
 
 # install TVM dependencies
 RUN apt-get install -q -y \
-    lvm-10 \
+    llvm-10 \
     clang-10 \
     protobuf-compiler \
     libprotoc-dev \
