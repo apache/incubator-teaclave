@@ -39,6 +39,7 @@ USER_ID = "user_mnist"
 USER_PASSWORD = "password_mnist"
 PAYLOAD_FILE = "wasm_tvm_mnist_payload/target/wasm32-unknown-unknown/release/mnist.wasm"
 
+
 def main():
 
     client = AuthenticationService(AUTHENTICATION_SERVICE_ADDRESS,
