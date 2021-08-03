@@ -36,6 +36,19 @@ jobs:
           cp /root/.bashrc $HOME/.bashrc &&
           ln -sf /root/.rustup ~/.rustup &&
           ln -sf /root/.cargo ~/.cargo
+      - name: Preparing build system
+        run: |
+          . ~/.cargo/env &&
+          . /opt/sgxsdk/environment &&
+          mkdir -p build &&
+          cd build &&
+          cmake -DCMAKE_BUILD_TYPE=Debug -DSGX_SIM_MODE=ON -DTEST_MODE=ON ..
+      - name: Building
+        run: |
+          . /opt/sgxsdk/environment &&
+          . ~/.cargo/env &&
+          cd build &&
+          make VERBOSE=1
       - name: Prepare TVM example building environment and TVM example
         run: |
           git clone https://github.com/apache/tvm /tvm &&
@@ -52,19 +65,6 @@ jobs:
           . ~/.cargo/env &&
           cd ${GITHUB_WORKSPACE}/examples/python/wasm_tvm_mnist_payload &&
           make
-      - name: Preparing build system
-        run: |
-          . ~/.cargo/env &&
-          . /opt/sgxsdk/environment &&
-          mkdir -p build &&
-          cd build &&
-          cmake -DCMAKE_BUILD_TYPE=Debug -DSGX_SIM_MODE=ON -DTEST_MODE=ON ..
-      - name: Building
-        run: |
-          . /opt/sgxsdk/environment &&
-          . ~/.cargo/env &&
-          cd build &&
-          make VERBOSE=1
       - name: Run tests and examples
         run: |
           export AS_SPID="00000000000000000000000000000000" &&
