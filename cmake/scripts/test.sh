@@ -219,8 +219,13 @@ run_examples() {
   sleep 3    # wait for execution services
   popd
 
-  # Generate WASM file for WAMR Rust example21
+  # Generate WASM file for WAMR Rust example
   pushd ${TEACLAVE_PROJECT_ROOT}/examples/python/wasm_rust_psi_payload
+  make
+  popd
+
+  # Generate WASM file for WAMR TVM example
+  pushd ${TEACLAVE_PROJECT_ROOT}/examples/python/wasm_tvm_mnist_payload
   make
   popd
 

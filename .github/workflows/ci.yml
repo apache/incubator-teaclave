@@ -49,6 +49,16 @@ jobs:
           . ~/.cargo/env &&
           cd build &&
           make VERBOSE=1
+      - name: Prepare TVM example building environment
+        run: |
+          git clone --recursive https://github.com/apache/tvm /tvm &&
+          cd /tvm &&
+          mkdir build &&
+          cd build &&
+          cp ../cmake/config.cmake ./ &&
+          sed -i '/set(USE_LLVM OFF)/c\set(USE_LLVM ON)' config.cmake &&
+          cmake -DUSE_LLVM=ON .. &&
+          make -j4
       - name: Run tests and examples
         run: |
           export AS_SPID="00000000000000000000000000000000" &&
