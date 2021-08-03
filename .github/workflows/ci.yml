@@ -49,6 +49,7 @@ jobs:
           sed -i '/set(USE_LLVM OFF)/c\set(USE_LLVM ON)' config.cmake &&
           cmake -DUSE_LLVM=ON .. &&
           make -j4 &&
+          . ~/.cargo/env &&
           cd ${GITHUB_WORKSPACE}/examples/python/wasm_tvm_mnist_payload &&
           make
       - name: Preparing build system
