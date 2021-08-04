@@ -29,8 +29,9 @@ use std::os::raw::{c_char, c_int};
 
 use teaclave_types::{FunctionArguments, FunctionRuntime, TeaclaveExecutor};
 
-const DEFAULT_HEAP_SIZE: u32 = 8092;
-const DEFAULT_STACK_SIZE: u32 = 8092;
+// TVM example needs 20MB heap to run in WAMR
+const DEFAULT_HEAP_SIZE: u32 = 20971520;
+const DEFAULT_STACK_SIZE: u32 = 163840;
 const DEFAULT_ERROR_BUF_SIZE: usize = 128;
 
 #[repr(C)]
@@ -257,10 +258,41 @@ pub mod tests {
     use teaclave_types::*;
 
     pub fn run_tests() -> bool {
-        run_tests!(test_wamr,)
+        run_tests!(test_wamr_tvm_mnist, test_wamr_millionaire,)
     }
 
-    fn test_wamr() {
+    fn test_wamr_tvm_mnist() {
+        let mut args = HashMap::new();
+
+        args.insert("input_img".to_string(), "input_img".to_string());
+        let args = FunctionArguments::from(args);
+
+        let wa_payload = include_bytes!("../../tests/fixtures/functions/wamr_tvm_mnist/mnist.wasm");
+
+        let wa_payload = wa_payload.to_vec();
+        let input_img = "fixtures/functions/wamr_tvm_mnist/img_10.jpg";
+
+        let input_img_info =
+            StagedFileInfo::new(input_img, TeaclaveFile128Key::random(), FileAuthTag::mock());
+
+        let input_files = StagedFiles::new(hashmap!("input_img" => input_img_info));
+        let output_files = StagedFiles::default();
+
+        let runtime = Box::new(RawIoRuntime::new(input_files, output_files));
+
+        let function = WAMicroRuntime::default();
+        let summary = function
+            .execute("".to_string(), args, wa_payload, runtime)
+            .unwrap();
+        log::debug!(
+            "IN TEST test_wamr_tvm_mnist: AFTER execution, summary: {:?}",
+            summary
+        );
+
+        assert_eq!(summary, "3");
+    }
+
+    fn test_wamr_millionaire() {
         let mut args = HashMap::new();
 
         args.insert("input_file_id1".to_string(), "pf_in_a".to_string());
@@ -295,7 +327,10 @@ pub mod tests {
         let summary = function
             .execute("".to_string(), args, wa_payload, runtime)
             .unwrap();
-        log::debug!("IN TEST test_wamr: AFTER execution, summary: {:?}", summary);
+        log::debug!(
+            "IN TEST test_wamr_millionaire: AFTER execution, summary: {:?}",
+            summary
+        );
 
         assert_eq!(summary, "7");
 

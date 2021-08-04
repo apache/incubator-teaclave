@@ -28,7 +28,7 @@ jobs:
           cd sdk/swift/TeaclaveClientSDK && xcodebuild -scheme TeaclaveClientSDK
   sim-debug-ubuntu-1804:
     runs-on: ubuntu-18.04
-    container: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.0
+    container: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.1
     steps:
       - uses: actions/checkout@v2
       - name: Setting up $HOME
@@ -49,6 +49,22 @@ jobs:
           . ~/.cargo/env &&
           cd build &&
           make VERBOSE=1
+      - name: Prepare TVM example building environment and TVM example
+        run: |
+          git clone https://github.com/apache/tvm /tvm &&
+          cd /tvm &&
+          git checkout df06c5848f59108a8e6e7dffb997b4b659b573a7 &&
+          git submodule init &&
+          git submodule update &&
+          mkdir build &&
+          cd build &&
+          cp ../cmake/config.cmake ./ &&
+          sed -i '/set(USE_LLVM OFF)/c\set(USE_LLVM ON)' config.cmake &&
+          cmake -DUSE_LLVM=ON .. &&
+          make -j4 &&
+          . ~/.cargo/env &&
+          cd ${GITHUB_WORKSPACE}/examples/python/wasm_tvm_mnist_payload &&
+          make
       - name: Run tests and examples
         run: |
           export AS_SPID="00000000000000000000000000000000" &&
@@ -61,7 +77,7 @@ jobs:
 
   format:
     runs-on: ubuntu-18.04
-    container: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.0
+    container: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.1
     steps:
       - uses: actions/checkout@v2
       - name: Setting up $HOME
@@ -82,7 +98,7 @@ jobs:
           cd build && make check
   lint:
     runs-on: ubuntu-18.04
-    container: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.0
+    container: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.1
     steps:
       - uses: actions/checkout@v2
       - name: Setting up $HOME
