@@ -255,9 +255,10 @@ impl TeaclaveManagement for TeaclaveManagementService {
     ) -> TeaclaveServiceResponseResult<RegisterFunctionResponse> {
         let user_id = self.get_request_user_id(request.metadata())?;
 
-        let function = Function::from(request.message)
+        let function = FunctionBuilder::from(request.message)
             .id(Uuid::new_v4())
-            .owner(user_id);
+            .owner(user_id)
+            .build();
 
         self.write_to_db(&function)
             .map_err(|_| TeaclaveManagementServiceError::StorageError)?;
@@ -607,7 +608,7 @@ impl TeaclaveManagementService {
         let function_input2 = FunctionInput::new("input2", "input_desc");
         let function_output2 = FunctionOutput::new("output2", "output_desc");
 
-        let function = Function::new()
+        let function = FunctionBuilder::new()
             .id(Uuid::parse_str("00000000-0000-0000-0000-000000000001").unwrap())
             .name("mock-func-1")
             .description("mock-desc")
@@ -616,12 +617,13 @@ impl TeaclaveManagementService {
             .arguments(vec!["arg1".to_string(), "arg2".to_string()])
             .inputs(vec![function_input, function_input2])
             .outputs(vec![function_output, function_output2])
-            .owner("teaclave".to_string());
+            .owner("teaclave".to_string())
+            .build();
 
         self.write_to_db(&function)?;
 
         let function_output = FunctionOutput::new("output", "output_desc");
-        let function = Function::new()
+        let function = FunctionBuilder::new()
             .id(Uuid::parse_str("00000000-0000-0000-0000-000000000002").unwrap())
             .name("mock-func-2")
             .description("mock-desc")
@@ -629,7 +631,8 @@ impl TeaclaveManagementService {
             .public(true)
             .arguments(vec!["arg1".to_string()])
             .outputs(vec![function_output])
-            .owner("teaclave".to_string());
+            .owner("teaclave".to_string())
+            .build();
 
         self.write_to_db(&function)?;
         Ok(())
@@ -670,7 +673,7 @@ pub mod tests {
     pub fn handle_function() {
         let function_input = FunctionInput::new("input", "input_desc");
         let function_output = FunctionOutput::new("output", "output_desc");
-        let function = Function::new()
+        let function = FunctionBuilder::new()
             .id(Uuid::new_v4())
             .name("mock_function")
             .description("mock function")
@@ -679,7 +682,8 @@ pub mod tests {
             .inputs(vec![function_input])
             .outputs(vec![function_output])
             .public(true)
-            .owner("mock_user");
+            .owner("mock_user")
+            .build();
         assert!(Function::match_prefix(&function.key_string()));
         let value = function.to_vec().unwrap();
         let deserialized_function = Function::from_slice(&value).unwrap();
@@ -687,14 +691,15 @@ pub mod tests {
     }
 
     pub fn handle_task() {
-        let function = Function::new()
+        let function = FunctionBuilder::new()
             .id(Uuid::new_v4())
             .name("mock_function")
             .description("mock function")
             .payload(b"python script".to_vec())
             .arguments(vec!["arg".to_string()])
             .public(true)
-            .owner("mock_user");
+            .owner("mock_user")
+            .build();
         let function_arguments = FunctionArguments::from_json(json!({"arg": "data"})).unwrap();
 
         let task = Task::<Create>::new(
@@ -714,26 +719,28 @@ pub mod tests {
     }
 
     pub fn handle_staged_task() {
-        let function = Function::new()
+        let function = FunctionBuilder::new()
             .id(Uuid::new_v4())
             .name("mock_function")
             .description("mock function")
             .payload(b"python script".to_vec())
             .public(true)
-            .owner("mock_user");
+            .owner("mock_user")
+            .build();
 
         let url = Url::parse("s3://bucket_id/path?token=mock_token").unwrap();
         let cmac = FileAuthTag::mock();
         let input_data = FunctionInputFile::new(url.clone(), cmac, FileCrypto::default());
         let output_data = FunctionOutputFile::new(url, FileCrypto::default());
 
-        let staged_task = StagedTask::new()
+        let staged_task = StagedTaskBuilder::new()
             .task_id(Uuid::new_v4())
             .executor(Executor::MesaPy)
             .function_payload(function.payload)
             .function_arguments(hashmap!("arg" => "data"))
             .input_data(hashmap!("input" => input_data))
-            .output_data(hashmap!("output" => output_data));
+            .output_data(hashmap!("output" => output_data))
+            .build();
 
         let value = staged_task.to_vec().unwrap();
         let deserialized_data = StagedTask::from_slice(&value).unwrap();

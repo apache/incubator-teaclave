@@ -27,11 +27,12 @@ use uuid::Uuid;
 #[test_case]
 fn test_pull_task() {
     let function_id = Uuid::new_v4();
-    let staged_task = StagedTask::new()
+    let staged_task = StagedTaskBuilder::new()
         .task_id(Uuid::new_v4())
         .function_name("builtin-echo")
         .function_id(function_id)
-        .executor(Executor::Builtin);
+        .executor(Executor::Builtin)
+        .build();
 
     let mut storage_client = get_storage_client();
     let enqueue_request = EnqueueRequest::new(
@@ -53,11 +54,12 @@ fn test_update_task_status_result() {
     let task_id = Uuid::new_v4();
     let function_id = Uuid::new_v4();
 
-    let staged_task = StagedTask::new()
+    let staged_task = StagedTaskBuilder::new()
         .task_id(task_id)
         .function_name("builtin-echo")
         .function_id(function_id)
-        .executor(Executor::Builtin);
+        .executor(Executor::Builtin)
+        .build();
 
     let mut storage_client = get_storage_client();
     let enqueue_request = EnqueueRequest::new(

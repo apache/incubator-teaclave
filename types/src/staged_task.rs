@@ -199,68 +199,68 @@ impl Storable for StagedTask {
 }
 
 impl StagedTask {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    pub fn task_id(self, task_id: Uuid) -> Self {
-        Self { task_id, ..self }
-    }
-
-    pub fn function_id(self, function_id: Uuid) -> Self {
-        Self {
-            function_id,
-            ..self
-        }
-    }
-
-    pub fn executor(self, executor: Executor) -> Self {
-        Self { executor, ..self }
-    }
-
-    pub fn function_name(self, name: impl ToString) -> Self {
-        Self {
-            function_name: name.to_string(),
-            ..self
-        }
-    }
-
-    pub fn function_arguments(self, function_arguments: impl Into<FunctionArguments>) -> Self {
-        Self {
-            function_arguments: function_arguments.into(),
-            ..self
-        }
-    }
-
-    pub fn function_payload(self, function_payload: Vec<u8>) -> Self {
-        Self {
-            function_payload,
-            ..self
-        }
-    }
-
-    pub fn input_data(self, input_data: impl Into<FunctionInputFiles>) -> Self {
-        Self {
-            input_data: input_data.into(),
-            ..self
-        }
-    }
-
-    pub fn output_data(self, output_data: impl Into<FunctionOutputFiles>) -> Self {
-        Self {
-            output_data: output_data.into(),
-            ..self
-        }
-    }
-
-    pub fn executor_type(self, executor_type: ExecutorType) -> Self {
-        Self {
-            executor_type,
-            ..self
-        }
-    }
-
     pub fn get_queue_key() -> &'static str {
         QUEUE_KEY
+    }
+}
+
+pub struct StagedTaskBuilder {
+    task: StagedTask,
+}
+
+impl StagedTaskBuilder {
+    pub fn new() -> Self {
+        Self {
+            task: StagedTask::default(),
+        }
+    }
+
+    pub fn task_id(mut self, task_id: Uuid) -> Self {
+        self.task.task_id = task_id;
+        self
+    }
+
+    pub fn function_id(mut self, function_id: Uuid) -> Self {
+        self.task.function_id = function_id;
+        self
+    }
+
+    pub fn executor(mut self, executor: Executor) -> Self {
+        self.task.executor = executor;
+        self
+    }
+
+    pub fn function_name(mut self, name: impl ToString) -> Self {
+        self.task.function_name = name.to_string();
+        self
+    }
+
+    pub fn function_arguments(mut self, function_arguments: impl Into<FunctionArguments>) -> Self {
+        self.task.function_arguments = function_arguments.into();
+        self
+    }
+
+    pub fn function_payload(mut self, function_payload: Vec<u8>) -> Self {
+        self.task.function_payload = function_payload;
+        self
+    }
+
+    pub fn input_data(mut self, input_data: impl Into<FunctionInputFiles>) -> Self {
+        self.task.input_data = input_data.into();
+        self
+    }
+
+    pub fn output_data(mut self, output_data: impl Into<FunctionOutputFiles>) -> Self {
+        self.task.output_data = output_data.into();
+        self
+    }
+
+    pub fn executor_type(mut self, executor_type: ExecutorType) -> Self {
+        self.task.executor_type = executor_type;
+        self
+    }
+
+    pub fn build(self) -> StagedTask {
+        self.task
     }
 }

@@ -26,12 +26,11 @@ use std::collections::HashMap;
 use std::prelude::v1::*;
 use teaclave_rpc::into_request;
 use teaclave_types::{
-    Executor, ExecutorType, ExternalID, FileAuthTag, FileCrypto, Function, FunctionArguments,
-    FunctionInput, FunctionOutput, OwnerList, TaskFileOwners, TaskResult, TaskStatus, UserID,
-    UserList,
+    Executor, ExecutorType, ExternalID, FileAuthTag, FileCrypto, FunctionArguments,
+    FunctionBuilder, FunctionInput, FunctionOutput, OwnerList, TaskFileOwners, TaskResult,
+    TaskStatus, UserID, UserList,
 };
 use url::Url;
-use uuid::Uuid;
 
 pub use proto::TeaclaveFrontend;
 pub use proto::TeaclaveFrontendClient;
@@ -276,78 +275,81 @@ pub struct RegisterFunctionRequest {
     pub outputs: Vec<FunctionOutput>,
 }
 
-impl RegisterFunctionRequest {
+pub struct RegisterFunctionRequestBuilder {
+    request: RegisterFunctionRequest,
+}
+
+impl RegisterFunctionRequestBuilder {
     pub fn new() -> Self {
-        Self {
+        let request = RegisterFunctionRequest {
             executor_type: ExecutorType::Builtin,
             public: true,
             ..Default::default()
-        }
+        };
+
+        Self { request }
     }
 
-    pub fn name(self, name: impl ToString) -> Self {
-        Self {
-            name: name.to_string(),
-            ..self
-        }
+    pub fn name(mut self, name: impl ToString) -> Self {
+        self.request.name = name.to_string();
+        self
     }
 
-    pub fn description(self, description: impl ToString) -> Self {
-        Self {
-            description: description.to_string(),
-            ..self
-        }
+    pub fn description(mut self, description: impl ToString) -> Self {
+        self.request.description = description.to_string();
+        self
     }
 
-    pub fn executor_type(self, executor_type: ExecutorType) -> Self {
-        Self {
-            executor_type,
-            ..self
-        }
+    pub fn executor_type(mut self, executor_type: ExecutorType) -> Self {
+        self.request.executor_type = executor_type;
+        self
     }
 
-    pub fn payload(self, payload: Vec<u8>) -> Self {
-        Self { payload, ..self }
+    pub fn payload(mut self, payload: Vec<u8>) -> Self {
+        self.request.payload = payload;
+        self
     }
 
-    pub fn public(self, public: bool) -> Self {
-        Self { public, ..self }
+    pub fn public(mut self, public: bool) -> Self {
+        self.request.public = public;
+        self
     }
 
-    pub fn arguments<T: IntoIterator>(self, args: T) -> Self
+    pub fn arguments<T: IntoIterator>(mut self, args: T) -> Self
     where
         <T as IntoIterator>::Item: ToString,
     {
-        Self {
-            arguments: args.into_iter().map(|x| x.to_string()).collect(),
-            ..self
-        }
+        self.request.arguments = args.into_iter().map(|x| x.to_string()).collect();
+        self
     }
 
-    pub fn inputs(self, inputs: Vec<FunctionInput>) -> Self {
-        Self { inputs, ..self }
+    pub fn inputs(mut self, inputs: Vec<FunctionInput>) -> Self {
+        self.request.inputs = inputs;
+        self
     }
 
-    pub fn outputs(self, outputs: Vec<FunctionOutput>) -> Self {
-        Self { outputs, ..self }
+    pub fn outputs(mut self, outputs: Vec<FunctionOutput>) -> Self {
+        self.request.outputs = outputs;
+        self
+    }
+
+    pub fn build(self) -> RegisterFunctionRequest {
+        self.request
     }
 }
 
 // We explicitly construct Function here in case of missing any field
-impl From<RegisterFunctionRequest> for Function {
+impl From<RegisterFunctionRequest> for FunctionBuilder {
     fn from(request: RegisterFunctionRequest) -> Self {
-        Function {
-            id: Uuid::default(),
-            owner: UserID::default(),
-            name: request.name,
-            description: request.description,
-            public: request.public,
-            executor_type: request.executor_type,
-            payload: request.payload,
-            arguments: request.arguments,
-            inputs: request.inputs,
-            outputs: request.outputs,
-        }
+        FunctionBuilder::new()
+            .name(request.name)
+            .description(request.description)
+            .public(request.public)
+            .executor_type(request.executor_type)
+            .payload(request.payload)
+            .arguments(request.arguments)
+            .inputs(request.inputs)
+            .outputs(request.outputs)
     }
 }
 

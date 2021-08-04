@@ -34,14 +34,15 @@ fn test_execute_function() {
 
     let function_id = Uuid::new_v4();
 
-    let staged_task = StagedTask::new()
+    let staged_task = StagedTaskBuilder::new()
         .task_id(task_id)
         .function_id(function_id)
         .function_name("builtin-echo")
         .executor(Executor::Builtin)
         .function_arguments(hashmap!(
             "message" => "Hello, Teaclave Tests!"
-        ));
+        ))
+        .build();
 
     let mut storage_client = get_storage_client();
     let enqueue_request = EnqueueRequest::new(

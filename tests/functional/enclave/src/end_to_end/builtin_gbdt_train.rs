@@ -61,12 +61,13 @@ fn register_gbdt_function(client: &mut TeaclaveFrontendClient) -> ExternalID {
     ];
 
     // Register Function
-    let request = RegisterFunctionRequest::new()
+    let request = RegisterFunctionRequestBuilder::new()
         .name("builtin-gbdt-train")
         .description("Native Gbdt Training Function")
         .arguments(fn_args)
         .inputs(vec![fn_input])
-        .outputs(vec![fn_output]);
+        .outputs(vec![fn_output])
+        .build();
 
     let response = client.register_function(request).unwrap();
     log::debug!("Register function: {:?}", response);

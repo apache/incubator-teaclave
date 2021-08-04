@@ -36,8 +36,8 @@ pub use teaclave_proto::teaclave_frontend_service::{
     ApproveTaskRequest, ApproveTaskResponse, AssignDataRequest, AssignDataResponse,
     CreateTaskRequest, CreateTaskResponse, GetFunctionRequest, GetFunctionResponse, GetTaskRequest,
     GetTaskResponse, InvokeTaskRequest, InvokeTaskResponse, RegisterFunctionRequest,
-    RegisterFunctionResponse, RegisterInputFileRequest, RegisterInputFileResponse,
-    RegisterOutputFileRequest, RegisterOutputFileResponse,
+    RegisterFunctionRequestBuilder, RegisterFunctionResponse, RegisterInputFileRequest,
+    RegisterInputFileResponse, RegisterOutputFileRequest, RegisterOutputFileResponse,
 };
 pub use teaclave_types::{
     EnclaveInfo, Executor, FileCrypto, FunctionInput, FunctionOutput, TaskResult,
@@ -202,22 +202,25 @@ impl FrontendClient {
         outputs: Option<Vec<FunctionOutput>>,
     ) -> Result<String> {
         let executor_type = executor_type.try_into()?;
-        let mut request = RegisterFunctionRequest::new()
+        let mut builder = RegisterFunctionRequestBuilder::new()
             .name(name)
             .description(description)
             .executor_type(executor_type);
+
         if let Some(payload) = payload {
-            request = request.payload(payload.into());
+            builder = builder.payload(payload.into());
         }
         if let Some(arguments) = arguments {
-            request = request.arguments(arguments);
+            builder = builder.arguments(arguments);
         }
         if let Some(inputs) = inputs {
-            request = request.inputs(inputs);
+            builder = builder.inputs(inputs);
         }
         if let Some(outputs) = outputs {
-            request = request.outputs(outputs);
+            builder = builder.outputs(outputs);
         }
+
+        let request = builder.build();
         let response = self.register_function_with_request(request)?;
 
         Ok(response.function_id.to_string())

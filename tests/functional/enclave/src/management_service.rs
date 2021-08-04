@@ -127,14 +127,15 @@ fn test_get_input_file() {
 fn test_register_function() {
     let function_input = FunctionInput::new("input", "input_desc");
     let function_output = FunctionOutput::new("output", "output_desc");
-    let request = RegisterFunctionRequest::new()
+    let request = RegisterFunctionRequestBuilder::new()
         .name("mock_function")
         .executor_type(ExecutorType::Python)
         .payload(b"def entrypoint:\n\treturn".to_vec())
         .public(true)
         .arguments(vec!["arg"])
         .inputs(vec![function_input])
-        .outputs(vec![function_output]);
+        .outputs(vec![function_output])
+        .build();
 
     let mut client = authorized_client("mock_user");
     let response = client.register_function(request);
@@ -146,14 +147,15 @@ fn test_register_function() {
 fn test_get_function() {
     let function_input = FunctionInput::new("input", "input_desc");
     let function_output = FunctionOutput::new("output", "output_desc");
-    let request = RegisterFunctionRequest::new()
+    let request = RegisterFunctionRequestBuilder::new()
         .name("mock_function")
         .executor_type(ExecutorType::Python)
         .payload(b"def entrypoint:\n\treturn".to_vec())
         .public(false)
         .arguments(vec!["arg"])
         .inputs(vec![function_input])
-        .outputs(vec![function_output]);
+        .outputs(vec![function_output])
+        .build();
 
     let mut client = authorized_client("mock_user");
     let response = client.register_function(request).unwrap();

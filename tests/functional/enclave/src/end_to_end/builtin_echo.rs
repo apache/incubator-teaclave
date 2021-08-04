@@ -28,10 +28,11 @@ pub fn test_echo_task_success() {
         create_frontend_client(shared_enclave_info(), FRONTEND_SERVICE_ADDR, cred).unwrap();
 
     // Register Function
-    let request = RegisterFunctionRequest::new()
+    let request = RegisterFunctionRequestBuilder::new()
         .name("builtin-echo")
         .description("Native Echo Function")
-        .arguments(vec!["message"]);
+        .arguments(vec!["message"])
+        .build();
 
     let response = client.register_function(request).unwrap();
 
