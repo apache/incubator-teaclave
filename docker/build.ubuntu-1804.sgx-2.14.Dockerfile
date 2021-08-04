@@ -107,7 +107,7 @@ RUN git clone https://github.com/apache/tvm /tvm                && \
     cp ../cmake/config.cmake ./                                 && \
     sed -i '/set(USE_LLVM OFF)/c\set(USE_LLVM ON)' config.cmake && \
     cmake -DUSE_LLVM=ON ..                                      && \
-    make -j4 
+    make -j$(nproc)
 
 # clean up apt caches
 
