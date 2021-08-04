@@ -96,6 +96,20 @@ RUN apt-get install -q -y \
 # TVM Python builder dependencies
 RUN pip3 install onnx==1.9.0 numpy decorator attrs spicy
 
+# Build TVM
+# Build TVM
+RUN git clone https://github.com/apache/tvm /tvm                && \
+    cd /tvm                                                     && \
+    git checkout df06c5848f59108a8e6e7dffb997b4b659b573a7       && \
+    git submodule init                                          && \
+    git submodule update                                        && \
+    mkdir build                                                 && \
+    cd build                                                    && \
+    cp ../cmake/config.cmake ./                                 && \
+    sed -i '/set(USE_LLVM OFF)/c\set(USE_LLVM ON)' config.cmake && \
+    cmake -DUSE_LLVM=ON ..                                      && \
+    make -j4 
+
 # clean up apt caches
 
 RUN apt-get clean && \
