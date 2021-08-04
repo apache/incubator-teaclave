@@ -11,6 +11,7 @@ permalink: /docs/
 - [How to Add Built-in Functions](builtin-functions.md)
 - [Deploying Teaclave on Azure Confidential Computing VM](azure-confidential-computing.md)
 - [Executing WebAssembly in Teaclave](executing-wasm.md)
+- [Inference Task with TVM in Teaclave](inference-with-tvm.md)
 
 ## Design
 
