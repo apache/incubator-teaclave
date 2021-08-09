@@ -53,10 +53,10 @@ clean() {
 main() {
 
     if [ $1 = "trusted" ]; then
-        clean
+        clean 2>/dev/null
         copy $TRUSTED_TOML $TRUSTED_LOCK $TRUSTED_CONFIG
     elif [ $1 = "untrusted" ]; then
-        clean
+        clean 2>/dev/null
         copy $UNTRUSTED_TOML $UNTRUSTED_LOCK $UNTRUSTED_CONFIG
     elif [ $1 = "clean" ]; then
         clean
