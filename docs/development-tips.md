@@ -26,10 +26,13 @@ includes `Cargo.toml` which can be copied from our build system:
 `third_party/crates-sgx/config`. Similarly, when developing the app parts, you
 can copy the `cmake/tomls/Cargo.sgx_untrusted_lib.toml` file to the root
 directory as `Cargo.toml`, and `.cargo/config` and `Cargo.lock` files can be
-found in `third_party/crates-io/` directory. For standalone Rust applications
-such as CLI, no `Cargo.toml` is needed. After the preparation of `Cargo.toml` in
-root, RLS/rust-analyzer can understand the projects finally. You will see type
-hints and cross references using IDEs with extensions.
+found in `third_party/crates-io/` directory. Besides, please also change the
+last line of `directory = "vendor"` to `directory =
+"third_party/crates-sgx/vendor"` or `directory ="third_party/crates-io/vendor"`
+so the dependencies can be resolved automatically. For standalone Rust
+applications such as CLI, no `Cargo.toml` is needed. After the preparation of
+`Cargo.toml` in root, RLS/rust-analyzer can understand the projects finally. You
+will see type hints and cross references using IDEs with extensions.
 
 ::: tip NOTE 
 You can also simply use the script `scripts/ide.sh <trusted|untrusted|clean>`
