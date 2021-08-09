@@ -55,9 +55,11 @@ main() {
     if [ $1 = "trusted" ]; then
         clean 2>/dev/null
         copy $TRUSTED_TOML $TRUSTED_LOCK $TRUSTED_CONFIG
+        sed -i '/directory = "vendor"/c\directory = "third_party/crates-sgx/vendor"' ${teaclave_root}/${CONFIG_DEST}
     elif [ $1 = "untrusted" ]; then
         clean 2>/dev/null
         copy $UNTRUSTED_TOML $UNTRUSTED_LOCK $UNTRUSTED_CONFIG
+        sed -i '/directory = "vendor"/c\directory = "third_party/crates-io/vendor"' ${teaclave_root}/${CONFIG_DEST}
     elif [ $1 = "clean" ]; then
         clean
     else
