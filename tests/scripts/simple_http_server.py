@@ -17,7 +17,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-
 from http.server import SimpleHTTPRequestHandler
 import socketserver
 import sys
