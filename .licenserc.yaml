@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -17,30 +15,31 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from http.server import SimpleHTTPRequestHandler
-import socketserver
-import sys
+header:
+  license:
+    spdx-id: Apache-2.0
+    copyright-owner: Apache Software Foundation
 
-
-class HTTPRequestHandler(SimpleHTTPRequestHandler):
-    def do_PUT(self):
-        length = int(self.headers["Content-Length"])
-
-        path = self.translate_path(self.path)
-        with open(path, "wb") as dst:
-            dst.write(self.rfile.read(length))
-
-        self.send_response(200)
-        self.end_headers()
-
-
-if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        port = int(sys.argv[1])
-    else:
-        port = 6789
-    socketserver.TCPServer.allow_reuse_address = True
-    with socketserver.TCPServer(("0.0.0.0", port),
-                                HTTPRequestHandler) as httpd:
-        print("serving at port", port)
-        httpd.serve_forever()
+  paths-ignore:
+    - '**/*.md'
+    - '**/*.pem'
+    - '**/*.sha256'
+    - '**/*.xcodeproj/**'
+    - '**/Cargo.lock'
+    - '**/target/**'
+    - '.gitattributes'
+    - '.github/ISSUE_TEMPLATE/**'
+    - '.gitmodules'
+    - 'DISCLAIMER-WIP'
+    - 'KEYS'
+    - 'LICENSE'
+    - 'NOTICE'
+    - 'build/**'
+    - 'common/protected_fs_rs/**'
+    - 'common/rusty_leveldb_sgx/**'
+    - 'keys'
+    - 'licenses'
+    - 'release/**'
+    - 'services/access_control/model.conf'
+    - 'tests/fixtures/enclave_info.toml'
+    - 'third_party/**'
