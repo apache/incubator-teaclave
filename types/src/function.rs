@@ -66,61 +66,69 @@ pub struct Function {
     pub owner: UserID,
 }
 
-impl Function {
+pub struct FunctionBuilder {
+    function: Function,
+}
+
+impl FunctionBuilder {
     pub fn new() -> Self {
-        Self::default()
-    }
-
-    pub fn id(self, id: Uuid) -> Self {
-        Self { id, ..self }
-    }
-
-    pub fn executor_type(self, executor_type: ExecutorType) -> Self {
         Self {
-            executor_type,
-            ..self
+            function: Function::default(),
         }
     }
 
-    pub fn name(self, name: impl ToString) -> Self {
-        Self {
-            name: name.to_string(),
-            ..self
-        }
+    pub fn id(mut self, id: Uuid) -> Self {
+        self.function.id = id;
+        self
     }
 
-    pub fn description(self, description: impl ToString) -> Self {
-        Self {
-            description: description.to_string(),
-            ..self
-        }
+    pub fn executor_type(mut self, executor_type: ExecutorType) -> Self {
+        self.function.executor_type = executor_type;
+        self
     }
 
-    pub fn payload(self, payload: Vec<u8>) -> Self {
-        Self { payload, ..self }
+    pub fn name(mut self, name: impl ToString) -> Self {
+        self.function.name = name.to_string();
+        self
     }
 
-    pub fn public(self, public: bool) -> Self {
-        Self { public, ..self }
+    pub fn description(mut self, description: impl ToString) -> Self {
+        self.function.description = description.to_string();
+        self
     }
 
-    pub fn arguments(self, arguments: Vec<String>) -> Self {
-        Self { arguments, ..self }
+    pub fn payload(mut self, payload: Vec<u8>) -> Self {
+        self.function.payload = payload;
+        self
     }
 
-    pub fn inputs(self, inputs: Vec<FunctionInput>) -> Self {
-        Self { inputs, ..self }
+    pub fn public(mut self, public: bool) -> Self {
+        self.function.public = public;
+        self
     }
 
-    pub fn outputs(self, outputs: Vec<FunctionOutput>) -> Self {
-        Self { outputs, ..self }
+    pub fn arguments(mut self, arguments: Vec<String>) -> Self {
+        self.function.arguments = arguments;
+        self
     }
 
-    pub fn owner(self, owner: impl Into<UserID>) -> Self {
-        Self {
-            owner: owner.into(),
-            ..self
-        }
+    pub fn inputs(mut self, inputs: Vec<FunctionInput>) -> Self {
+        self.function.inputs = inputs;
+        self
+    }
+
+    pub fn outputs(mut self, outputs: Vec<FunctionOutput>) -> Self {
+        self.function.outputs = outputs;
+        self
+    }
+
+    pub fn owner(mut self, owner: impl Into<UserID>) -> Self {
+        self.function.owner = owner.into();
+        self
+    }
+
+    pub fn build(self) -> Function {
+        self.function
     }
 }
 

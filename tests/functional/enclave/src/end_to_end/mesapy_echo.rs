@@ -34,13 +34,14 @@ def entrypoint(argv):
     return argv[1]
 ";
     // Register Function
-    let request = RegisterFunctionRequest::new()
+    let request = RegisterFunctionRequestBuilder::new()
         .name("mesapy_echo_demo")
         .description("Mesapy Echo Function")
         .payload(script.into())
         .executor_type(ExecutorType::Python)
         .public(true)
-        .arguments(vec!["message"]);
+        .arguments(vec!["message"])
+        .build();
 
     let response = client.register_function(request).unwrap();
 

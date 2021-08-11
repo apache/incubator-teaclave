@@ -55,14 +55,15 @@ def entrypoint(argv):
     let input1 = FunctionInput::new("InPartyA", "Input from party A");
     let input2 = FunctionInput::new("InPartyB", "Input from party B");
     let fusion_output = FunctionOutput::new("OutFusionData", "Output fusion data");
-    let request = RegisterFunctionRequest::new()
+    let request = RegisterFunctionRequestBuilder::new()
         .name("mesapy_data_fusion_demo")
         .description("Mesapy Data Fusion Function")
         .payload(script.into())
         .executor_type(ExecutorType::Python)
         .public(true)
         .inputs(vec![input1, input2])
-        .outputs(vec![fusion_output]);
+        .outputs(vec![fusion_output])
+        .build();
     let response = client.register_function(request).unwrap();
     log::debug!("Resgister function: {:?}", response);
     response.function_id
@@ -230,14 +231,15 @@ def entrypoint(argv):
 "#;
 
     let input_spec = FunctionInput::new("InputData", "Lines of Data");
-    let request = RegisterFunctionRequest::new()
+    let request = RegisterFunctionRequestBuilder::new()
         .name("wlc")
         .description("Mesapy Word Line Count Function")
         .arguments(vec!["query"])
         .payload(script.into())
         .executor_type(ExecutorType::Python)
         .public(true)
-        .inputs(vec![input_spec]);
+        .inputs(vec![input_spec])
+        .build();
     let response = client.register_function(request).unwrap();
     log::debug!("Resgister function: {:?}", response);
     response.function_id

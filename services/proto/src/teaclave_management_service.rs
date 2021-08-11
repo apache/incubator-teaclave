@@ -43,6 +43,8 @@ pub type GetInputFileResponse = crate::teaclave_frontend_service::GetInputFileRe
 pub type GetOutputFileRequest = crate::teaclave_frontend_service::GetOutputFileRequest;
 pub type GetOutputFileResponse = crate::teaclave_frontend_service::GetOutputFileResponse;
 pub type RegisterFunctionRequest = crate::teaclave_frontend_service::RegisterFunctionRequest;
+pub type RegisterFunctionRequestBuilder =
+    crate::teaclave_frontend_service::RegisterFunctionRequestBuilder;
 pub type RegisterFunctionResponse = crate::teaclave_frontend_service::RegisterFunctionResponse;
 pub type GetFunctionRequest = crate::teaclave_frontend_service::GetFunctionRequest;
 pub type GetFunctionResponse = crate::teaclave_frontend_service::GetFunctionResponse;

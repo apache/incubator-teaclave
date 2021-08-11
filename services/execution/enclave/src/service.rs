@@ -157,7 +157,7 @@ fn prepare_task(task: &StagedTask, file_mgr: &TaskFileManager) -> Result<StagedF
     let input_files = file_mgr.prepare_staged_inputs()?;
     let output_files = file_mgr.prepare_staged_outputs()?;
 
-    let staged_function = StagedFunction::new()
+    let staged_function = StagedFunctionBuilder::new()
         .executor_type(task.executor_type)
         .executor(task.executor)
         .name(&task.function_name)
@@ -165,7 +165,8 @@ fn prepare_task(task: &StagedTask, file_mgr: &TaskFileManager) -> Result<StagedF
         .payload(task.function_payload.clone())
         .input_files(input_files)
         .output_files(output_files)
-        .runtime_name("default");
+        .runtime_name("default")
+        .build();
     Ok(staged_function)
 }
 
@@ -186,11 +187,12 @@ pub mod tests {
         let task_id = Uuid::new_v4();
         let function_arguments =
             FunctionArguments::from_json(json!({"message": "Hello, Teaclave!"})).unwrap();
-        let staged_task = StagedTask::new()
+        let staged_task = StagedTaskBuilder::new()
             .task_id(task_id)
             .executor(Executor::Builtin)
             .function_name("builtin-echo")
-            .function_arguments(function_arguments);
+            .function_arguments(function_arguments)
+            .build();
 
         let file_mgr = TaskFileManager::new(
             WORKER_BASE_DIR,
@@ -243,13 +245,14 @@ pub mod tests {
         let input_data = hashmap!("training_data" => training_input_data);
         let output_data = hashmap!("trained_model" => model_output_data);
 
-        let staged_task = StagedTask::new()
+        let staged_task = StagedTaskBuilder::new()
             .task_id(task_id)
             .executor(Executor::Builtin)
             .function_name("builtin-gbdt-train")
             .function_arguments(function_arguments)
             .input_data(input_data)
-            .output_data(output_data);
+            .output_data(output_data)
+            .build();
 
         let file_mgr = TaskFileManager::new(
             WORKER_BASE_DIR,

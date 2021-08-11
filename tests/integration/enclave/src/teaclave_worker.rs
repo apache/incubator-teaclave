@@ -21,7 +21,7 @@ use serde_json::json;
 use teaclave_crypto::TeaclaveFile128Key;
 use teaclave_types::{
     hashmap, read_all_bytes, Executor, ExecutorType, FileAuthTag, FunctionArguments,
-    StagedFileInfo, StagedFiles, StagedFunction,
+    StagedFileInfo, StagedFiles, StagedFunctionBuilder,
 };
 use teaclave_worker::Worker;
 
@@ -56,14 +56,15 @@ fn test_start_worker() {
     let output_files = StagedFiles::new(hashmap!(
         "trained_model" => output_info.clone()));
 
-    let staged_function = StagedFunction::new()
+    let staged_function = StagedFunctionBuilder::new()
         .executor_type(ExecutorType::Builtin)
         .executor(Executor::Builtin)
         .name("builtin-gbdt-train")
         .arguments(arguments)
         .input_files(input_files)
         .output_files(output_files)
-        .runtime_name("default");
+        .runtime_name("default")
+        .build();
 
     let worker = Worker::default();
 

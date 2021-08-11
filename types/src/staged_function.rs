@@ -116,55 +116,58 @@ pub struct StagedFunction {
     pub runtime_name: String,
 }
 
-impl StagedFunction {
+pub struct StagedFunctionBuilder {
+    function: StagedFunction,
+}
+
+impl StagedFunctionBuilder {
     pub fn new() -> Self {
-        Self::default()
-    }
-
-    pub fn name(self, name: impl ToString) -> Self {
         Self {
-            name: name.to_string(),
-            ..self
+            function: StagedFunction::default(),
         }
     }
 
-    pub fn executor(self, executor: Executor) -> Self {
-        Self { executor, ..self }
+    pub fn name(mut self, name: impl ToString) -> Self {
+        self.function.name = name.to_string();
+        self
     }
 
-    pub fn payload(self, payload: Vec<u8>) -> Self {
-        Self { payload, ..self }
+    pub fn executor(mut self, executor: Executor) -> Self {
+        self.function.executor = executor;
+        self
     }
 
-    pub fn arguments(self, arguments: FunctionArguments) -> Self {
-        Self { arguments, ..self }
+    pub fn payload(mut self, payload: Vec<u8>) -> Self {
+        self.function.payload = payload;
+        self
     }
 
-    pub fn input_files(self, input_files: StagedFiles) -> Self {
-        Self {
-            input_files,
-            ..self
-        }
+    pub fn arguments(mut self, arguments: FunctionArguments) -> Self {
+        self.function.arguments = arguments;
+        self
     }
 
-    pub fn output_files(self, output_files: StagedFiles) -> Self {
-        Self {
-            output_files,
-            ..self
-        }
+    pub fn input_files(mut self, input_files: StagedFiles) -> Self {
+        self.function.input_files = input_files;
+        self
     }
 
-    pub fn runtime_name(self, runtime_name: impl ToString) -> Self {
-        Self {
-            runtime_name: runtime_name.to_string(),
-            ..self
-        }
+    pub fn output_files(mut self, output_files: StagedFiles) -> Self {
+        self.function.output_files = output_files;
+        self
     }
 
-    pub fn executor_type(self, executor_type: ExecutorType) -> Self {
-        Self {
-            executor_type,
-            ..self
-        }
+    pub fn runtime_name(mut self, runtime_name: impl ToString) -> Self {
+        self.function.runtime_name = runtime_name.to_string();
+        self
+    }
+
+    pub fn executor_type(mut self, executor_type: ExecutorType) -> Self {
+        self.function.executor_type = executor_type;
+        self
+    }
+
+    pub fn build(self) -> StagedFunction {
+        self.function
     }
 }
