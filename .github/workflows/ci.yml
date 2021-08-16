@@ -38,7 +38,7 @@ jobs:
         run: |
           export PKG_CONFIG_PATH="/usr/local/opt/openssl/lib/pkgconfig:/usr/local/opt/libssh2/lib/pkgconfig/"
           export PATH=~/.cargo/bin:$PATH
-          cargo install cargo-lipo
+          cargo +stable install cargo-lipo
           cargo build --manifest-path sdk/rust/Cargo.toml
           cargo build --manifest-path sdk/rust/Cargo.toml --target aarch64-apple-ios
           cargo lipo --manifest-path sdk/rust/Cargo.toml
