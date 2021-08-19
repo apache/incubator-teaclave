@@ -31,13 +31,13 @@ from PIL import Image
 import numpy as np
 import tvm.relay as relay
 
+# This example uses mnist-8 model from:
 # https://github.com/onnx/models/tree/master/vision/classification/mnist
 
-# This example uses mnist-8 model
-model_url = "".join([
-    "https://github.com/onnx/models/raw/master",
-    "/vision/classification/mnist/model/mnist-8.onnx"
-])
+# model_url = "".join([
+#     "https://github.com/onnx/models/raw/master",
+#     "/vision/classification/mnist/model/mnist-8.onnx"
+# ])
 
 
 def build_graph_lib(opt_level):
@@ -47,11 +47,15 @@ def build_graph_lib(opt_level):
         os.makedirs(out_dir)
 
     # Follow the tutorial to download and compile the model
-    model_path = download_testdata(model_url,
-                                   "mnist-8.onnx",
-                                   module="onnx",
-                                   overwrite=True)
-    # print(model_path)
+    # model_path = download_testdata(model_url,
+    #                                "mnist-8.onnx",
+    #                                module="onnx",
+    #                                overwrite=True)
+
+    # use the local model in case the LFS server is down
+    # comment this line if a model from other source is needed
+    model_path = "./mnist-8.onnx"
+
     onnx_model = onnx.load(model_path)
     img_path = "./data/img_10.jpg"
 
