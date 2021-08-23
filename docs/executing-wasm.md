@@ -49,6 +49,13 @@ You can also use `clang` provided by
 payload written in
 C](https://github.com/apache/incubator-teaclave/tree/master/examples/python/wasm_c_millionaire_problem_payload).
 
+Alternatively, C and C++ code can be compiled with [zig](https://ziglang.org):
+
+```sh
+zig cc  -Os --target=wasm32-freestanding -shared -o example.wasm example.c
+zig c++ -Os --target=wasm32-freestanding -shared -o example.wasm example.cpp
+```
+
 ## From Rust
 
 First of all, your cargo should support `wasm32` target and `wasm-gc` is
