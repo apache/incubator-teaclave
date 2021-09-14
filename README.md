@@ -104,7 +104,8 @@ sub-projects under Teaclave:
 Teaclave is open source in [The Apache Way](https://www.apache.org/theapacheway/),
 we aim to create a project that is maintained and owned by the community. All
 kinds of contributions are welcome. Read this [document](CONTRIBUTING.md) to
-learn more about how to contribute. Thanks to our [contributors](CONTRIBUTORS.md).
+learn more about how to contribute. Thanks to our
+[contributors](https://teaclave.apache.org/contributors/).
 
 ## Community
 
