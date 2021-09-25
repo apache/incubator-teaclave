@@ -219,6 +219,7 @@ services:
 
   teaclave-file-service:
     image: python:3
+    container_name: teaclave-file-service
     volumes:
       - ../tests:/teaclave-file-service
     working_dir: /teaclave-file-service
