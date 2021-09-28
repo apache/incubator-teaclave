@@ -50,10 +50,7 @@ simpler, we recommend to use [docker-compose](https://docs.docker.com/compose/)
 to manage all services. Since the remote attestation is required for all
 services, you should setup the attestation service configurations
 before start the services. You can use env vars or set them in the
-`docker-compose-ubuntu-1804-*.yml` file.
-Note that `-sgx-sim-mode.yml` is for the simulation mode, `-isgx.yml` and
-`-intel-sgx.yml` is for Intel's SGX driver (`isgx`) and upstream in-tree kernel
-driver (`intel_sgx`) respectively, which can be seen by `lsmod | grep sgx`.
+`docker-compose-ubuntu-1804.yml` file.
 
 Here is an example to start all services.
 
@@ -63,7 +60,7 @@ $ export AS_KEY="00000000000000000000000000000000"
 $ export AS_ALGO="sgx_epid"
 $ export AS_URL="https://api.trustedservices.intel.com:443"
 
-$ docker-compose -f docker-compose-ubuntu-1804.yml up
+$ ./run-teaclave-services.sh
 Starting teaclave-file-service           ... done
 Starting teaclave-authentication-service ... done
 Starting teaclave-access-control-service ... done
