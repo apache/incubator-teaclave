@@ -23,21 +23,21 @@ AESM_SEL="none"
 function sgx_dev_detect() {
     local ISGX_DEV=/dev/isgx
     local ISGX_DEV_EXIST=false
-    if [[ -c "$ISGX_DEV" ]]; then
+    if [ -c "$ISGX_DEV" ]; then
         echo "$ISGX_DEV device detected."
         ISGX_DEV_EXIST=true
     fi
 
     local ENCL_DEV=/dev/sgx/enclave
     local ENCL_DEV_EXIST=false
-    if [[ -c "$ENCL_DEV" ]]; then
+    if [ -L "$ENCL_DEV" ] && [ -c $(readlink $ENCL_DEV) ]; then
         echo "$ENCL_DEV device detected."
         ENCL_DEV_EXIST=true
     fi
 
     local PROV_DEV=/dev/sgx/provision
     local PROV_DEV_EXIST=false
-    if [[ -c "$PROV_DEV" ]]; then
+    if [ -L "$PROV_DEV" ] && [ -c $(readlink $PROV_DEV) ]; then
         echo "$PROV_DEV device detected."
         PROV_DEV_EXIST=true
     fi
@@ -77,7 +77,7 @@ function sgx_dev_detect() {
 function aesm_detect() {
     local AESM_SOCK=/var/run/aesmd/aesm.socket
     local AESM_SOCK_EXIST=false
-    if [[ -S "$AESM_SOCK" ]]; then
+    if [ -S "$AESM_SOCK" ]; then
         echo "$AESM_SOCK socket detected."
         AESM_SOCK_EXIST=true
     fi
