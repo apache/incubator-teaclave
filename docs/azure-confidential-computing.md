@@ -76,7 +76,7 @@ export AS_URL=https://api.trustedservices.intel.com:443
 Start Teaclave services.
 
 ```
-(cd docker && docker-compose -f docker-compose-ubuntu-1804-intel-sgx.yml up --build --detach)
+(cd docker && ./run-teaclave-services.sh -d)
 ```
 
 At last, try the hello world example.
