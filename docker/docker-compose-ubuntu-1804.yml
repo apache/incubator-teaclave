@@ -29,11 +29,6 @@ services:
       - 17776
     volumes:
       - ./runtime.config.toml:/teaclave/runtime.config.toml
-      - type: bind
-        source: /var/run/aesmd/aesm.socket
-        target: /var/run/aesmd/aesm.socket
-    devices:
-      - /dev/isgx
     working_dir: /teaclave
     environment:
       - AS_SPID
@@ -57,11 +52,6 @@ services:
       - 7777
     volumes:
       - ./runtime.config.toml:/teaclave/runtime.config.toml
-      - type: bind
-        source: /var/run/aesmd/aesm.socket
-        target: /var/run/aesmd/aesm.socket
-    devices:
-      - /dev/isgx
     working_dir: /teaclave
     environment:
       - AS_SPID
@@ -85,11 +75,6 @@ services:
       - 17777
     volumes:
       - ./runtime.config.toml:/teaclave/runtime.config.toml
-      - type: bind
-        source: /var/run/aesmd/aesm.socket
-        target: /var/run/aesmd/aesm.socket
-    devices:
-      - /dev/isgx
     working_dir: /teaclave
     environment:
       - AS_SPID
@@ -113,11 +98,6 @@ services:
       - 17778
     volumes:
       - ./runtime.config.toml:/teaclave/runtime.config.toml
-      - type: bind
-        source: /var/run/aesmd/aesm.socket
-        target: /var/run/aesmd/aesm.socket
-    devices:
-      - /dev/isgx
     working_dir: /teaclave
     environment:
       - AS_SPID
@@ -138,11 +118,6 @@ services:
       - 17779
     volumes:
       - ./runtime.config.toml:/teaclave/runtime.config.toml
-      - type: bind
-        source: /var/run/aesmd/aesm.socket
-        target: /var/run/aesmd/aesm.socket
-    devices:
-      - /dev/isgx
     working_dir: /teaclave
     environment:
       - AS_SPID
@@ -163,11 +138,6 @@ services:
       - 17770
     volumes:
       - ./runtime.config.toml:/teaclave/runtime.config.toml
-      - type: bind
-        source: /var/run/aesmd/aesm.socket
-        target: /var/run/aesmd/aesm.socket
-    devices:
-      - /dev/isgx
     working_dir: /teaclave
     environment:
       - AS_SPID
@@ -191,11 +161,6 @@ services:
       - 17780
     volumes:
       - ./runtime.config.toml:/teaclave/runtime.config.toml
-      - type: bind
-        source: /var/run/aesmd/aesm.socket
-        target: /var/run/aesmd/aesm.socket
-    devices:
-      - /dev/isgx
     working_dir: /teaclave
     environment:
       - AS_SPID

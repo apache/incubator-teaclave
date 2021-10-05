@@ -118,7 +118,7 @@ $ export AS_URL="https://api.trustedservices.intel.com:443"    # IAS URL
 Launch all services with `docker-compose`:
 
 ```
-$ (cd docker && docker-compose -f docker-compose-ubuntu-1804-isgx.yml up --build)
+$ (cd docker && ./run-teaclave-services.sh)
 Starting teaclave-authentication-service ... done
 Starting teaclave-access-control-service ... done
 Starting teaclave-scheduler-service      ... done
@@ -222,7 +222,7 @@ $ export AS_URL="https://api.trustedservices.intel.com:443"
 At last, launch all services with `docker-compose`:
 
 ```
-$ (cd docker && docker-compose -f docker-compose-ubuntu-1804-sgx-sim-mode.yml up --build)
+$ (cd docker && ./run-teaclave-services.sh)
 ```
 
 Install dependencies for Python client.
