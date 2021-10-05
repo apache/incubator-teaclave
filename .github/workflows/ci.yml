@@ -30,13 +30,13 @@ jobs:
           submodules: 'true'
       - name: Install dependencies
         run: |
-          brew install cmake openssl
+          brew install cmake openssl@1.1
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           export PATH=~/.cargo/bin:$PATH
           rustup default nightly-2020-04-07 && rustup target add aarch64-apple-ios x86_64-apple-ios
       - name: Building Teaclave Client SDK
         run: |
-          export PKG_CONFIG_PATH="/usr/local/opt/openssl/lib/pkgconfig:/usr/local/opt/libssh2/lib/pkgconfig/"
+          export PKG_CONFIG_PATH="/usr/local/opt/openssl@1.1/lib/pkgconfig:/usr/local/opt/libssh2/lib/pkgconfig/"
           export PATH=~/.cargo/bin:$PATH
           cargo +stable install cargo-lipo
           cargo build --manifest-path sdk/rust/Cargo.toml
