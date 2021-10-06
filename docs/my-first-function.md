@@ -118,7 +118,7 @@ $ export AS_URL="https://api.trustedservices.intel.com:443"    # IAS URL
 Launch all services with `docker-compose`:
 
 ```
-$ (cd docker && ./run-teaclave-services.sh)
+$ (cd docker && ./run-teaclave-services.sh -m sim)
 Starting teaclave-authentication-service ... done
 Starting teaclave-access-control-service ... done
 Starting teaclave-scheduler-service      ... done
