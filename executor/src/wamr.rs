@@ -91,6 +91,10 @@ extern "C" {
 
     fn wasm_runtime_deinstantiate(module_inst: *const c_void);
 
+    fn wasm_runtime_unload(module: *const c_void);
+
+    fn wasm_runtime_destroy();
+
 }
 
 #[derive(Default)]
@@ -220,7 +224,6 @@ impl TeaclaveExecutor for WAMicroRuntime {
 
         let result =
             unsafe { wasm_runtime_call_wasm(exec_env, entry_func, wasm_argc, wasm_argv.as_ptr()) };
-        reset_thread_context()?;
 
         // clean WAMR allocated memory
         let _ = p_argv
@@ -242,6 +245,12 @@ impl TeaclaveExecutor for WAMicroRuntime {
         };
 
         unsafe { wasm_runtime_deinstantiate(module_instance) };
+
+        unsafe { wasm_runtime_unload(module) };
+
+        unsafe { wasm_runtime_destroy() };
+
+        reset_thread_context()?;
 
         result
     }
