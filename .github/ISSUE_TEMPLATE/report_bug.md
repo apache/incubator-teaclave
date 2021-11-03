@@ -5,7 +5,7 @@ labels: bug
 ---
 <!--
 Thank you for filing a bug report! 🐛 Please provide a short summary of the bug,
-along with any information you feel relevant to replicating the bug.
+along with any information you feel relevant to reproduce the bug.
 -->
 
 I tried to build, execute, deploy, and use Teaclave like this:
