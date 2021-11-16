@@ -199,11 +199,24 @@ public class AuthenticationClient {
         self.cClient = client
     }
 
-    public func register(id: String, password: String) -> Result<Void, TeaclaveClientError> {
+    public func set_credential(id: String, token: String) -> Result<Void, TeaclaveClientError> {
+        let id_c_string = id.cString(using: .ascii)
+        let token_c_string = token.cString(using: .ascii)
+
+        let ret = teaclave_authentication_set_credential(cClient, id_c_string, token_c_string)
+        guard ret == 0 else {
+            return Result.failure(.setCredentialError)
+        }
+        return Result.success(())
+    }
+
+    public func register(id: String, password: String, role: String, attribute: String) -> Result<Void, TeaclaveClientError> {
         let id_c_string = id.cString(using: .ascii)
         let password_c_string = password.cString(using: .ascii)
+        let role_c_string = role.cString(using: .ascii)
+        let attribute_c_string = attribute.cString(using: .ascii)
 
-        let ret = teaclave_user_register(cClient, id_c_string, password_c_string)
+        let ret = teaclave_user_register(cClient, id_c_string, password_c_string, role_c_string, attribute_c_string)
         guard ret == 0 else {
             return Result.failure(.userRegisterError)
         }
@@ -256,7 +269,7 @@ public class FrontendClient {
         let id_c_string = id.cString(using: .ascii)
         let token_c_string = token.cString(using: .ascii)
 
-        let ret = teaclave_set_credential(cClient, id_c_string, token_c_string)
+        let ret = teaclave_frontend_set_credential(cClient, id_c_string, token_c_string)
         guard ret == 0 else {
             return Result.failure(.setCredentialError)
         }

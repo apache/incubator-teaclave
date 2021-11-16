@@ -21,8 +21,8 @@ HOSTNAME = 'localhost'
 AUTHENTICATION_SERVICE_ADDRESS = (HOSTNAME, 7776)
 FRONTEND_SERVICE_ADDRESS = (HOSTNAME, 7777)
 
-USER_ID = "example_user"
-USER_PASSWORD = "test_password"
+USER_ID = "admin"
+USER_PASSWORD = "teaclave"
 
 if os.environ.get('DCAP'):
     AS_ROOT_CERT_FILENAME = "dcap_root_ca_cert.pem"
@@ -37,3 +37,17 @@ if os.environ.get('TEACLAVE_PROJECT_ROOT'):
 else:
     AS_ROOT_CA_CERT_PATH = "../../keys/" + AS_ROOT_CERT_FILENAME
     ENCLAVE_INFO_PATH = "../../release/examples/enclave_info.toml"
+
+from teaclave import (AuthenticationService, AuthenticationClient)
+
+
+class PlatformAdmin:
+    def __init__(self, user_id: str, user_password: str):
+        self.client = AuthenticationService(
+            AUTHENTICATION_SERVICE_ADDRESS, AS_ROOT_CA_CERT_PATH,
+            ENCLAVE_INFO_PATH).connect().get_client()
+        token = self.client.user_login(user_id, user_password)
+        self.client.metadata = {"id": user_id, "token": token}
+
+    def register_user(self, user_id: str, user_password: str):
+        self.client.user_register(user_id, user_password, "PlatformAdmin", "")

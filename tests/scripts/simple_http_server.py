@@ -17,7 +17,9 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from http.server import SimpleHTTPRequestHandler
+from http.server import SimpleHTTPRequestHandler, HTTPServer
+from socketserver import ThreadingMixIn
+import threading
 import socketserver
 import sys
 
@@ -34,13 +36,16 @@ class HTTPRequestHandler(SimpleHTTPRequestHandler):
         self.end_headers()
 
 
+class ThreadingSimpleServer(ThreadingMixIn, HTTPServer):
+    pass
+
+
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         port = int(sys.argv[1])
     else:
         port = 6789
     socketserver.TCPServer.allow_reuse_address = True
-    with socketserver.TCPServer(("0.0.0.0", port),
-                                HTTPRequestHandler) as httpd:
+    with ThreadingSimpleServer(('0.0.0.0', port), HTTPRequestHandler) as httpd:
         print("serving at port", port)
         httpd.serve_forever()

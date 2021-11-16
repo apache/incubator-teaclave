@@ -38,8 +38,20 @@ impl std::convert::From<&str> for UserID {
     }
 }
 
+impl std::convert::From<&String> for UserID {
+    fn from(uid: &String) -> UserID {
+        UserID(uid.to_string())
+    }
+}
+
 impl std::convert::From<UserID> for String {
     fn from(user_id: UserID) -> String {
+        user_id.to_string()
+    }
+}
+
+impl std::convert::From<&UserID> for String {
+    fn from(user_id: &UserID) -> String {
         user_id.to_string()
     }
 }

@@ -65,9 +65,16 @@ struct CreateRequest {
 }
 
 #[derive(Clone)]
+struct UpdateRequest {
+    key: Vec<u8>,
+    value: Vec<u8>,
+}
+
+#[derive(Clone)]
 enum DbRequest {
     Get(GetRequest),
     Create(CreateRequest),
+    Update(UpdateRequest),
     Ping,
 }
 
@@ -75,6 +82,7 @@ enum DbRequest {
 enum DbResponse {
     Get(GetResponse),
     Create,
+    Update,
     Ping,
 }
 
@@ -114,6 +122,13 @@ impl Database {
                             Ok(_) => Ok(DbResponse::Create),
                             Err(_) => Err(DbError::LevelDbInternalError),
                         },
+                    },
+                    DbRequest::Update(request) => match database.get(&request.key) {
+                        Some(_) => match database.put(&request.key, &request.value) {
+                            Ok(_) => Ok(DbResponse::Update),
+                            Err(_) => Err(DbError::LevelDbInternalError),
+                        },
+                        None => Err(DbError::UserNotExist),
                     },
                     DbRequest::Ping => Ok(DbResponse::Ping),
                 };
@@ -178,6 +193,23 @@ impl DbClient {
         let db_response = result?;
         match db_response {
             DbResponse::Create => Ok(()),
+            _ => Err(DbError::InvalidResponse),
+        }
+    }
+
+    pub(crate) fn update_user(&self, user: &UserInfo) -> Result<(), DbError> {
+        let (sender, receiver) = channel();
+        let user_bytes = serde_json::to_vec(&user).map_err(|_| DbError::InvalidRequest)?;
+        let request = DbRequest::Update(UpdateRequest {
+            key: user.id.as_bytes().to_vec(),
+            value: user_bytes.to_vec(),
+        });
+        let call = DBCall { sender, request };
+        self.sender.send(call)?;
+        let result = receiver.recv()?;
+        let db_response = result?;
+        match db_response {
+            DbResponse::Update => Ok(()),
             _ => Err(DbError::InvalidResponse),
         }
     }

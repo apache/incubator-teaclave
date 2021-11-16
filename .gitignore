@@ -27,3 +27,7 @@ cov_report
 # ignore the build dir which usually for cmake
 /build
 /release
+# ignore intermediate assets during building and testing
+examples/c/builtin_echo
+examples/c/builtin_ordered_set_intersect
+examples/python/out.jpg

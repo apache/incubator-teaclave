@@ -23,7 +23,7 @@ from teaclave import (AuthenticationService, FrontendService, FunctionInput,
                       FunctionOutput, OwnerList)
 from utils import (AUTHENTICATION_SERVICE_ADDRESS, FRONTEND_SERVICE_ADDRESS,
                    AS_ROOT_CA_CERT_PATH, ENCLAVE_INFO_PATH, USER_ID,
-                   USER_PASSWORD)
+                   USER_PASSWORD, PlatformAdmin)
 
 
 class UserData:
@@ -81,8 +81,6 @@ class Client:
         self.client = AuthenticationService(
             AUTHENTICATION_SERVICE_ADDRESS, AS_ROOT_CA_CERT_PATH,
             ENCLAVE_INFO_PATH).connect().get_client()
-        print(f"[+] {self.user_id} registering user")
-        self.client.user_register(self.user_id, self.user_password)
         print(f"[+] {self.user_id} login")
         token = self.client.user_login(self.user_id, self.user_password)
         self.client = FrontendService(
@@ -186,6 +184,10 @@ class Client:
 
 
 def main():
+    platform_admin = PlatformAdmin("admin", "teaclave")
+    platform_admin.register_user(USER_DATA_0.user_id, USER_DATA_0.password)
+    platform_admin.register_user(USER_DATA_1.user_id, USER_DATA_1.password)
+
     user0 = Client(USER_DATA_0.user_id, USER_DATA_0.password)
     user1 = Client(USER_DATA_1.user_id, USER_DATA_1.password)
 

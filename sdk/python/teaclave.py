@@ -117,10 +117,14 @@ class CryptoInfo:
 
 
 class UserRegisterRequest(Request):
-    def __init__(self, user_id: str, user_password: str):
+    def __init__(self, metadata: Metadata, user_id: str, user_password: str,
+                 role: str, attribute: str):
         self.request = "user_register"
+        self.metadata = metadata
         self.id = user_id
         self.password = user_password
+        self.role = role
+        self.attribute = attribute
 
 
 class UserLoginRequest(Request):
@@ -184,17 +188,22 @@ class AuthenticationClient:
     Args:
         channel: Trusted TLS socket (verified with remote attestation).
     """
-    def __init__(self, channel: ssl.SSLSocket):
+    def __init__(self, channel: ssl.SSLSocket, metadata: Metadata = None):
         self.channel = channel
+        self.metadata = metadata
 
-    def user_register(self, user_id: str, user_password: str):
+    def user_register(self, user_id: str, user_password: str, role: str,
+                      attribute: str):
         """Register a new user.
 
         Args:
             user_id: User ID.
             user_password: Password.
+            role: Role of user.
+            attribute: Attribute related to the role.
         """
-        request = UserRegisterRequest(user_id, user_password)
+        request = UserRegisterRequest(self.metadata, user_id, user_password,
+                                      role, attribute)
         _write_message(self.channel, request)
         _ = _read_message(self.channel)
 
@@ -264,7 +273,7 @@ class RegisterFunctionRequest(Request):
     def __init__(self, metadata: Metadata, name: str, description: str,
                  executor_type: str, public: bool, payload: List[int],
                  arguments: List[str], inputs: List[FunctionInput],
-                 outputs: List[FunctionOutput]):
+                 outputs: List[FunctionOutput], user_allowlist: List[str]):
         self.request = "register_function"
         self.metadata = metadata
         self.name = name
@@ -275,6 +284,48 @@ class RegisterFunctionRequest(Request):
         self.arguments = arguments
         self.inputs = inputs
         self.outputs = outputs
+        self.user_allowlist = user_allowlist
+
+
+class UpdateFunctionRequest:
+    def __init__(self, metadata: Metadata, function_id: str, name: str,
+                 description: str, executor_type: str, public: bool,
+                 payload: List[int], arguments: List[str],
+                 inputs: List[FunctionInput], outputs: List[FunctionOutput],
+                 user_allowlist: List[str]):
+        self.request = "update_function"
+        self.metadata = metadata
+        self.function_id = function_id
+        self.name = name
+        self.description = description
+        self.executor_type = executor_type
+        self.public = public
+        self.payload = payload
+        self.arguments = arguments
+        self.inputs = inputs
+        self.outputs = outputs
+        self.user_allowlist = user_allowlist
+
+
+class ListFunctionsRequest:
+    def __init__(self, metadata: Metadata, user_id: str):
+        self.request = "list_functions"
+        self.metadata = metadata
+        self.user_id = user_id
+
+
+class DeleteFunctionRequest:
+    def __init__(self, metadata: Metadata, function_id: str):
+        self.request = "delete_function"
+        self.metadata = metadata
+        self.function_id = function_id
+
+
+class GetFunctionRequest:
+    def __init__(self, metadata: Metadata, function_id: str):
+        self.request = "get_function"
+        self.metadata = metadata
+        self.function_id = function_id
 
 
 class RegisterInputFileRequest(Request):
@@ -361,21 +412,64 @@ class FrontendClient:
         self.channel = channel
         self.metadata = metadata
 
-    def register_function(self,
-                          name: str,
-                          description: str,
-                          executor_type: str,
-                          public: bool = True,
-                          payload: List[int] = [],
-                          arguments: List[str] = [],
-                          inputs: List[FunctionInput] = [],
-                          outputs: List[FunctionOutput] = []):
+    def register_function(
+        self,
+        name: str,
+        description: str,
+        executor_type: str,
+        public: bool = True,
+        payload: List[int] = [],
+        arguments: List[str] = [],
+        inputs: List[FunctionInput] = [],
+        outputs: List[FunctionOutput] = [],
+        user_allowlist: List[str] = [],
+    ):
         request = RegisterFunctionRequest(self.metadata, name, description,
                                           executor_type, public, payload,
-                                          arguments, inputs, outputs)
+                                          arguments, inputs, outputs,
+                                          user_allowlist)
         _write_message(self.channel, request)
         response = _read_message(self.channel)
         return response["content"]["function_id"]
+
+    def update_function(
+        self,
+        function_id: str,
+        name: str,
+        description: str,
+        executor_type: str,
+        public: bool = True,
+        payload: List[int] = [],
+        arguments: List[str] = [],
+        inputs: List[FunctionInput] = [],
+        outputs: List[FunctionOutput] = [],
+        user_allowlist: List[str] = [],
+    ):
+        request = UpdateFunctionRequest(self.metadata, function_id, name,
+                                        description, executor_type, public,
+                                        payload, arguments, inputs, outputs,
+                                        user_allowlist)
+        _write_message(self.channel, request)
+        response = _read_message(self.channel)
+        return response["content"]["function_id"]
+
+    def list_functions(self, user_id: str):
+        request = ListFunctionsRequest(self.metadata, user_id)
+        _write_message(self.channel, request)
+        response = _read_message(self.channel)
+        return response["content"]["function_ids"]
+
+    def get_function(self, function_id: str):
+        request = GetFunctionRequest(self.metadata, function_id)
+        _write_message(self.channel, request)
+        response = _read_message(self.channel)
+        return response["content"]
+
+    def delete_function(self, function_id: str):
+        request = DeleteFunctionRequest(self.metadata, function_id)
+        _write_message(self.channel, request)
+        response = _read_message(self.channel)
+        return response["content"]
 
     def register_input_file(self, url: str, schema: str, key: List[int],
                             iv: List[int], cmac: List[int]):

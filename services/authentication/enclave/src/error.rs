@@ -28,12 +28,26 @@ pub(crate) enum TeaclaveAuthenticationApiError {
     InvalidUserId,
     #[error("invalid password")]
     InvalidPassword,
+    #[error("invalid role")]
+    InvalidRole,
     #[error("service unavailable")]
     ServiceUnavailable,
 }
 
 impl From<TeaclaveAuthenticationApiError> for TeaclaveServiceResponseError {
     fn from(error: TeaclaveAuthenticationApiError) -> Self {
+        TeaclaveServiceResponseError::RequestError(error.to_string())
+    }
+}
+
+#[derive(Error, Debug)]
+pub(crate) enum TeaclaveAuthenticationInternalError {
+    #[error("permission denied")]
+    PermissionDenied,
+}
+
+impl From<TeaclaveAuthenticationInternalError> for TeaclaveServiceResponseError {
+    fn from(error: TeaclaveAuthenticationInternalError) -> Self {
         TeaclaveServiceResponseError::RequestError(error.to_string())
     }
 }

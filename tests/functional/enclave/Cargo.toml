@@ -25,7 +25,7 @@ edition = "2018"
 
 [lib]
 name = "teaclave_functional_tests_enclave"
-crate-type = ["staticlib"]
+crate-type = ["staticlib", "rlib"]
 
 [features]
 default = []

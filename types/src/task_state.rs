@@ -241,6 +241,7 @@ impl Task<Stage> {
         let function_arguments = self.state.function_arguments.clone();
         let staged_task = StagedTask {
             task_id: self.state.task_id,
+            user_id: requester.into(),
             executor: self.state.executor,
             executor_type: function.executor_type,
             function_id: function.id,

@@ -70,7 +70,9 @@ int teaclave_close_authentication_service(struct AuthenticationClient *client);
  */
 int teaclave_user_register(struct AuthenticationClient *client,
                            const char *user_id,
-                           const char *user_password);
+                           const char *user_password,
+                           const char *role,
+                           const char *attribute);
 
 /**
  * Login a new user with `user_id` and `user_password`. The login session token
@@ -118,9 +120,17 @@ int teaclave_close_frontend_service(struct FrontendClient *client);
  * Set user's credential with `user_id` and `user_token`. The function returns
  * 0 for success. On error, the function returns 1.
  */
-int teaclave_set_credential(struct FrontendClient *client,
+int teaclave_frontend_set_credential(struct FrontendClient *client,
                             const char *user_id,
                             const char *user_token);
+
+/**
+ * Set user's credential with `user_id` and `user_token`. The function returns
+ * 0 for success. On error, the function returns 1.
+ */
+int teaclave_authentication_set_credential(struct AuthenticationClient *client,
+                                const char *user_id,
+                                const char *user_token);
 
 /**
  * Invoke task with `task_id`. The function returns 0 for success. On error,

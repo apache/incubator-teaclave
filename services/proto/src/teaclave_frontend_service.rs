@@ -261,6 +261,21 @@ impl GetOutputFileResponse {
     }
 }
 
+#[into_request(TeaclaveManagementRequest::ListFunctions)]
+#[into_request(TeaclaveFrontendRequest::ListFunctions)]
+#[derive(Debug, Default)]
+pub struct ListFunctionsRequest {
+    pub user_id: UserID,
+}
+
+#[into_request(TeaclaveManagementResponse::ListFunctions)]
+#[into_request(TeaclaveFrontendResponse::ListFunctions)]
+#[derive(Debug, Default)]
+pub struct ListFunctionsResponse {
+    pub registered_functions: Vec<String>,
+    pub allowed_functions: Vec<String>,
+}
+
 #[into_request(TeaclaveManagementRequest::RegisterFunction)]
 #[into_request(TeaclaveFrontendRequest::RegisterFunction)]
 #[derive(Debug, Default)]
@@ -273,8 +288,10 @@ pub struct RegisterFunctionRequest {
     pub arguments: Vec<String>,
     pub inputs: Vec<FunctionInput>,
     pub outputs: Vec<FunctionOutput>,
+    pub user_allowlist: Vec<String>,
 }
 
+#[derive(Default)]
 pub struct RegisterFunctionRequestBuilder {
     request: RegisterFunctionRequest,
 }
@@ -333,6 +350,11 @@ impl RegisterFunctionRequestBuilder {
         self
     }
 
+    pub fn user_allowlist(mut self, user_allowlist: Vec<String>) -> Self {
+        self.request.user_allowlist = user_allowlist;
+        self
+    }
+
     pub fn build(self) -> RegisterFunctionRequest {
         self.request
     }
@@ -350,6 +372,7 @@ impl From<RegisterFunctionRequest> for FunctionBuilder {
             .arguments(request.arguments)
             .inputs(request.inputs)
             .outputs(request.outputs)
+            .user_allowlist(request.user_allowlist)
     }
 }
 
@@ -360,6 +383,125 @@ pub struct RegisterFunctionResponse {
 }
 
 impl RegisterFunctionResponse {
+    pub fn new(function_id: ExternalID) -> Self {
+        Self { function_id }
+    }
+}
+
+#[into_request(TeaclaveManagementRequest::UpdateFunction)]
+#[into_request(TeaclaveFrontendRequest::UpdateFunction)]
+#[derive(Debug, Default)]
+pub struct UpdateFunctionRequest {
+    pub function_id: ExternalID,
+    pub name: String,
+    pub description: String,
+    pub executor_type: ExecutorType,
+    pub payload: Vec<u8>,
+    pub public: bool,
+    pub arguments: Vec<String>,
+    pub inputs: Vec<FunctionInput>,
+    pub outputs: Vec<FunctionOutput>,
+    pub user_allowlist: Vec<String>,
+}
+
+#[derive(Default)]
+pub struct UpdateFunctionRequestBuilder {
+    request: UpdateFunctionRequest,
+}
+
+impl UpdateFunctionRequestBuilder {
+    pub fn new() -> Self {
+        let request = UpdateFunctionRequest {
+            executor_type: ExecutorType::Builtin,
+            public: true,
+            ..Default::default()
+        };
+
+        Self { request }
+    }
+
+    pub fn function_id(mut self, id: ExternalID) -> Self {
+        self.request.function_id = id;
+        self
+    }
+
+    pub fn name(mut self, name: impl ToString) -> Self {
+        self.request.name = name.to_string();
+        self
+    }
+
+    pub fn description(mut self, description: impl ToString) -> Self {
+        self.request.description = description.to_string();
+        self
+    }
+
+    pub fn executor_type(mut self, executor_type: ExecutorType) -> Self {
+        self.request.executor_type = executor_type;
+        self
+    }
+
+    pub fn payload(mut self, payload: Vec<u8>) -> Self {
+        self.request.payload = payload;
+        self
+    }
+
+    pub fn public(mut self, public: bool) -> Self {
+        self.request.public = public;
+        self
+    }
+
+    pub fn arguments<T: IntoIterator>(mut self, args: T) -> Self
+    where
+        <T as IntoIterator>::Item: ToString,
+    {
+        self.request.arguments = args.into_iter().map(|x| x.to_string()).collect();
+        self
+    }
+
+    pub fn inputs(mut self, inputs: Vec<FunctionInput>) -> Self {
+        self.request.inputs = inputs;
+        self
+    }
+
+    pub fn outputs(mut self, outputs: Vec<FunctionOutput>) -> Self {
+        self.request.outputs = outputs;
+        self
+    }
+
+    pub fn user_allowlist(mut self, user_allowlist: Vec<String>) -> Self {
+        self.request.user_allowlist = user_allowlist;
+        self
+    }
+
+    pub fn build(self) -> UpdateFunctionRequest {
+        self.request
+    }
+}
+
+// We explicitly construct Function here in case of missing any field
+impl From<UpdateFunctionRequest> for FunctionBuilder {
+    fn from(request: UpdateFunctionRequest) -> Self {
+        FunctionBuilder::new()
+            .id(request.function_id.uuid)
+            .name(request.name)
+            .description(request.description)
+            .public(request.public)
+            .executor_type(request.executor_type)
+            .payload(request.payload)
+            .arguments(request.arguments)
+            .inputs(request.inputs)
+            .outputs(request.outputs)
+            .user_allowlist(request.user_allowlist)
+    }
+}
+
+#[into_request(TeaclaveManagementResponse::UpdateFunction)]
+#[derive(Debug)]
+pub struct UpdateFunctionResponse {
+    pub function_id: ExternalID,
+}
+
+impl UpdateFunctionResponse {
     pub fn new(function_id: ExternalID) -> Self {
         Self { function_id }
     }
@@ -390,7 +532,25 @@ pub struct GetFunctionResponse {
     pub arguments: Vec<String>,
     pub inputs: Vec<FunctionInput>,
     pub outputs: Vec<FunctionOutput>,
+    pub user_allowlist: Vec<String>,
 }
+
+#[into_request(TeaclaveManagementRequest::DeleteFunction)]
+#[into_request(TeaclaveFrontendRequest::DeleteFunction)]
+#[derive(Debug)]
+pub struct DeleteFunctionRequest {
+    pub function_id: ExternalID,
+}
+
+impl DeleteFunctionRequest {
+    pub fn new(function_id: ExternalID) -> Self {
+        Self { function_id }
+    }
+}
+
+#[into_request(TeaclaveManagementResponse::DeleteFunction)]
+#[derive(Debug)]
+pub struct DeleteFunctionResponse {}
 
 #[into_request(TeaclaveManagementRequest::CreateTask)]
 #[into_request(TeaclaveFrontendRequest::CreateTask)]
@@ -937,6 +1097,7 @@ impl std::convert::TryFrom<proto::RegisterFunctionRequest> for RegisterFunctionR
             arguments: proto.arguments,
             inputs: inputs?,
             outputs: outputs?,
+            user_allowlist: proto.user_allowlist,
         };
         Ok(ret)
     }
@@ -964,6 +1125,7 @@ impl From<RegisterFunctionRequest> for proto::RegisterFunctionRequest {
             arguments: request.arguments,
             inputs,
             outputs,
+            user_allowlist: request.user_allowlist,
         }
     }
 }
@@ -987,6 +1149,86 @@ impl From<RegisterFunctionResponse> for proto::RegisterFunctionResponse {
     }
 }
 
+impl std::convert::TryFrom<proto::UpdateFunctionRequest> for UpdateFunctionRequest {
+    type Error = Error;
+
+    fn try_from(proto: proto::UpdateFunctionRequest) -> Result<Self> {
+        let function_id = proto.function_id.try_into()?;
+        let inputs: Result<Vec<FunctionInput>> = proto
+            .inputs
+            .into_iter()
+            .map(FunctionInput::try_from)
+            .collect();
+        let outputs: Result<Vec<FunctionOutput>> = proto
+            .outputs
+            .into_iter()
+            .map(FunctionOutput::try_from)
+            .collect();
+        let executor_type = proto.executor_type.try_into()?;
+
+        let ret = Self {
+            function_id,
+            name: proto.name,
+            description: proto.description,
+            executor_type,
+            payload: proto.payload,
+            public: proto.public,
+            arguments: proto.arguments,
+            inputs: inputs?,
+            outputs: outputs?,
+            user_allowlist: proto.user_allowlist,
+        };
+        Ok(ret)
+    }
+}
+
+impl From<UpdateFunctionRequest> for proto::UpdateFunctionRequest {
+    fn from(request: UpdateFunctionRequest) -> Self {
+        let inputs: Vec<proto::FunctionInput> = request
+            .inputs
+            .into_iter()
+            .map(proto::FunctionInput::from)
+            .collect();
+        let outputs: Vec<proto::FunctionOutput> = request
+            .outputs
+            .into_iter()
+            .map(proto::FunctionOutput::from)
+            .collect();
+
+        Self {
+            function_id: request.function_id.to_string(),
+            name: request.name,
+            description: request.description,
+            executor_type: request.executor_type.into(),
+            payload: request.payload,
+            public: request.public,
+            arguments: request.arguments,
+            inputs,
+            outputs,
+            user_allowlist: request.user_allowlist,
+        }
+    }
+}
+
+impl std::convert::TryFrom<proto::UpdateFunctionResponse> for UpdateFunctionResponse {
+    type Error = Error;
+
+    fn try_from(proto: proto::UpdateFunctionResponse) -> Result<Self> {
+        let function_id = proto.function_id.try_into()?;
+        let ret = Self { function_id };
+
+        Ok(ret)
+    }
+}
+
+impl From<UpdateFunctionResponse> for proto::UpdateFunctionResponse {
+    fn from(response: UpdateFunctionResponse) -> Self {
+        Self {
+            function_id: response.function_id.to_string(),
+        }
+    }
+}
+
 impl std::convert::TryFrom<proto::GetFunctionRequest> for GetFunctionRequest {
     type Error = Error;
 
@@ -1000,6 +1242,80 @@ impl std::convert::TryFrom<proto::GetFunctionRequest> for GetFunctionRequest {
 
 impl From<GetFunctionRequest> for proto::GetFunctionRequest {
     fn from(request: GetFunctionRequest) -> Self {
+        Self {
+            function_id: request.function_id.to_string(),
+        }
+    }
+}
+
+impl std::convert::TryFrom<proto::DeleteFunctionResponse> for DeleteFunctionResponse {
+    type Error = Error;
+
+    fn try_from(_proto: proto::DeleteFunctionResponse) -> Result<Self> {
+        Ok(DeleteFunctionResponse {})
+    }
+}
+
+impl From<DeleteFunctionResponse> for proto::DeleteFunctionResponse {
+    fn from(_response: DeleteFunctionResponse) -> Self {
+        Self {}
+    }
+}
+
+impl std::convert::TryFrom<proto::ListFunctionsRequest> for ListFunctionsRequest {
+    type Error = Error;
+
+    fn try_from(proto: proto::ListFunctionsRequest) -> Result<Self> {
+        let user_id = proto.user_id.try_into()?;
+        let ret = Self { user_id };
+
+        Ok(ret)
+    }
+}
+
+impl From<ListFunctionsRequest> for proto::ListFunctionsRequest {
+    fn from(request: ListFunctionsRequest) -> Self {
+        Self {
+            user_id: request.user_id.to_string(),
+        }
+    }
+}
+
+impl std::convert::TryFrom<proto::ListFunctionsResponse> for ListFunctionsResponse {
+    type Error = Error;
+
+    fn try_from(proto: proto::ListFunctionsResponse) -> Result<Self> {
+        let ret = Self {
+            registered_functions: proto.registered_functions,
+            allowed_functions: proto.allowed_functions,
+        };
+
+        Ok(ret)
+    }
+}
+
+impl From<ListFunctionsResponse> for proto::ListFunctionsResponse {
+    fn from(request: ListFunctionsResponse) -> Self {
+        Self {
+            registered_functions: request.registered_functions,
+            allowed_functions: request.allowed_functions,
+        }
+    }
+}
+
+impl std::convert::TryFrom<proto::DeleteFunctionRequest> for DeleteFunctionRequest {
+    type Error = Error;
+
+    fn try_from(proto: proto::DeleteFunctionRequest) -> Result<Self> {
+        let function_id = proto.function_id.try_into()?;
+        let ret = Self { function_id };
+
+        Ok(ret)
+    }
+}
+
+impl From<DeleteFunctionRequest> for proto::DeleteFunctionRequest {
+    fn from(request: DeleteFunctionRequest) -> Self {
         Self {
             function_id: request.function_id.to_string(),
         }
@@ -1032,6 +1348,7 @@ impl std::convert::TryFrom<proto::GetFunctionResponse> for GetFunctionResponse {
             arguments: proto.arguments,
             inputs: inputs?,
             outputs: outputs?,
+            user_allowlist: proto.user_allowlist,
         };
 
         Ok(ret)
@@ -1061,6 +1378,7 @@ impl From<GetFunctionResponse> for proto::GetFunctionResponse {
             arguments: response.arguments,
             inputs,
             outputs,
+            user_allowlist: response.user_allowlist,
         }
     }
 }

@@ -35,8 +35,8 @@ const ENCLAVE_INFO_PATH: &str = "../../../release/services/enclave_info.toml";
 const AS_ROOT_CA_CERT_PATH: &str = "../../../keys/dcap_root_ca_cert.pem";
 #[cfg(not(dcap))]
 const AS_ROOT_CA_CERT_PATH: &str = "../../../keys/ias_root_ca_cert.pem";
-const USER_ID: &str = "echo_test_example_user";
-const USER_PASSWORD: &str = "test_password";
+const USER_ID: &str = "admin";
+const USER_PASSWORD: &str = "teaclave";
 
 fn echo(message: &str) -> Result<Vec<u8>> {
     let enclave_info = teaclave_client_sdk::EnclaveInfo::from_file(ENCLAVE_INFO_PATH)?;
@@ -47,9 +47,6 @@ fn echo(message: &str) -> Result<Vec<u8>> {
         &enclave_info,
         &as_root_ca_cert,
     )?;
-
-    println!("[+] registering user");
-    client.user_register(USER_ID, USER_PASSWORD)?;
 
     println!("[+] login");
     let token = client.user_login(USER_ID, USER_PASSWORD)?;

@@ -54,6 +54,37 @@ struct Client {
     user_data: UserData,
 }
 
+struct PlatformAdmin {
+    client: teaclave_client_sdk::AuthenticationClient,
+}
+
+impl PlatformAdmin {
+    fn new(admin_user_id: &str, admin_user_password: &str) -> Result<Self> {
+        let enclave_info = teaclave_client_sdk::EnclaveInfo::from_file(ENCLAVE_INFO_PATH)?;
+        let bytes = fs::read(AS_ROOT_CA_CERT_PATH)?;
+        let as_root_ca_cert = pem::parse(bytes)?.contents;
+        let mut client = teaclave_client_sdk::AuthenticationService::connect(
+            "localhost:7776",
+            &enclave_info,
+            &as_root_ca_cert,
+        )?;
+        let token = client.user_login(admin_user_id, admin_user_password)?;
+        client.set_credential(admin_user_id, &token);
+        Ok(Self { client })
+    }
+
+    fn register_user(
+        &mut self,
+        user_id: &str,
+        user_password: &str,
+        role: &str,
+        attribute: &str,
+    ) -> Result<()> {
+        self.client
+            .user_register(user_id, user_password, role, attribute)
+    }
+}
+
 impl Client {
     fn new(user_data: UserData) -> Result<Client> {
         let enclave_info = teaclave_client_sdk::EnclaveInfo::from_file(ENCLAVE_INFO_PATH)?;
@@ -64,9 +95,6 @@ impl Client {
             &enclave_info,
             &as_root_ca_cert,
         )?;
-
-        println!("[+] {} registering user", user_data.user_id);
-        let _ = client.user_register(&user_data.user_id, &user_data.user_password); //for test purpose, ignore repetitive registrations
 
         println!("[+] {} login", user_data.user_id);
         client.user_login(&user_data.user_id, &user_data.user_password)?;
@@ -173,6 +201,10 @@ impl Client {
 }
 
 fn main() -> Result<()> {
+    let mut admin = PlatformAdmin::new("admin", "teaclave")?;
+    // Ignore registering errors
+    let _ = admin.register_user("user0", "password", "PlatformAdmin", "");
+    let _ = admin.register_user("user1", "password", "PlatformAdmin", "");
     let user0_data = UserData {
         user_id: "user0".to_string(),
         user_password: "password".to_string(),

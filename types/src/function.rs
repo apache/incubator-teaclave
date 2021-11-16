@@ -50,6 +50,25 @@ impl FunctionOutput {
     }
 }
 
+const USER_PREFIX: &str = "user";
+
+#[derive(Default, Debug, Deserialize, Serialize)]
+pub struct User {
+    pub id: UserID,
+    pub registered_functions: Vec<String>,
+    pub allowed_functions: Vec<String>,
+}
+
+impl Storable for User {
+    fn key_prefix() -> &'static str {
+        USER_PREFIX
+    }
+
+    fn uuid(&self) -> Uuid {
+        Uuid::new_v5(&Uuid::NAMESPACE_DNS, self.id.to_string().as_bytes())
+    }
+}
+
 const FUNCION_PREFIX: &str = "function";
 
 #[derive(Default, Debug, Deserialize, Serialize)]
@@ -64,8 +83,10 @@ pub struct Function {
     pub inputs: Vec<FunctionInput>,
     pub outputs: Vec<FunctionOutput>,
     pub owner: UserID,
+    pub user_allowlist: Vec<String>,
 }
 
+#[derive(Default)]
 pub struct FunctionBuilder {
     function: Function,
 }
@@ -124,6 +145,11 @@ impl FunctionBuilder {
 
     pub fn owner(mut self, owner: impl Into<UserID>) -> Self {
         self.function.owner = owner.into();
+        self
+    }
+
+    pub fn user_allowlist(mut self, user_allowlist: Vec<String>) -> Self {
+        self.function.user_allowlist = user_allowlist;
         self
     }
 

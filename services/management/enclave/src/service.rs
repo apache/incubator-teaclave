@@ -23,18 +23,20 @@ use std::prelude::v1::*;
 use std::sync::{Arc, SgxMutex as Mutex};
 use teaclave_proto::teaclave_frontend_service::{
     ApproveTaskRequest, ApproveTaskResponse, AssignDataRequest, AssignDataResponse,
-    CreateTaskRequest, CreateTaskResponse, GetFunctionRequest, GetFunctionResponse,
-    GetInputFileRequest, GetInputFileResponse, GetOutputFileRequest, GetOutputFileResponse,
-    GetTaskRequest, GetTaskResponse, InvokeTaskRequest, InvokeTaskResponse,
+    CreateTaskRequest, CreateTaskResponse, DeleteFunctionRequest, DeleteFunctionResponse,
+    GetFunctionRequest, GetFunctionResponse, GetInputFileRequest, GetInputFileResponse,
+    GetOutputFileRequest, GetOutputFileResponse, GetTaskRequest, GetTaskResponse,
+    InvokeTaskRequest, InvokeTaskResponse, ListFunctionsRequest, ListFunctionsResponse,
     RegisterFunctionRequest, RegisterFunctionResponse, RegisterFusionOutputRequest,
     RegisterFusionOutputResponse, RegisterInputFileRequest, RegisterInputFileResponse,
     RegisterInputFromOutputRequest, RegisterInputFromOutputResponse, RegisterOutputFileRequest,
-    RegisterOutputFileResponse, UpdateInputFileRequest, UpdateInputFileResponse,
-    UpdateOutputFileRequest, UpdateOutputFileResponse,
+    RegisterOutputFileResponse, UpdateFunctionRequest, UpdateFunctionResponse,
+    UpdateInputFileRequest, UpdateInputFileResponse, UpdateOutputFileRequest,
+    UpdateOutputFileResponse,
 };
 use teaclave_proto::teaclave_management_service::TeaclaveManagement;
 use teaclave_proto::teaclave_storage_service::{
-    EnqueueRequest, GetRequest, PutRequest, TeaclaveStorageClient,
+    DeleteRequest, EnqueueRequest, GetRequest, PutRequest, TeaclaveStorageClient,
 };
 use teaclave_rpc::endpoint::Endpoint;
 use teaclave_rpc::Request;
@@ -257,13 +259,46 @@ impl TeaclaveManagement for TeaclaveManagementService {
 
         let function = FunctionBuilder::from(request.message)
             .id(Uuid::new_v4())
+            .owner(user_id.clone())
+            .build();
+
+        self.write_to_db(&function)
+            .map_err(|_| TeaclaveManagementServiceError::StorageError)?;
+
+        let mut u = User::default();
+        u.id = user_id;
+        u.registered_functions
+            .push(function.external_id().to_string());
+        self.write_to_db(&u)
+            .map_err(|_| TeaclaveManagementServiceError::StorageError)?;
+
+        // Update allowed function list for users
+        for user_id in &function.user_allowlist {
+            let mut u = User::default();
+            u.id = user_id.into();
+            u.allowed_functions.push(function.external_id().to_string());
+            self.write_to_db(&u)
+                .map_err(|_| TeaclaveManagementServiceError::StorageError)?;
+        }
+
+        let response = RegisterFunctionResponse::new(function.external_id());
+        Ok(response)
+    }
+
+    fn update_function(
+        &self,
+        request: Request<UpdateFunctionRequest>,
+    ) -> TeaclaveServiceResponseResult<UpdateFunctionResponse> {
+        let user_id = self.get_request_user_id(request.metadata())?;
+
+        let function = FunctionBuilder::from(request.message)
             .owner(user_id)
             .build();
 
         self.write_to_db(&function)
             .map_err(|_| TeaclaveManagementServiceError::StorageError)?;
 
-        let response = RegisterFunctionResponse::new(function.external_id());
+        let response = UpdateFunctionResponse::new(function.external_id());
         Ok(response)
     }
 
@@ -278,23 +313,87 @@ impl TeaclaveManagement for TeaclaveManagementService {
             .read_from_db(&request.message.function_id)
             .map_err(|_| TeaclaveManagementServiceError::PermissionDenied)?;
 
+        if function.public || function.owner == user_id {
+            let response = GetFunctionResponse {
+                name: function.name,
+                description: function.description,
+                owner: function.owner,
+                executor_type: function.executor_type,
+                payload: function.payload,
+                public: function.public,
+                arguments: function.arguments,
+                inputs: function.inputs,
+                outputs: function.outputs,
+                user_allowlist: function.user_allowlist,
+            };
+
+            Ok(response)
+        } else if !function.public && function.user_allowlist.contains(&user_id.into()) {
+            let response = GetFunctionResponse {
+                name: function.name,
+                description: function.description,
+                owner: function.owner,
+                executor_type: function.executor_type,
+                payload: vec![],
+                public: function.public,
+                arguments: function.arguments,
+                inputs: function.inputs,
+                outputs: function.outputs,
+                user_allowlist: vec![],
+            };
+
+            Ok(response)
+        } else {
+            Err(TeaclaveManagementServiceError::PermissionDenied.into())
+        }
+    }
+
+    // access control: function.owner == user_id
+    fn delete_function(
+        &self,
+        request: Request<DeleteFunctionRequest>,
+    ) -> TeaclaveServiceResponseResult<DeleteFunctionResponse> {
+        let user_id = self.get_request_user_id(request.metadata())?;
+
+        let function: Function = self
+            .read_from_db(&request.message.function_id)
+            .map_err(|_| TeaclaveManagementServiceError::PermissionDenied)?;
+
         ensure!(
-            (function.public || function.owner == user_id),
+            function.owner == user_id,
             TeaclaveManagementServiceError::PermissionDenied
         );
-
-        let response = GetFunctionResponse {
-            name: function.name,
-            description: function.description,
-            owner: function.owner,
-            executor_type: function.executor_type,
-            payload: function.payload,
-            public: function.public,
-            arguments: function.arguments,
-            inputs: function.inputs,
-            outputs: function.outputs,
-        };
+        self.delete_from_db(&request.message.function_id)
+            .map_err(|_| TeaclaveManagementServiceError::PermissionDenied)?;
+        let response = DeleteFunctionResponse {};
         Ok(response)
+    }
+
+    // access contro: user_id = request.user_id
+    fn list_functions(
+        &self,
+        request: Request<ListFunctionsRequest>,
+    ) -> TeaclaveServiceResponseResult<ListFunctionsResponse> {
+        let request = request.message;
+
+        let mut u = User::default();
+        u.id = request.user_id;
+        let external_id = u.external_id();
+
+        let user: Result<User> = self.read_from_db(&external_id);
+        match user {
+            Ok(us) => {
+                let response = ListFunctionsResponse {
+                    registered_functions: us.registered_functions,
+                    allowed_functions: us.allowed_functions,
+                };
+                Ok(response)
+            }
+            Err(_) => {
+                let response = ListFunctionsResponse::default();
+                Ok(response)
+            }
+        }
     }
 
     // access control: none
@@ -302,17 +401,32 @@ impl TeaclaveManagement for TeaclaveManagementService {
     // 1) arugments match function definition
     // 2) input match function definition
     // 3) output match function definition
+    // 4) requested user_id in the user_allowlist
     fn create_task(
         &self,
         request: Request<CreateTaskRequest>,
     ) -> TeaclaveServiceResponseResult<CreateTaskResponse> {
         let user_id = self.get_request_user_id(request.metadata())?;
+        let role = self.get_request_role(request.metadata())?;
 
         let request = request.message;
 
         let function: Function = self
             .read_from_db(&request.function_id)
             .map_err(|_| TeaclaveManagementServiceError::PermissionDenied)?;
+
+        match role {
+            UserRole::DataOwner(a) | UserRole::DataOwnerManager(a) => {
+                ensure!(
+                    (function.public || function.user_allowlist.contains(&a)),
+                    TeaclaveManagementServiceError::PermissionDenied
+                );
+            }
+            UserRole::PlatformAdmin => (),
+            _ => {
+                return Err(TeaclaveManagementServiceError::PermissionDenied.into());
+            }
+        }
 
         let task = Task::<Create>::new(
             user_id,
@@ -547,6 +661,16 @@ impl TeaclaveManagementService {
         Ok(user_id.to_string().into())
     }
 
+    fn get_request_role(
+        &self,
+        meta: &HashMap<String, String>,
+    ) -> TeaclaveServiceResponseResult<UserRole> {
+        let role = meta
+            .get("role")
+            .ok_or(TeaclaveManagementServiceError::InvalidRequest)?;
+        Ok(UserRole::from_str(role))
+    }
+
     fn write_to_db(&self, item: &impl Storable) -> Result<()> {
         let k = item.key();
         let v = item.to_vec()?;
@@ -571,6 +695,16 @@ impl TeaclaveManagementService {
             .map_err(|_| anyhow!("Cannot lock storage client"))?
             .get(request)?;
         T::from_slice(response.value.as_slice())
+    }
+
+    fn delete_from_db(&self, key: &ExternalID) -> Result<()> {
+        let request = DeleteRequest::new(key.to_bytes());
+        self.storage_client
+            .clone()
+            .lock()
+            .map_err(|_| anyhow!("Cannot lock storage client"))?
+            .delete(request)?;
+        Ok(())
     }
 
     fn enqueue_to_db(&self, key: &[u8], item: &impl Storable) -> TeaclaveServiceResponseResult<()> {
@@ -632,6 +766,19 @@ impl TeaclaveManagementService {
             .arguments(vec!["arg1".to_string()])
             .outputs(vec![function_output])
             .owner("teaclave".to_string())
+            .build();
+
+        self.write_to_db(&function)?;
+
+        let function = FunctionBuilder::new()
+            .id(Uuid::parse_str("00000000-0000-0000-0000-000000000003").unwrap())
+            .name("mock-func-3")
+            .description("Private mock function")
+            .payload(b"mock-payload".to_vec())
+            .public(false)
+            .arguments(vec!["arg1".to_string()])
+            .owner("mock_user".to_string())
+            .user_allowlist(vec!["mock_user".to_string(), "mock_user1".to_string()])
             .build();
 
         self.write_to_db(&function)?;

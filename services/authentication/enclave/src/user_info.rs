@@ -24,6 +24,8 @@ use std::num;
 use std::prelude::v1::*;
 use std::vec;
 
+use teaclave_types::{UserAuthClaims, UserRole};
+
 const SALT_LEN: usize = 16;
 const PASSWORD_DIGEST_LEN: usize = digest::SHA512_OUTPUT_LEN;
 const PBKDF2_ITERATIONS: u32 = 100_000;
@@ -36,22 +38,13 @@ pub(crate) const JWT_SECRET_LEN: usize = 512;
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub(crate) struct UserInfo {
     pub id: String,
+    pub role: UserRole,
     pub salt: Vec<u8>,
     pub salted_password_hash: Vec<u8>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub(crate) struct Claims {
-    // user id
-    pub sub: String,
-    // issuer
-    pub iss: String,
-    // expiration time
-    pub exp: u64,
-}
-
 impl UserInfo {
-    pub(crate) fn new(id: &str, password: &str) -> Self {
+    pub(crate) fn new(id: &str, password: &str, role: UserRole) -> Self {
         let mut rng = rand::thread_rng();
         let mut salt = vec![0u8; SALT_LEN];
         rng.fill_bytes(&mut salt);
@@ -66,6 +59,7 @@ impl UserInfo {
         );
         Self {
             id: id.to_string(),
+            role,
             salt,
             salted_password_hash,
         }
@@ -85,8 +79,9 @@ impl UserInfo {
 
     pub(crate) fn get_token(&self, exp: u64, secret: &[u8]) -> Result<String> {
         let iss = ISSUER_NAME.to_string();
-        let claims = Claims {
+        let claims = UserAuthClaims {
             sub: self.id.to_string(),
+            role: self.role.to_string(),
             iss,
             exp,
         };
@@ -97,12 +92,12 @@ impl UserInfo {
         Ok(token)
     }
 
-    pub(crate) fn validate_token(&self, secret: &[u8], token: &str) -> bool {
+    pub(crate) fn validate_token(&self, secret: &[u8], token: &str) -> Result<UserAuthClaims> {
         let iss = ISSUER_NAME.to_string();
         let mut validation = jwt::Validation::new(JWT_ALG);
         validation.iss = Some(iss);
         validation.sub = Some(self.id.to_string());
         let secret = jwt::DecodingKey::from_secret(secret);
-        jwt::decode::<Claims>(token, &secret, &validation).is_ok()
+        Ok(jwt::decode::<UserAuthClaims>(token, &secret, &validation)?.claims)
     }
 }

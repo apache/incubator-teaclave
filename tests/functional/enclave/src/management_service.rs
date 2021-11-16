@@ -144,6 +144,101 @@ fn test_register_function() {
 }
 
 #[test_case]
+fn test_register_private_function() {
+    let function_input = FunctionInput::new("input", "input_desc");
+    let function_output = FunctionOutput::new("output", "output_desc");
+    let request = RegisterFunctionRequestBuilder::new()
+        .name("mock_function")
+        .executor_type(ExecutorType::Python)
+        .payload(b"def entrypoint:\n\treturn".to_vec())
+        .public(false)
+        .arguments(vec!["arg"])
+        .inputs(vec![function_input])
+        .outputs(vec![function_output])
+        .user_allowlist(vec!["mock_user".to_string()])
+        .build();
+
+    let mut client = authorized_client("mock_user");
+    let response = client.register_function(request);
+
+    assert!(response.is_ok());
+}
+
+#[test_case]
+fn test_delete_function() {
+    let function_input = FunctionInput::new("input", "input_desc");
+    let function_output = FunctionOutput::new("output", "output_desc");
+    let request = RegisterFunctionRequestBuilder::new()
+        .name("mock_function")
+        .executor_type(ExecutorType::Python)
+        .payload(b"def entrypoint:\n\treturn".to_vec())
+        .public(true)
+        .arguments(vec!["arg"])
+        .inputs(vec![function_input])
+        .outputs(vec![function_output])
+        .build();
+
+    let mut client = authorized_client("mock_user");
+    let response = client.register_function(request);
+    let function_id = response.unwrap().function_id;
+
+    let request = DeleteFunctionRequest::new(function_id);
+    let response = client.delete_function(request);
+    assert!(response.is_ok());
+}
+
+#[test_case]
+fn test_update_function() {
+    let function_input = FunctionInput::new("input", "input_desc");
+    let function_output = FunctionOutput::new("output", "output_desc");
+    let request = RegisterFunctionRequestBuilder::new()
+        .name("mock_function")
+        .executor_type(ExecutorType::Python)
+        .payload(b"def entrypoint:\n\treturn".to_vec())
+        .public(true)
+        .arguments(vec!["arg"])
+        .inputs(vec![function_input])
+        .outputs(vec![function_output])
+        .build();
+
+    let mut client = authorized_client("mock_user");
+    let response = client.register_function(request);
+    let original_id = response.unwrap().function_id;
+
+    let function_input = FunctionInput::new("input", "input_desc");
+    let function_output = FunctionOutput::new("output", "output_desc");
+    let request = UpdateFunctionRequestBuilder::new()
+        .function_id(original_id.clone())
+        .name("mock_function")
+        .executor_type(ExecutorType::Python)
+        .payload(b"def entrypoint:\n\treturn".to_vec())
+        .public(false)
+        .arguments(vec!["arg"])
+        .inputs(vec![function_input])
+        .outputs(vec![function_output])
+        .user_allowlist(vec!["mock_user".to_string()])
+        .build();
+
+    let mut client = authorized_client("mock_user");
+    let response = client.update_function(request);
+
+    assert!(response.is_ok());
+    assert!(original_id == response.unwrap().function_id);
+}
+
+#[test_case]
+fn test_list_functions() {
+    let request = ListFunctionsRequest {
+        user_id: "mock_user".into(),
+    };
+
+    let mut client = authorized_client("mock_user");
+    let response = client.list_functions(request);
+
+    assert!(response.is_ok());
+}
+
+#[test_case]
 fn test_get_function() {
     let function_input = FunctionInput::new("input", "input_desc");
     let function_output = FunctionOutput::new("output", "output_desc");
@@ -175,6 +270,25 @@ fn test_get_function() {
     let request = GetFunctionRequest::new(function_id);
     let response = client.get_function(request);
     assert!(response.is_ok());
+
+    // private functions
+    let function_id =
+        ExternalID::try_from("function-00000000-0000-0000-0000-000000000003").unwrap();
+
+    let mut client = authorized_client("mock_user");
+    let request = GetFunctionRequest::new(function_id.clone());
+    let response = client.get_function(request);
+    assert!(response.is_ok());
+
+    let mut client = authorized_client("mock_user1");
+    let request = GetFunctionRequest::new(function_id.clone());
+    let response = client.get_function(request);
+    assert!(response.is_ok());
+
+    let mut client = authorized_client("mock_unauthorized_user");
+    let request = GetFunctionRequest::new(function_id);
+    let response = client.get_function(request);
+    assert!(response.is_err());
 }
 
 fn create_valid_task_request() -> CreateTaskRequest {
@@ -197,6 +311,16 @@ fn create_valid_task_request() -> CreateTaskRequest {
         .outputs_ownership(output_owners)
 }
 
+fn create_valid_task_request_private_function() -> CreateTaskRequest {
+    let function_id =
+        ExternalID::try_from("function-00000000-0000-0000-0000-000000000003").unwrap();
+
+    CreateTaskRequest::new()
+        .function_id(function_id)
+        .function_arguments(hashmap!("arg1" => "data1"))
+        .executor(Executor::MesaPy)
+}
+
 #[test_case]
 fn test_create_task() {
     let mut client = authorized_client("mock_user");
@@ -206,6 +330,10 @@ fn test_create_task() {
     assert!(response.is_err());
 
     let request = create_valid_task_request();
+    let response = client.create_task(request);
+    assert!(response.is_ok());
+
+    let request = create_valid_task_request_private_function();
     let response = client.create_task(request);
     assert!(response.is_ok());
 
@@ -227,6 +355,12 @@ fn test_create_task() {
     ));
     let response = client.create_task(request);
     assert!(response.is_err());
+
+    let mut client = authorized_client("mock_user2");
+    let request = create_valid_task_request_private_function();
+    let response = client.create_task(request);
+    // PlatformAdmin can access private function
+    assert!(response.is_ok());
 }
 
 #[test_case]

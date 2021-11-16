@@ -116,7 +116,7 @@ impl TeaclaveExecutor for WAMicroRuntime {
         set_thread_context(Context::new(runtime))?;
 
         let ret = unsafe { wasm_runtime_init() };
-        assert!(ret != false);
+        assert!(ret);
 
         // export native function
         let export_symbols: [NativeSymbol; 5] = [

@@ -22,17 +22,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "utils.h"
+
 #define BUFFER_SIZE 4086
 #define QUOTE(x...) #x
-
-const char *authentication_service_address = "localhost:7776";
-const char *frontend_service_address = "localhost:7777";
-const char *enclave_info_path = "../../release/services/enclave_info.toml";
-#ifdef DCAP
-const char *as_root_ca_cert_path = "../../keys/dcap_root_ca_cert.pem";
-#else
-const char *as_root_ca_cert_path = "../../keys/ias_root_ca_cert.pem";
-#endif
 
 typedef struct UserData {
     char *user_id;
@@ -75,7 +68,8 @@ const char *register_function_request_serialized = QUOTE(
     "outputs": [ 
         {"name": "output_result1", "description": "Output data."},
         {"name": "output_result2", "description": "Output data."}
-    ]
+    ],
+    "user_allowlist": ["user0", "user1"]
 });
 
 const char *create_task_request_serialized = QUOTE(
@@ -147,34 +141,6 @@ const char *approve_serialized = QUOTE(
     "task_id": "%s"
 });
 
-int login(char *user_id, char *password, char *token, size_t *token_len)
-{
-    int ret = 0;
-
-    AuthenticationClient *authentication_client = teaclave_connect_authentication_service(
-        authentication_service_address, enclave_info_path, as_root_ca_cert_path);
-    if (authentication_client == NULL) {
-        fprintf(stderr, "[-] %s Failed to connect to the authentication service.\n", user_id);
-        ret = 1;
-        return ret;
-    }
-
-    ret = teaclave_user_register(authentication_client, user_id, password);
-    if (ret != 0) {
-        fprintf(stderr, "[-] Failed to register user.\n");
-        fprintf(stderr, "[-] Maybe `%s' already exists. Continue. \n", user_id);
-    }
-
-    ret = teaclave_user_login(authentication_client, user_id, password, token, token_len);
-    if (ret != 0) {
-        fprintf(stderr, "[-] %s Failed to login.\n", user_id);
-        return ret;
-    }
-    printf("[+] token: %s\n", token);
-
-    return ret;
-}
-
 struct FrontendClient *init_client(char *user_id, char *password)
 {
     struct FrontendClient *frontend_client;
@@ -197,7 +163,7 @@ struct FrontendClient *init_client(char *user_id, char *password)
     }
 
     /* Set user id and token. */
-    ret = teaclave_set_credential(frontend_client, user_id, token);
+    ret = teaclave_frontend_set_credential(frontend_client, user_id, token);
     if (ret != 0) {
         fprintf(stderr, "[-] %s Failed to set credential.\n", user_id);
         return frontend_client;
@@ -250,6 +216,8 @@ char *format_cmac_to_string(UserData user_data){
 int main()
 {
     int ret = 0;
+    char token[BUFFER_SIZE] = {0};
+    size_t token_len = BUFFER_SIZE;
     char task_id[BUFFER_SIZE] = {0};
     char user0_task_result[BUFFER_SIZE] = {0};
     char user1_task_result[BUFFER_SIZE] = {0};
@@ -267,6 +235,25 @@ int main()
     char user1_output_id[BUFFER_SIZE] = {0};
     char serialized_response[BUFFER_SIZE] = {0};
     size_t serialized_response_len = BUFFER_SIZE;
+    const char *admin_user_id = "admin";
+    const char *admin_user_password = "teaclave";
+
+    /* Register */
+    ret = login(admin_user_id, admin_user_password, token, &token_len);
+    if (ret != 0) {
+        fprintf(stderr, "[-] Failed to login.\n");
+        goto bail;
+    }
+
+    ret = user_register(admin_user_id, token, "user0", "password");
+    if (ret != 0) {
+        fprintf(stderr, "[-] Failed to login. Ignored.\n");
+    }
+
+    ret = user_register(admin_user_id, token, "user1", "password");
+    if (ret != 0) {
+        fprintf(stderr, "[-] Failed to login. Ignored.\n");
+    }
 
     FrontendClient *client0 = init_client(user0_data.user_id, user0_data.password);
     if (client0 == NULL) {
