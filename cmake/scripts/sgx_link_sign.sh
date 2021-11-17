@@ -48,7 +48,12 @@ TEACLAVE_LINK_FLAGS="-L${TEACLAVE_OUT_DIR} -lpycomponent ffi.o -lpypy-c -lsgx_tl
 if [ "$TEACLAVE_EXECUTOR_WAMR" == "ON" ]; then
     TEACLAVE_LINK_FLAGS+=" -lvmlib"
 fi
-ENCLAVE_LINK_FLAGS="-Wl,--no-undefined -nostdlib -nodefaultlibs -nostartfiles -L${SGX_LIBRARY_PATH} \
+
+# Enable the security flags
+ENCLAVE_SECURITY_LINK_FLAGS="-Wl,-z,relro,-z,now,-z,noexecstack"
+
+ENCLAVE_LINK_FLAGS="${ENCLAVE_SECURITY_LINK_FLAGS} \
+                   -Wl,--no-undefined -nostdlib -nodefaultlibs -nostartfiles -L${SGX_LIBRARY_PATH} \
                    -Wl,--whole-archive -l${Trts_Library_Name} -Wl,--no-whole-archive \
                    -Wl,--start-group \
                    -l${Service_Library_Name} -lsgx_tprotected_fs -lsgx_tkey_exchange \
