@@ -115,10 +115,10 @@ impl TeaclaveExecutor for WAMicroRuntime {
 
         set_thread_context(Context::new(runtime))?;
 
-        unsafe { wasm_runtime_init() };
+        let ret = unsafe { wasm_runtime_init() };
+        assert!(ret != false);
 
         // export native function
-
         let export_symbols: [NativeSymbol; 5] = [
             NativeSymbol {
                 symbol: b"teaclave_open_input\0".as_ptr() as _,
