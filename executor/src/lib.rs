@@ -25,26 +25,34 @@ use std::prelude::v1::*;
 #[macro_use]
 extern crate log;
 
+#[cfg(executor_builtin)]
 mod builtin;
 mod context;
+#[cfg(executor_mesapy)]
 mod mesapy;
+#[cfg(executor_wamr)]
 mod wamr;
 
+#[cfg(executor_builtin)]
 pub use builtin::BuiltinFunctionExecutor;
+#[cfg(executor_mesapy)]
 pub use mesapy::MesaPy;
+#[cfg(executor_wamr)]
 pub use wamr::WAMicroRuntime;
 
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
-    use teaclave_test_utils::check_all_passed;
 
     pub fn run_tests() -> bool {
-        check_all_passed!(
-            context::tests::run_tests(),
-            mesapy::tests::run_tests(),
-            builtin::tests::run_tests(),
-            wamr::tests::run_tests(),
-        )
+        let mut v: Vec<bool> = Vec::new();
+        v.push(context::tests::run_tests());
+        #[cfg(executor_mesapy)]
+        v.push(mesapy::tests::run_tests());
+        #[cfg(executor_builtin)]
+        v.push(builtin::tests::run_tests());
+        #[cfg(executor_wamr)]
+        v.push(wamr::tests::run_tests());
+        v.iter().all(|&x| x)
     }
 }

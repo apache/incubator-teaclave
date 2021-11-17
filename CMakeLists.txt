@@ -47,6 +47,9 @@ option(SGX_SIM_MODE "Turn on/off sgx simulation mode" OFF)
 option(DCAP "Turn on/off DCAP attestation" OFF)
 option(GIT_SUBMODULE "Check submodules during build" ON)
 option(USE_PREBUILT_MESAPY "Use prebuilt MesaPy SGX executor" ON)
+option(EXECUTOR_BUILTIN "Compile with the Builtin executor" ON)
+option(EXECUTOR_MESAPY "Compile with the MesaPy executor" ON)
+option(EXECUTOR_WAMR "Compile with the WebAssembly Micro Runtime executor" ON)
 init_submodules()
 
 if(DCAP)
@@ -63,6 +66,19 @@ if(SGX_SIM_MODE)
 else()
   set(SGX_MODE "HW")
 endif()
+
+if(EXECUTOR_BUILTIN)
+  set(RUSTFLAGS "${RUSTFLAGS} --cfg executor_builtin")
+endif()
+
+if(EXECUTOR_MESAPY)
+  set(RUSTFLAGS "${RUSTFLAGS} --cfg executor_mesapy")
+endif()
+
+if(EXECUTOR_WAMR)
+  set(RUSTFLAGS "${RUSTFLAGS} --cfg executor_wamr")
+endif()
+
 # ======= VARIABLES FOR CMAKE -D{VAR}=VAL CONFIGURATION END =======
 
 # =============== VARIABLES FOR MANUAL CHANGE BEGIN ===============
@@ -238,18 +254,32 @@ foreach(_i RANGE ${SGX_LIB_LAST_INDEX})
   list(GET SGX_LIB_PATHS ${_i} _pkg_path)
   list(GET SGX_LIB_CATEGORIES ${_i} _category)
   list(GET EDL_LIB_NAMES ${_i} _edl_lib_name)
-  add_sgx_build_target(
-    ${_pkg_path}
-    ${_pkg_name}
-    DEPENDS
-    prep
-    mesapy
-    wamr
-    pycomponent
-    INSTALL_DIR
-    ${TEACLAVE_INSTALL_DIR}/${_category}
-    EDL_LIB_NAME
-    ${_edl_lib_name})
+  if(EXECUTOR_WAMR)
+    add_sgx_build_target(
+      ${_pkg_path}
+      ${_pkg_name}
+      DEPENDS
+      prep
+      mesapy
+      pycomponent
+      wamr
+      INSTALL_DIR
+      ${TEACLAVE_INSTALL_DIR}/${_category}
+      EDL_LIB_NAME
+      ${_edl_lib_name})
+  else()
+    add_sgx_build_target(
+      ${_pkg_path}
+      ${_pkg_name}
+      DEPENDS
+      prep
+      mesapy
+      pycomponent
+      INSTALL_DIR
+      ${TEACLAVE_INSTALL_DIR}/${_category}
+      EDL_LIB_NAME
+      ${_edl_lib_name})
+  endif()
 endforeach()
 
 # Dylib/staticlib of Teaclave Rust Client SDK
