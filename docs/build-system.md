@@ -65,6 +65,9 @@ To set a variable or option, you can pass `-DXXX=` to `cmake`. For example,
 - `DOC`: Generate document with `cargo doc` during the compilation. Defaults to OFF.
 - `USE_PREBUILT_MESAPY`: Whether to use the prebuilt MesaPy for SGX library. If
   set to OFF, will build the library from the source code. Defaults to ON.
+- `EXECUTOR_BUILTIN`: Compile with the Builtin executor. Defaults to ON.
+- `EXECUTOR_MESAPY`: Compile with the MesaPy executor. Defaults to ON.
+- `EXECUTOR_WAMR`: Compile with the WebAssembly Micro Runtime executor. Defaults to ON.
 
 ## Targets
 

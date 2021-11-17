@@ -30,14 +30,14 @@ add_custom_target(
     -path ${TEACLAVE_PROJECT_ROOT}/third_party -prune -o
     -path ${TEACLAVE_PROJECT_ROOT}/.git -prune -o
     -path ${TEACLAVE_BUILD_ROOT} -prune
-    -o -name "*.rs" -exec rustfmt {} +
+    -o -name '*.rs' -exec rustfmt {} +
   COMMAND
     find ${TEACLAVE_PROJECT_ROOT}
     -path ${TEACLAVE_PROJECT_ROOT}/third_party -prune -o
     -path ${TEACLAVE_PROJECT_ROOT}/.git -prune -o
     -path ${TEACLAVE_PROJECT_ROOT}/services/access_control -prune -o
     -path ${TEACLAVE_BUILD_ROOT} -prune
-    -o -name "*.py" -exec yapf -i {} +
+    -o -name '*.py' -exec yapf -i {} +
   COMMENT "Formating every .rs and .py file with rustfmt and yapf"
   DEPENDS prep)
 
