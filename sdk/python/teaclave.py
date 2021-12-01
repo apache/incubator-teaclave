@@ -50,6 +50,10 @@ __all__ = [
 Metadata = Dict[str, str]
 
 
+class Request:
+    pass
+
+
 class FunctionInput:
     """Function input for registering.
 
@@ -112,14 +116,14 @@ class CryptoInfo:
         self.iv = iv
 
 
-class UserRegisterReqeust:
+class UserRegisterRequest(Request):
     def __init__(self, user_id: str, user_password: str):
         self.request = "user_register"
         self.id = user_id
         self.password = user_password
 
 
-class UserLoginRequest:
+class UserLoginRequest(Request):
     def __init__(self, user_id: str, user_password: str):
         self.request = "user_login"
         self.id = user_id
@@ -190,7 +194,7 @@ class AuthenticationClient:
             user_id: User ID.
             user_password: Password.
         """
-        request = UserRegisterReqeust(user_id, user_password)
+        request = UserRegisterRequest(user_id, user_password)
         _write_message(self.channel, request)
         _ = _read_message(self.channel)
 
@@ -256,7 +260,7 @@ class FrontendService:
         return FrontendClient(self._channel)
 
 
-class RegisterFunctionRequest:
+class RegisterFunctionRequest(Request):
     def __init__(self, metadata: Metadata, name: str, description: str,
                  executor_type: str, public: bool, payload: List[int],
                  arguments: List[str], inputs: List[FunctionInput],
@@ -273,7 +277,7 @@ class RegisterFunctionRequest:
         self.outputs = outputs
 
 
-class RegisterInputFileRequest:
+class RegisterInputFileRequest(Request):
     def __init__(self, metadata: Metadata, url: str, cmac: List[int],
                  crypto_info: CryptoInfo):
         self.request = "register_input_file"
@@ -283,7 +287,7 @@ class RegisterInputFileRequest:
         self.crypto_info = crypto_info
 
 
-class RegisterOutputFileRequest:
+class RegisterOutputFileRequest(Request):
     def __init__(self, metadata: Metadata, url: str, crypto_info: CryptoInfo):
         self.request = "register_output_file"
         self.metadata = metadata
@@ -291,7 +295,7 @@ class RegisterOutputFileRequest:
         self.crypto_info = crypto_info
 
 
-class UpdateInputFileRequest:
+class UpdateInputFileRequest(Request):
     def __init__(self, metadata: Metadata, data_id: str, url: str):
         self.request = "update_input_file"
         self.metadata = metadata
@@ -299,7 +303,7 @@ class UpdateInputFileRequest:
         self.url = url
 
 
-class UpdateOutputFileRequest:
+class UpdateOutputFileRequest(Request):
     def __init__(self, metadata: Metadata, data_id: str, url: str):
         self.request = "update_output_file"
         self.metadata = metadata
@@ -307,7 +311,7 @@ class UpdateOutputFileRequest:
         self.url = url
 
 
-class CreateTaskRequest:
+class CreateTaskRequest(Request):
     def __init__(self, metadata: Metadata, function_id: str,
                  function_arguments: Dict[str, Any], executor: str,
                  inputs_ownership: List[OwnerList],
@@ -321,7 +325,7 @@ class CreateTaskRequest:
         self.outputs_ownership = outputs_ownership
 
 
-class AssignDataRequest:
+class AssignDataRequest(Request):
     def __init__(self, metadata: Metadata, task_id: str, inputs: List[DataMap],
                  outputs: List[DataMap]):
         self.request = "assign_data"
@@ -331,21 +335,21 @@ class AssignDataRequest:
         self.outputs = outputs
 
 
-class ApproveTaskRequest:
+class ApproveTaskRequest(Request):
     def __init__(self, metadata: Metadata, task_id: str):
         self.request = "approve_task"
         self.metadata = metadata
         self.task_id = task_id
 
 
-class InvokeTaskRequest:
+class InvokeTaskRequest(Request):
     def __init__(self, metadata: Metadata, task_id: str):
         self.request = "invoke_task"
         self.metadata = metadata
         self.task_id = task_id
 
 
-class GetTaskRequest:
+class GetTaskRequest(Request):
     def __init__(self, metadata: Metadata, task_id: str):
         self.request = "get_task"
         self.metadata = metadata
@@ -448,9 +452,21 @@ class FrontendClient:
 def _write_message(sock: ssl.SSLSocket, message: Any):
     class RequestEncoder(json.JSONEncoder):
         def default(self, o):
-            return o.__dict__
+            if isinstance(o, Request):
+                request = o.__dict__["request"]
+                j = {}
+                j["message"] = {}
+                j["message"][request] = {}
+                for k, v in o.__dict__.items():
+                    if k == "metadata": j[k] = v
+                    elif k == "request": continue
+                    else: j["message"][request][k] = v
+                return j
+            else:
+                return o.__dict__
 
-    message = json.dumps(message, cls=RequestEncoder).encode()
+    message = json.dumps(message, cls=RequestEncoder,
+                         separators=(',', ':')).encode()
     sock.sendall(struct.pack(">Q", len(message)))
     sock.sendall(message)
 
