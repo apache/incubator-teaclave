@@ -35,7 +35,7 @@ public enum TeaclaveClientError: Error {
 }
 
 public struct RegisterFunctionRequest: Encodable {
-    public let request: String = "register_function_request"
+    public let request: String = "register_function"
     public let name: String
     public let description: String
     public let executor_type: String
@@ -75,7 +75,7 @@ public struct OwnerList: Encodable {
 }
 
 public struct CreateTaskRequest: Encodable {
-    public let request: String = "register_create_task"
+    public let request: String = "create_task"
     public let function_id: String
     public let function_arguments: String
     public let executor: String
