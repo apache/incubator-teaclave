@@ -28,7 +28,6 @@ type ArgumentValue = serde_json::Value;
 
 #[derive(Clone, Serialize, Deserialize, Debug, Default)]
 pub struct FunctionArguments {
-    #[serde(flatten)]
     inner: serde_json::Map<String, ArgumentValue>,
 }
 

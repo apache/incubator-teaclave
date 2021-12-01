@@ -140,9 +140,12 @@ class TestAuthenticationService(unittest.TestCase):
         user_password = "invalid_password"
 
         message = {
-            "request": "user_login",
-            "id": user_id,
-            "password": user_password
+            "message": {
+                "user_login": {
+                    "id": user_id,
+                    "password": user_password
+                }
+            }
         }
         write_message(self.socket, message)
 

@@ -24,7 +24,6 @@ pub struct Request<T> {
     #[serde(skip_serializing_if = "HashMap::is_empty")]
     #[serde(default)]
     pub metadata: HashMap<String, String>,
-    #[serde(flatten)]
     pub message: T,
 }
 

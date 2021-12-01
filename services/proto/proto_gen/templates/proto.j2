@@ -18,7 +18,7 @@ under the License.
 #}
 
 #[derive(Clone, serde::Serialize, serde::Deserialize, Debug)]
-#[serde(tag = "request", rename_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
 pub enum {{ service.proto_name }}Request {
     {%- for m in service.methods %}
     {{ m.proto_name }}({{ m.input_type }}),
