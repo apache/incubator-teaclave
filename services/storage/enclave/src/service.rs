@@ -113,6 +113,10 @@ impl<'a> DBQueue<'a> {
         self.database
             .put(&self.get_tail_key(), &tail_index.to_le_bytes())
             .map_err(TeaclaveStorageError::LevelDb)?;
+
+        self.database
+            .flush()
+            .map_err(TeaclaveStorageError::LevelDb)?;
         Ok(())
     }
 
@@ -134,8 +138,12 @@ impl<'a> DBQueue<'a> {
             self.database
                 .put(&self.get_head_key(), &head_index.to_le_bytes())
                 .map_err(TeaclaveStorageError::LevelDb)?;
-            // delete element; it's ok to ignore the error
-            let _ = self.database.delete(&element_key);
+            self.database
+                .delete(&element_key)
+                .map_err(TeaclaveStorageError::LevelDb)?;
+            self.database
+                .compact_range(b"queue", b"queuf")
+                .map_err(TeaclaveStorageError::LevelDb)?;
             Ok(result)
         }
     }
@@ -189,6 +197,11 @@ impl TeaclaveStorage for TeaclaveStorageService {
             .borrow_mut()
             .put(&request.key, &request.value)
             .map_err(TeaclaveStorageError::LevelDb)?;
+
+        self.database
+            .borrow_mut()
+            .flush()
+            .map_err(TeaclaveStorageError::LevelDb)?;
         Ok(PutResponse)
     }
 
@@ -200,6 +213,11 @@ impl TeaclaveStorage for TeaclaveStorageService {
         self.database
             .borrow_mut()
             .delete(&request.key)
+            .map_err(TeaclaveStorageError::LevelDb)?;
+
+        self.database
+            .borrow_mut()
+            .flush()
             .map_err(TeaclaveStorageError::LevelDb)?;
         Ok(DeleteResponse)
     }
