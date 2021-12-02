@@ -155,9 +155,6 @@ impl<'a> DBQueue<'a> {
 
 impl TeaclaveStorageService {
     pub(crate) fn start(&mut self) {
-        #[cfg(test_mode)]
-        test_mode::repalce_with_mock_database(self);
-
         loop {
             let request = match self.receiver.recv() {
                 Ok(req) => req,
@@ -225,20 +222,6 @@ impl TeaclaveStorage for TeaclaveStorageService {
         let mut db = self.database.borrow_mut();
         let mut queue = DBQueue::open(&mut db, &request.key);
         queue.dequeue().map(|value| DequeueResponse { value })
-    }
-}
-
-#[cfg(test_mode)]
-mod test_mode {
-    use super::*;
-    pub(crate) fn repalce_with_mock_database(service: &mut TeaclaveStorageService) {
-        let opt = rusty_leveldb::in_memory();
-        let mut database = DB::open("mock_db", opt).unwrap();
-        database.put(b"test_get_key", b"test_get_value").unwrap();
-        database
-            .put(b"test_delete_key", b"test_delete_value")
-            .unwrap();
-        service.database.replace(database);
     }
 }
 
