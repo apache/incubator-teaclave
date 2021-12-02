@@ -49,12 +49,16 @@ mod publisher;
 mod service;
 
 fn start_service(config: &RuntimeConfig) -> Result<()> {
+    info!("Starting Scheduler...");
+
     let listen_address = config.internal_endpoints.scheduler.listen_address;
     let attestation_config = AttestationConfig::from_teaclave_config(&config)?;
     let attested_tls_config = RemoteAttestation::new(attestation_config)
         .generate_and_endorse()?
         .attested_tls_config()
         .ok_or_else(|| anyhow!("cannot get attested TLS config"))?;
+    info!(" Starting Scheduler: Self attestation finished ...");
+
     let enclave_info = EnclaveInfo::verify_and_new(
         &config.audit.enclave_info_bytes,
         AUDITOR_PUBLIC_KEYS,
@@ -74,6 +78,7 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
                 AS_ROOT_CA_CERT,
                 verifier::universal_quote_verifier,
             )?;
+    info!(" Starting Scheduler: Server config setup finished ...");
 
     let mut server =
         SgxTrustedTlsServer::<TeaclaveSchedulerResponse, TeaclaveSchedulerRequest>::new(
@@ -89,8 +94,11 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
         verifier::universal_quote_verifier,
         attested_tls_config,
     )?;
+    info!(" Starting Scheduler: setup storage endpoint finished ...");
 
     let service = service::TeaclaveSchedulerService::new(storage_service_endpoint)?;
+
+    info!(" Starting Scheduler: start listening ...");
     match server.start(service) {
         Ok(_) => (),
         Err(e) => {

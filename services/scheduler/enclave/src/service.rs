@@ -48,7 +48,7 @@ impl TeaclaveSchedulerService {
                 Ok(channel) => break channel,
                 Err(_) => {
                     anyhow::ensure!(i < 10, "failed to connect to storage service");
-                    log::debug!("Failed to connect to storage service, retry {}", i);
+                    log::warn!("Failed to connect to storage service, retry {}", i);
                     i += 1;
                 }
             }

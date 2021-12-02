@@ -50,12 +50,16 @@ mod proxy;
 mod service;
 
 fn start_service(config: &RuntimeConfig) -> Result<()> {
+    info!("Starting Storage...");
+
     let listen_address = config.internal_endpoints.storage.listen_address;
     let attestation_config = AttestationConfig::from_teaclave_config(&config)?;
     let attested_tls_config = RemoteAttestation::new(attestation_config)
         .generate_and_endorse()?
         .attested_tls_config()
         .ok_or_else(|| anyhow!("cannot get attested TLS config"))?;
+    info!(" Starting Storage: Self attestation finished ...");
+
     let enclave_info = EnclaveInfo::verify_and_new(
         &config.audit.enclave_info_bytes,
         AUDITOR_PUBLIC_KEYS,
@@ -74,15 +78,19 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
         AS_ROOT_CA_CERT,
         verifier::universal_quote_verifier,
     )?;
+    info!(" Starting Storage: Server config setup finished ...");
 
     let (sender, receiver) = channel();
     thread::spawn(move || {
+        info!(" Starting Storage: opening database ...");
         #[cfg(test_mode)]
         let db = test_mode::create_mock_db();
         #[cfg(not(test_mode))]
         let db = create_teaclave_db();
 
         let mut storage_service = service::TeaclaveStorageService::new(RefCell::new(db), receiver);
+
+        info!(" Starting Storage: database loaded ...");
         storage_service.start();
     });
 
@@ -93,6 +101,7 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
 
     let service = proxy::ProxyService::new(sender);
 
+    info!(" Starting Storage: start listening ...");
     match server.start(service) {
         Ok(_) => (),
         Err(e) => {
