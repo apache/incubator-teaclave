@@ -77,10 +77,12 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
 
     let (sender, receiver) = channel();
     thread::spawn(move || {
-        let opt = rusty_leveldb::in_memory();
-        let storage = DB::open("teaclave_db", opt).expect("cannot open teaclave_db");
-        let mut storage_service =
-            service::TeaclaveStorageService::new(RefCell::new(storage), receiver);
+        #[cfg(test_mode)]
+        let db = test_mode::create_mock_db();
+        #[cfg(not(test_mode))]
+        let db = create_teaclave_db();
+
+        let mut storage_service = service::TeaclaveStorageService::new(RefCell::new(db), receiver);
         storage_service.start();
     });
 
@@ -98,6 +100,31 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
         }
     }
     Ok(())
+}
+
+#[cfg(not(test_mode))]
+pub(crate) fn create_teaclave_db() -> DB {
+    let opt = rusty_leveldb::in_memory();
+    let database = DB::open("teaclave_db", opt).expect("cannot open teaclave_db");
+    database
+}
+
+#[cfg(test_mode)]
+mod test_mode {
+    use super::*;
+    pub(crate) fn create_mock_db() -> DB {
+        let key = [
+            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x0f, 0x0e, 0x0d, 0x0c, 0x0b, 0x0a,
+            0x09, 0x08,
+        ];
+        let opt = rusty_leveldb::Options::new_disk_db_with(key);
+        let mut database = DB::open("mock_db", opt).unwrap();
+        database.put(b"test_get_key", b"test_get_value").unwrap();
+        database
+            .put(b"test_delete_key", b"test_delete_value")
+            .unwrap();
+        database
+    }
 }
 
 #[handle_ecall]
