@@ -233,8 +233,12 @@ pub mod tests {
 
     fn get_mock_service() -> TeaclaveStorageService {
         let (_sender, receiver) = channel();
-        let opt = rusty_leveldb::in_memory();
-        let mut database = DB::open("mock_db", opt).unwrap();
+        let key = [
+            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x0f, 0x0e, 0x0d, 0x0c, 0x0b, 0x0a,
+            0x09, 0x08,
+        ];
+        let opt = rusty_leveldb::Options::new_disk_db_with(key);
+        let mut database = DB::open("mock_db_unit_test", opt).unwrap();
         database.put(b"test_get_key", b"test_get_value").unwrap();
         database
             .put(b"test_delete_key", b"test_delete_value")
