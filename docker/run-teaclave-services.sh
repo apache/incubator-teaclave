@@ -122,17 +122,18 @@ function aesm_detect() {
 }
 
 function usage {
-    echo "Usage: $(basename $0) [-hdm:]" 2>&1
+    echo "Usage: $(basename $0) [-hdbm:]" 2>&1
     echo '   -h           shows usage'
     echo '   -m           run mode (default: sgx)'
     echo '   -d           detached mode'
+    echo '   -b           build or rebuild services'
     echo 'Available run modes: sim, sgx'
     exit 1
 }
 
 RUN_MODE="sgx"
 DETACH_ARG=""
-optstring="hdm:"
+optstring="hdbm:"
 while getopts ${optstring} arg; do
     case ${arg} in
         h)
@@ -141,6 +142,9 @@ while getopts ${optstring} arg; do
             ;;
         d)
             DETACH_ARG="-d"
+            ;;
+        b)
+            BUILD_ARG="--build"
             ;;
         m)
             RUN_MODE=$OPTARG
@@ -215,5 +219,5 @@ else
     DC_ARGS="-f $DOCKER_COMPOSE_FILE"
 fi
 
-echo COMMAND: docker-compose ${DC_ARGS} up ${DETACH_ARG}
-docker-compose ${DC_ARGS} up ${DETACH_ARG}
+echo COMMAND: docker-compose ${DC_ARGS} up ${DETACH_ARG} ${BUILD_ARG}
+docker-compose ${DC_ARGS} up ${DETACH_ARG} ${BUILD_ARG}
