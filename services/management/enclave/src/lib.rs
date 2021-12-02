@@ -46,12 +46,16 @@ mod error;
 mod service;
 
 fn start_service(config: &RuntimeConfig) -> Result<()> {
+    info!("Starting Management...");
+
     let listen_address = config.internal_endpoints.management.listen_address;
     let attestation_config = AttestationConfig::from_teaclave_config(&config)?;
     let attested_tls_config = RemoteAttestation::new(attestation_config)
         .generate_and_endorse()?
         .attested_tls_config()
         .ok_or_else(|| anyhow!("cannot get attested TLS config"))?;
+    info!(" Starting Management: Self attestation finished ...");
+
     let enclave_info = EnclaveInfo::verify_and_new(
         &config.audit.enclave_info_bytes,
         AUDITOR_PUBLIC_KEYS,
@@ -71,6 +75,9 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
                 AS_ROOT_CA_CERT,
                 verifier::universal_quote_verifier,
             )?;
+
+    info!(" Starting Management: Server config setup finished ...");
+
     let mut server =
         SgxTrustedTlsServer::<TeaclaveManagementResponse, TeaclaveManagementRequest>::new(
             listen_address,
@@ -85,7 +92,11 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
         attested_tls_config,
     )?;
 
+    info!(" Starting Management: setup storage endpoint finished ...");
+
     let service = service::TeaclaveManagementService::new(storage_service_endpoint)?;
+
+    info!(" Starting Management: start listening ...");
     match server.start(service) {
         Ok(_) => (),
         Err(e) => {

@@ -82,7 +82,7 @@ impl TeaclaveFrontendService {
                 Ok(channel) => break channel,
                 Err(_) => {
                     anyhow::ensure!(i < 10, "failed to connect to authentication service");
-                    log::debug!("Failed to connect to authentication service, retry {}", i);
+                    log::warn!("Failed to connect to authentication service, retry {}", i);
                     i += 1;
                 }
             }
@@ -98,7 +98,7 @@ impl TeaclaveFrontendService {
                 Ok(channel) => break channel,
                 Err(_) => {
                     anyhow::ensure!(i < 10, "failed to connect to management service");
-                    log::debug!("Failed to connect to management service, retry {}", i);
+                    log::warn!("Failed to connect to management service, retry {}", i);
                     i += 1;
                 }
             }

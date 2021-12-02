@@ -48,19 +48,25 @@ mod error;
 mod service;
 
 fn start_service(config: &RuntimeConfig) -> Result<()> {
+    info!("Starting FrontEnd ...");
+
     let listen_address = config.api_endpoints.frontend.listen_address;
     let attestation_config = AttestationConfig::from_teaclave_config(&config)?;
     let attested_tls_config = RemoteAttestation::new(attestation_config)
         .generate_and_endorse()?
         .attested_tls_config()
         .ok_or_else(|| anyhow!("cannot get attested TLS config"))?;
+
+    info!(" Starting FrontEnd: Self attestation finished ...");
+
     let server_config =
         SgxTrustedTlsServerConfig::from_attested_tls_config(attested_tls_config.clone())?;
-
     let mut server = SgxTrustedTlsServer::<TeaclaveFrontendResponse, TeaclaveFrontendRequest>::new(
         listen_address,
         server_config,
     );
+
+    info!(" Starting FrontEnd: Server config setup finished ...");
 
     let enclave_info = teaclave_types::EnclaveInfo::from_bytes(&config.audit.enclave_info_bytes);
     let authentication_service_endpoint = create_trusted_authentication_endpoint(
@@ -71,6 +77,8 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
         attested_tls_config.clone(),
     )?;
 
+    info!(" Starting FrontEnd: setup authentication endpoint finished ...");
+
     let management_service_endpoint = create_trusted_management_endpoint(
         &config.internal_endpoints.management.advertised_address,
         &enclave_info,
@@ -79,10 +87,14 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
         attested_tls_config,
     )?;
 
+    info!(" Starting FrontEnd: setup management endpoint finished ...");
+
     let service = service::TeaclaveFrontendService::new(
         authentication_service_endpoint,
         management_service_endpoint,
     )?;
+
+    info!(" Starting FrontEnd: start listening ...");
     match server.start(service) {
         Ok(_) => (),
         Err(e) => {
