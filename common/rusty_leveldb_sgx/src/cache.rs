@@ -18,6 +18,49 @@ struct LRUList<T> {
     count: usize,
 }
 
+use std::fmt;
+impl<T> fmt::Display for LRUNode<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.next.is_some() {
+            let node = self.next.as_ref().unwrap();
+            writeln!(
+                f,
+                "(self: {:?}, next: {:?}, pre: {:?}, data:{})",
+                self as *const _,
+                (*node).as_ref() as *const _,
+                self.prev,
+                self.data.is_some()
+            )
+        } else {
+            writeln!(
+                f,
+                "(self: {:?}, next: {}, pre: {:?}, data:{})",
+                self as *const _,
+                "None",
+                self.prev,
+                self.data.is_some()
+            )
+        }
+    }
+}
+
+impl<T> fmt::Display for LRUList<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let _ = write!(
+            f,
+            "\n {:?}, count: {}, head: {}",
+            self as *const _, self.count, self.head
+        )?;
+        let mut opt_node = &self.head.next;
+        while opt_node.is_some() {
+            let node = opt_node.as_ref().unwrap();
+            let _ = write!(f, "\t {}", node)?;
+            opt_node = &node.next
+        }
+        writeln!(f,)
+    }
+}
+
 /// This is likely unstable; more investigation is needed into correct behavior!
 impl<T> LRUList<T> {
     fn new() -> LRUList<T> {
@@ -93,7 +136,7 @@ impl<T> LRUList<T> {
         unsafe {
             // If has next
             if let Some(ref mut nextp) = (*node_handle).next {
-                swap(&mut (**nextp).prev, &mut (*node_handle).prev);
+                (**nextp).prev = (*node_handle).prev;
             }
             // If has prev
             if let Some(ref mut prevp) = (*node_handle).prev {
