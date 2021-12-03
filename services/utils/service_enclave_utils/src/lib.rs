@@ -42,6 +42,11 @@ global_dtors_object! {
     }
 }
 
+extern "C" {
+    pub static g_peak_heap_used: isize;
+    pub static g_peak_rsrv_mem_committed: isize;
+}
+
 pub struct ServiceEnclave;
 
 impl ServiceEnclave {
@@ -66,6 +71,10 @@ impl ServiceEnclave {
 
     pub fn finalize() -> teaclave_types::TeeServiceResult<()> {
         debug!("Enclave finalizing");
+        unsafe {
+            debug!("g_peak_heap_used: {}", g_peak_heap_used);
+            debug!("g_peak_rsrv_mem_committed: {}", g_peak_rsrv_mem_committed);
+        }
 
         #[cfg(feature = "cov")]
         sgx_cov::cov_writeout();
