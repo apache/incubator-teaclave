@@ -151,6 +151,10 @@ impl<'r> response::Responder<'r> for QuoteVerificationResponse {
     }
 }
 
+lazy_static! {
+    static ref GLOBAL_MUTEX: std::sync::Mutex<i32> = std::sync::Mutex::new(0i32);
+}
+
 #[post(
     "/sgx/dev/attestation/v4/report",
     format = "application/json",
@@ -176,27 +180,31 @@ fn verify_quote(request: String) -> QuoteVerificationResponse {
         rng.fill_bytes(&mut nonce.rand);
         qve_report_info.nonce = nonce;
         let mut expiration_check_date: time_t = 0;
-        let ret = unsafe {
-            sgx_qv_verify_quote(
-                quote.as_ptr(),
-                quote.len() as _,
-                std::ptr::null() as _,
-                libc::time(&mut expiration_check_date),
-                &mut collateral_exp_status as _,
-                &mut quote_verification_result as _,
-                &mut qve_report_info as _,
-                0,
-                std::ptr::null_mut(),
-            )
+
+        let ret = {
+            let _lock = GLOBAL_MUTEX.lock();
+            unsafe {
+                sgx_qv_verify_quote(
+                    quote.as_ptr(),
+                    quote.len() as _,
+                    std::ptr::null() as _,
+                    libc::time(&mut expiration_check_date),
+                    &mut collateral_exp_status as _,
+                    &mut quote_verification_result as _,
+                    &mut qve_report_info as _,
+                    0,
+                    std::ptr::null_mut(),
+                )
+            }
         };
 
         if ret != sgx_quote3_error_t::SGX_QL_SUCCESS {
-            eprintln!("sgx_qv_verify_quote fialed: {:?}", ret);
+            eprintln!("sgx_qv_verify_quote failed: {:?}", ret);
             return QuoteVerificationResponse::BadRequest;
         };
 
         if collateral_exp_status != 0 {
-            eprintln!("collateral_exp_status fialed: {:?}", collateral_exp_status);
+            eprintln!("collateral_exp_status failed: {:?}", collateral_exp_status);
             return QuoteVerificationResponse::BadRequest;
         }
 
