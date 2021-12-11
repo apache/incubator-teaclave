@@ -102,12 +102,14 @@ impl<W: Write> LogWriter<W> {
 
         let chksum = mask_crc(self.digest.sum32());
 
-        let mut s = 0;
-        s += self.dst.write(&chksum.encode_fixed_vec())?;
-        s += self.dst.write_fixedint(len as u16)?;
-        s += self.dst.write(&[t as u8])?;
-        s += self.dst.write(&data[0..len])?;
-
+        let mut s1 = 0;
+        let mut v = Vec::<u8>::with_capacity(len + HEADER_SIZE);
+        s1 += v.write(&chksum.encode_fixed_vec())?;
+        s1 += v.write_fixedint(len as u16)?;
+        s1 += v.write(&[t as u8])?;
+        s1 += v.write(&data[0..len])?;
+        let s = self.dst.write(v.as_slice())?;
+        assert!(s == s1);
         self.current_block_offset += s;
         Ok(s)
     }
@@ -150,7 +152,9 @@ impl<R: Read> LogReader<R> {
         dst.clear();
 
         loop {
-            if self.blocksize - self.blk_off < HEADER_SIZE {
+            if self.blocksize < self.blk_off {
+                self.blk_off = 0;
+            } else if self.blocksize - self.blk_off < HEADER_SIZE {
                 // skip to next block
                 self.src
                     .read(&mut self.head_scratch[0..self.blocksize - self.blk_off])?;
