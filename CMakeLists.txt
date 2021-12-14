@@ -107,6 +107,18 @@ parse_cargo_packages(
   EDL_NAMES
   EDL_LIB_NAMES)
 
+if(NOT TEST_MODE)
+  list(FILTER SGX_APPS EXCLUDE REGEX "_tests$")
+  list(FILTER SGX_APP_CATEGORIES EXCLUDE REGEX "tests")
+  list(FILTER SGX_LIBS EXCLUDE REGEX "_tests_enclave$")
+  list(FILTER SGX_LIB_CATEGORIES EXCLUDE REGEX "tests")
+endif()
+
+if(NOT DCAP)
+  list(FILTER UNIX_APPS EXCLUDE REGEX "dcap")
+  list(FILTER UNIX_APP_CATEGORIES EXCLUDE REGEX "dcap")
+endif()
+
 include(TeaclaveGenVars)
 
 # ========== CONFIG-TIME CHECKS AND INITIALIZATIONS BEGIN =========
@@ -119,13 +131,11 @@ include(UtilTargets)
 
 # unix_app
 list(LENGTH UNIX_APPS UNIX_APP_LEN)
+set(UNIX_APPS_DEPENDS prep)
 math(EXPR UNIX_APP_LAST_INDEX "${UNIX_APP_LEN} - 1")
 foreach(_i RANGE ${UNIX_APP_LAST_INDEX})
   list(GET UNIX_APPS ${_i} _pkg_name)
   list(GET UNIX_APP_CATEGORIES ${_i} _category)
-  if(${_category} STREQUAL "dcap" AND NOT DCAP)
-    continue()
-  endif()
   add_cargo_build_target(
     ${_pkg_name}
     TARGET_NAME
@@ -139,11 +149,12 @@ foreach(_i RANGE ${UNIX_APP_LAST_INDEX})
     EXTRA_CARGO_FLAGS
     ${EXTRA_CARGO_FLAGS}
     DEPENDS
-    prep)
+    ${UNIX_APPS_DEPENDS})
 endforeach()
 
 # sgx_untrusted_app
 list(LENGTH SGX_APPS SGX_APP_LEN)
+set(SGX_APPS_DEPENDS prep)
 math(EXPR SGX_APP_LAST_INDEX "${SGX_APP_LEN} - 1")
 foreach(_i RANGE ${SGX_APP_LAST_INDEX})
   list(GET SGX_APPS ${_i} _pkg_name)
@@ -161,7 +172,7 @@ foreach(_i RANGE ${SGX_APP_LAST_INDEX})
     EXTRA_CARGO_FLAGS
     ${EXTRA_CARGO_FLAGS}
     DEPENDS
-    prep)
+    ${SGX_APPS_DEPENDS})
 endforeach()
 
 set(MESAPY_OUTPUTS
@@ -248,38 +259,27 @@ target_compile_options(pycomponent PUBLIC -UWITH_THREAD -O2 -fPIC -Wimplicit
 
 # sgx_trusted_lib
 list(LENGTH SGX_LIBS SGX_LIB_LEN)
+set(SGX_LIB_DEPENDS prep mesapy pycomponent)
 math(EXPR SGX_LIB_LAST_INDEX "${SGX_LIB_LEN} - 1")
 foreach(_i RANGE ${SGX_LIB_LAST_INDEX})
   list(GET SGX_LIBS ${_i} _pkg_name)
   list(GET SGX_LIB_PATHS ${_i} _pkg_path)
   list(GET SGX_LIB_CATEGORIES ${_i} _category)
   list(GET EDL_LIB_NAMES ${_i} _edl_lib_name)
+
   if(EXECUTOR_WAMR)
-    add_sgx_build_target(
-      ${_pkg_path}
-      ${_pkg_name}
-      DEPENDS
-      prep
-      mesapy
-      pycomponent
-      wamr
-      INSTALL_DIR
-      ${TEACLAVE_INSTALL_DIR}/${_category}
-      EDL_LIB_NAME
-      ${_edl_lib_name})
-  else()
-    add_sgx_build_target(
-      ${_pkg_path}
-      ${_pkg_name}
-      DEPENDS
-      prep
-      mesapy
-      pycomponent
-      INSTALL_DIR
-      ${TEACLAVE_INSTALL_DIR}/${_category}
-      EDL_LIB_NAME
-      ${_edl_lib_name})
+    list(APPEND SGX_LIB_DEPENDS wamr)
   endif()
+
+  add_sgx_build_target(
+    ${_pkg_path}
+    ${_pkg_name}
+    DEPENDS
+    ${SGX_LIB_DEPENDS}
+    INSTALL_DIR
+    ${TEACLAVE_INSTALL_DIR}/${_category}
+    EDL_LIB_NAME
+    ${_edl_lib_name})
 endforeach()
 
 # Dylib/staticlib of Teaclave Rust Client SDK

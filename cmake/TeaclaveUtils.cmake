@@ -203,10 +203,6 @@ function(add_sgx_build_target sgx_lib_path pkg_name)
 
   set(_target_name ${SGXLIB_PREFIX}-${pkg_name_no_enclave})
 
-  if(pkg_name_no_enclave MATCHES "_tests$")
-    set(RUSTFLAGS "${RUSTFLAGS} --cfg test_mode")
-  endif()
-
   if(pkg_name_no_enclave MATCHES "_tests$" AND CMAKE_BUILD_TYPE_LOWER STREQUAL
                                                "release")
     set(_enclave_info "/dev/null")
