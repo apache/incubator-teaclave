@@ -179,6 +179,7 @@ impl From<TeaclaveOutputFile> for FunctionOutputFile {
 pub struct StagedTask {
     pub task_id: Uuid,
     pub function_id: Uuid,
+    pub user_id: String,
     pub executor: Executor,
     pub executor_type: ExecutorType,
     pub function_name: String,
@@ -204,6 +205,7 @@ impl StagedTask {
     }
 }
 
+#[derive(Default)]
 pub struct StagedTaskBuilder {
     task: StagedTask,
 }
@@ -222,6 +224,11 @@ impl StagedTaskBuilder {
 
     pub fn function_id(mut self, function_id: Uuid) -> Self {
         self.task.function_id = function_id;
+        self
+    }
+
+    pub fn user_id(mut self, user_id: impl ToString) -> Self {
+        self.task.user_id = user_id.to_string();
         self
     }
 

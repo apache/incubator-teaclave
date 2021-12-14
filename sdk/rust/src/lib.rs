@@ -56,6 +56,13 @@ impl AuthenticationClient {
         Self { api_client }
     }
 
+    pub fn set_credential(&mut self, id: &str, token: &str) {
+        let mut metadata = HashMap::new();
+        metadata.insert("id".to_string(), id.to_string());
+        metadata.insert("token".to_string(), token.to_string());
+        self.api_client.set_metadata(metadata);
+    }
+
     pub fn user_register_with_request(
         &mut self,
         request: UserRegisterRequest,
@@ -75,8 +82,14 @@ impl AuthenticationClient {
         Ok(serialized_response)
     }
 
-    pub fn user_register(&mut self, user_id: &str, user_password: &str) -> Result<()> {
-        let request = UserRegisterRequest::new(user_id, user_password);
+    pub fn user_register(
+        &mut self,
+        user_id: &str,
+        user_password: &str,
+        role: &str,
+        attribute: &str,
+    ) -> Result<()> {
+        let request = UserRegisterRequest::new(user_id, user_password, role, attribute);
         let _response = self.user_register_with_request(request)?;
 
         Ok(())
@@ -508,6 +521,8 @@ mod tests {
     const AS_ROOT_CA_CERT_PATH: &str = "../../keys/ias_root_ca_cert.pem";
     const USER_ID: &str = "rust_client_sdk_test_user";
     const USER_PASSWORD: &str = "test_password";
+    const ADMIN_ID: &str = "admin";
+    const ADMIN_PASSWORD: &str = "teaclave";
 
     #[test]
     fn test_authentication_service() {
@@ -517,7 +532,9 @@ mod tests {
         let mut client =
             AuthenticationService::connect("localhost:7776", &enclave_info, &as_root_ca_cert)
                 .unwrap();
-        let _ = client.user_register(USER_ID, USER_PASSWORD);
+        let token = client.user_login(ADMIN_ID, ADMIN_PASSWORD).unwrap();
+        client.set_credential(ADMIN_ID, &token);
+        let _ = client.user_register(USER_ID, USER_PASSWORD, "PlatformAdmin", "");
         client.user_login(USER_ID, USER_PASSWORD).unwrap();
     }
 
@@ -529,7 +546,9 @@ mod tests {
         let mut client =
             AuthenticationService::connect("localhost:7776", &enclave_info, &as_root_ca_cert)
                 .unwrap();
-        let _ = client.user_register(USER_ID, USER_PASSWORD);
+        let token = client.user_login(ADMIN_ID, ADMIN_PASSWORD).unwrap();
+        client.set_credential(ADMIN_ID, &token);
+        let _ = client.user_register(USER_ID, USER_PASSWORD, "PlatformAdmin", "");
         let token = client.user_login(USER_ID, USER_PASSWORD).unwrap();
 
         let mut client =
@@ -571,7 +590,9 @@ mod tests {
         let mut client =
             AuthenticationService::connect("localhost:7776", &enclave_info, &as_root_ca_cert)
                 .unwrap();
-        let _ = client.user_register(USER_ID, USER_PASSWORD);
+        let token = client.user_login(ADMIN_ID, ADMIN_PASSWORD).unwrap();
+        client.set_credential(ADMIN_ID, &token);
+        let _ = client.user_register(USER_ID, USER_PASSWORD, "PlatformAdmin", "");
         let token = client.user_login(USER_ID, USER_PASSWORD).unwrap();
 
         let mut client =
@@ -613,7 +634,9 @@ mod tests {
         let mut client =
             AuthenticationService::connect("localhost:7776", &enclave_info, &as_root_ca_cert)
                 .unwrap();
-        let _ = client.user_register(USER_ID, USER_PASSWORD);
+        let token = client.user_login(ADMIN_ID, ADMIN_PASSWORD).unwrap();
+        client.set_credential(ADMIN_ID, &token);
+        let _ = client.user_register(USER_ID, USER_PASSWORD, "PlatformAdmin", "");
         let token = client.user_login(USER_ID, USER_PASSWORD).unwrap();
 
         let mut client =
@@ -649,7 +672,9 @@ mod tests {
         let mut client =
             AuthenticationService::connect("localhost:7776", &enclave_info, &as_root_ca_cert)
                 .unwrap();
-        let _ = client.user_register(USER_ID, USER_PASSWORD);
+        let token = client.user_login(ADMIN_ID, ADMIN_PASSWORD).unwrap();
+        client.set_credential(ADMIN_ID, &token);
+        let _ = client.user_register(USER_ID, USER_PASSWORD, "PlatformAdmin", "");
         let token = client.user_login(USER_ID, USER_PASSWORD).unwrap();
 
         let mut client =
@@ -686,7 +711,9 @@ mod tests {
         let mut client =
             AuthenticationService::connect("localhost:7776", &enclave_info, &as_root_ca_cert)
                 .unwrap();
-        let _ = client.user_register(USER_ID, USER_PASSWORD);
+        let token = client.user_login(ADMIN_ID, ADMIN_PASSWORD).unwrap();
+        client.set_credential(ADMIN_ID, &token);
+        let _ = client.user_register(USER_ID, USER_PASSWORD, "PlatformAdmin", "");
         let token = client.user_login(USER_ID, USER_PASSWORD).unwrap();
 
         let mut client =

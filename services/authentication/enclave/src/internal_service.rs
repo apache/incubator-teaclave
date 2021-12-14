@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use crate::error::TeaclaveAuthenticationInternalError;
 use crate::user_db::DbClient;
 use crate::user_info::UserInfo;
 use std::prelude::v1::*;
@@ -48,14 +49,16 @@ impl TeaclaveAuthenticationInternal for TeaclaveAuthenticationInternalService {
     ) -> TeaclaveServiceResponseResult<UserAuthenticateResponse> {
         let request = request.message;
         if request.credential.id.is_empty() || request.credential.token.is_empty() {
-            return Ok(UserAuthenticateResponse::new(false));
+            return Err(TeaclaveAuthenticationInternalError::PermissionDenied.into());
         }
         let user: UserInfo = match self.db_client.get_user(&request.credential.id) {
             Ok(value) => value,
-            Err(_) => return Ok(UserAuthenticateResponse::new(false)),
+            Err(_) => return Err(TeaclaveAuthenticationInternalError::PermissionDenied.into()),
         };
-        let accept = user.validate_token(&self.jwt_secret, &request.credential.token);
-        Ok(UserAuthenticateResponse::new(accept))
+        let claims = user
+            .validate_token(&self.jwt_secret, &request.credential.token)
+            .map_err(|_| TeaclaveAuthenticationInternalError::PermissionDenied)?;
+        Ok(UserAuthenticateResponse { claims })
     }
 }
 
@@ -70,13 +73,18 @@ pub mod tests {
     use std::vec;
     use teaclave_proto::teaclave_common::UserCredential;
     use teaclave_rpc::IntoRequest;
+    use teaclave_types::{UserAuthClaims, UserRole};
 
     fn get_mock_service() -> TeaclaveAuthenticationInternalService {
         let database = Database::open().unwrap();
         let mut jwt_secret = vec![0; JWT_SECRET_LEN];
         let mut rng = rand::thread_rng();
         rng.fill_bytes(&mut jwt_secret);
-        let user = UserInfo::new("test_authenticate_id", "test_authenticate_id");
+        let user = UserInfo::new(
+            "test_authenticate_id",
+            "test_authenticate_id",
+            UserRole::PlatformAdmin,
+        );
         database.get_client().create_user(&user).unwrap();
         TeaclaveAuthenticationInternalService {
             db_client: database.get_client(),
@@ -94,7 +102,7 @@ pub mod tests {
         let token = user.get_token(exp, &service.jwt_secret).unwrap();
 
         let response = get_authenticate_response(id, &token, &service);
-        assert!(response.accept);
+        assert!(response.is_ok());
         let token = validate_token(id, &service.jwt_secret, &token);
         debug!("valid token: {:?}", token.unwrap());
     }
@@ -109,7 +117,7 @@ pub mod tests {
             &service.jwt_secret,
         );
         let response = get_authenticate_response(id, &token, &service);
-        assert!(!response.accept);
+        assert!(!response.is_ok());
         let error = validate_token(id, &service.jwt_secret, &token);
         assert!(error.is_err());
         match *error.unwrap_err().kind() {
@@ -125,7 +133,7 @@ pub mod tests {
         my_claims.iss = "wrong issuer".to_string();
         let token = gen_token(my_claims, None, &service.jwt_secret);
         let response = get_authenticate_response(id, &token, &service);
-        assert!(!response.accept);
+        assert!(!response.is_ok());
         let error = validate_token(id, &service.jwt_secret, &token);
         assert!(error.is_err());
         match *error.unwrap_err().kind() {
@@ -141,7 +149,7 @@ pub mod tests {
         my_claims.exp -= 24 * 60 + 1;
         let token = gen_token(my_claims, None, &service.jwt_secret);
         let response = get_authenticate_response(id, &token, &service);
-        assert!(!response.accept);
+        assert!(!response.is_ok());
         let error = validate_token(id, &service.jwt_secret, &token);
         assert!(error.is_err());
         match *error.unwrap_err().kind() {
@@ -155,9 +163,10 @@ pub mod tests {
         let service = get_mock_service();
         let mut my_claims = get_correct_claim(id);
         my_claims.sub = "wrong user".to_string();
+        my_claims.role = UserRole::PlatformAdmin.to_string();
         let token = gen_token(my_claims, None, &service.jwt_secret);
         let response = get_authenticate_response(id, &token, &service);
-        assert!(!response.accept);
+        assert!(!response.is_ok());
         let error = validate_token(id, &service.jwt_secret, &token);
         assert!(error.is_err());
         match *error.unwrap_err().kind() {
@@ -172,7 +181,7 @@ pub mod tests {
         let my_claims = get_correct_claim(id);
         let token = gen_token(my_claims, None, b"bad secret");
         let response = get_authenticate_response(id, &token, &service);
-        assert!(!response.accept);
+        assert!(!response.is_ok());
         let error = validate_token(id, &service.jwt_secret, &token);
         assert!(error.is_err());
         match *error.unwrap_err().kind() {
@@ -181,19 +190,24 @@ pub mod tests {
         }
     }
 
-    fn get_correct_claim(id: &str) -> Claims {
+    fn get_correct_claim(id: &str) -> UserAuthClaims {
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_secs();
-        Claims {
-            sub: id.to_string(),
+        UserAuthClaims {
+            sub: id.to_owned(),
+            role: UserRole::PlatformAdmin.to_string(),
             iss: ISSUER_NAME.to_string(),
             exp: now + 24 * 60,
         }
     }
 
-    fn gen_token(claim: Claims, bad_alg: Option<jsonwebtoken::Algorithm>, secret: &[u8]) -> String {
+    fn gen_token(
+        claim: UserAuthClaims,
+        bad_alg: Option<jsonwebtoken::Algorithm>,
+        secret: &[u8],
+    ) -> String {
         let mut header = jsonwebtoken::Header::default();
         header.alg = bad_alg.unwrap_or(JWT_ALG);
         let secret = jsonwebtoken::EncodingKey::from_secret(secret);
@@ -204,17 +218,17 @@ pub mod tests {
         id: &str,
         token: &str,
         service: &TeaclaveAuthenticationInternalService,
-    ) -> UserAuthenticateResponse {
+    ) -> TeaclaveServiceResponseResult<UserAuthenticateResponse> {
         let credential = UserCredential::new(id, token);
         let request = UserAuthenticateRequest::new(credential).into_request();
-        service.user_authenticate(request).unwrap()
+        service.user_authenticate(request)
     }
 
     fn validate_token(
         id: &str,
         secret: &[u8],
         token: &str,
-    ) -> jsonwebtoken::errors::Result<jsonwebtoken::TokenData<Claims>> {
+    ) -> jsonwebtoken::errors::Result<jsonwebtoken::TokenData<UserAuthClaims>> {
         let validation = jsonwebtoken::Validation {
             iss: Some(ISSUER_NAME.to_string()),
             sub: Some(id.to_string()),
@@ -222,6 +236,6 @@ pub mod tests {
             ..Default::default()
         };
         let secret = jsonwebtoken::DecodingKey::from_secret(secret);
-        jsonwebtoken::decode::<crate::user_info::Claims>(token, &secret, &validation)
+        jsonwebtoken::decode::<UserAuthClaims>(token, &secret, &validation)
     }
 }

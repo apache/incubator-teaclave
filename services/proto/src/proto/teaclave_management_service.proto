@@ -34,7 +34,10 @@ service TeaclaveManagement {
   rpc GetOutputFile (teaclave_frontend_service_proto.GetOutputFileRequest) returns (teaclave_frontend_service_proto.GetOutputFileResponse);
   rpc GetInputFile (teaclave_frontend_service_proto.GetInputFileRequest) returns (teaclave_frontend_service_proto.GetInputFileResponse);
   rpc RegisterFunction (teaclave_frontend_service_proto.RegisterFunctionRequest) returns (teaclave_frontend_service_proto.RegisterFunctionResponse);
+  rpc UpdateFunction (teaclave_frontend_service_proto.UpdateFunctionRequest) returns (teaclave_frontend_service_proto.UpdateFunctionResponse);
   rpc GetFunction (teaclave_frontend_service_proto.GetFunctionRequest) returns (teaclave_frontend_service_proto.GetFunctionResponse);
+  rpc DeleteFunction (teaclave_frontend_service_proto.DeleteFunctionRequest) returns (teaclave_frontend_service_proto.DeleteFunctionResponse);
+  rpc ListFunctions (teaclave_frontend_service_proto.ListFunctionsRequest) returns (teaclave_frontend_service_proto.ListFunctionsResponse);
   rpc CreateTask (teaclave_frontend_service_proto.CreateTaskRequest) returns (teaclave_frontend_service_proto.CreateTaskResponse);
   rpc GetTask (teaclave_frontend_service_proto.GetTaskRequest) returns (teaclave_frontend_service_proto.GetTaskResponse);
   rpc AssignData (teaclave_frontend_service_proto.AssignDataRequest) returns (teaclave_frontend_service_proto.AssignDataResponse);

@@ -45,6 +45,7 @@ macro_rules! impl_get_internal_service_client_fn {
             let metadata = hashmap!(
                 "id" => username,
                 "token" => "",
+                "role" => "PlatformAdmin"
             );
             $return::new_with_metadata(channel, metadata).unwrap()
         }
@@ -85,10 +86,19 @@ lazy_static! {
         let runtime_config = RuntimeConfig::from_toml(CONFIG_FILE).expect("runtime config");
         EnclaveInfo::from_bytes(&runtime_config.audit.enclave_info_bytes)
     };
+    static ref ADMIN_CREDENTIAL: UserCredential = {
+        let mut api_client =
+            create_authentication_api_client(shared_enclave_info(), AUTH_SERVICE_ADDR).unwrap();
+        login(&mut api_client, "admin", "teaclave").unwrap()
+    };
 }
 
 pub fn shared_enclave_info() -> &'static EnclaveInfo {
     &ENCLAVE_INFO
+}
+
+pub fn shared_admin_credential() -> &'static UserCredential {
+    &ADMIN_CREDENTIAL
 }
 
 pub fn create_client_config(
@@ -133,12 +143,29 @@ pub fn create_authentication_api_client(
     Ok(client)
 }
 
+pub fn create_authentication_api_client_with_credential(
+    enclave_info: &EnclaveInfo,
+    service_addr: &str,
+    cred: &UserCredential,
+) -> Result<TeaclaveAuthenticationApiClient> {
+    let tls_config = create_client_config(&enclave_info, "teaclave_authentication_service")?;
+    let channel = Endpoint::new(service_addr).config(tls_config).connect()?;
+
+    let mut metadata = HashMap::new();
+    metadata.insert("id".to_string(), cred.id.to_owned());
+    metadata.insert("token".to_string(), cred.token.to_owned());
+    let client = TeaclaveAuthenticationApiClient::new_with_metadata(channel, metadata)?;
+    Ok(client)
+}
+
 pub fn register_new_account(
     api_client: &mut TeaclaveAuthenticationApiClient,
     username: &str,
     password: &str,
+    role: &str,
+    attribute: &str,
 ) -> Result<()> {
-    let request = UserRegisterRequest::new(username, password);
+    let request = UserRegisterRequest::new(username, password, role, attribute);
     let response = api_client.user_register(request)?;
 
     log::debug!("User register: {:?}", response);
@@ -168,11 +195,15 @@ pub const TEST_PASSWORD: &str = "test_password";
 
 pub fn setup() {
     // Register user for the first time
-    let mut api_client =
-        create_authentication_api_client(shared_enclave_info(), AUTH_SERVICE_ADDR).unwrap();
+    let mut api_client = create_authentication_api_client_with_credential(
+        shared_enclave_info(),
+        AUTH_SERVICE_ADDR,
+        shared_admin_credential(),
+    )
+    .unwrap();
 
     // Ignore error if register failed.
     for uname in vec![USERNAME, USERNAME1, USERNAME2, USERNAME3].iter() {
-        let _ = register_new_account(&mut api_client, uname, TEST_PASSWORD);
+        let _ = register_new_account(&mut api_client, uname, TEST_PASSWORD, "PlatformAdmin", "");
     }
 }

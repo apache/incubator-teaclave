@@ -23,7 +23,7 @@ from teaclave import (AuthenticationService, FrontendService, FunctionInput,
                       DataMap, OwnerList)
 from utils import (AUTHENTICATION_SERVICE_ADDRESS, FRONTEND_SERVICE_ADDRESS,
                    AS_ROOT_CA_CERT_PATH, ENCLAVE_INFO_PATH, USER_ID,
-                   USER_PASSWORD)
+                   USER_PASSWORD, PlatformAdmin)
 
 # If you're using `docker-compose` to start the Teaclave server containers,
 # please change `localhost` to `teaclave-file-service`
@@ -41,13 +41,12 @@ PAYLOAD_FILE = "wasm_tvm_mnist_payload/target/wasm32-unknown-unknown/release/mni
 
 
 def main():
+    platform_admin = PlatformAdmin("admin", "teaclave")
+    platform_admin.register_user(USER_ID, USER_PASSWORD)
 
     client = AuthenticationService(AUTHENTICATION_SERVICE_ADDRESS,
                                    AS_ROOT_CA_CERT_PATH,
                                    ENCLAVE_INFO_PATH).connect().get_client()
-
-    print(f"[+] {USER_ID} registering user")
-    client.user_register(USER_ID, USER_PASSWORD)
 
     print(f"[+] {USER_ID} login")
     token = client.user_login(USER_ID, USER_PASSWORD)

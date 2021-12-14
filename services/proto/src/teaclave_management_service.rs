@@ -46,8 +46,16 @@ pub type RegisterFunctionRequest = crate::teaclave_frontend_service::RegisterFun
 pub type RegisterFunctionRequestBuilder =
     crate::teaclave_frontend_service::RegisterFunctionRequestBuilder;
 pub type RegisterFunctionResponse = crate::teaclave_frontend_service::RegisterFunctionResponse;
+pub type UpdateFunctionRequest = crate::teaclave_frontend_service::UpdateFunctionRequest;
+pub type UpdateFunctionRequestBuilder =
+    crate::teaclave_frontend_service::UpdateFunctionRequestBuilder;
+pub type UpdateFunctionResponse = crate::teaclave_frontend_service::UpdateFunctionResponse;
+pub type DeleteFunctionRequest = crate::teaclave_frontend_service::DeleteFunctionRequest;
+pub type DeleteFunctionResponse = crate::teaclave_frontend_service::DeleteFunctionResponse;
 pub type GetFunctionRequest = crate::teaclave_frontend_service::GetFunctionRequest;
 pub type GetFunctionResponse = crate::teaclave_frontend_service::GetFunctionResponse;
+pub type ListFunctionsRequest = crate::teaclave_frontend_service::ListFunctionsRequest;
+pub type ListFunctionsResponse = crate::teaclave_frontend_service::ListFunctionsResponse;
 pub type CreateTaskRequest = crate::teaclave_frontend_service::CreateTaskRequest;
 pub type CreateTaskResponse = crate::teaclave_frontend_service::CreateTaskResponse;
 pub type GetTaskRequest = crate::teaclave_frontend_service::GetTaskRequest;

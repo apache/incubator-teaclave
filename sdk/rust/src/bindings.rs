@@ -122,12 +122,14 @@ pub unsafe extern "C" fn teaclave_close_authentication_service(
 ///
 /// # Safety
 ///
-/// `user_id`, `user_password` should be C string (null terminated).
+/// `user_id`, `user_password`, `role`, `attribute` should be C string (null terminated).
 #[no_mangle]
 pub unsafe extern "C" fn teaclave_user_register(
     client: &mut AuthenticationClient,
     user_id: *const c_char,
     user_password: *const c_char,
+    role: *const c_char,
+    attribute: *const c_char,
 ) -> c_int {
     if (client as *mut AuthenticationClient).is_null()
         || user_id.is_null()
@@ -138,7 +140,9 @@ pub unsafe extern "C" fn teaclave_user_register(
 
     let user_id = CStr::from_ptr(user_id).to_string_lossy().into_owned();
     let user_password = CStr::from_ptr(user_password).to_string_lossy().into_owned();
-    unwrap_or_return_one!(client.user_register(&user_id, &user_password));
+    let role = CStr::from_ptr(role).to_string_lossy().into_owned();
+    let attribute = CStr::from_ptr(attribute).to_string_lossy().into_owned();
+    unwrap_or_return_one!(client.user_register(&user_id, &user_password, &role, &attribute));
 
     0
 }
@@ -262,7 +266,31 @@ pub unsafe extern "C" fn teaclave_close_frontend_service(client: *mut FrontendCl
 ///
 /// `user_id` and `user_token` should be C string (null terminated).
 #[no_mangle]
-pub unsafe extern "C" fn teaclave_set_credential(
+pub unsafe extern "C" fn teaclave_authentication_set_credential(
+    client: &mut AuthenticationClient,
+    user_id: *const c_char,
+    user_token: *const c_char,
+) -> c_int {
+    if (client as *mut AuthenticationClient).is_null() || user_id.is_null() || user_token.is_null()
+    {
+        return 1;
+    }
+
+    let user_id = CStr::from_ptr(user_id).to_string_lossy().into_owned();
+    let user_token = CStr::from_ptr(user_token).to_string_lossy().into_owned();
+    client.set_credential(&user_id, &user_token);
+
+    0
+}
+
+/// Set user's credential with `user_id` and `user_token`. The function returns
+/// 0 for success. On error, the function returns 1.
+///
+/// # Safety
+///
+/// `user_id` and `user_token` should be C string (null terminated).
+#[no_mangle]
+pub unsafe extern "C" fn teaclave_frontend_set_credential(
     client: &mut FrontendClient,
     user_id: *const c_char,
     user_token: *const c_char,

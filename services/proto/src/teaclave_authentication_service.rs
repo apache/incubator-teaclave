@@ -23,6 +23,8 @@ use teaclave_rpc::into_request;
 
 use crate::teaclave_authentication_service_proto as proto;
 use crate::teaclave_common;
+use teaclave_types::UserAuthClaims;
+
 pub use proto::TeaclaveAuthenticationApi;
 pub use proto::TeaclaveAuthenticationApiClient;
 pub use proto::TeaclaveAuthenticationApiRequest;
@@ -37,13 +39,22 @@ pub use proto::TeaclaveAuthenticationInternalResponse;
 pub struct UserRegisterRequest {
     pub id: std::string::String,
     pub password: std::string::String,
+    pub role: std::string::String,
+    pub attribute: std::string::String,
 }
 
 impl UserRegisterRequest {
-    pub fn new(id: impl Into<String>, password: impl Into<String>) -> Self {
+    pub fn new(
+        id: impl Into<String>,
+        password: impl Into<String>,
+        role: impl Into<String>,
+        attribute: impl Into<String>,
+    ) -> Self {
         Self {
             id: id.into(),
             password: password.into(),
+            role: role.into(),
+            attribute: attribute.into(),
         }
     }
 }
@@ -51,6 +62,35 @@ impl UserRegisterRequest {
 #[into_request(TeaclaveAuthenticationApiResponse::UserRegister)]
 #[derive(Debug, Default)]
 pub struct UserRegisterResponse;
+
+#[into_request(TeaclaveAuthenticationApiRequest::UserUpdate)]
+#[derive(Debug)]
+pub struct UserUpdateRequest {
+    pub id: std::string::String,
+    pub password: std::string::String,
+    pub role: std::string::String,
+    pub attribute: std::string::String,
+}
+
+impl UserUpdateRequest {
+    pub fn new(
+        id: impl Into<String>,
+        password: impl Into<String>,
+        role: impl Into<String>,
+        attribute: impl Into<String>,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            password: password.into(),
+            role: role.into(),
+            attribute: attribute.into(),
+        }
+    }
+}
+
+#[into_request(TeaclaveAuthenticationApiResponse::UserUpdate)]
+#[derive(Debug, Default)]
+pub struct UserUpdateResponse;
 
 #[into_request(TeaclaveAuthenticationApiRequest::UserLogin)]
 #[derive(Debug)]
@@ -97,12 +137,12 @@ impl UserAuthenticateRequest {
 #[into_request(TeaclaveAuthenticationInternalResponse::UserAuthenticate)]
 #[derive(Debug)]
 pub struct UserAuthenticateResponse {
-    pub accept: bool,
+    pub claims: UserAuthClaims,
 }
 
 impl UserAuthenticateResponse {
-    pub fn new(accept: bool) -> Self {
-        Self { accept }
+    pub fn new(claims: UserAuthClaims) -> Self {
+        Self { claims }
     }
 }
 
@@ -113,6 +153,8 @@ impl std::convert::TryFrom<proto::UserRegisterRequest> for UserRegisterRequest {
         let ret = Self {
             id: proto.id,
             password: proto.password,
+            role: proto.role,
+            attribute: proto.attribute,
         };
 
         Ok(ret)
@@ -124,6 +166,8 @@ impl From<UserRegisterRequest> for proto::UserRegisterRequest {
         Self {
             id: request.id,
             password: request.password,
+            role: request.role,
+            attribute: request.attribute,
         }
     }
 }
@@ -138,6 +182,46 @@ impl std::convert::TryFrom<proto::UserRegisterResponse> for UserRegisterResponse
 
 impl From<UserRegisterResponse> for proto::UserRegisterResponse {
     fn from(_response: UserRegisterResponse) -> Self {
+        Self {}
+    }
+}
+
+impl std::convert::TryFrom<proto::UserUpdateRequest> for UserUpdateRequest {
+    type Error = Error;
+
+    fn try_from(proto: proto::UserUpdateRequest) -> Result<Self> {
+        let ret = Self {
+            id: proto.id,
+            password: proto.password,
+            role: proto.role,
+            attribute: proto.attribute,
+        };
+
+        Ok(ret)
+    }
+}
+
+impl From<UserUpdateRequest> for proto::UserUpdateRequest {
+    fn from(request: UserUpdateRequest) -> Self {
+        Self {
+            id: request.id,
+            password: request.password,
+            role: request.role,
+            attribute: request.attribute,
+        }
+    }
+}
+
+impl std::convert::TryFrom<proto::UserUpdateResponse> for UserUpdateResponse {
+    type Error = Error;
+
+    fn try_from(_reponse: proto::UserUpdateResponse) -> Result<Self> {
+        Ok(Self {})
+    }
+}
+
+impl From<UserUpdateResponse> for proto::UserUpdateResponse {
+    fn from(_response: UserUpdateResponse) -> Self {
         Self {}
     }
 }
@@ -205,12 +289,41 @@ impl From<UserAuthenticateRequest> for proto::UserAuthenticateRequest {
     }
 }
 
+impl std::convert::TryFrom<proto::UserAuthClaims> for UserAuthClaims {
+    type Error = Error;
+
+    fn try_from(proto: proto::UserAuthClaims) -> Result<Self> {
+        let ret = Self {
+            sub: proto.sub,
+            role: proto.role,
+            iss: proto.iss,
+            exp: proto.exp,
+        };
+
+        Ok(ret)
+    }
+}
+
+impl From<UserAuthClaims> for proto::UserAuthClaims {
+    fn from(request: UserAuthClaims) -> Self {
+        Self {
+            sub: request.sub,
+            role: request.role,
+            iss: request.iss,
+            exp: request.exp,
+        }
+    }
+}
+
 impl std::convert::TryFrom<proto::UserAuthenticateResponse> for UserAuthenticateResponse {
     type Error = Error;
 
     fn try_from(proto: proto::UserAuthenticateResponse) -> Result<Self> {
         let ret = Self {
-            accept: proto.accept,
+            claims: proto
+                .claims
+                .ok_or_else(|| anyhow!("Missing claims"))?
+                .try_into()?,
         };
 
         Ok(ret)
@@ -220,7 +333,7 @@ impl std::convert::TryFrom<proto::UserAuthenticateResponse> for UserAuthenticate
 impl From<UserAuthenticateResponse> for proto::UserAuthenticateResponse {
     fn from(response: UserAuthenticateResponse) -> Self {
         Self {
-            accept: response.accept,
+            claims: Some(response.claims.into()),
         }
     }
 }

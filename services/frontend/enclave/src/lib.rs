@@ -137,6 +137,13 @@ register_ecall_handler!(
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
+    use teaclave_test_utils::*;
 
-    pub fn run_tests() -> bool {}
+    pub fn run_tests() -> bool {
+        run_tests!(
+            service::tests::test_authorize_platform_admin,
+            service::tests::test_authorize_function_owner,
+            service::tests::test_authorize_data_owner,
+        )
+    }
 }

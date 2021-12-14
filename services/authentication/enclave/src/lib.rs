@@ -46,7 +46,7 @@ use teaclave_proto::teaclave_authentication_service::{
 use teaclave_rpc::config::SgxTrustedTlsServerConfig;
 use teaclave_rpc::server::SgxTrustedTlsServer;
 use teaclave_service_enclave_utils::ServiceEnclave;
-use teaclave_types::{EnclaveInfo, TeeServiceError, TeeServiceResult};
+use teaclave_types::{EnclaveInfo, TeeServiceError, TeeServiceResult, UserRole};
 
 mod api_service;
 mod error;
@@ -136,6 +136,11 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
     let internal_jwt_secret = api_jwt_secret.to_owned();
 
     let attested_tls_config_ref = attested_tls_config.clone();
+    {
+        let client = database.get_client();
+        create_platform_admin_user(client, "admin", "teaclave")?;
+    }
+
     let client = database.get_client();
     let api_endpoint_thread_handler = thread::spawn(move || {
         let _ = start_api_endpoint(
@@ -163,6 +168,17 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
     internal_endpoint_thread_handler
         .join()
         .expect("cannot join internal endpoint thread");
+
+    Ok(())
+}
+
+pub(crate) fn create_platform_admin_user(
+    db_client: user_db::DbClient,
+    id: &str,
+    password: &str,
+) -> Result<()> {
+    let new_user = user_info::UserInfo::new(id, password, UserRole::PlatformAdmin);
+    db_client.create_user(&new_user)?;
 
     Ok(())
 }
@@ -206,6 +222,7 @@ pub mod tests {
         run_tests!(
             api_service::tests::test_user_login,
             api_service::tests::test_user_register,
+            api_service::tests::test_user_update,
             internal_service::tests::test_user_authenticate,
             internal_service::tests::test_invalid_algorithm,
             internal_service::tests::test_invalid_issuer,

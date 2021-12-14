@@ -119,9 +119,27 @@ message RegisterFunctionRequest {
   repeated string arguments = 6;
   repeated FunctionInput inputs = 10;
   repeated FunctionOutput outputs = 11;
+  repeated string user_allowlist = 12;
 }
 
 message RegisterFunctionResponse {
+  string function_id = 1;
+}
+
+message UpdateFunctionRequest {
+  string function_id = 1;
+  string name = 2;
+  string description = 3;
+  string executor_type = 4;
+  bool public = 5;
+  bytes payload = 6;
+  repeated string arguments = 7;
+  repeated FunctionInput inputs = 10;
+  repeated FunctionOutput outputs = 11;
+  repeated string user_allowlist = 12;
+}
+
+message UpdateFunctionResponse {
   string function_id = 1;
 }
 
@@ -139,6 +157,22 @@ message GetFunctionResponse {
   repeated string arguments = 7;
   repeated FunctionInput inputs = 10;
   repeated FunctionOutput outputs = 11;
+  repeated string user_allowlist = 12;
+}
+
+message DeleteFunctionRequest {
+  string function_id = 1;
+}
+
+message DeleteFunctionResponse { }
+
+message ListFunctionsRequest {
+  string user_id = 1;
+}
+
+message ListFunctionsResponse {
+  repeated string registered_functions = 1;
+  repeated string allowed_functions = 2;
 }
 
 message DataMap {
@@ -209,6 +243,9 @@ service TeaclaveFrontend {
   rpc GetInputFile (GetInputFileRequest) returns (GetInputFileResponse);
   rpc RegisterFunction (RegisterFunctionRequest) returns (RegisterFunctionResponse);
   rpc GetFunction (GetFunctionRequest) returns (GetFunctionResponse);
+  rpc UpdateFunction (UpdateFunctionRequest) returns (UpdateFunctionResponse);
+  rpc ListFunctions (ListFunctionsRequest) returns (ListFunctionsResponse);
+  rpc DeleteFunction (DeleteFunctionRequest) returns (DeleteFunctionResponse);
   rpc CreateTask (CreateTaskRequest) returns (CreateTaskResponse);
   rpc GetTask (GetTaskRequest) returns (GetTaskResponse);
   rpc AssignData (AssignDataRequest) returns (AssignDataResponse);

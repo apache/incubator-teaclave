@@ -70,13 +70,24 @@ impl TeaclaveExecutionService {
             let staged_task = match self.pull_task() {
                 Ok(staged_task) => staged_task,
                 Err(e) => {
-                    log::warn!("PullTask Error: {:?}", e);
+                    log::debug!("PullTask Error: {:?}", e);
                     continue;
                 }
             };
 
-            log::debug!("InvokeTask: {:?}", staged_task);
             let result = self.invoke_task(&staged_task);
+            match result {
+                Ok(_) => log::debug!(
+                    "InvokeTask: {:?}, {:?}, success",
+                    staged_task.user_id,
+                    staged_task.function_id
+                ),
+                Err(_) => log::debug!(
+                    "InvokeTask: {:?}, {:?}, failure",
+                    staged_task.user_id,
+                    staged_task.function_id
+                ),
+            }
             log::debug!("InvokeTask result: {:?}", result);
 
             match self.update_task_result(&staged_task.task_id, result) {

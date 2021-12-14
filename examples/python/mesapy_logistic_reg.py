@@ -93,8 +93,6 @@ class ConfigClient:
         self.client = AuthenticationService(
             AUTHENTICATION_SERVICE_ADDRESS, AS_ROOT_CA_CERT_PATH,
             ENCLAVE_INFO_PATH).connect().get_client()
-        print(f"[+] {self.user_id} registering user")
-        self.client.user_register(self.user_id, self.user_password)
         print(f"[+] {self.user_id} login")
         token = self.client.user_login(self.user_id, self.user_password)
         self.client = FrontendService(
@@ -201,7 +199,7 @@ train = "http://localhost:6789/fixtures/functions/py_logistic_reg/train.enc"
 predict = "http://localhost:6789/fixtures/functions/py_logistic_reg/predict.enc"
 params = "http://localhost:6789/fixtures/functions/py_logistic_reg/params.out"
 scaler = "http://localhost:6789/fixtures/functions/py_logistic_reg/scaler.out"
-USER = UserClient("user0", "password")
+USER = UserClient("admin", "teaclave")
 fo_test = "http://localhost:6789/fixtures/functions/py_logistic_reg/testa.out"
 
 train_inputs = [

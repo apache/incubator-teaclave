@@ -23,13 +23,13 @@ use std::str;
 
 fn main() {
     let proto_files = [
-        "services/proto/src/proto/teaclave_access_control_service.proto",
-        "services/proto/src/proto/teaclave_authentication_service.proto",
-        "services/proto/src/proto/teaclave_common.proto",
-        "services/proto/src/proto/teaclave_storage_service.proto",
-        "services/proto/src/proto/teaclave_frontend_service.proto",
-        "services/proto/src/proto/teaclave_management_service.proto",
-        "services/proto/src/proto/teaclave_scheduler_service.proto",
+        "src/proto/teaclave_access_control_service.proto",
+        "src/proto/teaclave_authentication_service.proto",
+        "src/proto/teaclave_common.proto",
+        "src/proto/teaclave_storage_service.proto",
+        "src/proto/teaclave_frontend_service.proto",
+        "src/proto/teaclave_management_service.proto",
+        "src/proto/teaclave_scheduler_service.proto",
     ];
 
     let out_dir = env::var("OUT_DIR").expect("$OUT_DIR not set. Please build with cargo");
@@ -60,6 +60,15 @@ fn main() {
         false
     };
 
+    let proto_files = [
+        "services/proto/src/proto/teaclave_access_control_service.proto",
+        "services/proto/src/proto/teaclave_authentication_service.proto",
+        "services/proto/src/proto/teaclave_common.proto",
+        "services/proto/src/proto/teaclave_storage_service.proto",
+        "services/proto/src/proto/teaclave_frontend_service.proto",
+        "services/proto/src/proto/teaclave_management_service.proto",
+        "services/proto/src/proto/teaclave_scheduler_service.proto",
+    ];
     let mut c = Command::new("cargo");
     c.current_dir(&current_dir);
     c.args(&[

@@ -37,9 +37,6 @@ class BuiltinOnlineDecryptExample:
             AUTHENTICATION_SERVICE_ADDRESS, AS_ROOT_CA_CERT_PATH,
             ENCLAVE_INFO_PATH).connect().get_client()
 
-        print("[+] registering user")
-        client.user_register(self.user_id, self.user_password)
-
         print("[+] login")
         token = client.user_login(self.user_id, self.user_password)
 

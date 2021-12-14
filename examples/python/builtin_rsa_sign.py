@@ -24,16 +24,13 @@ from teaclave import (AuthenticationService, FrontendService,
                       FunctionOutput, OwnerList, DataMap)
 from utils import (AUTHENTICATION_SERVICE_ADDRESS, FRONTEND_SERVICE_ADDRESS,
                    AS_ROOT_CA_CERT_PATH, ENCLAVE_INFO_PATH, USER_ID,
-                   USER_PASSWORD)
+                   USER_PASSWORD, PlatformAdmin)
 
 
 def get_client(user_id, user_password):
     auth_client = AuthenticationService(
         AUTHENTICATION_SERVICE_ADDRESS, AS_ROOT_CA_CERT_PATH,
         ENCLAVE_INFO_PATH).connect().get_client()
-
-    print("[+] registering user")
-    auth_client.user_register(user_id, user_password)
 
     print("[+] login")
     token = auth_client.user_login(user_id, user_password)
@@ -92,6 +89,10 @@ def create_task(client, function_id, input_file_user):
 
 
 def rsa_task():
+    platform_admin = PlatformAdmin("admin", "teaclave")
+    platform_admin.register_user("rsa_sign_user1", "password1")
+    platform_admin.register_user("rsa_sign_user2", "password2")
+
     client1 = get_client("rsa_sign_user1", "password1")
     client2 = get_client("rsa_sign_user2", "password2")
 

@@ -35,8 +35,7 @@ class TeaclaveClientSDKTests: XCTestCase {
             enclave_info_path: enclave_info_path,
             as_root_ca_cert_path: as_root_ca_cert_path
         )!
-        let _ = client.register(id: "test_id", password: "test_password")
-        let token = try client.login(id: "test_id", password: "test_password").get()
+        let token = try client.login(id: "admin", password: "teacalve").get()
 
         let register_function_request = RegisterFunctionRequest(
             name: "builtin-echo",
@@ -78,8 +77,7 @@ class TeaclaveClientSDKTests: XCTestCase {
             enclave_info_path: enclave_info_path,
             as_root_ca_cert_path: as_root_ca_cert_path
         )!
-        let _ = user0_client.register(id: "user0", password: "password")
-        let user0_token = try user0_client.login(id: "user0", password: "password").get()
+        let user0_token = try user0_client.login(id: "admin", password: "teaclave").get()
 
         let user0_frontend_client = FrontendClient(
             address: frontend_service_address,
@@ -138,8 +136,7 @@ class TeaclaveClientSDKTests: XCTestCase {
             as_root_ca_cert_path: as_root_ca_cert_path
         )!
 
-        let _ = user1_client.register(id: "user1", password: "password")
-        let user1_token = try user1_client.login(id: "user1", password: "password").get()
+        let user1_token = try user1_client.login(id: "admin", password: "teaclave").get()
         let user1_frontend_client = FrontendClient(
             address: frontend_service_address,
             enclave_info_path: enclave_info_path,

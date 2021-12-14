@@ -115,6 +115,7 @@ pub struct StagedFunction {
     pub runtime_name: String,
 }
 
+#[derive(Default)]
 pub struct StagedFunctionBuilder {
     function: StagedFunction,
 }

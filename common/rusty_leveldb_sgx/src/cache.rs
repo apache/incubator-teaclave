@@ -34,9 +34,8 @@ impl<T> fmt::Display for LRUNode<T> {
         } else {
             writeln!(
                 f,
-                "(self: {:?}, next: {}, pre: {:?}, data:{})",
+                "(self: {:?}, next: None, pre: {:?}, data:{})",
                 self as *const _,
-                "None",
                 self.prev,
                 self.data.is_some()
             )

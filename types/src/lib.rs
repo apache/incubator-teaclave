@@ -36,6 +36,7 @@ mod staged_task;
 mod storage;
 mod task;
 mod task_state;
+mod user;
 mod worker;
 
 pub use attestation::*;
@@ -51,6 +52,7 @@ pub use staged_task::*;
 pub use storage::*;
 pub use task::*;
 pub use task_state::*;
+pub use user::*;
 pub use worker::*;
 
 #[cfg(feature = "enclave_unit_test")]
