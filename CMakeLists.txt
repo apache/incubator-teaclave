@@ -107,6 +107,18 @@ parse_cargo_packages(
   EDL_NAMES
   EDL_LIB_NAMES)
 
+if(NOT TEST_MODE)
+  list(FILTER SGX_APPS EXCLUDE REGEX "_tests$")
+  list(FILTER SGX_APP_CATEGORIES EXCLUDE REGEX "tests")
+  list(FILTER SGX_LIBS EXCLUDE REGEX "_tests_enclave$")
+  list(FILTER SGX_LIB_CATEGORIES EXCLUDE REGEX "tests")
+endif()
+
+if(NOT DCAP)
+  list(FILTER UNIX_APPS EXCLUDE REGEX "dcap")
+  list(FILTER UNIX_APP_CATEGORIES EXCLUDE REGEX "dcap")
+endif()
+
 include(TeaclaveGenVars)
 
 # ========== CONFIG-TIME CHECKS AND INITIALIZATIONS BEGIN =========
@@ -123,9 +135,6 @@ math(EXPR UNIX_APP_LAST_INDEX "${UNIX_APP_LEN} - 1")
 foreach(_i RANGE ${UNIX_APP_LAST_INDEX})
   list(GET UNIX_APPS ${_i} _pkg_name)
   list(GET UNIX_APP_CATEGORIES ${_i} _category)
-  if(${_category} STREQUAL "dcap" AND NOT DCAP)
-    continue()
-  endif()
   add_cargo_build_target(
     ${_pkg_name}
     TARGET_NAME
