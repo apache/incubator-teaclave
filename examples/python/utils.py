@@ -16,6 +16,7 @@
 # under the License.
 
 import os
+from teaclave import (AuthenticationService, FrontendService)
 
 HOSTNAME = 'localhost'
 AUTHENTICATION_SERVICE_ADDRESS = (HOSTNAME, 7776)
@@ -38,16 +39,25 @@ else:
     AS_ROOT_CA_CERT_PATH = "../../keys/" + AS_ROOT_CERT_FILENAME
     ENCLAVE_INFO_PATH = "../../release/examples/enclave_info.toml"
 
-from teaclave import (AuthenticationService, AuthenticationClient)
-
 
 class PlatformAdmin:
     def __init__(self, user_id: str, user_password: str):
-        self.client = AuthenticationService(
-            AUTHENTICATION_SERVICE_ADDRESS, AS_ROOT_CA_CERT_PATH,
-            ENCLAVE_INFO_PATH).connect().get_client()
+        self.client = AuthenticationService(AUTHENTICATION_SERVICE_ADDRESS,
+                                            AS_ROOT_CA_CERT_PATH,
+                                            ENCLAVE_INFO_PATH).connect()
         token = self.client.user_login(user_id, user_password)
         self.client.metadata = {"id": user_id, "token": token}
 
     def register_user(self, user_id: str, user_password: str):
         self.client.user_register(user_id, user_password, "PlatformAdmin", "")
+
+
+def connect_authentication_service():
+    return AuthenticationService(AUTHENTICATION_SERVICE_ADDRESS,
+                                 AS_ROOT_CA_CERT_PATH,
+                                 ENCLAVE_INFO_PATH).connect()
+
+
+def connect_frontend_service():
+    return FrontendService(FRONTEND_SERVICE_ADDRESS, AS_ROOT_CA_CERT_PATH,
+                           ENCLAVE_INFO_PATH).connect()

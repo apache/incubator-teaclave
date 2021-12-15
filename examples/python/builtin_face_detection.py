@@ -24,12 +24,7 @@ import json
 from PIL import Image, ImageDraw
 import requests
 
-from teaclave import (AuthenticationService, FrontendService, OwnerList,
-                      AuthenticationClient, FrontendClient, DataMap,
-                      FunctionInput)
-from utils import (AUTHENTICATION_SERVICE_ADDRESS, FRONTEND_SERVICE_ADDRESS,
-                   AS_ROOT_CA_CERT_PATH, ENCLAVE_INFO_PATH, USER_ID,
-                   USER_PASSWORD)
+from utils import USER_ID, USER_PASSWORD, connect_authentication_service, connect_frontend_service
 
 
 class BuiltinFaceDetectionExample:
@@ -38,16 +33,11 @@ class BuiltinFaceDetectionExample:
         self.user_password = user_password
 
     def detect_face(self, image):
-        client = AuthenticationService(
-            AUTHENTICATION_SERVICE_ADDRESS, AS_ROOT_CA_CERT_PATH,
-            ENCLAVE_INFO_PATH).connect().get_client()
+        with connect_authentication_service() as client:
+            print("[+] login")
+            token = client.user_login(self.user_id, self.user_password)
 
-        print("[+] login")
-        token = client.user_login(self.user_id, self.user_password)
-
-        client = FrontendService(FRONTEND_SERVICE_ADDRESS,
-                                 AS_ROOT_CA_CERT_PATH,
-                                 ENCLAVE_INFO_PATH).connect().get_client()
+        client = connect_frontend_service()
         metadata = {"id": self.user_id, "token": token}
         client.metadata = metadata
 
@@ -82,6 +72,7 @@ class BuiltinFaceDetectionExample:
         print("[+] getting result")
         result = client.get_task_result(task_id)
         print("[+] done")
+        client.close()
 
         return bytes(result)
 

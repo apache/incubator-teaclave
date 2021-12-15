@@ -19,11 +19,8 @@
 
 import sys
 
-from teaclave import (AuthenticationService, FrontendService, FunctionInput,
-                      DataMap, OwnerList)
-from utils import (AUTHENTICATION_SERVICE_ADDRESS, FRONTEND_SERVICE_ADDRESS,
-                   AS_ROOT_CA_CERT_PATH, ENCLAVE_INFO_PATH, USER_ID,
-                   USER_PASSWORD, PlatformAdmin)
+from teaclave import FunctionInput, FunctionOutput, OwnerList, DataMap
+from utils import USER_ID, USER_PASSWORD, connect_authentication_service, connect_frontend_service, PlatformAdmin
 
 # If you're using `docker-compose` to start the Teaclave server containers,
 # please change `localhost` to `teaclave-file-service`
@@ -42,17 +39,15 @@ PAYLOAD_FILE = "wasm_tvm_mnist_payload/target/wasm32-unknown-unknown/release/mni
 
 def main():
     platform_admin = PlatformAdmin("admin", "teaclave")
-    platform_admin.register_user(USER_ID, USER_PASSWORD)
+    try:
+        platform_admin.register_user(USER_ID, USER_PASSWORD)
+    except Exception:
+        pass
 
-    client = AuthenticationService(AUTHENTICATION_SERVICE_ADDRESS,
-                                   AS_ROOT_CA_CERT_PATH,
-                                   ENCLAVE_INFO_PATH).connect().get_client()
-
-    print(f"[+] {USER_ID} login")
-    token = client.user_login(USER_ID, USER_PASSWORD)
-
-    client = FrontendService(FRONTEND_SERVICE_ADDRESS, AS_ROOT_CA_CERT_PATH,
-                             ENCLAVE_INFO_PATH).connect().get_client()
+    with connect_authentication_service() as client:
+        print(f"[+] login")
+        token = client.user_login(USER_ID, USER_PASSWORD)
+    client = connect_frontend_service()
     metadata = {"id": USER_ID, "token": token}
     client.metadata = metadata
 
@@ -99,6 +94,7 @@ def main():
 
     print(f"[+] {USER_ID} getting task result")
     result = client.get_task_result(task_id)
+    client.close()
 
     print("[+] User result: " + bytes(result).decode("utf-8"))
 

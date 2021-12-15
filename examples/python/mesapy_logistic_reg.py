@@ -23,12 +23,8 @@ An example about Logistic Regression in MesaPy.
 import sys
 import binascii
 from typing import List
-from teaclave import (AuthenticationService, FrontendService,
-                      AuthenticationClient, FrontendClient, FunctionInput,
-                      FunctionOutput, OwnerList, DataMap)
-from utils import (AUTHENTICATION_SERVICE_ADDRESS, FRONTEND_SERVICE_ADDRESS,
-                   AS_ROOT_CA_CERT_PATH, ENCLAVE_INFO_PATH, USER_ID,
-                   USER_PASSWORD)
+from teaclave import FunctionInput, FunctionOutput, OwnerList, DataMap
+from utils import USER_ID, USER_PASSWORD, connect_authentication_service, connect_frontend_service, PlatformAdmin
 
 from enum import Enum
 
@@ -90,14 +86,10 @@ class ConfigClient:
     def __init__(self, user_id, user_password):
         self.user_id = user_id
         self.user_password = user_password
-        self.client = AuthenticationService(
-            AUTHENTICATION_SERVICE_ADDRESS, AS_ROOT_CA_CERT_PATH,
-            ENCLAVE_INFO_PATH).connect().get_client()
-        print(f"[+] {self.user_id} login")
-        token = self.client.user_login(self.user_id, self.user_password)
-        self.client = FrontendService(
-            FRONTEND_SERVICE_ADDRESS, AS_ROOT_CA_CERT_PATH,
-            ENCLAVE_INFO_PATH).connect().get_client()
+        with connect_authentication_service() as client:
+            print(f"[+] {self.user_id} login")
+            token = client.user_login(self.user_id, self.user_password)
+        self.client = connect_frontend_service()
         metadata = {"id": self.user_id, "token": token}
         self.client.metadata = metadata
 

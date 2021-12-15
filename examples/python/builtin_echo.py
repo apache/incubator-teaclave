@@ -19,11 +19,7 @@
 
 import sys
 
-from teaclave import (AuthenticationService, FrontendService,
-                      AuthenticationClient, FrontendClient)
-from utils import (AUTHENTICATION_SERVICE_ADDRESS, FRONTEND_SERVICE_ADDRESS,
-                   AS_ROOT_CA_CERT_PATH, ENCLAVE_INFO_PATH, USER_ID,
-                   USER_PASSWORD)
+from utils import USER_ID, USER_PASSWORD, connect_authentication_service, connect_frontend_service
 
 
 class BuiltinEchoExample:
@@ -32,37 +28,33 @@ class BuiltinEchoExample:
         self.user_password = user_password
 
     def echo(self, message="Hello, Teaclave!"):
-        client = AuthenticationService(
-            AUTHENTICATION_SERVICE_ADDRESS, AS_ROOT_CA_CERT_PATH,
-            ENCLAVE_INFO_PATH).connect().get_client()
+        with connect_authentication_service() as client:
+            print("[+] login")
+            token = client.user_login(self.user_id, self.user_password)
 
-        print("[+] login")
-        token = client.user_login(self.user_id, self.user_password)
+        with connect_frontend_service() as client:
+            metadata = {"id": self.user_id, "token": token}
+            client.metadata = metadata
 
-        client = FrontendService(FRONTEND_SERVICE_ADDRESS,
-                                 AS_ROOT_CA_CERT_PATH,
-                                 ENCLAVE_INFO_PATH).connect().get_client()
-        metadata = {"id": self.user_id, "token": token}
-        client.metadata = metadata
+            print("[+] registering function")
+            function_id = client.register_function(
+                name="builtin-echo",
+                description="Native Echo Function",
+                executor_type="builtin",
+                arguments=["message"])
 
-        print("[+] registering function")
-        function_id = client.register_function(
-            name="builtin-echo",
-            description="Native Echo Function",
-            executor_type="builtin",
-            arguments=["message"])
+            print("[+] creating task")
+            task_id = client.create_task(
+                function_id=function_id,
+                function_arguments={"message": message},
+                executor="builtin")
 
-        print("[+] creating task")
-        task_id = client.create_task(function_id=function_id,
-                                     function_arguments={"message": message},
-                                     executor="builtin")
+            print("[+] invoking task")
+            client.invoke_task(task_id)
 
-        print("[+] invoking task")
-        client.invoke_task(task_id)
-
-        print("[+] getting result")
-        result = client.get_task_result(task_id)
-        print("[+] done")
+            print("[+] getting result")
+            result = client.get_task_result(task_id)
+            print("[+] done")
 
         return bytes(result)
 

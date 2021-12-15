@@ -42,9 +42,8 @@ from OpenSSL.crypto import X509Store, X509StoreContext
 from OpenSSL import crypto
 
 __all__ = [
-    'FrontendClient', 'FrontendService', 'AuthenticationClient',
-    'AuthenticationService', 'FunctionInput', 'FunctionOutput', 'OwnerList',
-    'DataMap'
+    'FrontendService', 'AuthenticationService', 'FunctionInput',
+    'FunctionOutput', 'OwnerList', 'DataMap'
 ]
 
 Metadata = Dict[str, str]
@@ -52,6 +51,55 @@ Metadata = Dict[str, str]
 
 class Request:
     pass
+
+
+class TeaclaveException(Exception):
+    pass
+
+
+class TeaclaveService:
+    channel = None
+    metadata = None
+
+    def __init__(self, name: str, address: Tuple[str, int],
+                 as_root_ca_cert_path: str, enclave_info_path: str):
+        self._context = ssl._create_unverified_context()
+        self._name = name
+        self._address = address
+        self._as_root_ca_cert_path = as_root_ca_cert_path
+        self._enclave_info_path = enclave_info_path
+        self._closed = False
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        if not self._closed:
+            self.close()
+
+    def close(self):
+        self._closed = True
+        if self.channel: self.channel.close()
+
+    def check_channel(self):
+        if not self.channel: raise TeaclaveException("Channel is None")
+
+    def check_metadata(self):
+        if not self.metadata: raise TeaclaveException("Metadata is None")
+
+    def connect(self):
+        """Establish trusted connection and verify remote attestation report.
+        """
+        sock = socket.create_connection(self._address)
+        channel = self._context.wrap_socket(sock,
+                                            server_hostname=self._address[0])
+        cert = channel.getpeercert(binary_form=True)
+        if not cert: raise TeaclaveException("Peer cert is None")
+        _verify_report(self._as_root_ca_cert_path, self._enclave_info_path,
+                       cert, self._name)
+        self.channel = channel
+
+        return self
 
 
 class FunctionInput:
@@ -134,7 +182,7 @@ class UserLoginRequest(Request):
         self.password = user_password
 
 
-class AuthenticationService:
+class AuthenticationService(TeaclaveService):
     """
     Establish trusted channel with the authentication service and provide
     clients to send request through RPC.
@@ -146,51 +194,10 @@ class AuthenticationService:
         enclave_info_path: Path of enclave info to verify the remote service in
             the attestation report.
     """
-    _context = ssl._create_unverified_context()
-    _channel = None
-
     def __init__(self, address: Tuple[str, int], as_root_ca_cert_path: str,
                  enclave_info_path: str):
-        self.address = address
-        self.as_root_ca_cert_path = as_root_ca_cert_path
-        self.enclave_info_path = enclave_info_path
-
-    def connect(self):
-        """Establish trusted connection and verify remote attestation report.
-
-        Returns:
-            AuthenticationService: The original object which can be chained
-                with other methods.
-        """
-        sock = socket.create_connection(self.address)
-        channel = self._context.wrap_socket(sock,
-                                            server_hostname=self.address[0])
-        cert = channel.getpeercert(binary_form=True)
-        _verify_report(self.as_root_ca_cert_path, self.enclave_info_path, cert,
-                       "authentication")
-
-        self._channel = channel
-
-        return self
-
-    def get_client(self):
-        """Get a client of authentication service to send RPC requests.
-
-        Returns:
-            AuthenticationClient: Used for send/receive RPC requests.
-        """
-        return AuthenticationClient(self._channel)
-
-
-class AuthenticationClient:
-    """Client to communicate with the authentication service.
-
-    Args:
-        channel: Trusted TLS socket (verified with remote attestation).
-    """
-    def __init__(self, channel: ssl.SSLSocket, metadata: Metadata = None):
-        self.channel = channel
-        self.metadata = metadata
+        super().__init__("authentication", address, as_root_ca_cert_path,
+                         enclave_info_path)
 
     def user_register(self, user_id: str, user_password: str, role: str,
                       attribute: str):
@@ -202,10 +209,16 @@ class AuthenticationClient:
             role: Role of user.
             attribute: Attribute related to the role.
         """
+        self.check_channel()
+        self.check_metadata()
         request = UserRegisterRequest(self.metadata, user_id, user_password,
                                       role, attribute)
         _write_message(self.channel, request)
-        _ = _read_message(self.channel)
+        response = _read_message(self.channel)
+        if response["result"] == "ok":
+            pass
+        else:
+            raise TeaclaveException("Failed to register user")
 
     def user_login(self, user_id: str, user_password: str) -> str:
         """Login and get a session token.
@@ -217,56 +230,14 @@ class AuthenticationClient:
         Returns:
             str: User login token.
         """
+        self.check_channel()
         request = UserLoginRequest(user_id, user_password)
         _write_message(self.channel, request)
         response = _read_message(self.channel)
-        return response["content"]["token"]
-
-
-class FrontendService:
-    """Establish trusted channel with the frontend service and provide
-    clients to send request through RPC.
-
-    Args:
-        address: The address of the remote services in tuple.
-        as_root_ca_cert_path: Root CA certification of the attestation services
-            to verify the attestation report.
-        enclave_info_path: Path of enclave info to verify the remote service in
-            the attestation report.
-    """
-    _context = ssl._create_unverified_context()
-    _channel = None
-
-    def __init__(self, address: Tuple[str, int], as_root_ca_cert_path: str,
-                 enclave_info_path: str):
-        self.address = address
-        self.as_root_ca_cert_path = as_root_ca_cert_path
-        self.enclave_info_path = enclave_info_path
-
-    def connect(self):
-        """Establish trusted connection and verify remote attestation report.
-
-        Returns:
-            FrontendService: The original object which can be chained
-                with other methods.
-        """
-        sock = socket.create_connection(self.address)
-        channel = self._context.wrap_socket(sock,
-                                            server_hostname=self.address[0])
-        cert = channel.getpeercert(binary_form=True)
-        _verify_report(self.as_root_ca_cert_path, self.enclave_info_path, cert,
-                       "frontend")
-
-        self._channel = channel
-        return self
-
-    def get_client(self):
-        """Get a client of frontend service to send RPC requests.
-
-        Returns:
-            FrontendClient: Used for send/receive RPC requests.
-        """
-        return FrontendClient(self._channel)
+        if response["result"] == "ok":
+            return response["content"]["token"]
+        else:
+            raise TeaclaveException("Failed to login user")
 
 
 class RegisterFunctionRequest(Request):
@@ -407,10 +378,21 @@ class GetTaskRequest(Request):
         self.task_id = task_id
 
 
-class FrontendClient:
-    def __init__(self, channel: ssl.SSLSocket, metadata: Metadata = None):
-        self.channel = channel
-        self.metadata = metadata
+class FrontendService(TeaclaveService):
+    """Establish trusted channel with the frontend service and provide
+    clients to send request through RPC.
+
+    Args:
+        address: The address of the remote services in tuple.
+        as_root_ca_cert_path: Root CA certification of the attestation services
+            to verify the attestation report.
+        enclave_info_path: Path of enclave info to verify the remote service in
+            the attestation report.
+    """
+    def __init__(self, address: Tuple[str, int], as_root_ca_cert_path: str,
+                 enclave_info_path: str):
+        super().__init__("frontend", address, as_root_ca_cert_path,
+                         enclave_info_path)
 
     def register_function(
         self,
@@ -424,13 +406,18 @@ class FrontendClient:
         outputs: List[FunctionOutput] = [],
         user_allowlist: List[str] = [],
     ):
+        self.check_metadata()
+        self.check_channel()
         request = RegisterFunctionRequest(self.metadata, name, description,
                                           executor_type, public, payload,
                                           arguments, inputs, outputs,
                                           user_allowlist)
         _write_message(self.channel, request)
         response = _read_message(self.channel)
-        return response["content"]["function_id"]
+        if response["result"] == "ok":
+            return response["content"]["function_id"]
+        else:
+            raise TeaclaveException("Failed to register function")
 
     def update_function(
         self,
@@ -445,47 +432,77 @@ class FrontendClient:
         outputs: List[FunctionOutput] = [],
         user_allowlist: List[str] = [],
     ):
+        self.check_metadata()
+        self.check_channel()
         request = UpdateFunctionRequest(self.metadata, function_id, name,
                                         description, executor_type, public,
                                         payload, arguments, inputs, outputs,
                                         user_allowlist)
         _write_message(self.channel, request)
         response = _read_message(self.channel)
-        return response["content"]["function_id"]
+        if response["result"] == "ok":
+            return response["content"]["function_id"]
+        else:
+            raise TeaclaveException("Failed to update function")
 
     def list_functions(self, user_id: str):
+        self.check_metadata()
+        self.check_channel()
         request = ListFunctionsRequest(self.metadata, user_id)
         _write_message(self.channel, request)
         response = _read_message(self.channel)
-        return response["content"]["function_ids"]
+        if response["result"] == "ok":
+            return response["content"]["function_ids"]
+        else:
+            raise TeaclaveException("Failed to list functions")
 
     def get_function(self, function_id: str):
+        self.check_metadata()
+        self.check_channel()
         request = GetFunctionRequest(self.metadata, function_id)
         _write_message(self.channel, request)
         response = _read_message(self.channel)
-        return response["content"]
+        if response["result"] == "ok":
+            return response["content"]
+        else:
+            raise TeaclaveException("Failed to get function")
 
     def delete_function(self, function_id: str):
+        self.check_metadata()
+        self.check_channel()
         request = DeleteFunctionRequest(self.metadata, function_id)
         _write_message(self.channel, request)
         response = _read_message(self.channel)
-        return response["content"]
+        if response["result"] == "ok":
+            return response["content"]
+        else:
+            raise TeaclaveException("Failed to delete function")
 
     def register_input_file(self, url: str, schema: str, key: List[int],
                             iv: List[int], cmac: List[int]):
+        self.check_metadata()
+        self.check_channel()
         request = RegisterInputFileRequest(self.metadata, url, cmac,
                                            CryptoInfo(schema, key, iv))
         _write_message(self.channel, request)
         response = _read_message(self.channel)
-        return response["content"]["data_id"]
+        if response["result"] == "ok":
+            return response["content"]["data_id"]
+        else:
+            raise TeaclaveException("Failed to register input file")
 
     def register_output_file(self, url: str, schema: str, key: List[int],
                              iv: List[int]):
+        self.check_metadata()
+        self.check_channel()
         request = RegisterOutputFileRequest(self.metadata, url,
                                             CryptoInfo(schema, key, iv))
         _write_message(self.channel, request)
         response = _read_message(self.channel)
-        return response["content"]["data_id"]
+        if response["result"] == "ok":
+            return response["content"]["data_id"]
+        else:
+            raise TeaclaveException("Failed to register output file")
 
     def create_task(self,
                     function_id: str,
@@ -493,39 +510,63 @@ class FrontendClient:
                     executor: str,
                     inputs_ownership: List[OwnerList] = [],
                     outputs_ownership: List[OwnerList] = []):
+        self.check_metadata()
+        self.check_channel()
         function_arguments = json.dumps(function_arguments)
         request = CreateTaskRequest(self.metadata, function_id,
                                     function_arguments, executor,
                                     inputs_ownership, outputs_ownership)
         _write_message(self.channel, request)
         response = _read_message(self.channel)
-        return response["content"]["task_id"]
+        if response["result"] == "ok":
+            return response["content"]["task_id"]
+        else:
+            raise TeaclaveException("Failed to create task")
 
     def assign_data_to_task(self, task_id: str, inputs: List[DataMap],
                             outputs: List[DataMap]):
+        self.check_metadata()
+        self.check_channel()
         request = AssignDataRequest(self.metadata, task_id, inputs, outputs)
         _write_message(self.channel, request)
-        _ = _read_message(self.channel)
-        return
+        response = _read_message(self.channel)
+        if response["result"] == "ok":
+            pass
+        else:
+            raise TeaclaveException("Failed to assign data to task")
 
     def approve_task(self, task_id: str):
+        self.check_metadata()
+        self.check_channel()
         request = ApproveTaskRequest(self.metadata, task_id)
         _write_message(self.channel, request)
-        _ = _read_message(self.channel)
-        return
+        response = _read_message(self.channel)
+        if response["result"] == "ok":
+            pass
+        else:
+            raise TeaclaveException("Failed to approve task")
 
     def invoke_task(self, task_id: str):
+        self.check_metadata()
+        self.check_channel()
         request = InvokeTaskRequest(self.metadata, task_id)
         _write_message(self.channel, request)
         response = _read_message(self.channel)
-        assert (response["result"] == "ok")
+        if response["result"] == "ok":
+            pass
+        else:
+            raise TeaclaveException("Failed to invoke task")
 
     def get_task_result(self, task_id: str):
+        self.check_metadata()
+        self.check_channel()
         request = GetTaskRequest(self.metadata, task_id)
 
         while True:
             _write_message(self.channel, request)
             response = _read_message(self.channel)
+            if response["result"] != "ok":
+                raise TeaclaveException("Failed to get task result")
             time.sleep(1)
             if response["content"]["status"] == 10:
                 break
@@ -533,13 +574,18 @@ class FrontendClient:
         return response["content"]["result"]["result"]["Ok"]["return_value"]
 
     def get_output_cmac_by_tag(self, task_id: str, tag: str):
+        self.check_metadata()
+        self.check_channel()
         request = GetTaskRequest(self.metadata, task_id)
         while True:
             _write_message(self.channel, request)
             response = _read_message(self.channel)
+            if response["result"] != "ok":
+                raise TeaclaveException("Failed to get task result")
             time.sleep(1)
             if response["content"]["status"] == 10:
                 break
+
         return response["content"]["result"]["result"]["Ok"]["tags_map"][tag]
 
 
