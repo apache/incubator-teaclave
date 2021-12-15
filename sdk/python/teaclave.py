@@ -258,7 +258,7 @@ class RegisterFunctionRequest(Request):
         self.user_allowlist = user_allowlist
 
 
-class UpdateFunctionRequest:
+class UpdateFunctionRequest(Request):
     def __init__(self, metadata: Metadata, function_id: str, name: str,
                  description: str, executor_type: str, public: bool,
                  payload: List[int], arguments: List[str],
@@ -278,21 +278,21 @@ class UpdateFunctionRequest:
         self.user_allowlist = user_allowlist
 
 
-class ListFunctionsRequest:
+class ListFunctionsRequest(Request):
     def __init__(self, metadata: Metadata, user_id: str):
         self.request = "list_functions"
         self.metadata = metadata
         self.user_id = user_id
 
 
-class DeleteFunctionRequest:
+class DeleteFunctionRequest(Request):
     def __init__(self, metadata: Metadata, function_id: str):
         self.request = "delete_function"
         self.metadata = metadata
         self.function_id = function_id
 
 
-class GetFunctionRequest:
+class GetFunctionRequest(Request):
     def __init__(self, metadata: Metadata, function_id: str):
         self.request = "get_function"
         self.metadata = metadata
