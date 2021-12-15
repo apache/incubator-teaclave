@@ -267,10 +267,23 @@ impl TeaclaveManagement for TeaclaveManagementService {
 
         let mut u = User::default();
         u.id = user_id;
-        u.registered_functions
-            .push(function.external_id().to_string());
-        self.write_to_db(&u)
-            .map_err(|_| TeaclaveManagementServiceError::StorageError)?;
+        let external_id = u.external_id();
+
+        let user: Result<User> = self.read_from_db(&external_id);
+        match user {
+            Ok(mut us) => {
+                us.registered_functions
+                    .push(function.external_id().to_string());
+                self.write_to_db(&us)
+                    .map_err(|_| TeaclaveManagementServiceError::StorageError)?;
+            }
+            Err(_) => {
+                u.registered_functions
+                    .push(function.external_id().to_string());
+                self.write_to_db(&u)
+                    .map_err(|_| TeaclaveManagementServiceError::StorageError)?;
+            }
+        }
 
         // Update allowed function list for users
         for user_id in &function.user_allowlist {
