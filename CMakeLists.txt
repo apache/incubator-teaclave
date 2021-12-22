@@ -195,6 +195,7 @@ add_custom_command(
   COMMAND
     wget -qN https://mesapy.org/release/${MESAPY_VERSION}-mesapy-sgx.tar.gz &&
     tar xzf ${MESAPY_VERSION}-mesapy-sgx.tar.gz
+  DEPENDS prep
   WORKING_DIRECTORY ${TEACLAVE_OUT_DIR})
 else()
   add_custom_command(
@@ -208,6 +209,7 @@ else()
         sgx/sgx_ulibc/libsgx_ulibc.a
         sgx/examples/exec/Enclave/src/ffi.o
         ${TEACLAVE_OUT_DIR}
+    DEPENDS prep
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/third_party/mesapy)
 endif()
 
