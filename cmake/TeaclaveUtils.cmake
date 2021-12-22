@@ -245,6 +245,10 @@ function(add_enclave_sig_target_n_hooks)
   # Hook the convenience targets for SGX modules so manually `make teaclave_execution_service/teaclave_frontend_service/...`
   # will trigger updating enclave sig files
   foreach(sgx_module ${SGX_MODULES})
+    if(sgx_module MATCHES "_tool$")
+      continue()
+    endif()
+
     add_custom_command(
       TARGET ${sgx_module}
       POST_BUILD
