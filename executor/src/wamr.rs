@@ -17,10 +17,10 @@
 
 use std::prelude::v1::*;
 
-use crate::context::reset_thread_context;
-use crate::context::set_thread_context;
-use crate::context::Context;
-use crate::context::{
+use teaclave_executor_context::context::reset_thread_context;
+use teaclave_executor_context::context::set_thread_context;
+use teaclave_executor_context::context::Context;
+use teaclave_executor_context::context::{
     wasm_close_file, wasm_create_output, wasm_open_input, wasm_read_file, wasm_write_file,
 };
 

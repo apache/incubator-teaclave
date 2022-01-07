@@ -22,34 +22,7 @@ extern crate sgx_tstd as std;
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
 
+#[macro_use]
 extern crate log;
 
-#[cfg(executor_builtin)]
-mod builtin;
-#[cfg(executor_mesapy)]
-mod mesapy;
-#[cfg(executor_wamr)]
-mod wamr;
-
-#[cfg(executor_builtin)]
-pub use builtin::BuiltinFunctionExecutor;
-#[cfg(executor_mesapy)]
-pub use mesapy::MesaPy;
-#[cfg(executor_wamr)]
-pub use wamr::WAMicroRuntime;
-
-#[cfg(feature = "enclave_unit_test")]
-pub mod tests {
-    use super::*;
-
-    pub fn run_tests() -> bool {
-        let mut v: Vec<bool> = Vec::new();
-        #[cfg(executor_mesapy)]
-        v.push(mesapy::tests::run_tests());
-        #[cfg(executor_builtin)]
-        v.push(builtin::tests::run_tests());
-        #[cfg(executor_wamr)]
-        v.push(wamr::tests::run_tests());
-        v.iter().all(|&x| x)
-    }
-}
+pub mod context;
