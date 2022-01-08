@@ -17,9 +17,9 @@
 
 use std::prelude::v1::*;
 
-use crate::context::reset_thread_context;
-use crate::context::set_thread_context;
-use crate::context::Context;
+use teaclave_executor_context::context::reset_thread_context;
+use teaclave_executor_context::context::set_thread_context;
+use teaclave_executor_context::context::Context;
 
 use std::ffi::CString;
 
