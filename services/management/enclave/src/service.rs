@@ -23,16 +23,16 @@ use std::prelude::v1::*;
 use std::sync::{Arc, SgxMutex as Mutex};
 use teaclave_proto::teaclave_frontend_service::{
     ApproveTaskRequest, ApproveTaskResponse, AssignDataRequest, AssignDataResponse,
-    CreateTaskRequest, CreateTaskResponse, DeleteFunctionRequest, DeleteFunctionResponse,
-    GetFunctionRequest, GetFunctionResponse, GetInputFileRequest, GetInputFileResponse,
-    GetOutputFileRequest, GetOutputFileResponse, GetTaskRequest, GetTaskResponse,
-    InvokeTaskRequest, InvokeTaskResponse, ListFunctionsRequest, ListFunctionsResponse,
-    RegisterFunctionRequest, RegisterFunctionResponse, RegisterFusionOutputRequest,
-    RegisterFusionOutputResponse, RegisterInputFileRequest, RegisterInputFileResponse,
-    RegisterInputFromOutputRequest, RegisterInputFromOutputResponse, RegisterOutputFileRequest,
-    RegisterOutputFileResponse, UpdateFunctionRequest, UpdateFunctionResponse,
-    UpdateInputFileRequest, UpdateInputFileResponse, UpdateOutputFileRequest,
-    UpdateOutputFileResponse,
+    CancelTaskRequest, CancelTaskResponse, CreateTaskRequest, CreateTaskResponse,
+    DeleteFunctionRequest, DeleteFunctionResponse, GetFunctionRequest, GetFunctionResponse,
+    GetInputFileRequest, GetInputFileResponse, GetOutputFileRequest, GetOutputFileResponse,
+    GetTaskRequest, GetTaskResponse, InvokeTaskRequest, InvokeTaskResponse, ListFunctionsRequest,
+    ListFunctionsResponse, RegisterFunctionRequest, RegisterFunctionResponse,
+    RegisterFusionOutputRequest, RegisterFusionOutputResponse, RegisterInputFileRequest,
+    RegisterInputFileResponse, RegisterInputFromOutputRequest, RegisterInputFromOutputResponse,
+    RegisterOutputFileRequest, RegisterOutputFileResponse, UpdateFunctionRequest,
+    UpdateFunctionResponse, UpdateInputFileRequest, UpdateInputFileResponse,
+    UpdateOutputFileRequest, UpdateOutputFileResponse,
 };
 use teaclave_proto::teaclave_management_service::TeaclaveManagement;
 use teaclave_proto::teaclave_storage_service::{
@@ -629,6 +629,54 @@ impl TeaclaveManagement for TeaclaveManagementService {
             .map_err(|_| TeaclaveManagementServiceError::StorageError)?;
 
         Ok(InvokeTaskResponse)
+    }
+
+    // access_control:
+    // 1) user_id == task.creator
+    // 2) user_role == admin
+    fn cancel_task(
+        &self,
+        request: Request<CancelTaskRequest>,
+    ) -> TeaclaveServiceResponseResult<CancelTaskResponse> {
+        let user_id = self.get_request_user_id(request.metadata())?;
+        let role = self.get_request_role(request.metadata())?;
+        let request = request.message;
+
+        let ts: TaskState = self
+            .read_from_db(&request.task_id)
+            .map_err(|_| TeaclaveManagementServiceError::PermissionDenied)?;
+
+        match role {
+            UserRole::PlatformAdmin => {}
+            _ => {
+                ensure!(
+                    ts.has_creator(&user_id),
+                    TeaclaveManagementServiceError::PermissionDenied
+                );
+            }
+        }
+
+        match ts.status {
+            // need scheduler to cancel the task
+            TaskStatus::Staged | TaskStatus::Running => {
+                self.enqueue_to_db(CANCEL_QUEUE_KEY.as_bytes(), &ts)?;
+            }
+            _ => {
+                // race will not affect correctness/privacy
+                let task: Task<Cancel> = ts.try_into().map_err(|e| {
+                    log::warn!("Cancel state error: {:?}", e);
+                    TeaclaveManagementServiceError::PermissionDenied
+                })?;
+
+                log::debug!("Canceled Task: {:?}", task);
+
+                let ts: TaskState = task.into();
+                self.write_to_db(&ts)
+                    .map_err(|_| TeaclaveManagementServiceError::StorageError)?;
+            }
+        }
+
+        Ok(CancelTaskResponse)
     }
 }
 

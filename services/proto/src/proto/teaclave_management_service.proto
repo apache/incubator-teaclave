@@ -43,4 +43,5 @@ service TeaclaveManagement {
   rpc AssignData (teaclave_frontend_service_proto.AssignDataRequest) returns (teaclave_frontend_service_proto.AssignDataResponse);
   rpc ApproveTask (teaclave_frontend_service_proto.ApproveTaskRequest) returns (teaclave_frontend_service_proto.ApproveTaskResponse);
   rpc InvokeTask (teaclave_frontend_service_proto.InvokeTaskRequest) returns (teaclave_frontend_service_proto.InvokeTaskResponse);
+  rpc CancelTask (teaclave_frontend_service_proto.CancelTaskRequest) returns (teaclave_frontend_service_proto.CancelTaskResponse);
 }

@@ -111,6 +111,8 @@ pub fn i32_to_task_status(status: i32) -> Result<TaskStatus> {
         Some(proto::TaskStatus::Staged) => TaskStatus::Staged,
         Some(proto::TaskStatus::Running) => TaskStatus::Running,
         Some(proto::TaskStatus::Finished) => TaskStatus::Finished,
+        Some(proto::TaskStatus::Failed) => TaskStatus::Failed,
+        Some(proto::TaskStatus::Canceled) => TaskStatus::Canceled,
         None => bail!("invalid task status"),
     };
     Ok(ret)
@@ -124,6 +126,8 @@ pub fn i32_from_task_status(status: TaskStatus) -> i32 {
         TaskStatus::Staged => proto::TaskStatus::Staged as i32,
         TaskStatus::Running => proto::TaskStatus::Running as i32,
         TaskStatus::Finished => proto::TaskStatus::Finished as i32,
+        TaskStatus::Failed => proto::TaskStatus::Failed as i32,
+        TaskStatus::Canceled => proto::TaskStatus::Canceled as i32,
     }
 }
 
@@ -192,5 +196,106 @@ impl std::convert::From<TaskResult> for proto::TaskResult {
         };
 
         proto::TaskResult { result: opt_result }
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum ExecutorStatus {
+    Idle,
+    Executing,
+}
+
+impl std::convert::TryFrom<proto::ExecutorStatus> for ExecutorStatus {
+    type Error = Error;
+    fn try_from(status: proto::ExecutorStatus) -> Result<Self> {
+        match status {
+            proto::ExecutorStatus::Idle => Ok(ExecutorStatus::Idle),
+            proto::ExecutorStatus::Executing => Ok(ExecutorStatus::Executing),
+        }
+    }
+}
+
+impl std::convert::TryFrom<i32> for ExecutorStatus {
+    type Error = Error;
+    fn try_from(status: i32) -> Result<Self> {
+        match proto::ExecutorStatus::from_i32(status) {
+            Some(proto::ExecutorStatus::Idle) => Ok(ExecutorStatus::Idle),
+            Some(proto::ExecutorStatus::Executing) => Ok(ExecutorStatus::Executing),
+            _ => bail!("invalid executor status"),
+        }
+    }
+}
+
+impl std::convert::From<ExecutorStatus> for i32 {
+    fn from(status: ExecutorStatus) -> Self {
+        match status {
+            ExecutorStatus::Idle => proto::ExecutorStatus::Idle as i32,
+            ExecutorStatus::Executing => proto::ExecutorStatus::Executing as i32,
+        }
+    }
+}
+
+impl std::convert::From<ExecutorStatus> for proto::ExecutorStatus {
+    fn from(status: ExecutorStatus) -> Self {
+        match status {
+            ExecutorStatus::Idle => proto::ExecutorStatus::Idle,
+            ExecutorStatus::Executing => proto::ExecutorStatus::Executing,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ExecutorCommand {
+    NoAction,
+    Stop,
+    NewTask,
+}
+
+impl Default for ExecutorCommand {
+    fn default() -> Self {
+        ExecutorCommand::NoAction
+    }
+}
+
+impl std::convert::TryFrom<proto::ExecutorCommand> for ExecutorCommand {
+    type Error = Error;
+    fn try_from(command: proto::ExecutorCommand) -> Result<Self> {
+        match command {
+            proto::ExecutorCommand::NoAction => Ok(ExecutorCommand::NoAction),
+            proto::ExecutorCommand::Stop => Ok(ExecutorCommand::Stop),
+            proto::ExecutorCommand::NewTask => Ok(ExecutorCommand::NewTask),
+        }
+    }
+}
+
+impl std::convert::From<ExecutorCommand> for proto::ExecutorCommand {
+    fn from(command: ExecutorCommand) -> Self {
+        match command {
+            ExecutorCommand::NoAction => proto::ExecutorCommand::NoAction,
+            ExecutorCommand::Stop => proto::ExecutorCommand::Stop,
+            ExecutorCommand::NewTask => proto::ExecutorCommand::NewTask,
+        }
+    }
+}
+
+impl std::convert::TryFrom<i32> for ExecutorCommand {
+    type Error = Error;
+    fn try_from(command: i32) -> Result<Self> {
+        match proto::ExecutorCommand::from_i32(command) {
+            Some(proto::ExecutorCommand::NoAction) => Ok(ExecutorCommand::NoAction),
+            Some(proto::ExecutorCommand::Stop) => Ok(ExecutorCommand::Stop),
+            Some(proto::ExecutorCommand::NewTask) => Ok(ExecutorCommand::NewTask),
+            _ => bail!("invalid executor status"),
+        }
+    }
+}
+
+impl std::convert::From<ExecutorCommand> for i32 {
+    fn from(command: ExecutorCommand) -> Self {
+        match command {
+            ExecutorCommand::NoAction => proto::ExecutorCommand::NoAction as i32,
+            ExecutorCommand::Stop => proto::ExecutorCommand::Stop as i32,
+            ExecutorCommand::NewTask => proto::ExecutorCommand::NewTask as i32,
+        }
     }
 }

@@ -142,6 +142,8 @@ pub enum TaskStatus {
     Staged,
     Running,
     Finished,
+    Canceled,
+    Failed,
 }
 
 impl Default for TaskStatus {

@@ -23,7 +23,7 @@ use std::thread;
 use teaclave_binder::proto::{ECallCommand, StartServiceInput, StartServiceOutput};
 use teaclave_binder::TeeBinder;
 use teaclave_config::RuntimeConfig;
-use teaclave_types::TeeServiceResult;
+use teaclave_types::{TeeServiceError, TeeServiceResult};
 
 struct TeaclaveServiceLauncher {
     tee: TeeBinder,
@@ -46,6 +46,7 @@ impl TeaclaveServiceLauncher {
             .invoke::<StartServiceInput, TeeServiceResult<StartServiceOutput>>(command, input)
         {
             Err(e) => bail!("TEE invocation error: {:?}", e),
+            Ok(Err(TeeServiceError::EnclaveForceTermination)) => std::process::exit(1),
             Ok(Err(e)) => bail!("Service exit with error: {:?}", e),
             _ => Ok(String::from("Service successfully exit")),
         }

@@ -53,7 +53,7 @@ fn test_execute_function() {
     let put_request = PutRequest::new(ts.key().as_slice(), ts.to_vec().unwrap().as_slice());
     let _put_response = storage_client.put(put_request).unwrap();
 
-    std::thread::sleep(std::time::Duration::from_secs(5));
+    std::thread::sleep(std::time::Duration::from_secs(15));
 
     let get_request = GetRequest::new(ts.key().as_slice());
     let get_response = storage_client.get(get_request).unwrap();

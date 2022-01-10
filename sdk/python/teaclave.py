@@ -371,6 +371,13 @@ class InvokeTaskRequest(Request):
         self.task_id = task_id
 
 
+class CancelTaskRequest(Request):
+    def __init__(self, metadata: Metadata, task_id: str):
+        self.request = "cancel_task"
+        self.metadata = metadata
+        self.task_id = task_id
+
+
 class GetTaskRequest(Request):
     def __init__(self, metadata: Metadata, task_id: str):
         self.request = "get_task"
@@ -557,6 +564,17 @@ class FrontendService(TeaclaveService):
         else:
             raise TeaclaveException("Failed to invoke task")
 
+    def cancel_task(self, task_id: str):
+        self.check_metadata()
+        self.check_channel()
+        request = CancelTaskRequest(self.metadata, task_id)
+        _write_message(self.channel, request)
+        response = _read_message(self.channel)
+        if response["result"] == "ok":
+            pass
+        else:
+            raise TeaclaveException("Failed to cancel task")
+
     def get_task_result(self, task_id: str):
         self.check_metadata()
         self.check_channel()
@@ -568,6 +586,15 @@ class FrontendService(TeaclaveService):
             if response["result"] != "ok":
                 raise TeaclaveException("Failed to get task result")
             time.sleep(1)
+            if response["content"]["status"] == 20:
+                print(response["content"]["result"]["result"])
+                raise TeaclaveException(
+                    "Task Canceled, Error: " +
+                    response["content"]["result"]["result"]["Err"]["reason"])
+            if response["content"]["status"] == 99:
+                raise TeaclaveException(
+                    "Task Failed, Error: " +
+                    response["content"]["result"]["result"]["Err"]["reason"])
             if response["content"]["status"] == 10:
                 break
 

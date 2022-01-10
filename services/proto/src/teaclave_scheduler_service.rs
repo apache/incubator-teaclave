@@ -21,7 +21,9 @@
 use std::collections::HashMap;
 use std::prelude::v1::*;
 
-use crate::teaclave_common::{i32_from_task_status, i32_to_task_status};
+use crate::teaclave_common::{
+    i32_from_task_status, i32_to_task_status, ExecutorCommand, ExecutorStatus,
+};
 use crate::teaclave_scheduler_service_proto as proto;
 use anyhow::{Error, Result};
 use core::convert::TryInto;
@@ -42,12 +44,41 @@ pub struct SubscribeResponse {
 }
 
 #[into_request(TeaclaveSchedulerRequest::PullTask)]
-pub struct PullTaskRequest {}
+pub struct PullTaskRequest {
+    pub executor_id: Uuid,
+}
 
 #[into_request(TeaclaveSchedulerResponse::PullTask)]
 #[derive(Debug)]
 pub struct PullTaskResponse {
     pub staged_task: StagedTask,
+}
+
+#[into_request(TeaclaveSchedulerRequest::Heartbeat)]
+pub struct HeartbeatRequest {
+    pub executor_id: Uuid,
+    pub status: ExecutorStatus,
+}
+
+impl HeartbeatRequest {
+    pub fn new(executor_id: Uuid, status: ExecutorStatus) -> Self {
+        Self {
+            executor_id,
+            status,
+        }
+    }
+}
+
+#[into_request(TeaclaveSchedulerResponse::Heartbeat)]
+#[derive(Debug)]
+pub struct HeartbeatResponse {
+    pub command: ExecutorCommand,
+}
+
+impl HeartbeatResponse {
+    pub fn new(command: ExecutorCommand) -> Self {
+        Self { command }
+    }
 }
 
 impl PullTaskResponse {
@@ -140,14 +171,16 @@ impl std::convert::From<SubscribeResponse> for proto::SubscribeResponse {
 impl std::convert::TryFrom<proto::PullTaskRequest> for PullTaskRequest {
     type Error = Error;
     fn try_from(proto: proto::PullTaskRequest) -> Result<Self> {
-        let ret = Self {};
+        let executor_id = Uuid::parse_str(&proto.executor_id)?;
+        let ret = Self { executor_id };
         Ok(ret)
     }
 }
 
 impl std::convert::From<PullTaskRequest> for proto::PullTaskRequest {
     fn from(req: PullTaskRequest) -> Self {
-        proto::PullTaskRequest {}
+        let executor_id = req.executor_id.to_string();
+        proto::PullTaskRequest { executor_id }
     }
 }
 
@@ -164,6 +197,46 @@ impl std::convert::From<PullTaskResponse> for proto::PullTaskResponse {
     fn from(req: PullTaskResponse) -> Self {
         proto::PullTaskResponse {
             staged_task: req.staged_task.to_vec().unwrap(),
+        }
+    }
+}
+
+impl std::convert::TryFrom<proto::HeartbeatRequest> for HeartbeatRequest {
+    type Error = Error;
+    fn try_from(proto: proto::HeartbeatRequest) -> Result<Self> {
+        let executor_id = Uuid::parse_str(&proto.executor_id)?;
+        let status = proto.status.try_into()?;
+        let ret = Self {
+            executor_id,
+            status,
+        };
+        Ok(ret)
+    }
+}
+
+impl std::convert::From<HeartbeatRequest> for proto::HeartbeatRequest {
+    fn from(req: HeartbeatRequest) -> Self {
+        let executor_id = req.executor_id.to_string();
+        proto::HeartbeatRequest {
+            executor_id,
+            status: req.status.into(),
+        }
+    }
+}
+
+impl std::convert::TryFrom<proto::HeartbeatResponse> for HeartbeatResponse {
+    type Error = Error;
+    fn try_from(proto: proto::HeartbeatResponse) -> Result<Self> {
+        let command = proto.command.try_into()?;
+        let ret = Self { command };
+        Ok(ret)
+    }
+}
+
+impl std::convert::From<HeartbeatResponse> for proto::HeartbeatResponse {
+    fn from(req: HeartbeatResponse) -> Self {
+        proto::HeartbeatResponse {
+            command: req.command.into(),
         }
     }
 }

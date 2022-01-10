@@ -81,6 +81,13 @@ impl TaskState {
     pub fn has_creator(&self, user_id: &UserID) -> bool {
         &self.creator == user_id
     }
+
+    pub fn is_ended(&self) -> bool {
+        match self.status {
+            TaskStatus::Finished | TaskStatus::Failed | TaskStatus::Canceled => true,
+            _ => false,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -97,6 +104,8 @@ impl StateTag for Stage {}
 impl StateTag for Run {}
 impl StateTag for Finish {}
 impl StateTag for Done {}
+impl StateTag for Cancel {}
+impl StateTag for Fail {}
 
 impl Task<Create> {
     pub fn new(
@@ -298,6 +307,50 @@ impl Task<Done> {
     }
 }
 
+impl Task<Fail> {
+    pub fn new(ts: TaskState) -> Result<Self> {
+        let task = Task::<Fail> {
+            state: ts,
+            extra: Fail,
+        };
+        Ok(task)
+    }
+
+    pub fn update_result(&mut self, result: TaskResult) -> Result<()> {
+        match &result {
+            TaskResult::Err(_) => {
+                self.state.result = result;
+                Ok(())
+            }
+            _ => Err(Error::msg(
+                "TaskResult::Err(TaskFailure) is expected for failed task",
+            )),
+        }
+    }
+}
+
+impl Task<Cancel> {
+    pub fn new(ts: TaskState) -> Result<Self> {
+        let task = Task::<Cancel> {
+            state: ts,
+            extra: Cancel,
+        };
+        Ok(task)
+    }
+
+    pub fn update_result(&mut self, result: TaskResult) -> Result<()> {
+        match &result {
+            TaskResult::Err(_) => {
+                self.state.result = result;
+                Ok(())
+            }
+            _ => Err(Error::msg(
+                "TaskResult::Err(TaskFailure) is expected for canceled task",
+            )),
+        }
+    }
+}
+
 trait TryTransitionTo<T>: Sized {
     type Error;
     fn try_transition_to(self) -> std::result::Result<T, Error>;
@@ -418,9 +471,51 @@ impl std::convert::TryFrom<TaskState> for Task<Finish> {
     }
 }
 
+impl std::convert::TryFrom<TaskState> for Task<Fail> {
+    type Error = Error;
+
+    fn try_from(ts: TaskState) -> Result<Self> {
+        let task = match ts.status {
+            TaskStatus::Running | TaskStatus::Staged => Task::<Fail>::new(ts)?,
+            _ => bail!("Cannot restore to Fail from saved state"),
+        };
+        Ok(task)
+    }
+}
+
+impl std::convert::TryFrom<TaskState> for Task<Cancel> {
+    type Error = Error;
+
+    fn try_from(ts: TaskState) -> Result<Self> {
+        let task = match ts.status {
+            TaskStatus::Running
+            | TaskStatus::Staged
+            | TaskStatus::Approved
+            | TaskStatus::Created
+            | TaskStatus::DataAssigned => Task::<Cancel>::new(ts)?,
+            _ => bail!("Cannot restore to Cancel from saved state"),
+        };
+        Ok(task)
+    }
+}
+
 impl std::convert::From<Task<Create>> for TaskState {
     fn from(mut task: Task<Create>) -> TaskState {
         task.state.status = TaskStatus::Created;
+        task.state
+    }
+}
+
+impl std::convert::From<Task<Fail>> for TaskState {
+    fn from(mut task: Task<Fail>) -> TaskState {
+        task.state.status = TaskStatus::Failed;
+        task.state
+    }
+}
+
+impl std::convert::From<Task<Cancel>> for TaskState {
+    fn from(mut task: Task<Cancel>) -> TaskState {
+        task.state.status = TaskStatus::Canceled;
         task.state
     }
 }
@@ -463,6 +558,10 @@ pub struct Run;
 pub struct Finish;
 #[derive(Debug, Default, Clone, Deserialize, Serialize)]
 pub struct Done;
+#[derive(Debug, Default, Clone, Deserialize, Serialize)]
+pub struct Cancel;
+#[derive(Debug, Default, Clone, Deserialize, Serialize)]
+pub struct Fail;
 
 impl std::convert::From<Create> for TaskStatus {
     fn from(_tag: Create) -> TaskStatus {
