@@ -20,6 +20,8 @@ use serde::{Deserialize, Serialize};
 use std::prelude::v1::*;
 use uuid::Uuid;
 
+pub const CANCEL_QUEUE_KEY: &str = "cancel_queue";
+
 pub trait Storable: Serialize + for<'de> Deserialize<'de> {
     fn key_prefix() -> &'static str;
 

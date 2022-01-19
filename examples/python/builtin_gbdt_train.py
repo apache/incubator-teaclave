@@ -103,6 +103,13 @@ class BuiltinGbdtExample:
         print("[+] invoking task")
         client.invoke_task(task_id)
 
+        # If you feel like you don't want to wait for the task to finish
+        # or something unexpected happens,
+        # you may uncomment the following lines to cancel the task
+        # time.sleep(3)
+        # print("[+] canceling task")
+        # client.cancel_task(task_id)
+
         print("[+] getting result")
         result = client.get_task_result(task_id)
         print("[+] done")

@@ -97,7 +97,7 @@ run_functional_tests() {
   pushd ${TEACLAVE_SERVICE_INSTALL_DIR}
   ./teaclave_authentication_service &
   ./teaclave_storage_service &
-  sleep 3    # wait for authentication and storage service
+  sleep 10    # wait for authentication and storage service
   ./teaclave_management_service &
   ./teaclave_scheduler_service &
   sleep 3    # wait for management service and scheduler_service
@@ -165,7 +165,7 @@ run_sdk_tests() {
   pushd ${TEACLAVE_SERVICE_INSTALL_DIR}
   ./teaclave_authentication_service &
   ./teaclave_storage_service &
-  sleep 3    # wait for authentication and storage service
+  sleep 10    # wait for authentication and storage service
   ./teaclave_management_service &
   ./teaclave_scheduler_service &
   sleep 3    # wait for management service and scheduler_service
@@ -258,6 +258,71 @@ run_examples() {
   cleanup
 }
 
+run_cancel_test() {
+  trap cleanup INT TERM ERR
+
+  echo_title "cancel"
+  mkdir -p /tmp/fusion_data
+  pushd ${TEACLAVE_CLI_INSTALL_DIR}
+  ./teaclave_cli verify \
+                 --enclave-info ../examples/enclave_info.toml \
+                 --public-keys $(find ../examples -name "*.public.pem") \
+                 --signatures $(find ../examples -name "*.sign.sha256")
+  popd
+
+  echo "initiating Teaclave with 2 executors..."
+
+  pushd ${TEACLAVE_SERVICE_INSTALL_DIR}
+  ./teaclave_authentication_service &
+  ./teaclave_storage_service &
+  sleep 3    # wait for authentication and storage service
+  ./teaclave_management_service &
+  ./teaclave_scheduler_service &
+  sleep 3    # wait for management service and scheduler_service
+  ./teaclave_access_control_service &
+  ./teaclave_frontend_service &
+  sleep 3    # wait for other services
+
+  start_storage_server
+
+  # Run of execution services separately
+  ./teaclave_execution_service & exe_pid1=$!
+  ./teaclave_execution_service & exe_pid2=$!
+  sleep 10    # wait for execution services
+  popd
+
+  echo "executor 1 pid: $exe_pid1"
+  echo "executor 2 pid: $exe_pid2"
+
+  pushd ${TEACLAVE_PROJECT_ROOT}/examples/python
+  export PYTHONPATH=${TEACLAVE_PROJECT_ROOT}/sdk/python
+  python3 mesapy_deadloop_cancel.py
+  popd
+
+  sleep 3
+
+  live_pids=0
+  if ps -p $exe_pid1 > /dev/null
+  then
+    live_pids=$((live_pids+1))
+  fi
+
+  if ps -p $exe_pid2 > /dev/null
+  then
+    live_pids=$((live_pids+1))
+  fi
+
+  if [ $live_pids -eq 1 ]
+  then
+    echo "only one executor is killed, test passed"
+  else
+    echo "Some unexpected happens, test failed"
+    false
+  fi
+
+  cleanup
+}
+
 case "$1" in
     "unit")
         run_unit_tests
@@ -274,11 +339,15 @@ case "$1" in
     "example")
         run_examples
         ;;
+    "cancel")
+        run_cancel_test
+        ;;
     *)
         run_unit_tests
         run_integration_tests
         run_functional_tests
         run_sdk_tests
         run_examples
+        run_cancel_test
         ;;
 esac

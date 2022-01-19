@@ -702,6 +702,22 @@ impl InvokeTaskRequest {
 #[derive(Debug)]
 pub struct InvokeTaskResponse;
 
+#[into_request(TeaclaveManagementRequest::CancelTask)]
+#[into_request(TeaclaveFrontendRequest::CancelTask)]
+#[derive(Debug)]
+pub struct CancelTaskRequest {
+    pub task_id: ExternalID,
+}
+
+impl CancelTaskRequest {
+    pub fn new(task_id: ExternalID) -> Self {
+        Self { task_id }
+    }
+}
+
+#[derive(Debug)]
+pub struct CancelTaskResponse;
+
 impl std::convert::TryFrom<proto::RegisterInputFileRequest> for RegisterInputFileRequest {
     type Error = Error;
 
@@ -1661,6 +1677,39 @@ impl std::convert::TryFrom<proto::InvokeTaskResponse> for InvokeTaskResponse {
 
 impl From<InvokeTaskResponse> for proto::InvokeTaskResponse {
     fn from(_response: InvokeTaskResponse) -> Self {
+        Self {}
+    }
+}
+
+impl std::convert::TryFrom<proto::CancelTaskRequest> for CancelTaskRequest {
+    type Error = Error;
+
+    fn try_from(proto: proto::CancelTaskRequest) -> Result<Self> {
+        let task_id = proto.task_id.try_into()?;
+        let ret = Self { task_id };
+
+        Ok(ret)
+    }
+}
+
+impl From<CancelTaskRequest> for proto::CancelTaskRequest {
+    fn from(request: CancelTaskRequest) -> Self {
+        Self {
+            task_id: request.task_id.to_string(),
+        }
+    }
+}
+
+impl std::convert::TryFrom<proto::CancelTaskResponse> for CancelTaskResponse {
+    type Error = Error;
+
+    fn try_from(_proto: proto::CancelTaskResponse) -> Result<Self> {
+        Ok(CancelTaskResponse)
+    }
+}
+
+impl From<CancelTaskResponse> for proto::CancelTaskResponse {
+    fn from(_response: CancelTaskResponse) -> Self {
         Self {}
     }
 }

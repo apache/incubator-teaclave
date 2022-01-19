@@ -77,18 +77,17 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
 
     let mut service =
         service::TeaclaveExecutionService::new(scheduler_service_endpoint, fusion_base)?;
-    let _ = service.start();
-
-    Ok(())
+    service.start()
 }
 
 #[handle_ecall]
 fn handle_start_service(input: &StartServiceInput) -> TeeServiceResult<StartServiceOutput> {
     match start_service(&input.config) {
         Ok(_) => Ok(StartServiceOutput),
+        // terminate the enclave for executor
         Err(e) => {
-            log::error!("Failed to start the service: {}", e);
-            Err(TeeServiceError::ServiceError)
+            log::error!("Service shutdown, reason: {}", e);
+            Err(TeeServiceError::EnclaveForceTermination)
         }
     }
 }

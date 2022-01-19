@@ -22,6 +22,7 @@ extern crate sgx_tstd as std;
 
 #[cfg(feature = "mesalock_sgx")]
 use std::prelude::v1::*;
+use std::sync::{Arc, SgxMutex as Mutex};
 
 #[macro_use]
 extern crate log;
@@ -96,15 +97,29 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
     )?;
     info!(" Starting Scheduler: setup storage endpoint finished ...");
 
-    let service = service::TeaclaveSchedulerService::new(storage_service_endpoint)?;
+    let service_resources = service::TeaclaveSchedulerResources::new(storage_service_endpoint)?;
+
+    let service_resources = Arc::new(Mutex::new(service_resources));
+
+    let service = service::TeaclaveSchedulerService::new(&service_resources);
+
+    let deamon = service::TeaclaveSchedulerDeamon::new(&service_resources);
+
+    let deamon_handle = std::thread::spawn(move || {
+        let _ = deamon.run();
+    });
 
     info!(" Starting Scheduler: start listening ...");
+
     match server.start(service) {
         Ok(_) => (),
         Err(e) => {
             error!("Service exit, error: {}.", e);
         }
     }
+
+    deamon_handle.join().unwrap();
+
     Ok(())
 }
 

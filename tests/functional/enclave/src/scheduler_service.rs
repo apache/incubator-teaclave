@@ -17,6 +17,7 @@
 
 use crate::utils::*;
 use std::prelude::v1::*;
+
 use teaclave_proto::teaclave_scheduler_service::*;
 use teaclave_proto::teaclave_storage_service::*;
 use teaclave_test_utils::test_case;
@@ -42,11 +43,23 @@ fn test_pull_task() {
     let _enqueue_response = storage_client.enqueue(enqueue_request).unwrap();
 
     let mut client = get_scheduler_client();
-    let request = PullTaskRequest {};
-    let response = client.pull_task(request);
+    let executor_id = Uuid::new_v4();
+
+    std::thread::sleep(std::time::Duration::from_secs(2));
+
+    let pull_task_request = PullTaskRequest { executor_id };
+    let response = client.pull_task(pull_task_request);
     log::debug!("response: {:?}", response);
+
     assert!(response.is_ok());
-    assert_eq!(response.unwrap().staged_task.function_id, function_id);
+
+    let response = response.unwrap();
+    log::info!(
+        "pulled staged_task function_id: {:?}",
+        response.staged_task.function_id
+    );
+
+    assert_eq!(response.staged_task.function_id, function_id);
 }
 
 #[test_case]
@@ -77,8 +90,13 @@ fn test_update_task_status_result() {
     let _put_response = storage_client.put(put_request).unwrap();
 
     let mut client = get_scheduler_client();
-    let request = PullTaskRequest {};
-    let response = client.pull_task(request).unwrap();
+
+    let executor_id = Uuid::new_v4();
+
+    std::thread::sleep(std::time::Duration::from_secs(2));
+
+    let pull_task_request = PullTaskRequest { executor_id };
+    let response = client.pull_task(pull_task_request).unwrap();
     log::debug!("response: {:?}", response);
     let task_id = response.staged_task.task_id;
 

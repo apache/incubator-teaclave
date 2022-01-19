@@ -48,6 +48,19 @@ enum TaskStatus {
   Staged = 3;
   Running = 4;
   Finished = 10;
+  Canceled = 20;
+  Failed = 99;
+}
+
+enum ExecutorStatus {
+  Idle = 0;
+  Executing = 1;
+}
+
+enum ExecutorCommand {
+  NoAction = 0;
+  Stop = 1;
+  NewTask = 2;
 }
 
 message TaskResult {

@@ -28,7 +28,17 @@ message SubscribeResponse {
   bool success = 1;
 }
 
-message PullTaskRequest {}
+message HeartbeatRequest {
+  string executor_id = 1;
+  teaclave_common_proto.ExecutorStatus status = 2;
+}
+message HeartbeatResponse {
+  teaclave_common_proto.ExecutorCommand command = 1;
+}
+
+message PullTaskRequest {
+  string executor_id = 1;
+}
 message PullTaskResponse {
   bytes staged_task = 1;
 }
@@ -60,4 +70,6 @@ service TeaclaveScheduler {
 
   rpc UpdateTaskStatus(UpdateTaskStatusRequest) returns (UpdateTaskStatusResponse);
   rpc UpdateTaskResult(UpdateTaskResultRequest) returns (UpdateTaskResultResponse);
+
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
 }

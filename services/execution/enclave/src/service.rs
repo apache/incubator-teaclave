@@ -18,9 +18,12 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::prelude::v1::*;
+use std::sync::mpsc;
 use std::sync::{Arc, SgxMutex as Mutex};
+use std::thread;
 
 use crate::task_file_manager::TaskFileManager;
+use teaclave_proto::teaclave_common::{ExecutorCommand, ExecutorStatus};
 use teaclave_proto::teaclave_scheduler_service::*;
 use teaclave_rpc::endpoint::Endpoint;
 use teaclave_types::*;
@@ -36,6 +39,8 @@ pub(crate) struct TeaclaveExecutionService {
     worker: Arc<Worker>,
     scheduler_client: Arc<Mutex<TeaclaveSchedulerClient>>,
     fusion_base: PathBuf,
+    id: Uuid,
+    status: ExecutorStatus,
 }
 
 impl TeaclaveExecutionService {
@@ -61,47 +66,102 @@ impl TeaclaveExecutionService {
             worker: Arc::new(Worker::default()),
             scheduler_client,
             fusion_base: fusion_base.as_ref().to_owned(),
+            id: Uuid::new_v4(),
+            status: ExecutorStatus::Idle,
         })
     }
 
     pub(crate) fn start(&mut self) -> Result<()> {
+        let (tx, rx) = mpsc::channel();
+        let mut current_task: Arc<Option<StagedTask>> = Arc::new(None);
+        let mut task_handle: Option<thread::JoinHandle<()>> = None;
+
         loop {
             std::thread::sleep(std::time::Duration::from_secs(3));
-            let staged_task = match self.pull_task() {
-                Ok(staged_task) => staged_task,
-                Err(e) => {
-                    log::debug!("PullTask Error: {:?}", e);
-                    continue;
-                }
-            };
 
-            let result = self.invoke_task(&staged_task);
-            match result {
-                Ok(_) => log::debug!(
-                    "InvokeTask: {:?}, {:?}, success",
-                    staged_task.user_id,
-                    staged_task.function_id
-                ),
-                Err(_) => log::debug!(
-                    "InvokeTask: {:?}, {:?}, failure",
-                    staged_task.user_id,
-                    staged_task.function_id
-                ),
+            match self.heartbeat() {
+                Ok(ExecutorCommand::Stop) => {
+                    log::info!("Executor {} is stopped", self.id);
+                    return Err(anyhow::anyhow!("EnclaveForceTermination"));
+                }
+                Ok(ExecutorCommand::NewTask) if self.status == ExecutorStatus::Idle => {
+                    match self.pull_task() {
+                        Ok(task) => {
+                            self.status = ExecutorStatus::Executing;
+                            self.update_task_status(&task.task_id, TaskStatus::Running)?;
+                            let tx_task = tx.clone();
+                            let fusion_base = self.fusion_base.clone();
+                            current_task = Arc::new(Some(task));
+                            let task_copy = current_task.clone();
+                            let handle = thread::spawn(move || {
+                                let result = invoke_task(
+                                    &task_copy.as_ref().as_ref().unwrap(),
+                                    &fusion_base,
+                                );
+                                tx_task.send(result).unwrap();
+                            });
+                            task_handle = Some(handle);
+                            log::info!("Executor {} accepted a new task, executing...", self.id);
+                        }
+                        Err(e) => {
+                            log::error!("Executor {} failed to pull task: {}", self.id, e);
+                        }
+                    };
+                }
+                Err(e) => {
+                    log::error!("Executor {} failed to heartbeat: {}", self.id, e);
+                    return Err(e);
+                }
+                _ => {}
             }
-            log::debug!("InvokeTask result: {:?}", result);
 
-            match self.update_task_result(&staged_task.task_id, result) {
-                Ok(_) => (),
-                Err(e) => {
-                    log::error!("UpdateResult Error: {:?}", e);
-                    continue;
+            match rx.try_recv() {
+                Ok(result) => {
+                    let task_unwrapped = current_task.as_ref().as_ref().unwrap();
+                    match result {
+                        Ok(_) => log::debug!(
+                            "InvokeTask: {:?}, {:?}, success",
+                            task_unwrapped.task_id,
+                            task_unwrapped.function_id
+                        ),
+                        Err(_) => log::debug!(
+                            "InvokeTask: {:?}, {:?}, failure",
+                            task_unwrapped.task_id,
+                            task_unwrapped.function_id
+                        ),
+                    }
+                    log::debug!("InvokeTask result: {:?}", result);
+                    let task_copy = current_task.clone();
+                    match self
+                        .update_task_result(&task_copy.as_ref().as_ref().unwrap().task_id, result)
+                    {
+                        Ok(_) => (),
+                        Err(e) => {
+                            log::error!("UpdateResult Error: {:?}", e);
+                            continue;
+                        }
+                    }
+                    current_task = Arc::new(None);
+                    task_handle.unwrap().join().unwrap();
+                    task_handle = None;
+                    self.status = ExecutorStatus::Idle;
                 }
+                Err(mpsc::TryRecvError::Disconnected) => {
+                    log::error!(
+                        "Executor {} failed to receive, sender disconnected",
+                        self.id
+                    );
+                }
+                // received nothing
+                Err(_) => {}
             }
         }
     }
 
     fn pull_task(&mut self) -> Result<StagedTask> {
-        let request = PullTaskRequest {};
+        let request = PullTaskRequest {
+            executor_id: self.id,
+        };
         let response = self
             .scheduler_client
             .clone()
@@ -113,25 +173,20 @@ impl TeaclaveExecutionService {
         Ok(response.staged_task)
     }
 
-    fn invoke_task(&mut self, task: &StagedTask) -> Result<TaskOutputs> {
-        self.update_task_status(&task.task_id, TaskStatus::Running)?;
+    fn heartbeat(&mut self) -> Result<ExecutorCommand> {
+        let request = HeartbeatRequest {
+            executor_id: self.id,
+            status: self.status,
+        };
+        let response = self
+            .scheduler_client
+            .clone()
+            .lock()
+            .map_err(|_| anyhow::anyhow!("Cannot lock scheduler client"))?
+            .heartbeat(request)?;
 
-        let file_mgr = TaskFileManager::new(
-            WORKER_BASE_DIR,
-            &self.fusion_base,
-            &task.task_id,
-            &task.input_data,
-            &task.output_data,
-        )?;
-        let invocation = prepare_task(&task, &file_mgr)?;
-
-        log::debug!("Invoke function: {:?}", invocation);
-        let worker = Worker::default();
-        let summary = worker.invoke_function(invocation)?;
-
-        let outputs_tag = finalize_task(&file_mgr)?;
-        let task_outputs = TaskOutputs::new(summary.as_bytes(), outputs_tag);
-        Ok(task_outputs)
+        log::debug!("heartbeat_with_result response: {:?}", response);
+        Ok(response.command)
     }
 
     fn update_task_result(
@@ -162,6 +217,25 @@ impl TeaclaveExecutionService {
 
         Ok(())
     }
+}
+
+fn invoke_task(task: &StagedTask, fusion_base: &PathBuf) -> Result<TaskOutputs> {
+    let file_mgr = TaskFileManager::new(
+        WORKER_BASE_DIR,
+        fusion_base,
+        &task.task_id,
+        &task.input_data,
+        &task.output_data,
+    )?;
+    let invocation = prepare_task(&task, &file_mgr)?;
+
+    log::debug!("Invoke function: {:?}", invocation);
+    let worker = Worker::default();
+    let summary = worker.invoke_function(invocation)?;
+
+    let outputs_tag = finalize_task(&file_mgr)?;
+    let task_outputs = TaskOutputs::new(summary.as_bytes(), outputs_tag);
+    Ok(task_outputs)
 }
 
 fn prepare_task(task: &StagedTask, file_mgr: &TaskFileManager) -> Result<StagedFunction> {

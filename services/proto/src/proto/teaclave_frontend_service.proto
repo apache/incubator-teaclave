@@ -232,6 +232,12 @@ message InvokeTaskRequest {
 
 message InvokeTaskResponse { }
 
+message CancelTaskRequest {
+  string task_id = 1;
+}
+
+message CancelTaskResponse { }
+
 service TeaclaveFrontend {
   rpc RegisterInputFile (RegisterInputFileRequest) returns (RegisterInputFileResponse);
   rpc RegisterOutputFile (RegisterOutputFileRequest) returns (RegisterOutputFileResponse);
@@ -251,5 +257,5 @@ service TeaclaveFrontend {
   rpc AssignData (AssignDataRequest) returns (AssignDataResponse);
   rpc ApproveTask (ApproveTaskRequest) returns (ApproveTaskResponse);
   rpc InvokeTask (InvokeTaskRequest) returns (InvokeTaskResponse);
-
+  rpc CancelTask (CancelTaskRequest) returns (CancelTaskResponse);
 }

@@ -66,3 +66,5 @@ pub type ApproveTaskRequest = crate::teaclave_frontend_service::ApproveTaskReque
 pub type ApproveTaskResponse = crate::teaclave_frontend_service::ApproveTaskResponse;
 pub type InvokeTaskRequest = crate::teaclave_frontend_service::InvokeTaskRequest;
 pub type InvokeTaskResponse = crate::teaclave_frontend_service::InvokeTaskResponse;
+pub type CancelTaskRequest = crate::teaclave_frontend_service::CancelTaskRequest;
+pub type CancelTaskResponse = crate::teaclave_frontend_service::CancelTaskResponse;

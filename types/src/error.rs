@@ -65,6 +65,8 @@ pub enum TeeServiceError {
     ServiceError,
     #[error("CommandNotRegistered")]
     CommandNotRegistered,
+    #[error("EnclaveForceTermination")]
+    EnclaveForceTermination,
 }
 
 pub type TeeServiceResult<T> = std::result::Result<T, TeeServiceError>;

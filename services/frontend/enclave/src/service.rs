@@ -27,16 +27,16 @@ use teaclave_proto::teaclave_authentication_service::{
 use teaclave_proto::teaclave_common::UserCredential;
 use teaclave_proto::teaclave_frontend_service::{
     ApproveTaskRequest, ApproveTaskResponse, AssignDataRequest, AssignDataResponse,
-    CreateTaskRequest, CreateTaskResponse, DeleteFunctionRequest, DeleteFunctionResponse,
-    GetFunctionRequest, GetFunctionResponse, GetInputFileRequest, GetInputFileResponse,
-    GetOutputFileRequest, GetOutputFileResponse, GetTaskRequest, GetTaskResponse,
-    InvokeTaskRequest, InvokeTaskResponse, ListFunctionsRequest, ListFunctionsResponse,
-    RegisterFunctionRequest, RegisterFunctionResponse, RegisterFusionOutputRequest,
-    RegisterFusionOutputResponse, RegisterInputFileRequest, RegisterInputFileResponse,
-    RegisterInputFromOutputRequest, RegisterInputFromOutputResponse, RegisterOutputFileRequest,
-    RegisterOutputFileResponse, TeaclaveFrontend, UpdateFunctionRequest, UpdateFunctionResponse,
-    UpdateInputFileRequest, UpdateInputFileResponse, UpdateOutputFileRequest,
-    UpdateOutputFileResponse,
+    CancelTaskRequest, CancelTaskResponse, CreateTaskRequest, CreateTaskResponse,
+    DeleteFunctionRequest, DeleteFunctionResponse, GetFunctionRequest, GetFunctionResponse,
+    GetInputFileRequest, GetInputFileResponse, GetOutputFileRequest, GetOutputFileResponse,
+    GetTaskRequest, GetTaskResponse, InvokeTaskRequest, InvokeTaskResponse, ListFunctionsRequest,
+    ListFunctionsResponse, RegisterFunctionRequest, RegisterFunctionResponse,
+    RegisterFusionOutputRequest, RegisterFusionOutputResponse, RegisterInputFileRequest,
+    RegisterInputFileResponse, RegisterInputFromOutputRequest, RegisterInputFromOutputResponse,
+    RegisterOutputFileRequest, RegisterOutputFileResponse, TeaclaveFrontend, UpdateFunctionRequest,
+    UpdateFunctionResponse, UpdateInputFileRequest, UpdateInputFileResponse,
+    UpdateOutputFileRequest, UpdateOutputFileResponse,
 };
 use teaclave_proto::teaclave_management_service::TeaclaveManagementClient;
 use teaclave_rpc::endpoint::Endpoint;
@@ -58,10 +58,22 @@ macro_rules! authentication_and_forward_to_management {
                 if authorize(&claims, $endpoint) {
                     claims
                 } else {
+                    log::debug!(
+                        "User is not authorized to access endpoint: {}, func: {}",
+                        stringify!($endpoint),
+                        stringify!($func)
+                    );
                     bail!(TeaclaveFrontendError::AuthenticationError);
                 }
             }
-            _ => bail!(TeaclaveFrontendError::AuthenticationError),
+            _ => {
+                log::debug!(
+                    "User is not authenticated to access endpoint: {}, func: {}",
+                    stringify!($endpoint),
+                    stringify!($func)
+                );
+                bail!(TeaclaveFrontendError::AuthenticationError)
+            }
         };
 
         let client = $service.management_client.clone();
@@ -101,6 +113,7 @@ enum Endpoints {
     AssignData,
     ApproveTask,
     InvokeTask,
+    CancelTask,
 }
 
 fn authorize(claims: &UserAuthClaims, request: Endpoints) -> bool {
@@ -129,7 +142,8 @@ fn authorize(claims: &UserAuthClaims, request: Endpoints) -> bool {
         | Endpoints::GetTask
         | Endpoints::AssignData
         | Endpoints::ApproveTask
-        | Endpoints::InvokeTask => role.is_data_owner(),
+        | Endpoints::InvokeTask
+        | Endpoints::CancelTask => role.is_data_owner(),
         Endpoints::GetFunction | Endpoints::ListFunctions => {
             role.is_function_owner() || role.is_data_owner()
         }
@@ -374,6 +388,13 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
         request: Request<InvokeTaskRequest>,
     ) -> TeaclaveServiceResponseResult<InvokeTaskResponse> {
         authentication_and_forward_to_management!(self, request, invoke_task, Endpoints::InvokeTask)
+    }
+
+    fn cancel_task(
+        &self,
+        request: Request<CancelTaskRequest>,
+    ) -> TeaclaveServiceResponseResult<CancelTaskResponse> {
+        authentication_and_forward_to_management!(self, request, cancel_task, Endpoints::CancelTask)
     }
 }
 

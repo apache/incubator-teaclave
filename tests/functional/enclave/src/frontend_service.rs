@@ -19,11 +19,13 @@ use crate::utils::*;
 use std::convert::TryFrom;
 use std::prelude::v1::*;
 use teaclave_proto::teaclave_common::*;
+use teaclave_proto::teaclave_common::{ExecutorCommand, ExecutorStatus};
 use teaclave_proto::teaclave_frontend_service::*;
 use teaclave_proto::teaclave_scheduler_service::*;
 use teaclave_test_utils::test_case;
 use teaclave_types::*;
 use url::Url;
+use uuid::Uuid;
 
 fn authorized_client() -> TeaclaveFrontendClient {
     let mut api_client =
@@ -343,8 +345,141 @@ fn test_invoke_task() {
     let response = client.get_task(request).unwrap();
     assert_eq!(response.status, TaskStatus::Staged);
 
-    let request = PullTaskRequest {};
     let mut scheduler_client = get_scheduler_client();
-    let response = scheduler_client.pull_task(request);
+    let executor_id = Uuid::new_v4();
+
+    std::thread::sleep(std::time::Duration::from_secs(2));
+
+    let pull_task_request = PullTaskRequest { executor_id };
+    let response = scheduler_client.pull_task(pull_task_request);
     assert!(response.is_ok());
+}
+
+#[test_case]
+fn test_cancel_task() {
+    let mut client = authorized_client();
+    let function_id =
+        ExternalID::try_from("function-00000000-0000-0000-0000-000000000002").unwrap();
+    let external_outfile_url =
+        Url::parse("https://external-storage.com/filepath?presigned_token").unwrap();
+    let external_outfile_crypto = FileCrypto::default();
+
+    let request = CreateTaskRequest::new()
+        .function_id(function_id)
+        .function_arguments(hashmap!("arg1" => "arg1_value"))
+        .executor(Executor::MesaPy)
+        .outputs_ownership(hashmap!("output" => vec!["frontend_user"]));
+    let response = client.create_task(request).unwrap();
+    let task_id = response.task_id;
+
+    let request = RegisterOutputFileRequest::new(external_outfile_url, external_outfile_crypto);
+    let response = client.register_output_file(request).unwrap();
+    let output_id = response.data_id;
+
+    let request =
+        AssignDataRequest::new(task_id.clone(), hashmap!(), hashmap!("output" => output_id));
+    client.assign_data(request).unwrap();
+
+    let request = ApproveTaskRequest::new(task_id.clone());
+    client.approve_task(request).unwrap();
+
+    let request = InvokeTaskRequest::new(task_id.clone());
+    let response = client.invoke_task(request);
+    assert!(response.is_ok());
+
+    let mut scheduler_client = get_scheduler_client();
+
+    std::thread::sleep(std::time::Duration::from_secs(5));
+
+    let executor_id = Uuid::new_v4();
+    let request = HeartbeatRequest {
+        executor_id,
+        status: ExecutorStatus::Idle,
+    };
+
+    let response = scheduler_client.heartbeat(request).unwrap();
+    assert!(response.command == ExecutorCommand::NewTask);
+
+    let request = CancelTaskRequest::new(task_id.clone());
+    let response = client.cancel_task(request);
+    assert!(response.is_ok());
+
+    std::thread::sleep(std::time::Duration::from_secs(3));
+
+    let pull_task_request = PullTaskRequest { executor_id };
+    let response = scheduler_client.pull_task(pull_task_request);
+    log::debug!("response: {:?}", response);
+
+    assert!(response.is_err());
+
+    std::thread::sleep(std::time::Duration::from_secs(3));
+
+    let request = GetTaskRequest::new(task_id);
+    let response = client.get_task(request).unwrap();
+
+    assert_eq!(response.status, TaskStatus::Canceled);
+}
+
+#[test_case]
+fn test_fail_task() {
+    let mut client = authorized_client();
+    let function_id =
+        ExternalID::try_from("function-00000000-0000-0000-0000-000000000002").unwrap();
+    let external_outfile_url =
+        Url::parse("https://external-storage.com/filepath?presigned_token").unwrap();
+    let external_outfile_crypto = FileCrypto::default();
+
+    let request = CreateTaskRequest::new()
+        .function_id(function_id)
+        .function_arguments(hashmap!("arg1" => "arg1_value"))
+        .executor(Executor::MesaPy)
+        .outputs_ownership(hashmap!("output" => vec!["frontend_user"]));
+    let response = client.create_task(request).unwrap();
+    let task_id = response.task_id;
+
+    let request = RegisterOutputFileRequest::new(external_outfile_url, external_outfile_crypto);
+    let response = client.register_output_file(request).unwrap();
+    let output_id = response.data_id;
+
+    let request =
+        AssignDataRequest::new(task_id.clone(), hashmap!(), hashmap!("output" => output_id));
+    client.assign_data(request).unwrap();
+
+    let request = ApproveTaskRequest::new(task_id.clone());
+    client.approve_task(request).unwrap();
+
+    let request = InvokeTaskRequest::new(task_id.clone());
+    let response = client.invoke_task(request);
+    assert!(response.is_ok());
+
+    let mut scheduler_client = get_scheduler_client();
+
+    std::thread::sleep(std::time::Duration::from_secs(5));
+
+    let executor_id = Uuid::new_v4();
+    let request = HeartbeatRequest {
+        executor_id,
+        status: ExecutorStatus::Idle,
+    };
+    let response = scheduler_client.heartbeat(request).unwrap();
+    assert!(response.command == ExecutorCommand::NewTask);
+
+    let pull_task_request = PullTaskRequest { executor_id };
+    let response = scheduler_client.pull_task(pull_task_request).unwrap();
+    log::debug!("response: {:?}", response);
+
+    let request = HeartbeatRequest {
+        executor_id,
+        status: ExecutorStatus::Executing,
+    };
+    let response = scheduler_client.heartbeat(request).unwrap();
+    log::debug!("response: {:?}", response);
+    assert!(response.command == ExecutorCommand::NoAction);
+
+    std::thread::sleep(std::time::Duration::from_secs(33));
+
+    let request = GetTaskRequest::new(task_id);
+    let response = client.get_task(request).unwrap();
+
+    assert_eq!(response.status, TaskStatus::Failed);
 }

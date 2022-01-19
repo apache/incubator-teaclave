@@ -23,6 +23,7 @@ use teaclave_proto::teaclave_scheduler_service::*;
 use teaclave_test_utils::test_case;
 use teaclave_types::*;
 use url::Url;
+use uuid::Uuid;
 
 fn authorized_client(user_id: &str) -> TeaclaveManagementClient {
     get_management_client(user_id)
@@ -723,8 +724,12 @@ fn test_invoke_task() {
     let response = client2.get_task(request).unwrap();
     assert_eq!(response.status, TaskStatus::Staged);
 
-    let request = PullTaskRequest {};
     let mut scheduler_client = get_scheduler_client();
-    let response = scheduler_client.pull_task(request);
+    let executor_id = Uuid::new_v4();
+
+    std::thread::sleep(std::time::Duration::from_secs(2));
+
+    let pull_task_request = PullTaskRequest { executor_id };
+    let response = scheduler_client.pull_task(pull_task_request);
     assert!(response.is_ok());
 }

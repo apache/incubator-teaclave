@@ -73,6 +73,9 @@ if(TEST_MODE)
   add_custom_target(
     run-sdk-tests COMMAND ${TEACLAVE_COMMON_ENVS}
                           ${MT_SCRIPT_DIR}/test.sh sdk)
+  add_custom_target(
+    run-cancel-test COMMAND ${TEACLAVE_COMMON_ENVS}
+                          ${MT_SCRIPT_DIR}/test.sh cancel)
 else()
   add_custom_target(
     run-tests
