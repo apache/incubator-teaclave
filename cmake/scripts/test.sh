@@ -317,6 +317,7 @@ run_cancel_test() {
     echo "only one executor is killed, test passed"
   else
     echo "Some unexpected happens, test failed"
+    false
   fi
 
   cleanup
