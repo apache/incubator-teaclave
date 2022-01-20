@@ -662,17 +662,24 @@ impl TeaclaveManagement for TeaclaveManagementService {
                 self.enqueue_to_db(CANCEL_QUEUE_KEY.as_bytes(), &ts)?;
             }
             _ => {
+                // early cancelation
                 // race will not affect correctness/privacy
-                let task: Task<Cancel> = ts.try_into().map_err(|e| {
+                let mut task: Task<Cancel> = ts.try_into().map_err(|e| {
                     log::warn!("Cancel state error: {:?}", e);
                     TeaclaveManagementServiceError::PermissionDenied
                 })?;
 
                 log::debug!("Canceled Task: {:?}", task);
 
+                task.update_result(TaskResult::Err(TaskFailure {
+                    reason: "Task canceled".to_string(),
+                }))
+                .map_err(|_| TeaclaveManagementServiceError::PermissionDenied)?;
                 let ts: TaskState = task.into();
                 self.write_to_db(&ts)
                     .map_err(|_| TeaclaveManagementServiceError::StorageError)?;
+
+                log::warn!("Canceled Task writtenback");
             }
         }
 

@@ -52,6 +52,10 @@ typedef struct FrontendClient FrontendClient;
  *
  * * The function returns an opaque pointer (handle) of the service. On error,
  * the function returns NULL.
+ *
+ * # Safety
+ *
+ * `address`, `enclave_info_path`, `as_root_ca_cert_path` should be C string (null terminated).
  */
 struct AuthenticationClient *teaclave_connect_authentication_service(const char *address,
                                                                      const char *enclave_info_path,
@@ -61,12 +65,22 @@ struct AuthenticationClient *teaclave_connect_authentication_service(const char 
  * Close and free the authentication service handle, i.e., the
  * `AuthenticaionClient` type opaque pointer. The function returns 0 for
  * success. On error, the function returns 1.
+ *
+ * # Safety
+ *
+ * This function is unsafe because improper use may lead to
+ * memory problems. For example, a double-free may occur if the
+ * function is called twice on the same raw pointer.
  */
 int teaclave_close_authentication_service(struct AuthenticationClient *client);
 
 /**
  * Register a new user with `user_id` and `user_password`. The function returns
  * 0 for success. On error, the function returns 1.
+ *
+ * # Safety
+ *
+ * `user_id`, `user_password`, `role`, `attribute` should be C string (null terminated).
  */
 int teaclave_user_register(struct AuthenticationClient *client,
                            const char *user_id,
@@ -79,6 +93,10 @@ int teaclave_user_register(struct AuthenticationClient *client,
  * will be save in the `token` buffer, and length will be set in the
  * `token_len` argument. The function returns 0 for success. On error, the
  * function returns 1.
+ *
+ * # Safety
+ *
+ * `user_id`, `user_password` should be C string (null terminated), token and token_len should be consistent.
  */
 int teaclave_user_login(struct AuthenticationClient *client,
                         const char *user_id,
@@ -104,6 +122,10 @@ int teaclave_user_login(struct AuthenticationClient *client,
  *
  * * The function returns an opaque pointer (handle) of the service. On error,
  * the function returns NULL.
+ *
+ * # Safety
+ *
+ * All arguments should be C string (null terminated).
  */
 struct FrontendClient *teaclave_connect_frontend_service(const char *address,
                                                          const char *enclave_info_path,
@@ -113,36 +135,68 @@ struct FrontendClient *teaclave_connect_frontend_service(const char *address,
  * Close and free the frontend service handle, i.e., the `FrontendClient` type
  * opaque pointer. The function returns 0 for success. On error, the function
  * returns 1.
+ *
+ * # Safety
+ *
+ * This function is unsafe because improper use may lead to
+ * memory problems. For example, a double-free may occur if the
+ * function is called twice on the same raw pointer.
  */
 int teaclave_close_frontend_service(struct FrontendClient *client);
 
 /**
  * Set user's credential with `user_id` and `user_token`. The function returns
  * 0 for success. On error, the function returns 1.
+ *
+ * # Safety
+ *
+ * `user_id` and `user_token` should be C string (null terminated).
  */
-int teaclave_frontend_set_credential(struct FrontendClient *client,
-                            const char *user_id,
-                            const char *user_token);
+int teaclave_authentication_set_credential(struct AuthenticationClient *client,
+                                           const char *user_id,
+                                           const char *user_token);
 
 /**
  * Set user's credential with `user_id` and `user_token`. The function returns
  * 0 for success. On error, the function returns 1.
+ *
+ * # Safety
+ *
+ * `user_id` and `user_token` should be C string (null terminated).
  */
-int teaclave_authentication_set_credential(struct AuthenticationClient *client,
-                                const char *user_id,
-                                const char *user_token);
+int teaclave_frontend_set_credential(struct FrontendClient *client,
+                                     const char *user_id,
+                                     const char *user_token);
 
 /**
  * Invoke task with `task_id`. The function returns 0 for success. On error,
  * the function returns 1.
+ *
+ * # Safety
+ *
+ * `task_id` should be C string (null terminated).
  */
 int teaclave_invoke_task(struct FrontendClient *client, const char *task_id);
+
+/**
+ * Cancel task with `task_id`. The function returns 0 for success. On error,
+ * the function returns 1.
+ *
+ * # Safety
+ *
+ * `task_id` should be C string (null terminated).
+ */
+int teaclave_cancel_task(struct FrontendClient *client, const char *task_id);
 
 /**
  * Get task result of `task_id`. The result will be save in the `task_result`
  * buffer, and set corresponding `task_result_len` argument. Note that this is
  * a blocking function and wait for the return of the task. The function
  * returns 0 for success. On error, the function returns 1.
+ *
+ * # Safety
+ *
+ * Inconsistent length of allocated buffer may caused overflow.
  */
 int teaclave_get_task_result(struct FrontendClient *client,
                              const char *task_id,
@@ -165,6 +219,10 @@ int teaclave_get_task_result(struct FrontendClient *client,
  * # Return
  *
  * The function returns 0 for success. On error, the function returns 1.
+ *
+ * # Safety
+ *
+ * Inconsistent length of allocated buffer may caused overflow.
  */
 int teaclave_user_register_serialized(struct AuthenticationClient *client,
                                       const char *serialized_request,
@@ -187,6 +245,10 @@ int teaclave_user_register_serialized(struct AuthenticationClient *client,
  * # Return
  *
  * The function returns 0 for success. On error, the function returns 1.
+ *
+ * # Safety
+ *
+ * Inconsistent length of allocated buffer may caused overflow.
  */
 int teaclave_user_login_serialized(struct AuthenticationClient *client,
                                    const char *serialized_request,
@@ -209,6 +271,10 @@ int teaclave_user_login_serialized(struct AuthenticationClient *client,
  * # Return
  *
  * The function returns 0 for success. On error, the function returns 1.
+ *
+ * # Safety
+ *
+ * Inconsistent length of allocated buffer may caused overflow.
  */
 int teaclave_register_function_serialized(struct FrontendClient *client,
                                           const char *serialized_request,
@@ -231,6 +297,10 @@ int teaclave_register_function_serialized(struct FrontendClient *client,
  * # Return
  *
  * The function returns 0 for success. On error, the function returns 1.
+ *
+ * # Safety
+ *
+ * Inconsistent length of allocated buffer may caused overflow.
  */
 int teaclave_get_function_serialized(struct FrontendClient *client,
                                      const char *serialized_request,
@@ -253,6 +323,10 @@ int teaclave_get_function_serialized(struct FrontendClient *client,
  * # Return
  *
  * The function returns 0 for success. On error, the function returns 1.
+ *
+ * # Safety
+ *
+ * Inconsistent length of allocated buffer may caused overflow.
  */
 int teaclave_register_input_file_serialized(struct FrontendClient *client,
                                             const char *serialized_request,
@@ -275,6 +349,10 @@ int teaclave_register_input_file_serialized(struct FrontendClient *client,
  * # Return
  *
  * The function returns 0 for success. On error, the function returns 1.
+ *
+ * # Safety
+ *
+ * Inconsistent length of allocated buffer may caused overflow.
  */
 int teaclave_register_output_file_serialized(struct FrontendClient *client,
                                              const char *serialized_request,
@@ -297,6 +375,10 @@ int teaclave_register_output_file_serialized(struct FrontendClient *client,
  * # Return
  *
  * The function returns 0 for success. On error, the function returns 1.
+ *
+ * # Safety
+ *
+ * Inconsistent length of allocated buffer may caused overflow.
  */
 int teaclave_create_task_serialized(struct FrontendClient *client,
                                     const char *serialized_request,
@@ -319,6 +401,10 @@ int teaclave_create_task_serialized(struct FrontendClient *client,
  * # Return
  *
  * The function returns 0 for success. On error, the function returns 1.
+ *
+ * # Safety
+ *
+ * Inconsistent length of allocated buffer may caused overflow.
  */
 int teaclave_assign_data_serialized(struct FrontendClient *client,
                                     const char *serialized_request,
@@ -341,6 +427,10 @@ int teaclave_assign_data_serialized(struct FrontendClient *client,
  * # Return
  *
  * The function returns 0 for success. On error, the function returns 1.
+ *
+ * # Safety
+ *
+ * Inconsistent length of allocated buffer may caused overflow.
  */
 int teaclave_approve_task_serialized(struct FrontendClient *client,
                                      const char *serialized_request,
@@ -363,6 +453,10 @@ int teaclave_approve_task_serialized(struct FrontendClient *client,
  * # Return
  *
  * The function returns 0 for success. On error, the function returns 1.
+ *
+ * # Safety
+ *
+ * Inconsistent length of allocated buffer may caused overflow.
  */
 int teaclave_invoke_task_serialized(struct FrontendClient *client,
                                     const char *serialized_request,
@@ -385,6 +479,36 @@ int teaclave_invoke_task_serialized(struct FrontendClient *client,
  * # Return
  *
  * The function returns 0 for success. On error, the function returns 1.
+ *
+ * # Safety
+ *
+ * Inconsistent length of allocated buffer may caused overflow.
+ */
+int teaclave_cancel_task_serialized(struct FrontendClient *client,
+                                    const char *serialized_request,
+                                    char *serialized_response,
+                                    size_t *serialized_response_len);
+
+/**
+ * Send JSON serialized request to the service with the `client` and
+ * get the serialized response.
+ *
+ * # Arguments
+ *
+ * * `client`: service client.
+ * * `serialized_request`; JSON serialized request
+ * * `serialized_response`: buffer to store the JSON serialized response.
+ * * `serialized_response_len`: length of the allocated
+ *   `serialized_response`, will be set as the length of
+ *   `serialized_response` when return successfully.
+ *
+ * # Return
+ *
+ * The function returns 0 for success. On error, the function returns 1.
+ *
+ * # Safety
+ *
+ * Inconsistent length of allocated buffer may caused overflow.
  */
 int teaclave_get_task_serialized(struct FrontendClient *client,
                                  const char *serialized_request,
