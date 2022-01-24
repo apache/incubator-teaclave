@@ -679,7 +679,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
                 self.write_to_db(&ts)
                     .map_err(|_| TeaclaveManagementServiceError::StorageError)?;
 
-                log::warn!("Canceled Task writtenback");
+                log::warn!("Canceled Task: writtenback");
             }
         }
 
