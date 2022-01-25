@@ -94,7 +94,7 @@ impl<W: Write> LogWriter<W> {
     }
 
     fn emit_record(&mut self, t: RecordType, data: &[u8], len: usize) -> Result<usize> {
-        assert!(len < 256 * 256);
+        assert!(len + HEADER_SIZE + self.current_block_offset <= self.block_size);
 
         self.digest.reset();
         self.digest.write(&[t as u8]);
@@ -111,6 +111,7 @@ impl<W: Write> LogWriter<W> {
         let s = self.dst.write(v.as_slice())?;
         assert!(s == s1);
         self.current_block_offset += s;
+        assert!(self.current_block_offset <= self.block_size);
         Ok(s)
     }
 
