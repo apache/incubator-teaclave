@@ -120,7 +120,7 @@ RUN pip3 install onnx==1.9.0 numpy decorator attrs spicy
 # Build TVM
 RUN git clone https://github.com/apache/tvm /tvm                && \
     cd /tvm                                                     && \
-    git checkout df06c5848f59108a8e6e7dffb997b4b659b573a7       && \
+    git checkout 7b3a22e465dd6aca4729504a19beb4bc23312755       && \
     git submodule init                                          && \
     git submodule update                                        && \
     mkdir build                                                 && \
