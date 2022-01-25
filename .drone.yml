@@ -163,6 +163,155 @@ node:
 ---
 
 kind: pipeline
+name: sgx-debug-ubuntu-2004
+
+steps:
+- name: prepare
+  image: teaclave/teaclave-build-ubuntu-2004-sgx-2.15.1:0.1.1
+  commands:
+  - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
+  - mkdir -p build
+  - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DTEST_MODE=ON ..
+- name: check
+  image: teaclave/teaclave-build-ubuntu-2004-sgx-2.15.1:0.1.1
+  commands:
+  - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
+  - cd build && make check
+- name: compile
+  image: teaclave/teaclave-build-ubuntu-2004-sgx-2.15.1:0.1.1
+  commands:
+  - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
+  - cd build && make VERBOSE=1 -j2
+- name: tvm example
+  image: teaclave/teaclave-build-ubuntu-2004-sgx-2.15.1:0.1.1
+  commands:
+  - . ~/.cargo/env
+  - cd examples/python/wasm_tvm_mnist_payload
+  - make
+- name: test
+  image: teaclave/teaclave-build-ubuntu-2004-sgx-2.15.1:0.1.1
+  environment:
+    AS_ALGO: sgx_epid
+    AS_URL: https://api.trustedservices.intel.com:443
+    AS_KEY:
+      from_secret: V5_KEY
+    AS_SPID:
+      from_secret: V5_SPID
+  privileged: true
+  volumes:
+  - name: isgx
+    path: /dev/isgx
+  - name: aesmd
+    path: /var/run/aesmd/aesm.socket
+  commands:
+  - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
+  - (cd release/tool && ./teaclave_sgx_tool status)
+  - (cd release/tool && ./teaclave_sgx_tool attestation --key $AS_KEY --spid $AS_SPID)
+  - cd build && make run-tests
+
+volumes:
+- name: isgx
+  host:
+    path: /dev/isgx
+- name: aesmd
+  host:
+    path: /var/run/aesmd/aesm.socket
+
+node:
+  instance: mesatee-sgx
+
+---
+
+kind: pipeline
+name: sgx-dcap-debug-ubuntu-2004
+
+steps:
+- name: prepare
+  image: teaclave/teaclave-build-ubuntu-2004-sgx-dcap-1.12.1:0.1.1
+  commands:
+  - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
+  - mkdir -p build
+  - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DTEST_MODE=ON -DDCAP=ON ..
+- name: check
+  image: teaclave/teaclave-build-ubuntu-2004-sgx-dcap-1.12.1:0.1.1
+  commands:
+  - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
+  - cd build && make check
+- name: compile
+  image: teaclave/teaclave-build-ubuntu-2004-sgx-dcap-1.12.1:0.1.1
+  commands:
+  - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
+  - sed -i 's/ias_root_ca_cert/dcap_root_ca_cert/' config/build.config.toml
+  - cd build && make VERBOSE=1 -j2
+- name: tvm example
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.2
+  commands:
+  - . ~/.cargo/env
+  - cd examples/python/wasm_tvm_mnist_payload
+  - make
+- name: test
+  image: teaclave/teaclave-build-ubuntu-2004-sgx-dcap-1.12.1:0.1.1
+  environment:
+    AS_ALGO: sgx_ecdsa
+    AS_URL: https://localhost:8080
+    AS_KEY:
+      from_secret: V5_KEY
+    AS_SPID:
+      from_secret: V5_SPID
+  privileged: true
+  volumes:
+  - name: sgx
+    path: /dev/sgx
+  - name: sgx_enclave
+    path: /dev/sgx_enclave
+  - name: sgx_provision
+    path: /dev/sgx_provision
+  - name: aesmd
+    path: /var/run/aesmd/aesm.socket
+  - name: aesmd-conf
+    path: /etc/aesmd.conf
+  - name: qcnl
+    path: /etc/sgx_default_qcnl.conf
+  commands:
+  - echo "$(ip route | awk 'NR==1 {print $3}') pccs-server" >> /etc/hosts
+  - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
+  - (cd release/dcap && ./teaclave_dcap_ref_as &)
+  - cd build && make run-tests
+
+volumes:
+- name: sgx
+  host:
+    path: /dev/sgx
+- name: sgx_enclave
+  host:
+    path: /dev/sgx_enclave
+- name: sgx_provision
+  host:
+    path: /dev/sgx_provision
+- name: aesmd
+  host:
+    path: /var/run/aesmd/aesm.socket
+- name: aesmd-conf
+  host:
+    path: /etc/aesmd.conf
+- name: qcnl
+  host:
+    path: /etc/sgx_default_qcnl.conf
+
+node:
+  instance: mesatee-sgx-dcap
+
+---
+
+kind: pipeline
 name: sgx-release-ubuntu-1804
 
 steps:
@@ -377,6 +526,8 @@ trigger:
 depends_on:
   - sgx-debug-ubuntu-1804
   - sgx-dcap-debug-ubuntu-1804
+  - sgx-debug-ubuntu-2004
+  - sgx-dcap-debug-ubuntu-2004
   - sgx-release-ubuntu-1804
   - sim-debug-ubuntu-1804
   - sim-release-ubuntu-1804

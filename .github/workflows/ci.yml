@@ -81,6 +81,44 @@ jobs:
           cd build &&
           make run-tests
 
+  sim-debug-ubuntu-2004:
+    runs-on: ubuntu-20.04
+    container: teaclave/teaclave-build-ubuntu-2004-sgx-2.15.1:0.1.1
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setting up $HOME
+        run: |
+          cp /root/.bashrc $HOME/.bashrc &&
+          ln -sf /root/.rustup ~/.rustup &&
+          ln -sf /root/.cargo ~/.cargo
+      - name: Preparing build system
+        run: |
+          . ~/.cargo/env &&
+          . /opt/sgxsdk/environment &&
+          mkdir -p build &&
+          cd build &&
+          cmake -DCMAKE_BUILD_TYPE=Debug -DSGX_SIM_MODE=ON -DTEST_MODE=ON ..
+      - name: Building
+        run: |
+          . /opt/sgxsdk/environment &&
+          . ~/.cargo/env &&
+          cd build &&
+          make VERBOSE=1
+      - name: Build TVM example
+        run: |
+          . ~/.cargo/env &&
+          cd ${GITHUB_WORKSPACE}/examples/python/wasm_tvm_mnist_payload &&
+          make
+      - name: Run tests and examples
+        run: |
+          export AS_SPID="00000000000000000000000000000000" &&
+          export AS_KEY="00000000000000000000000000000000" &&
+          export AS_ALGO="sgx_epid" &&
+          export AS_URL="https://api.trustedservices.intel.com:443" &&
+          . ~/.cargo/env &&
+          cd build &&
+          make run-tests
+
   format:
     runs-on: ubuntu-18.04
     container: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.2
