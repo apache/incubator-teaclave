@@ -244,7 +244,10 @@ pub extern "C" fn ocall_handle_file_request(in_buf: *const u8, in_len: u32) -> u
     let input_buf: &[u8] = unsafe { std::slice::from_raw_parts(in_buf, in_len as usize) };
     match handle_file_request(input_buf) {
         Ok(_) => 0,
-        Err(_) => 1,
+        Err(e) => {
+            log::error!("error: {:?}. in_buf: {:?}", e, in_buf);
+            1
+        }
     }
 }
 
