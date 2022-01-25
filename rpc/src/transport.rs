@@ -19,7 +19,7 @@ use crate::protocol;
 use crate::Request;
 use crate::TeaclaveService;
 use anyhow::Result;
-use log::debug;
+use log::warn;
 use serde::{Deserialize, Serialize};
 use std::prelude::v1::*;
 
@@ -96,19 +96,19 @@ where
             let request: Request<V> = match protocol.read_message::<Request<V>>() {
                 Ok(r) => r,
                 Err(e) => match e {
-                    protocol::ProtocolError::IoError(_) => {
-                        debug!("Connection disconnected.");
+                    protocol::ProtocolError::IoError(e) => {
+                        log::debug!("Connection disconnected: {:?}", e);
                         return Ok(());
                     }
                     _ => {
-                        debug!("{:?}", e);
+                        warn!("Connection error: {:?}", e);
                         let response: JsonProtocolResult<U, TeaclaveServiceResponseError> =
                             Err(TeaclaveServiceResponseError::RequestError(
                                 "invalid request".to_string(),
                             ))
                             .into();
                         protocol.write_message(response)?;
-                        continue;
+                        return Ok(());
                     }
                 },
             };
