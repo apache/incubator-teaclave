@@ -45,7 +45,7 @@ use teaclave_proto::teaclave_authentication_service::{
 };
 use teaclave_rpc::config::SgxTrustedTlsServerConfig;
 use teaclave_rpc::server::SgxTrustedTlsServer;
-use teaclave_service_enclave_utils::ServiceEnclave;
+use teaclave_service_enclave_utils::{base_dir_for_db, ServiceEnclave};
 use teaclave_types::{EnclaveInfo, TeeServiceError, TeeServiceResult, UserRole};
 
 mod api_service;
@@ -110,6 +110,8 @@ fn start_api_endpoint(
 }
 
 fn start_service(config: &RuntimeConfig) -> Result<()> {
+    info!("Starting Authentication...");
+
     let enclave_info = EnclaveInfo::verify_and_new(
         &config.audit.enclave_info_bytes,
         AUDITOR_PUBLIC_KEYS,
@@ -129,7 +131,12 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
         .generate_and_endorse()?
         .attested_tls_config()
         .ok_or_else(|| anyhow!("cannot get attested TLS config"))?;
-    let database = user_db::Database::open()?;
+
+    info!(" Starting Authentication: Self attestation finished ...");
+
+    let db_base = base_dir_for_db(&config)?;
+    let database = user_db::Database::open(&db_base)?;
+
     let mut api_jwt_secret = vec![0; user_info::JWT_SECRET_LEN];
     let mut rng = rand::thread_rng();
     rng.fill_bytes(&mut api_jwt_secret);
@@ -138,7 +145,9 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
     let attested_tls_config_ref = attested_tls_config.clone();
     {
         let client = database.get_client();
-        create_platform_admin_user(client, "admin", "teaclave")?;
+        if create_platform_admin_user(client, "admin", "teaclave").is_ok() {
+            info!(" Starting Authentication: Platform first launch, admin user created ...");
+        }
     }
 
     let client = database.get_client();
@@ -150,6 +159,7 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
             attested_tls_config_ref,
         );
     });
+    info!(" Starting Authentication: setup API endpoint finished ...");
 
     let client = database.get_client();
     let internal_endpoint_thread_handler = thread::spawn(move || {
@@ -161,6 +171,7 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
             accepted_enclave_attrs,
         );
     });
+    info!(" Starting Authentication: setup Internal endpoint finished ...");
 
     api_endpoint_thread_handler
         .join()
@@ -169,6 +180,7 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
         .join()
         .expect("cannot join internal endpoint thread");
 
+    info!(" Starting Authentication: start listening ...");
     Ok(())
 }
 
@@ -223,6 +235,9 @@ pub mod tests {
             api_service::tests::test_user_login,
             api_service::tests::test_user_register,
             api_service::tests::test_user_update,
+            api_service::tests::test_user_change_password,
+            api_service::tests::test_reset_user_password,
+            api_service::tests::test_delete_user,
             internal_service::tests::test_user_authenticate,
             internal_service::tests::test_invalid_algorithm,
             internal_service::tests::test_invalid_issuer,

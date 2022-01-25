@@ -16,6 +16,9 @@
 // under the License.
 
 use crate::user_info::UserInfo;
+use rusty_leveldb::LdbIterator;
+use rusty_leveldb::DB;
+use std::path::Path;
 use std::prelude::v1::*;
 use std::sync::mpsc::{channel, Sender};
 use std::thread;
@@ -59,6 +62,15 @@ struct GetResponse {
 }
 
 #[derive(Clone)]
+struct ListRequest {
+    key: String,
+}
+#[derive(Clone)]
+struct ListResponse {
+    values: Vec<String>,
+}
+
+#[derive(Clone)]
 struct CreateRequest {
     key: Vec<u8>,
     value: Vec<u8>,
@@ -71,17 +83,26 @@ struct UpdateRequest {
 }
 
 #[derive(Clone)]
+struct DeleteRequest {
+    key: Vec<u8>,
+}
+
+#[derive(Clone)]
 enum DbRequest {
     Get(GetRequest),
     Create(CreateRequest),
     Update(UpdateRequest),
+    Delete(DeleteRequest),
+    List(ListRequest),
     Ping,
 }
 
 #[derive(Clone)]
 enum DbResponse {
     Get(GetResponse),
+    List(ListResponse),
     Create,
+    Delete,
     Update,
     Ping,
 }
@@ -96,12 +117,36 @@ pub(crate) struct Database {
     sender: Sender<DBCall>,
 }
 
+#[cfg(not(test_mode))]
+pub(crate) fn create_persistent_auth_db(base_dir: impl AsRef<Path>) -> DB {
+    let key = [
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x0f, 0x0e, 0x0d, 0x0c, 0x0b, 0x0a, 0x09,
+        0x08,
+    ];
+    let opt = rusty_leveldb::Options::new_disk_db_with(key);
+    let db_path = base_dir.as_ref().join("authentication_db");
+    log::info!("open auth db: {:?}", db_path);
+    let database = DB::open(db_path, opt).unwrap();
+    database
+}
+
+#[cfg(test_mode)]
+pub(crate) fn create_in_memory_auth_db(_base_dir: impl AsRef<Path>) -> DB {
+    let opt = rusty_leveldb::in_memory();
+    log::info!("open in_memory auth db");
+    let database = DB::open("authentication_db", opt).unwrap();
+    database
+}
+
 impl Database {
-    pub(crate) fn open() -> Result<Self, DbError> {
+    pub(crate) fn open(db_base: impl AsRef<Path>) -> Result<Self, DbError> {
         let (sender, receiver) = channel();
+        let db_base = db_base.as_ref().to_owned();
         thread::spawn(move || {
-            let opt = rusty_leveldb::in_memory();
-            let mut database = rusty_leveldb::DB::open("authentication_db", opt).unwrap();
+            #[cfg(not(test_mode))]
+            let mut database = create_persistent_auth_db(&db_base);
+            #[cfg(test_mode)]
+            let mut database = create_in_memory_auth_db(&db_base);
             loop {
                 let call: DBCall = match receiver.recv() {
                     Ok(req) => req,
@@ -116,19 +161,45 @@ impl Database {
                         Some(value) => Ok(DbResponse::Get(GetResponse { value })),
                         None => Err(DbError::UserNotExist),
                     },
+                    DbRequest::Delete(request) => match database.delete(&request.key) {
+                        Ok(_) => Ok(DbResponse::Delete),
+                        Err(_) => Err(DbError::UserNotExist),
+                    },
                     DbRequest::Create(request) => match database.get(&request.key) {
                         Some(_) => Err(DbError::UserExist),
                         None => match database.put(&request.key, &request.value) {
-                            Ok(_) => Ok(DbResponse::Create),
+                            Ok(_) => match database.flush() {
+                                Ok(_) => Ok(DbResponse::Create),
+                                Err(_) => Err(DbError::LevelDbInternalError),
+                            },
                             Err(_) => Err(DbError::LevelDbInternalError),
                         },
                     },
                     DbRequest::Update(request) => match database.get(&request.key) {
                         Some(_) => match database.put(&request.key, &request.value) {
-                            Ok(_) => Ok(DbResponse::Update),
+                            Ok(_) => match database.flush() {
+                                Ok(_) => Ok(DbResponse::Update),
+                                Err(_) => Err(DbError::LevelDbInternalError),
+                            },
                             Err(_) => Err(DbError::LevelDbInternalError),
                         },
                         None => Err(DbError::UserNotExist),
+                    },
+                    DbRequest::List(request) => match database.new_iter() {
+                        Ok(mut iter) => {
+                            let mut values = Vec::new();
+                            while let Some((_, ref value)) = iter.next() {
+                                let user: UserInfo =
+                                    serde_json::from_slice(value).unwrap_or_default();
+                                if !request.key.is_empty() && user.has_attribute(&request.key) {
+                                    values.push(user.id);
+                                } else if request.key.is_empty() {
+                                    values.push(user.id);
+                                }
+                            }
+                            Ok(DbResponse::List(ListResponse { values }))
+                        }
+                        Err(_) => Err(DbError::LevelDbInternalError),
                     },
                     DbRequest::Ping => Ok(DbResponse::Ping),
                 };
@@ -180,6 +251,21 @@ impl DbClient {
         }
     }
 
+    pub(crate) fn delete_user(&self, id: &str) -> Result<(), DbError> {
+        let (sender, receiver) = channel();
+        let request = DbRequest::Delete(DeleteRequest {
+            key: id.as_bytes().to_vec(),
+        });
+        let call = DBCall { sender, request };
+        self.sender.send(call)?;
+        let result = receiver.recv()?;
+        let db_response = result?;
+        match db_response {
+            DbResponse::Delete => Ok(()),
+            _ => Err(DbError::UserNotExist),
+        }
+    }
+
     pub(crate) fn create_user(&self, user: &UserInfo) -> Result<(), DbError> {
         let (sender, receiver) = channel();
         let user_bytes = serde_json::to_vec(&user).map_err(|_| DbError::InvalidRequest)?;
@@ -194,6 +280,36 @@ impl DbClient {
         match db_response {
             DbResponse::Create => Ok(()),
             _ => Err(DbError::InvalidResponse),
+        }
+    }
+
+    pub(crate) fn list_users_by_attribute(&self, attribute: &str) -> Result<Vec<String>, DbError> {
+        let (sender, receiver) = channel();
+        let request = DbRequest::List(ListRequest {
+            key: attribute.to_string(),
+        });
+        let call = DBCall { sender, request };
+        self.sender.send(call)?;
+        let result = receiver.recv()?;
+        let db_response = result?;
+        match db_response {
+            DbResponse::List(response) => Ok(response.values),
+            _ => Err(DbError::UserNotExist),
+        }
+    }
+
+    pub(crate) fn list_users(&self) -> Result<Vec<String>, DbError> {
+        let (sender, receiver) = channel();
+        let request = DbRequest::List(ListRequest {
+            key: "".to_string(),
+        });
+        let call = DBCall { sender, request };
+        self.sender.send(call)?;
+        let result = receiver.recv()?;
+        let db_response = result?;
+        match db_response {
+            DbResponse::List(response) => Ok(response.values),
+            _ => Err(DbError::UserNotExist),
         }
     }
 

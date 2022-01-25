@@ -20,6 +20,9 @@ use rand::Rng;
 use std::iter;
 use std::prelude::v1::*;
 use std::string::String;
+use std::time::Instant;
+#[cfg(feature = "mesalock_sgx")]
+use std::untrusted::time::InstantEx;
 
 use rusty_leveldb::CompressionType;
 use rusty_leveldb::Options;
@@ -125,8 +128,53 @@ fn test_write_and_reopen() {
     fs::remove_dir_all("/tmp/leveldb_testdb").expect("Cannot remove directory");
 }
 
+fn test_huge_value() {
+    let key = [
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x0f, 0x0e, 0x0d, 0x0c, 0x0b, 0x0a, 0x09,
+        0x08,
+    ];
+    let mut opt = Options::new_disk_db_with(key);
+    opt.compression_type = CompressionType::CompressionSnappy;
+    let mut db = DB::open("/tmp/leveldb_testdb", opt).unwrap();
+
+    let mut data_size = 0x4000;
+    for _ in 0..8 {
+        let before = Instant::now();
+        let (k, v) = (gen_string(KEY_LEN), gen_string(data_size));
+        db.put(k.as_bytes(), v.as_bytes()).unwrap();
+        db.flush().unwrap();
+        let elapsed = before.elapsed().as_secs_f64();
+        println!(
+            "  Set key size = {:#10x}, eclapsed = {}",
+            data_size, elapsed
+        );
+
+        let before = Instant::now();
+        db.get(k.as_bytes()).unwrap();
+        let elapsed = before.elapsed().as_secs_f64();
+        println!(
+            "  Get key size = {:#10x}, eclapsed = {}",
+            data_size, elapsed
+        );
+
+        let before = Instant::now();
+        db.delete(k.as_bytes()).unwrap();
+        db.flush().unwrap();
+        let elapsed = before.elapsed().as_secs_f64();
+        println!(
+            "  Del key size = {:#10x}, eclapsed = {}",
+            data_size, elapsed
+        );
+        data_size *= 2;
+    }
+
+    drop(db);
+
+    fs::remove_dir_all("/tmp/leveldb_testdb").expect("Cannot remove directory");
+}
+
 pub fn run_tests() -> bool {
     use teaclave_test_utils::*;
 
-    run_tests!(test_write_a_lot, test_write_and_reopen,)
+    run_tests!(test_write_a_lot, test_write_and_reopen, test_huge_value,)
 }

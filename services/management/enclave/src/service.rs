@@ -289,9 +289,21 @@ impl TeaclaveManagement for TeaclaveManagementService {
         for user_id in &function.user_allowlist {
             let mut u = User::default();
             u.id = user_id.into();
-            u.allowed_functions.push(function.external_id().to_string());
-            self.write_to_db(&u)
-                .map_err(|_| TeaclaveManagementServiceError::StorageError)?;
+            let external_id = u.external_id();
+            let user: Result<User> = self.read_from_db(&external_id);
+            match user {
+                Ok(mut us) => {
+                    us.allowed_functions
+                        .push(function.external_id().to_string());
+                    self.write_to_db(&us)
+                        .map_err(|_| TeaclaveManagementServiceError::StorageError)?;
+                }
+                Err(_) => {
+                    u.allowed_functions.push(function.external_id().to_string());
+                    self.write_to_db(&u)
+                        .map_err(|_| TeaclaveManagementServiceError::StorageError)?;
+                }
+            }
         }
 
         let response = RegisterFunctionResponse::new(function.external_id());
@@ -387,10 +399,24 @@ impl TeaclaveManagement for TeaclaveManagementService {
         &self,
         request: Request<ListFunctionsRequest>,
     ) -> TeaclaveServiceResponseResult<ListFunctionsResponse> {
-        let request = request.message;
+        let mut request_user_id = request.message.user_id.clone();
+
+        let current_user_id = self.get_request_user_id(request.metadata())?;
+        let role = self.get_request_role(request.metadata())?;
+
+        if role != UserRole::PlatformAdmin {
+            ensure!(
+                request_user_id == current_user_id,
+                TeaclaveManagementServiceError::PermissionDenied
+            );
+        }
+
+        if let UserRole::DataOwner(s) = role {
+            request_user_id = s.into();
+        }
 
         let mut u = User::default();
-        u.id = request.user_id;
+        u.id = request_user_id;
         let external_id = u.external_id();
 
         let user: Result<User> = self.read_from_db(&external_id);

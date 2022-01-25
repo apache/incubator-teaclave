@@ -24,6 +24,7 @@ from utils import USER_ID, USER_PASSWORD, connect_authentication_service, connec
 
 
 class UserData:
+
     def __init__(self,
                  user_id,
                  password,
@@ -66,12 +67,14 @@ USER_DATA_1 = UserData("user1", "password",
 
 
 class DataList:
+
     def __init__(self, data_name, data_id):
         self.data_name = data_name
         self.data_id = data_id
 
 
 class Client:
+
     def __init__(self, user_id, user_password):
         self.user_id = user_id
         self.user_password = user_password

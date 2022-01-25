@@ -46,7 +46,10 @@ impl TeaclaveServiceLauncher {
             .invoke::<StartServiceInput, TeeServiceResult<StartServiceOutput>>(command, input)
         {
             Err(e) => bail!("TEE invocation error: {:?}", e),
-            Ok(Err(TeeServiceError::EnclaveForceTermination)) => std::process::exit(1),
+            Ok(Err(TeeServiceError::EnclaveForceTermination)) => {
+                log::info!("Exit");
+                std::process::exit(1);
+            }
             Ok(Err(e)) => bail!("Service exit with error: {:?}", e),
             _ => Ok(String::from("Service successfully exit")),
         }

@@ -29,6 +29,10 @@ pub struct TestCase(pub String, pub fn() -> ());
 
 inventory::collect!(TestCase);
 
+use std::time::Instant;
+#[cfg(feature = "mesalock_sgx")]
+use std::untrusted::time::InstantEx;
+
 #[macro_export]
 macro_rules! run_inventory_tests {
     ($predicate:expr) => {{
@@ -135,13 +139,23 @@ where
     F: FnOnce() -> R + std::panic::UnwindSafe,
 {
     *ncases += 1;
-    let t = || {
+    let t = || -> f64 {
+        let before = Instant::now();
         f();
+        before.elapsed().as_secs_f64()
     };
-    if std::panic::catch_unwind(t).is_ok() {
-        println!("{} {} ... {}!", "testing", name, "\x1B[1;32mok\x1B[0m");
-    } else {
-        println!("{} {} ... {}!", "testing", name, "\x1B[1;31mfailed\x1B[0m");
-        failurecases.push(String::from(name));
+    match std::panic::catch_unwind(t) {
+        Ok(elapsed) => {
+            println!("{} {} ... {}!", "testing", name, "\x1B[1;32mok\x1B[0m");
+            if elapsed < 0.5 {
+                println!("  Elapsed time: {:?}", elapsed);
+            } else {
+                println!("  Elapsed time: \x1B[1;31m{:?}\x1B[0m", elapsed);
+            }
+        }
+        Err(_) => {
+            println!("{} {} ... {}!", "testing", name, "\x1B[1;31mfailed\x1B[0m");
+            failurecases.push(String::from(name));
+        }
     }
 }

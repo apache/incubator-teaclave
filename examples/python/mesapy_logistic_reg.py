@@ -35,12 +35,14 @@ class Executor(Enum):
 
 
 class UserClient:
+
     def __init__(self, user_id, password):
         self.user_id = user_id
         self.password = password
 
 
 class InputData:
+
     def __init__(self,
                  input_url="",
                  input_cmac=[],
@@ -60,6 +62,7 @@ class InputData:
 
 
 class OutputData:
+
     def __init__(self,
                  output_url="",
                  key=[],
@@ -77,12 +80,14 @@ class OutputData:
 
 
 class DataList:
+
     def __init__(self, data_name, data_id):
         self.data_name = data_name
         self.data_id = data_id
 
 
 class ConfigClient:
+
     def __init__(self, user_id, user_password):
         self.user_id = user_id
         self.user_password = user_password

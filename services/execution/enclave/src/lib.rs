@@ -26,6 +26,7 @@ use std::untrusted::path::PathEx;
 
 use anyhow::{anyhow, ensure, Result};
 
+use log::info;
 use teaclave_attestation::{verifier, AttestationConfig, RemoteAttestation};
 use teaclave_binder::proto::{
     ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
@@ -43,11 +44,15 @@ mod service;
 mod task_file_manager;
 
 fn start_service(config: &RuntimeConfig) -> Result<()> {
+    info!("Starting Execution...");
+
     let attestation_config = AttestationConfig::from_teaclave_config(&config)?;
     let attested_tls_config = RemoteAttestation::new(attestation_config)
         .generate_and_endorse()?
         .attested_tls_config()
         .ok_or_else(|| anyhow!("cannot get attested TLS config"))?;
+    info!(" Starting Execution: Self attestation finished ...");
+
     let enclave_info = EnclaveInfo::verify_and_new(
         &config.audit.enclave_info_bytes,
         AUDITOR_PUBLIC_KEYS,
@@ -75,8 +80,10 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
         fusion_base.display()
     );
 
+    info!(" Starting Execution: start ...");
     let mut service =
         service::TeaclaveExecutionService::new(scheduler_service_endpoint, fusion_base)?;
+
     service.start()
 }
 

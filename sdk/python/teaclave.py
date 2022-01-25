@@ -34,6 +34,7 @@ import socket
 
 from typing import Tuple, Dict, List, Any
 
+import cryptography
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 
@@ -61,14 +62,19 @@ class TeaclaveService:
     channel = None
     metadata = None
 
-    def __init__(self, name: str, address: Tuple[str, int],
-                 as_root_ca_cert_path: str, enclave_info_path: str):
+    def __init__(self,
+                 name: str,
+                 address: Tuple[str, int],
+                 as_root_ca_cert_path: str,
+                 enclave_info_path: str,
+                 dump_report=False):
         self._context = ssl._create_unverified_context()
         self._name = name
         self._address = address
         self._as_root_ca_cert_path = as_root_ca_cert_path
         self._enclave_info_path = enclave_info_path
         self._closed = False
+        self._dump_report = dump_report
 
     def __enter__(self):
         return self
@@ -95,11 +101,106 @@ class TeaclaveService:
                                             server_hostname=self._address[0])
         cert = channel.getpeercert(binary_form=True)
         if not cert: raise TeaclaveException("Peer cert is None")
-        _verify_report(self._as_root_ca_cert_path, self._enclave_info_path,
-                       cert, self._name)
+        try:
+            self._verify_report(self._as_root_ca_cert_path,
+                                self._enclave_info_path, cert, self._name)
+        except Exception as e:
+            raise TeaclaveException(f"Failed to verify attesation report: {e}")
         self.channel = channel
 
         return self
+
+    def _verify_report(self, as_root_ca_cert_path: str, enclave_info_path: str,
+                       cert: Dict[str, Any], endpoint_name: str):
+
+        def load_certificates(pem_bytes):
+            start_line = b'-----BEGIN CERTIFICATE-----'
+            result = []
+            cert_slots = pem_bytes.split(start_line)
+            for single_pem_cert in cert_slots[1:]:
+                cert = load_certificate(FILETYPE_ASN1,
+                                        start_line + single_pem_cert)
+                result.append(cert)
+            return result
+
+        if os.environ.get('SGX_MODE') == 'SW':
+            return
+
+        cert = x509.load_der_x509_certificate(cert, default_backend())
+
+        if self._dump_report:
+            try:
+                with open(self._name + "_attestation_report.pem", "wb") as f:
+                    f.write(
+                        cert.public_bytes(cryptography.hazmat.primitives.
+                                          serialization.Encoding.PEM))
+            except:
+                raise TeaclaveException("Failed to dump attestation report")
+
+        try:
+            ext = json.loads(cert.extensions[0].value.value)
+        except:
+            raise TeaclaveException("Failed to load extensions")
+
+        report = bytes(ext["report"])
+        signature = bytes(ext["signature"])
+        try:
+            certs = [
+                load_certificate(FILETYPE_ASN1, bytes(c)) for c in ext["certs"]
+            ]
+        except:
+            raise TeaclaveException(
+                "Failed to load singing certificate of the report")
+
+        # verify signing cert with AS root cert
+        try:
+            with open(as_root_ca_cert_path) as f:
+                as_root_ca_cert = f.read()
+        except:
+            raise TeaclaveException(
+                "Failed to open attestation service root certificate")
+
+        try:
+            as_root_ca_cert = load_certificate(FILETYPE_PEM, as_root_ca_cert)
+        except:
+            raise TeaclaveException(
+                "Failed to load attestation service root certificate")
+
+        store = X509Store()
+        store.add_cert(as_root_ca_cert)
+        for c in certs:
+            store.add_cert(c)
+        store_ctx = X509StoreContext(store, as_root_ca_cert)
+
+        try:
+            store_ctx.verify_certificate()
+
+            # verify report's signature
+            crypto.verify(certs[0], signature, bytes(ext["report"]), 'sha256')
+        except:
+            raise TeaclaveException("Failed to verify report signature")
+
+        report = json.loads(report)
+        quote = report['isvEnclaveQuoteBody']
+        quote = base64.b64decode(quote)
+
+        # get mr_enclave and mr_signer from the quote
+        mr_enclave = quote[112:112 + 32].hex()
+        mr_signer = quote[176:176 + 32].hex()
+
+        # get enclave_info
+        try:
+            enclave_info = toml.load(enclave_info_path)
+        except:
+            raise TeaclaveException("Failed to load enclave info")
+
+        # verify mr_enclave and mr_signer
+        enclave_name = "teaclave_" + endpoint_name + "_service"
+        if mr_enclave != enclave_info[enclave_name]["mr_enclave"]:
+            raise Exception("Failed to verify mr_enclave")
+
+        if mr_signer != enclave_info[enclave_name]["mr_signer"]:
+            raise Exception("Failed to verify mr_signer")
 
 
 class FunctionInput:
@@ -109,6 +210,7 @@ class FunctionInput:
         name: Name of input data.
         description: Description of the input data.
     """
+
     def __init__(self, name: str, description: str):
         self.name = name
         self.description = description
@@ -121,6 +223,7 @@ class FunctionOutput:
         name: Name of output data.
         description: Description of the output data.
     """
+
     def __init__(self, name: str, description: str):
         self.name = name
         self.description = description
@@ -133,6 +236,7 @@ class OwnerList:
         data_name: Name of output data.
         uids: A list of user id which own this data.
     """
+
     def __init__(self, data_name: str, uids: List[str]):
         self.data_name = data_name
         self.uids = uids
@@ -145,6 +249,7 @@ class DataMap:
         data_name: Name of output data.
         data_id: Id for the data name.
     """
+
     def __init__(self, data_name, data_id):
         self.data_name = data_name
         self.data_id = data_id
@@ -158,6 +263,7 @@ class CryptoInfo:
         key: Key for encryption and decryption, bytes in list.
         iv: IV, bytes in list.
     """
+
     def __init__(self, schema: str, key: List[int], iv: List[int]):
         self.schema = schema
         self.key = key
@@ -165,6 +271,7 @@ class CryptoInfo:
 
 
 class UserRegisterRequest(Request):
+
     def __init__(self, metadata: Metadata, user_id: str, user_password: str,
                  role: str, attribute: str):
         self.request = "user_register"
@@ -175,11 +282,56 @@ class UserRegisterRequest(Request):
         self.attribute = attribute
 
 
+class UserUpdateRequest(Request):
+
+    def __init__(self, metadata: Metadata, user_id: str, user_password: str,
+                 role: str, attribute: str):
+        self.request = "user_update"
+        self.metadata = metadata
+        self.id = user_id
+        self.password = user_password
+        self.role = role
+        self.attribute = attribute
+
+
 class UserLoginRequest(Request):
+
     def __init__(self, user_id: str, user_password: str):
         self.request = "user_login"
         self.id = user_id
         self.password = user_password
+
+
+class UserChangePasswordRequest(Request):
+
+    def __init__(self, metadata: Metadata, password: str):
+        self.request = "user_change_password"
+        self.metadata = metadata
+        self.password = password
+
+
+class ResetUserPasswordRequest(Request):
+
+    def __init__(self, metadata: Metadata, user_id: str):
+        self.request = "reset_user_password"
+        self.metadata = metadata
+        self.id = user_id
+
+
+class DeleteUserRequest(Request):
+
+    def __init__(self, metadata: Metadata, user_id: str):
+        self.request = "delete_user"
+        self.metadata = metadata
+        self.id = user_id
+
+
+class ListUsersRequest(Request):
+
+    def __init__(self, metadata: Metadata, user_id: str):
+        self.request = "list_users"
+        self.metadata = metadata
+        self.id = user_id
 
 
 class AuthenticationService(TeaclaveService):
@@ -194,10 +346,14 @@ class AuthenticationService(TeaclaveService):
         enclave_info_path: Path of enclave info to verify the remote service in
             the attestation report.
     """
-    def __init__(self, address: Tuple[str, int], as_root_ca_cert_path: str,
-                 enclave_info_path: str):
+
+    def __init__(self,
+                 address: Tuple[str, int],
+                 as_root_ca_cert_path: str,
+                 enclave_info_path: str,
+                 dump_report=False):
         super().__init__("authentication", address, as_root_ca_cert_path,
-                         enclave_info_path)
+                         enclave_info_path, dump_report)
 
     def user_register(self, user_id: str, user_password: str, role: str,
                       attribute: str):
@@ -218,7 +374,34 @@ class AuthenticationService(TeaclaveService):
         if response["result"] == "ok":
             pass
         else:
-            raise TeaclaveException("Failed to register user")
+            reason = "unknown"
+            if "request_error" in response:
+                reason = response["request_error"]
+            raise TeaclaveException(f"Failed to register user ({reason})")
+
+    def user_update(self, user_id: str, user_password: str, role: str,
+                    attribute: str):
+        """Update an existing user.
+
+        Args:
+            user_id: User ID.
+            user_password: Password.
+            role: Role of user.
+            attribute: Attribute related to the role.
+        """
+        self.check_channel()
+        self.check_metadata()
+        request = UserUpdateRequest(self.metadata, user_id, user_password,
+                                    role, attribute)
+        _write_message(self.channel, request)
+        response = _read_message(self.channel)
+        if response["result"] == "ok":
+            pass
+        else:
+            reason = "unknown"
+            if "request_error" in response:
+                reason = response["request_error"]
+            raise TeaclaveException(f"Failed to update user ({reason})")
 
     def user_login(self, user_id: str, user_password: str) -> str:
         """Login and get a session token.
@@ -237,10 +420,95 @@ class AuthenticationService(TeaclaveService):
         if response["result"] == "ok":
             return response["content"]["token"]
         else:
-            raise TeaclaveException("Failed to login user")
+            reason = "unknown"
+            if "request_error" in response:
+                reason = response["request_error"]
+            raise TeaclaveException(f"Failed to login user ({reason})")
+
+    def user_change_password(self, user_password: str):
+        """Change password.
+
+        Args:
+            user_password: New password.
+        """
+        self.check_channel()
+        self.check_metadata()
+        request = UserChangePasswordRequest(self.metadata, user_password)
+        _write_message(self.channel, request)
+        response = _read_message(self.channel)
+        if response["result"] == "ok":
+            pass
+        else:
+            reason = "unknown"
+            if "request_error" in response:
+                reason = response["request_error"]
+            raise TeaclaveException(f"Failed to change password ({reason})")
+
+    def reset_user_password(self, user_id: str) -> str:
+        """Reset password of a managed user.
+
+        Args:
+            user_id: User ID.
+
+        Returns:
+            str: Restted new password.
+        """
+        self.check_channel()
+        self.check_metadata()
+        request = ResetUserPasswordRequest(self.metadata, user_id)
+        _write_message(self.channel, request)
+        response = _read_message(self.channel)
+        if response["result"] == "ok":
+            return response["content"]["token"]
+        else:
+            reason = "unknown"
+            if "request_error" in response:
+                reason = response["request_error"]
+            raise TeaclaveException(f"Failed to reset password ({reason})")
+
+    def delete_user(self, user_id: str) -> str:
+        """Delete a user.
+
+        Args:
+            user_id: User ID.
+        """
+        self.check_channel()
+        self.check_metadata()
+        request = DeleteUserRequest(self.metadata, user_id)
+        _write_message(self.channel, request)
+        response = _read_message(self.channel)
+        if response["result"] == "ok":
+            pass
+        else:
+            reason = "unknown"
+            if "request_error" in response:
+                reason = response["request_error"]
+            raise TeaclaveException(f"Failed to delete user ({reason})")
+
+    def list_users(self, user_id: str) -> str:
+        """List managed users
+
+        Args:
+            user_id: User ID.
+
+        Returns:
+            str: User list
+        """
+        self.check_channel()
+        request = ListUsersRequest(self.metadata, user_id)
+        _write_message(self.channel, request)
+        response = _read_message(self.channel)
+        if response["result"] == "ok":
+            return response["content"]["ids"]
+        else:
+            reason = "unknown"
+            if "request_error" in response:
+                reason = response["request_error"]
+            raise TeaclaveException(f"Failed to list user ({reason})")
 
 
 class RegisterFunctionRequest(Request):
+
     def __init__(self, metadata: Metadata, name: str, description: str,
                  executor_type: str, public: bool, payload: List[int],
                  arguments: List[str], inputs: List[FunctionInput],
@@ -259,6 +527,7 @@ class RegisterFunctionRequest(Request):
 
 
 class UpdateFunctionRequest(Request):
+
     def __init__(self, metadata: Metadata, function_id: str, name: str,
                  description: str, executor_type: str, public: bool,
                  payload: List[int], arguments: List[str],
@@ -279,6 +548,7 @@ class UpdateFunctionRequest(Request):
 
 
 class ListFunctionsRequest(Request):
+
     def __init__(self, metadata: Metadata, user_id: str):
         self.request = "list_functions"
         self.metadata = metadata
@@ -286,6 +556,7 @@ class ListFunctionsRequest(Request):
 
 
 class DeleteFunctionRequest(Request):
+
     def __init__(self, metadata: Metadata, function_id: str):
         self.request = "delete_function"
         self.metadata = metadata
@@ -293,6 +564,7 @@ class DeleteFunctionRequest(Request):
 
 
 class GetFunctionRequest(Request):
+
     def __init__(self, metadata: Metadata, function_id: str):
         self.request = "get_function"
         self.metadata = metadata
@@ -300,6 +572,7 @@ class GetFunctionRequest(Request):
 
 
 class RegisterInputFileRequest(Request):
+
     def __init__(self, metadata: Metadata, url: str, cmac: List[int],
                  crypto_info: CryptoInfo):
         self.request = "register_input_file"
@@ -310,6 +583,7 @@ class RegisterInputFileRequest(Request):
 
 
 class RegisterOutputFileRequest(Request):
+
     def __init__(self, metadata: Metadata, url: str, crypto_info: CryptoInfo):
         self.request = "register_output_file"
         self.metadata = metadata
@@ -318,6 +592,7 @@ class RegisterOutputFileRequest(Request):
 
 
 class UpdateInputFileRequest(Request):
+
     def __init__(self, metadata: Metadata, data_id: str, url: str):
         self.request = "update_input_file"
         self.metadata = metadata
@@ -326,6 +601,7 @@ class UpdateInputFileRequest(Request):
 
 
 class UpdateOutputFileRequest(Request):
+
     def __init__(self, metadata: Metadata, data_id: str, url: str):
         self.request = "update_output_file"
         self.metadata = metadata
@@ -334,6 +610,7 @@ class UpdateOutputFileRequest(Request):
 
 
 class CreateTaskRequest(Request):
+
     def __init__(self, metadata: Metadata, function_id: str,
                  function_arguments: Dict[str, Any], executor: str,
                  inputs_ownership: List[OwnerList],
@@ -348,6 +625,7 @@ class CreateTaskRequest(Request):
 
 
 class AssignDataRequest(Request):
+
     def __init__(self, metadata: Metadata, task_id: str, inputs: List[DataMap],
                  outputs: List[DataMap]):
         self.request = "assign_data"
@@ -358,6 +636,7 @@ class AssignDataRequest(Request):
 
 
 class ApproveTaskRequest(Request):
+
     def __init__(self, metadata: Metadata, task_id: str):
         self.request = "approve_task"
         self.metadata = metadata
@@ -365,6 +644,7 @@ class ApproveTaskRequest(Request):
 
 
 class InvokeTaskRequest(Request):
+
     def __init__(self, metadata: Metadata, task_id: str):
         self.request = "invoke_task"
         self.metadata = metadata
@@ -372,6 +652,7 @@ class InvokeTaskRequest(Request):
 
 
 class CancelTaskRequest(Request):
+
     def __init__(self, metadata: Metadata, task_id: str):
         self.request = "cancel_task"
         self.metadata = metadata
@@ -379,6 +660,7 @@ class CancelTaskRequest(Request):
 
 
 class GetTaskRequest(Request):
+
     def __init__(self, metadata: Metadata, task_id: str):
         self.request = "get_task"
         self.metadata = metadata
@@ -396,10 +678,14 @@ class FrontendService(TeaclaveService):
         enclave_info_path: Path of enclave info to verify the remote service in
             the attestation report.
     """
-    def __init__(self, address: Tuple[str, int], as_root_ca_cert_path: str,
-                 enclave_info_path: str):
+
+    def __init__(self,
+                 address: Tuple[str, int],
+                 as_root_ca_cert_path: str,
+                 enclave_info_path: str,
+                 dump_report=False):
         super().__init__("frontend", address, as_root_ca_cert_path,
-                         enclave_info_path)
+                         enclave_info_path, dump_report)
 
     def register_function(
         self,
@@ -424,7 +710,10 @@ class FrontendService(TeaclaveService):
         if response["result"] == "ok":
             return response["content"]["function_id"]
         else:
-            raise TeaclaveException("Failed to register function")
+            reason = "unknown"
+            if "request_error" in response:
+                reason = response["request_error"]
+            raise TeaclaveException(f"Failed to register function ({reason})")
 
     def update_function(
         self,
@@ -450,7 +739,10 @@ class FrontendService(TeaclaveService):
         if response["result"] == "ok":
             return response["content"]["function_id"]
         else:
-            raise TeaclaveException("Failed to update function")
+            reason = "unknown"
+            if "request_error" in response:
+                reason = response["request_error"]
+            raise TeaclaveException(f"Failed to update function ({reason})")
 
     def list_functions(self, user_id: str):
         self.check_metadata()
@@ -459,7 +751,7 @@ class FrontendService(TeaclaveService):
         _write_message(self.channel, request)
         response = _read_message(self.channel)
         if response["result"] == "ok":
-            return response["content"]["function_ids"]
+            return response["content"]
         else:
             raise TeaclaveException("Failed to list functions")
 
@@ -472,7 +764,10 @@ class FrontendService(TeaclaveService):
         if response["result"] == "ok":
             return response["content"]
         else:
-            raise TeaclaveException("Failed to get function")
+            reason = "unknown"
+            if "request_error" in response:
+                reason = response["request_error"]
+            raise TeaclaveException(f"Failed to get function ({reason})")
 
     def delete_function(self, function_id: str):
         self.check_metadata()
@@ -496,7 +791,11 @@ class FrontendService(TeaclaveService):
         if response["result"] == "ok":
             return response["content"]["data_id"]
         else:
-            raise TeaclaveException("Failed to register input file")
+            reason = "unknown"
+            if "request_error" in response:
+                reason = response["request_error"]
+            raise TeaclaveException(
+                f"Failed to register input file ({reason})")
 
     def register_output_file(self, url: str, schema: str, key: List[int],
                              iv: List[int]):
@@ -509,7 +808,11 @@ class FrontendService(TeaclaveService):
         if response["result"] == "ok":
             return response["content"]["data_id"]
         else:
-            raise TeaclaveException("Failed to register output file")
+            reason = "unknown"
+            if "request_error" in response:
+                reason = response["request_error"]
+            raise TeaclaveException(
+                f"Failed to register output file ({reason})")
 
     def create_task(self,
                     function_id: str,
@@ -528,7 +831,10 @@ class FrontendService(TeaclaveService):
         if response["result"] == "ok":
             return response["content"]["task_id"]
         else:
-            raise TeaclaveException("Failed to create task")
+            reason = "unknown"
+            if "request_error" in response:
+                reason = response["request_error"]
+            raise TeaclaveException(f"Failed to create task ({reason})")
 
     def assign_data_to_task(self, task_id: str, inputs: List[DataMap],
                             outputs: List[DataMap]):
@@ -540,7 +846,11 @@ class FrontendService(TeaclaveService):
         if response["result"] == "ok":
             pass
         else:
-            raise TeaclaveException("Failed to assign data to task")
+            reason = "unknown"
+            if "request_error" in response:
+                reason = response["request_error"]
+            raise TeaclaveException(
+                f"Failed to assign data to task ({reason})")
 
     def approve_task(self, task_id: str):
         self.check_metadata()
@@ -551,7 +861,10 @@ class FrontendService(TeaclaveService):
         if response["result"] == "ok":
             pass
         else:
-            raise TeaclaveException("Failed to approve task")
+            reason = "unknown"
+            if "request_error" in response:
+                reason = response["request_error"]
+            raise TeaclaveException(f"Failed to approve task ({reason})")
 
     def invoke_task(self, task_id: str):
         self.check_metadata()
@@ -562,7 +875,10 @@ class FrontendService(TeaclaveService):
         if response["result"] == "ok":
             pass
         else:
-            raise TeaclaveException("Failed to invoke task")
+            reason = "unknown"
+            if "request_error" in response:
+                reason = response["request_error"]
+            raise TeaclaveException(f"Failed to invoke task ({reason})")
 
     def cancel_task(self, task_id: str):
         self.check_metadata()
@@ -573,7 +889,10 @@ class FrontendService(TeaclaveService):
         if response["result"] == "ok":
             pass
         else:
-            raise TeaclaveException("Failed to cancel task")
+            reason = "unknown"
+            if "request_error" in response:
+                reason = response["request_error"]
+            raise TeaclaveException(f"Failed to cancel task ({reason})")
 
     def get_task_result(self, task_id: str):
         self.check_metadata()
@@ -584,19 +903,25 @@ class FrontendService(TeaclaveService):
             _write_message(self.channel, request)
             response = _read_message(self.channel)
             if response["result"] != "ok":
-                raise TeaclaveException("Failed to get task result")
+                reason = "unknown"
+                if "request_error" in response:
+                    reason = response["request_error"]
+                raise TeaclaveException(
+                    f"Failed to get task result ({reason})")
             time.sleep(1)
-            if response["content"]["status"] == 20:
-                print(response["content"]["result"]["result"])
+            if response["content"]["status"] == 10:
+                break
+            elif response["content"]["status"] == 20:
                 raise TeaclaveException(
                     "Task Canceled, Error: " +
                     response["content"]["result"]["result"]["Err"]["reason"])
-            if response["content"]["status"] == 99:
+            elif response["content"]["status"] == 99:
                 raise TeaclaveException(
                     "Task Failed, Error: " +
                     response["content"]["result"]["result"]["Err"]["reason"])
-            if response["content"]["status"] == 10:
-                break
+            else:
+                raise TeaclaveException("Task result unknown: " +
+                                        response["content"]["status"])
 
         return response["content"]["result"]["result"]["Ok"]["return_value"]
 
@@ -608,7 +933,11 @@ class FrontendService(TeaclaveService):
             _write_message(self.channel, request)
             response = _read_message(self.channel)
             if response["result"] != "ok":
-                raise TeaclaveException("Failed to get task result")
+                reason = "unknown"
+                if "request_error" in response:
+                    reason = response["request_error"]
+                raise TeaclaveException(
+                    f"Failed to get output cmac by tag ({reason})")
             time.sleep(1)
             if response["content"]["status"] == 10:
                 break
@@ -617,7 +946,9 @@ class FrontendService(TeaclaveService):
 
 
 def _write_message(sock: ssl.SSLSocket, message: Any):
+
     class RequestEncoder(json.JSONEncoder):
+
         def default(self, o):
             if isinstance(o, Request):
                 request = o.__dict__["request"]
@@ -648,49 +979,3 @@ def _read_message(sock: ssl.SSLSocket):
         raw += data
     response = json.loads(raw)
     return response
-
-
-def _verify_report(as_root_ca_cert_path: str, enclave_info_path: str,
-                   cert: Dict[str, Any], endpoint_name: str):
-    if os.environ.get('SGX_MODE') == 'SW':
-        return
-
-    cert = x509.load_der_x509_certificate(cert, default_backend())
-    ext = json.loads(cert.extensions[0].value.value)
-
-    report = bytes(ext["report"])
-    signature = bytes(ext["signature"])
-    signing_cert = bytes(ext["signing_cert"])
-    signing_cert = load_certificate(FILETYPE_ASN1, signing_cert)
-
-    # verify signing cert with AS root cert
-    with open(as_root_ca_cert_path) as f:
-        as_root_ca_cert = f.read()
-    as_root_ca_cert = load_certificate(FILETYPE_PEM, as_root_ca_cert)
-    store = X509Store()
-    store.add_cert(as_root_ca_cert)
-    store.add_cert(signing_cert)
-    store_ctx = X509StoreContext(store, as_root_ca_cert)
-    store_ctx.verify_certificate()
-
-    # verify report's signature
-    crypto.verify(signing_cert, signature, bytes(ext["report"]), 'sha256')
-
-    report = json.loads(report)
-    quote = report['isvEnclaveQuoteBody']
-    quote = base64.b64decode(quote)
-
-    # get mr_enclave and mr_signer from the quote
-    mr_enclave = quote[112:112 + 32].hex()
-    mr_signer = quote[176:176 + 32].hex()
-
-    # get enclave_info
-    enclave_info = toml.load(enclave_info_path)
-
-    # verify mr_enclave and mr_signer
-    enclave_name = "teaclave_" + endpoint_name + "_service"
-    if mr_enclave != enclave_info[enclave_name]["mr_enclave"]:
-        raise Exception("mr_enclave error")
-
-    if mr_signer != enclave_info[enclave_name]["mr_signer"]:
-        raise Exception("mr_signer error")

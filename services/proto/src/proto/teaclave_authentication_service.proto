@@ -65,10 +65,42 @@ message UserAuthenticateResponse {
   UserAuthClaims claims = 1;
 }
 
+message ListUsersRequest {
+  string id = 1;
+}
+
+message ListUsersResponse {
+  repeated string ids = 1;
+}
+
+message ResetUserPasswordRequest {
+  string id = 1;
+}
+
+message ResetUserPasswordResponse {
+  string password = 1;
+}
+
+message UserChangePasswordRequest {
+  string password = 1;
+}
+
+message UserChangePasswordResponse {}
+
+message DeleteUserRequest {
+  string id = 1;
+}
+
+message DeleteUserResponse {}
+
 service TeaclaveAuthenticationApi {
   rpc UserRegister(UserRegisterRequest) returns (UserRegisterResponse);
   rpc UserUpdate(UserUpdateRequest) returns (UserUpdateResponse);
   rpc UserLogin (UserLoginRequest) returns (UserLoginResponse);
+  rpc UserChangePassword (UserChangePasswordRequest) returns (UserChangePasswordResponse);
+  rpc ResetUserPassword (ResetUserPasswordRequest) returns (ResetUserPasswordResponse);
+  rpc DeleteUser (DeleteUserRequest) returns (DeleteUserResponse);
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
 }
 
 service TeaclaveAuthenticationInternal {

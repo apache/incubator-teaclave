@@ -54,6 +54,7 @@ thiserror = { version = "1.0.9" }
 ring      = { version = "0.16.5" }
 rand      = { version = "0.7.0" }
 jsonwebtoken = { version = "7.2.0" }
+uuid      = { version = "0.8.1", features = ["v4"] }
 
 rusty-leveldb                  = { path = "../../../common/rusty_leveldb_sgx" }
 teaclave_attestation           = { path = "../../../attestation" }

@@ -25,6 +25,7 @@ import sys
 
 
 class HTTPRequestHandler(SimpleHTTPRequestHandler):
+
     def do_PUT(self):
         length = int(self.headers["Content-Length"])
 

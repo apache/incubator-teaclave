@@ -35,7 +35,7 @@ pub(crate) const ISSUER_NAME: &str = "Teaclave";
 pub(crate) static JWT_ALG: jwt::Algorithm = jwt::Algorithm::HS512;
 pub(crate) const JWT_SECRET_LEN: usize = 512;
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Default, Clone, Serialize, Deserialize, Debug)]
 pub(crate) struct UserInfo {
     pub id: String,
     pub role: UserRole,
@@ -99,5 +99,12 @@ impl UserInfo {
         validation.sub = Some(self.id.to_string());
         let secret = jwt::DecodingKey::from_secret(secret);
         Ok(jwt::decode::<UserAuthClaims>(token, &secret, &validation)?.claims)
+    }
+
+    pub(crate) fn has_attribute(&self, attribute: &str) -> bool {
+        match self.role {
+            UserRole::DataOwner(ref a) => a == attribute,
+            _ => false,
+        }
     }
 }

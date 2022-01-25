@@ -24,6 +24,7 @@ from utils import USER_ID, USER_PASSWORD, connect_authentication_service, connec
 
 
 class BuiltinOnlineDecryptExample:
+
     def __init__(self, user_id, user_password):
         self.user_id = user_id
         self.user_password = user_password

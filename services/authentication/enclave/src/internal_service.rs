@@ -76,7 +76,7 @@ pub mod tests {
     use teaclave_types::{UserAuthClaims, UserRole};
 
     fn get_mock_service() -> TeaclaveAuthenticationInternalService {
-        let database = Database::open().unwrap();
+        let database = Database::open("").unwrap();
         let mut jwt_secret = vec![0; JWT_SECRET_LEN];
         let mut rng = rand::thread_rng();
         rng.fill_bytes(&mut jwt_secret);
@@ -98,7 +98,7 @@ pub mod tests {
         let user = service.db_client.get_user(id).unwrap();
 
         let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-        let exp = (now + Duration::from_secs(24 * 60)).as_secs();
+        let exp = (now + Duration::from_secs(24 * 60 * 60)).as_secs(); // 1 day
         let token = user.get_token(exp, &service.jwt_secret).unwrap();
 
         let response = get_authenticate_response(id, &token, &service);

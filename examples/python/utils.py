@@ -41,6 +41,7 @@ else:
 
 
 class PlatformAdmin:
+
     def __init__(self, user_id: str, user_password: str):
         self.client = AuthenticationService(AUTHENTICATION_SERVICE_ADDRESS,
                                             AS_ROOT_CA_CERT_PATH,

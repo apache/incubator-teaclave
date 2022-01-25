@@ -23,9 +23,13 @@ extern crate sgx_tstd as std;
 use log::debug;
 use log::error;
 use std::backtrace;
+use std::path::PathBuf;
 use std::sync::{Arc, SgxRwLock as RwLock};
+#[cfg(feature = "mesalock_sgx")]
+use std::untrusted::path::PathEx;
 use teaclave_attestation::verifier::AttestationReportVerificationFn;
 use teaclave_attestation::AttestedTlsConfig;
+use teaclave_config::RuntimeConfig;
 use teaclave_rpc::config::SgxTrustedTlsClientConfig;
 use teaclave_rpc::endpoint::Endpoint;
 use teaclave_types::EnclaveInfo;
@@ -81,6 +85,41 @@ impl ServiceEnclave {
 
         Ok(())
     }
+}
+
+pub fn base_dir_for_db(config: &RuntimeConfig) -> anyhow::Result<PathBuf> {
+    base_dir(config, "database")
+}
+
+pub fn base_dir_for_offload_functions(config: &RuntimeConfig) -> anyhow::Result<PathBuf> {
+    base_dir(config, "functions")
+}
+
+fn base_dir(config: &RuntimeConfig, sub_name: &str) -> anyhow::Result<PathBuf> {
+    let fusion_base = config.mount.fusion_base_dir.as_path();
+    // We only create this base directory in test_mode
+    // This directory should be mounted in release mode
+    #[cfg(test_mode)]
+    std::untrusted::fs::create_dir_all(&fusion_base)?;
+    if !fusion_base.exists() {
+        error!(
+            "Fusion base directory is not mounted: {}",
+            fusion_base.display()
+        );
+        anyhow::bail!("fusion_base not mounted");
+    }
+
+    let sub_base = fusion_base.join(sub_name);
+    std::untrusted::fs::create_dir_all(&sub_base)?;
+
+    if !sub_base.exists() {
+        error!(
+            "Offload base directory is not mounted: {}",
+            sub_base.display()
+        );
+        anyhow::bail!("sub_base not mounted");
+    }
+    Ok(sub_base)
 }
 
 pub use teaclave_service_enclave_utils_proc_macro::teaclave_service;

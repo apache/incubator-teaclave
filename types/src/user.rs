@@ -29,6 +29,12 @@ pub enum UserRole {
     Invalid,
 }
 
+impl Default for UserRole {
+    fn default() -> Self {
+        UserRole::Invalid
+    }
+}
+
 impl UserRole {
     pub fn new(role: &str, attribute: &str) -> Self {
         match role {

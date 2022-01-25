@@ -22,10 +22,7 @@ use anyhow::anyhow;
 use std::prelude::v1::*;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use std::untrusted::time::SystemTimeEx;
-use teaclave_proto::teaclave_authentication_service::{
-    TeaclaveAuthenticationApi, UserLoginRequest, UserLoginResponse, UserRegisterRequest,
-    UserRegisterResponse, UserUpdateRequest, UserUpdateResponse,
-};
+use teaclave_proto::teaclave_authentication_service::*;
 use teaclave_rpc::Request;
 use teaclave_service_enclave_utils::{bail, ensure, teaclave_service};
 use teaclave_types::{TeaclaveServiceResponseResult, UserRole};
@@ -48,6 +45,22 @@ impl TeaclaveAuthenticationApiService {
             jwt_secret,
         }
     }
+
+    fn validate_user_credential(
+        &self,
+        id: &str,
+        token: &str,
+    ) -> Result<UserRole, TeaclaveAuthenticationApiError> {
+        let user: UserInfo = match self.db_client.get_user(&id) {
+            Ok(value) => value,
+            Err(_) => bail!(TeaclaveAuthenticationApiError::PermissionDenied),
+        };
+
+        match user.validate_token(&self.jwt_secret, &token) {
+            Ok(claims) => Ok(claims.get_role()),
+            Err(_) => bail!(TeaclaveAuthenticationApiError::PermissionDenied),
+        }
+    }
 }
 
 impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
@@ -65,15 +78,8 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
             .get("token")
             .ok_or_else(|| anyhow!("Missing credential"))?
             .into();
-        let user: UserInfo = match self.db_client.get_user(&id) {
-            Ok(value) => value,
-            Err(_) => bail!(TeaclaveAuthenticationApiError::PermissionDenied),
-        };
 
-        let requester_role = match user.validate_token(&self.jwt_secret, &token) {
-            Ok(claims) => claims.get_role(),
-            Err(_) => return Err(TeaclaveAuthenticationApiError::PermissionDenied.into()),
-        };
+        let requester_role = self.validate_user_credential(&id, &token)?;
 
         let request = request.message;
         ensure!(
@@ -116,15 +122,7 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
             .get("token")
             .ok_or_else(|| anyhow!("Missing credential"))?
             .into();
-        let user: UserInfo = match self.db_client.get_user(&id) {
-            Ok(value) => value,
-            Err(_) => bail!(TeaclaveAuthenticationApiError::PermissionDenied),
-        };
-
-        let requester_role = match user.validate_token(&self.jwt_secret, &token) {
-            Ok(claims) => claims.get_role(),
-            Err(_) => return Err(TeaclaveAuthenticationApiError::PermissionDenied.into()),
-        };
+        let requester_role = self.validate_user_credential(&id, &token)?;
 
         let request = request.message;
         ensure!(
@@ -176,11 +174,162 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
             let now = SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .map_err(|_| TeaclaveAuthenticationApiError::ServiceUnavailable)?;
-            let exp = (now + Duration::from_secs(24 * 60)).as_secs();
+            let exp = (now + Duration::from_secs(24 * 60 * 60)).as_secs();
             match user.get_token(exp, &self.jwt_secret) {
                 Ok(token) => Ok(UserLoginResponse { token }),
                 Err(_) => Err(TeaclaveAuthenticationApiError::ServiceUnavailable.into()),
             }
+        }
+    }
+
+    fn user_change_password(
+        &self,
+        request: Request<UserChangePasswordRequest>,
+    ) -> TeaclaveServiceResponseResult<UserChangePasswordResponse> {
+        let id: String = request
+            .metadata
+            .get("id")
+            .ok_or_else(|| anyhow!("Missing credential"))?
+            .into();
+        let token: String = request
+            .metadata
+            .get("token")
+            .ok_or_else(|| anyhow!("Missing credential"))?
+            .into();
+        let requester_role = self.validate_user_credential(&id, &token)?;
+
+        let request = request.message;
+        ensure!(
+            !request.password.is_empty(),
+            TeaclaveAuthenticationApiError::InvalidPassword
+        );
+        let updated_user = UserInfo::new(&id, &request.password, requester_role);
+
+        match self.db_client.update_user(&updated_user) {
+            Ok(_) => Ok(UserChangePasswordResponse {}),
+            Err(DbError::UserNotExist) => Err(TeaclaveAuthenticationApiError::InvalidUserId.into()),
+            Err(_) => Err(TeaclaveAuthenticationApiError::ServiceUnavailable.into()),
+        }
+    }
+
+    fn reset_user_password(
+        &self,
+        request: Request<ResetUserPasswordRequest>,
+    ) -> TeaclaveServiceResponseResult<ResetUserPasswordResponse> {
+        let id: String = request
+            .metadata
+            .get("id")
+            .ok_or_else(|| anyhow!("Missing credential"))?
+            .into();
+        let token: String = request
+            .metadata
+            .get("token")
+            .ok_or_else(|| anyhow!("Missing credential"))?
+            .into();
+        let requester_role = self.validate_user_credential(&id, &token)?;
+
+        let request = request.message;
+        ensure!(
+            !request.id.is_empty(),
+            TeaclaveAuthenticationApiError::InvalidUserId
+        );
+        let user = self
+            .db_client
+            .get_user(&request.id)
+            .map_err(|_| TeaclaveAuthenticationApiError::InvalidUserId)?;
+
+        ensure!(
+            authorize_reset_user_password(&requester_role, &user),
+            TeaclaveAuthenticationApiError::InvalidRole
+        );
+
+        let mut encode_buffer = uuid::Uuid::encode_buffer();
+        let new_password = uuid::Uuid::new_v4()
+            .to_simple()
+            .encode_lower(&mut encode_buffer);
+        let updated_user = UserInfo::new(&request.id, &new_password, user.role);
+        match self.db_client.update_user(&updated_user) {
+            Ok(_) => Ok(ResetUserPasswordResponse {
+                password: new_password.to_string(),
+            }),
+            Err(DbError::UserNotExist) => Err(TeaclaveAuthenticationApiError::InvalidUserId.into()),
+            Err(_) => Err(TeaclaveAuthenticationApiError::ServiceUnavailable.into()),
+        }
+    }
+
+    fn delete_user(
+        &self,
+        request: Request<DeleteUserRequest>,
+    ) -> TeaclaveServiceResponseResult<DeleteUserResponse> {
+        let id: String = request
+            .metadata
+            .get("id")
+            .ok_or_else(|| anyhow!("Missing credential"))?
+            .into();
+        let token: String = request
+            .metadata
+            .get("token")
+            .ok_or_else(|| anyhow!("Missing credential"))?
+            .into();
+        let requester_role = self.validate_user_credential(&id, &token)?;
+
+        let request = request.message;
+        ensure!(
+            !request.id.is_empty(),
+            TeaclaveAuthenticationApiError::InvalidUserId
+        );
+        let user = self
+            .db_client
+            .get_user(&request.id)
+            .map_err(|_| TeaclaveAuthenticationApiError::InvalidUserId)?;
+
+        ensure!(
+            authorize_delete_user(&requester_role, &user),
+            TeaclaveAuthenticationApiError::InvalidRole
+        );
+        match self.db_client.delete_user(&request.id) {
+            Ok(_) => Ok(DeleteUserResponse {}),
+            Err(DbError::UserNotExist) => Err(TeaclaveAuthenticationApiError::InvalidUserId.into()),
+            Err(_) => Err(TeaclaveAuthenticationApiError::ServiceUnavailable.into()),
+        }
+    }
+
+    fn list_users(
+        &self,
+        request: Request<ListUsersRequest>,
+    ) -> TeaclaveServiceResponseResult<ListUsersResponse> {
+        let id: String = request
+            .metadata
+            .get("id")
+            .ok_or_else(|| anyhow!("Missing credential"))?
+            .into();
+        let token: String = request
+            .metadata
+            .get("token")
+            .ok_or_else(|| anyhow!("Missing credential"))?
+            .into();
+        let requester_role = self.validate_user_credential(&id, &token)?;
+
+        let request = request.message;
+        ensure!(
+            !request.id.is_empty(),
+            TeaclaveAuthenticationApiError::InvalidUserId
+        );
+
+        ensure!(
+            authorize_list_users(&requester_role, &request),
+            TeaclaveAuthenticationApiError::InvalidRole
+        );
+
+        let users = match requester_role {
+            UserRole::PlatformAdmin => self.db_client.list_users(),
+            _ => self.db_client.list_users_by_attribute(&request.id),
+        };
+
+        match users {
+            Ok(ids) => Ok(ListUsersResponse { ids }),
+            Err(DbError::UserNotExist) => Err(TeaclaveAuthenticationApiError::InvalidUserId.into()),
+            Err(_) => Err(TeaclaveAuthenticationApiError::ServiceUnavailable.into()),
         }
     }
 }
@@ -191,6 +340,14 @@ fn authorize_user_register(role: &UserRole, request: &UserRegisterRequest) -> bo
         UserRole::DataOwnerManager(s) => {
             let request_role = UserRole::new(&request.role, &request.attribute);
             request_role == UserRole::DataOwner(s.to_owned())
+        }
+        UserRole::FunctionOwner => {
+            let request_role = UserRole::new(&request.role, &request.attribute);
+            if let UserRole::DataOwnerManager(_) = request_role {
+                true
+            } else {
+                false
+            }
         }
         _ => false,
     }
@@ -207,6 +364,37 @@ fn authorize_user_update(role: &UserRole, request: &UserUpdateRequest) -> bool {
     }
 }
 
+fn authorize_reset_user_password(role: &UserRole, target_user: &UserInfo) -> bool {
+    match role {
+        UserRole::PlatformAdmin => true,
+        UserRole::DataOwnerManager(s) => {
+            let request_role = &target_user.role;
+            *request_role == UserRole::DataOwner(s.to_owned())
+        }
+        _ => false,
+    }
+}
+
+fn authorize_delete_user(role: &UserRole, target_user: &UserInfo) -> bool {
+    match role {
+        UserRole::PlatformAdmin => true,
+        UserRole::DataOwnerManager(s) => {
+            let request_role = &target_user.role;
+            *request_role == UserRole::DataOwner(s.to_owned())
+        }
+        _ => false,
+    }
+}
+
+fn authorize_list_users(role: &UserRole, request: &ListUsersRequest) -> bool {
+    match role {
+        UserRole::PlatformAdmin => true,
+        UserRole::DataOwnerManager(s) => s == &request.id,
+        UserRole::FunctionOwner => false,
+        _ => false,
+    }
+}
+
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
@@ -218,7 +406,7 @@ pub mod tests {
     use teaclave_rpc::IntoRequest;
 
     fn get_mock_service() -> TeaclaveAuthenticationApiService {
-        let database = Database::open().unwrap();
+        let database = Database::open("").unwrap();
         let mut jwt_secret = vec![0; JWT_SECRET_LEN];
         let mut rng = rand::thread_rng();
         rng.fill_bytes(&mut jwt_secret);
@@ -303,6 +491,114 @@ pub mod tests {
 
         debug!("saved user_info: {:?}", user);
         let request = UserLoginRequest::new("test_login_id", "test_password1").into_request();
+        assert!(service.user_login(request).is_err());
+    }
+
+    pub fn test_user_change_password() {
+        let service = get_mock_service();
+        let request = UserLoginRequest::new("admin", "teaclave").into_request();
+        let response = service.user_login(request).unwrap();
+
+        let mut metadata = HashMap::new();
+        metadata.insert("id".to_owned(), "admin".to_owned());
+        metadata.insert("token".to_owned(), response.token);
+        let mut request = UserRegisterRequest::new(
+            "test_user_change_password_id",
+            "test_password",
+            "PlatformAdmin",
+            "",
+        )
+        .into_request();
+        request.metadata = metadata.clone();
+        assert!(service.user_register(request).is_ok());
+
+        let request =
+            UserLoginRequest::new("test_user_change_password_id", "test_password").into_request();
+        let response = service.user_login(request).unwrap();
+        let mut metadata = HashMap::new();
+        metadata.insert("id".to_owned(), "test_user_change_password_id".to_owned());
+        metadata.insert("token".to_owned(), response.token);
+
+        let mut request = UserChangePasswordRequest::new("updated_password").into_request();
+        request.metadata = metadata.clone();
+        service.user_change_password(request).unwrap();
+
+        let mut request = UserChangePasswordRequest::new("").into_request();
+        request.metadata = metadata;
+        assert!(service.user_change_password(request).is_err());
+
+        let request = UserLoginRequest::new("test_user_change_password_id", "updated_password")
+            .into_request();
+        let response = service.user_login(request);
+        assert!(response.is_ok());
+    }
+
+    pub fn test_reset_user_password() {
+        let service = get_mock_service();
+        let request = UserLoginRequest::new("admin", "teaclave").into_request();
+        let response = service.user_login(request).unwrap();
+
+        let mut metadata = HashMap::new();
+        metadata.insert("id".to_owned(), "admin".to_owned());
+        metadata.insert("token".to_owned(), response.token);
+        let mut request = UserRegisterRequest::new(
+            "test_reset_user_password_id",
+            "test_password",
+            "PlatformAdmin",
+            "",
+        )
+        .into_request();
+        request.metadata = metadata.clone();
+        assert!(service.user_register(request).is_ok());
+
+        let mut request =
+            ResetUserPasswordRequest::new("test_reset_user_password_id").into_request();
+        request.metadata = metadata.clone();
+        let response = service.reset_user_password(request);
+        assert!(response.is_ok());
+
+        let request =
+            UserLoginRequest::new("test_reset_user_password_id", response.unwrap().password)
+                .into_request();
+        let response = service.user_login(request);
+        assert!(response.is_ok());
+    }
+
+    pub fn test_delete_user() {
+        let service = get_mock_service();
+
+        let request = UserLoginRequest::new("admin", "teaclave").into_request();
+        let response = service.user_login(request).unwrap();
+
+        let mut metadata = HashMap::new();
+        metadata.insert("id".to_owned(), "admin".to_owned());
+        metadata.insert("token".to_owned(), response.token);
+
+        let mut request =
+            UserRegisterRequest::new("test_delete_user_id", "test_password", "FunctionOwner", "")
+                .into_request();
+        request.metadata = metadata;
+        assert!(service.user_register(request).is_ok());
+
+        let request = UserLoginRequest::new("test_delete_user_id", "test_password").into_request();
+        let response = service.user_login(request);
+        assert!(response.is_ok());
+
+        let token = response.unwrap().token;
+        let user = service.db_client.get_user("test_delete_user_id").unwrap();
+        assert!(user.validate_token(&service.jwt_secret, &token).is_ok());
+
+        let request = UserLoginRequest::new("admin", "teaclave").into_request();
+        let response = service.user_login(request).unwrap();
+        let mut metadata = HashMap::new();
+        metadata.insert("id".to_owned(), "admin".to_owned());
+        metadata.insert("token".to_owned(), response.token);
+        let mut request = DeleteUserRequest::new("test_delete_user_id").into_request();
+        request.metadata = metadata;
+        assert!(service.delete_user(request).is_ok());
+
+        debug!("saved user_info: {:?}", user);
+        let request = UserLoginRequest::new("test_delete_user_id", "test_password").into_request();
         assert!(service.user_login(request).is_err());
     }
 }
