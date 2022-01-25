@@ -919,9 +919,6 @@ class FrontendService(TeaclaveService):
                 raise TeaclaveException(
                     "Task Failed, Error: " +
                     response["content"]["result"]["result"]["Err"]["reason"])
-            else:
-                raise TeaclaveException("Task result unknown: " +
-                                        response["content"]["status"])
 
         return response["content"]["result"]["result"]["Ok"]["return_value"]
 
