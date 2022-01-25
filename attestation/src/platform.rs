@@ -216,28 +216,19 @@ pub(crate) fn get_sgx_quote(ak_id: &sgx_att_key_id_t, report: sgx_report_t) -> R
 pub mod tests {
     use super::*;
     use crate::key;
-    use teaclave_test_utils::*;
 
-    pub fn run_tests() -> bool {
-        run_tests!(
-            test_init_sgx_quote,
-            test_create_sgx_isv_enclave_report,
-            test_get_sgx_quote,
-        )
-    }
-
-    fn test_init_sgx_quote() {
+    pub fn test_init_sgx_quote() {
         assert!(init_sgx_quote().is_ok());
     }
 
-    fn test_create_sgx_isv_enclave_report() {
+    pub fn test_create_sgx_isv_enclave_report() {
         let (_ak_id, qe_target_info) = init_sgx_quote().unwrap();
         let key_pair = key::NistP256KeyPair::new().unwrap();
         let sgx_report_result = create_sgx_isv_enclave_report(key_pair.pub_k(), qe_target_info);
         assert!(sgx_report_result.is_ok());
     }
 
-    fn test_get_sgx_quote() {
+    pub fn test_get_sgx_quote() {
         let (ak_id, qe_target_info) = init_sgx_quote().unwrap();
         let key_pair = key::NistP256KeyPair::new().unwrap();
         let sgx_report = create_sgx_isv_enclave_report(key_pair.pub_k(), qe_target_info).unwrap();

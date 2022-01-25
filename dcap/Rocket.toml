@@ -22,3 +22,7 @@ port = 8080
 [global.tls]
 certs = "dcap_server_cert.pem"
 key = "dcap_server_key.pem"
+
+[global.attestation]
+certs = "dcap_server_cert.pem"
+key = "dcap_server_key.pem"

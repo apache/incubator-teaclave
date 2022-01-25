@@ -212,8 +212,8 @@ impl TeaclaveServerCertVerifier {
         }
     }
 
-    fn display_attestation_report(&self, cert_der: &[u8]) -> bool {
-        match AttestationReport::from_cert(&cert_der, &self.root_ca) {
+    fn display_attestation_report(&self, certs: &[rustls::Certificate]) -> bool {
+        match AttestationReport::from_cert(certs, &self.root_ca) {
             Ok(report) => println!("{}", report),
             Err(e) => println!("{:?}", e),
         }
@@ -233,7 +233,7 @@ impl rustls::ServerCertVerifier for TeaclaveServerCertVerifier {
         if certs.len() != 1 {
             return Err(rustls::TLSError::NoCertificatesPresented);
         }
-        if self.display_attestation_report(&certs[0].0) {
+        if self.display_attestation_report(certs) {
             Ok(rustls::ServerCertVerified::assertion())
         } else {
             Err(rustls::TLSError::WebPKIError(

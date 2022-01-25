@@ -205,6 +205,7 @@ fn get_report(
     }
 
     let header_map = parse_headers(&http_response);
+    debug!("ias header_map: {:?}", header_map);
 
     debug!("get_content_length");
     if !header_map.contains_key("Content-Length")
@@ -235,14 +236,14 @@ fn get_report(
         AttestationAlgorithm::SgxEpid => "X-IASReport-Signing-Certificate",
         AttestationAlgorithm::SgxEcdsa => "X-DCAPReport-Signing-Certificate",
     };
-    let signing_cert = {
+    let certs: Vec<Vec<u8>> = {
         let cert_str = header_map.get(signing_cert_header).ok_or_else(|| {
             AttestationServiceError::MissingHeader(signing_cert_header.to_string())
         })?;
         let decoded_cert = percent_encoding::percent_decode_str(cert_str).decode_utf8()?;
         let certs = rustls::internal::pemfile::certs(&mut decoded_cert.as_bytes())
             .map_err(|_| anyhow!("pemfile error"))?;
-        certs[0].0.clone()
+        certs.iter().map(|c| c.0.clone()).collect()
     };
 
     debug!("return_report");
@@ -250,7 +251,7 @@ fn get_report(
     Ok(EndorsedAttestationReport {
         report,
         signature,
-        signing_cert,
+        certs,
     })
 }
 

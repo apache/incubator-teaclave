@@ -66,6 +66,17 @@ def read_message(sock):
 
 
 def verify_report(cert, endpoint_name):
+
+    def load_certificates(pem_bytes):
+        start_line = b'-----BEGIN CERTIFICATE-----'
+        result = []
+        cert_slots = pem_bytes.split(start_line)
+        for single_pem_cert in cert_slots[1:]:
+            cert = load_certificate(FILETYPE_ASN1,
+                                    start_line + single_pem_cert)
+            result.append(cert)
+        return result
+
     if os.environ.get('SGX_MODE') == 'SW':
         return
 
@@ -74,8 +85,7 @@ def verify_report(cert, endpoint_name):
 
     report = bytes(ext["report"])
     signature = bytes(ext["signature"])
-    signing_cert = bytes(ext["signing_cert"])
-    signing_cert = load_certificate(FILETYPE_ASN1, signing_cert)
+    certs = [load_certificate(FILETYPE_ASN1, bytes(c)) for c in ext["certs"]]
 
     # verify signing cert with AS root cert
     with open(AS_ROOT_CA_CERT_PATH) as f:
@@ -83,12 +93,13 @@ def verify_report(cert, endpoint_name):
     as_root_ca_cert = load_certificate(FILETYPE_PEM, as_root_ca_cert)
     store = X509Store()
     store.add_cert(as_root_ca_cert)
-    store.add_cert(signing_cert)
+    for c in certs:
+        store.add_cert(c)
     store_ctx = X509StoreContext(store, as_root_ca_cert)
     store_ctx.verify_certificate()
 
     # verify report's signature
-    crypto.verify(signing_cert, signature, bytes(ext["report"]), 'sha256')
+    crypto.verify(certs[0], signature, bytes(ext["report"]), 'sha256')
 
     report = json.loads(report)
     quote = report['isvEnclaveQuoteBody']
@@ -111,6 +122,7 @@ def verify_report(cert, endpoint_name):
 
 
 class TestAuthenticationService(unittest.TestCase):
+
     def setUp(self):
         sock = socket.create_connection(AUTHENTICATION_SERVICE_ADDRESS)
         self.socket = CONTEXT.wrap_socket(sock, server_hostname=HOSTNAME)

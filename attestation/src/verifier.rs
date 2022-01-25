@@ -78,13 +78,13 @@ impl AttestationReportVerifier {
     }
 
     /// Verify TLS certificate.
-    fn verify_cert(&self, cert_der: &[u8]) -> bool {
+    fn verify_cert(&self, certs: &[rustls::Certificate]) -> bool {
         debug!("verify cert");
         if cfg!(sgx_sim) {
             return true;
         }
 
-        let report = match AttestationReport::from_cert(&cert_der, &self.root_ca) {
+        let report = match AttestationReport::from_cert(certs, &self.root_ca) {
             Ok(report) => report,
             Err(e) => {
                 error!("cert verification error {:?}", e);
@@ -115,7 +115,7 @@ impl rustls::ServerCertVerifier for AttestationReportVerifier {
         if certs.len() != 1 {
             return Err(rustls::TLSError::NoCertificatesPresented);
         }
-        if self.verify_cert(&certs[0].0) {
+        if self.verify_cert(certs) {
             Ok(rustls::ServerCertVerified::assertion())
         } else {
             Err(rustls::TLSError::WebPKIError(
@@ -144,7 +144,7 @@ impl rustls::ClientCertVerifier for AttestationReportVerifier {
         if certs.len() != 1 {
             return Err(rustls::TLSError::NoCertificatesPresented);
         }
-        if self.verify_cert(&certs[0].0) {
+        if self.verify_cert(&certs) {
             Ok(rustls::ClientCertVerified::assertion())
         } else {
             Err(rustls::TLSError::WebPKIError(

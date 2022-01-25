@@ -502,23 +502,25 @@ impl AttestationReport {
     /// Construct a AttestationReport from a X509 certificate and verify
     /// attestation report with the report_ca_cert which is from the attestation
     /// service provider.
-    pub fn from_cert(cert: &[u8], report_ca_cert: &[u8]) -> Result<Self> {
+    pub fn from_cert(certs: &[rustls::Certificate], report_ca_cert: &[u8]) -> Result<Self> {
         // Before we reach here, Webpki already verifed the cert is properly signed.
         use crate::cert::*;
 
         // Extract information for attestation from TLS certification.
-        let x509 = yasna::parse_der(cert, X509::load)?;
+        let x509 = yasna::parse_der(&certs[0].0, X509::load)?;
         let tbs_cert: <TbsCert as Asn1Ty>::ValueTy = x509.0;
         let pub_key: <PubKey as Asn1Ty>::ValueTy = ((((((tbs_cert.1).1).1).1).1).1).0;
         let pub_k = (pub_key.1).0;
         let cert_ext: <SgxRaCertExt as Asn1Ty>::ValueTy = (((((((tbs_cert.1).1).1).1).1).1).1).0;
         let cert_ext_payload: Vec<u8> = ((cert_ext.0).1).0;
+        log::debug!("cert_ext_payload: {:?}", &cert_ext_payload);
 
         // Convert to endorsed report
         let report: EndorsedAttestationReport = serde_json::from_slice(&cert_ext_payload)?;
+        log::debug!("endorsed attestation report: {:?}", &report);
 
         // Verify report's signature
-        let signing_cert = webpki::EndEntityCert::from(&report.signing_cert)?;
+        let signing_cert = webpki::EndEntityCert::from(&report.certs[0])?;
         let root_store = {
             let mut root_store = rustls::RootCertStore::empty();
             root_store.add(&rustls::Certificate(report_ca_cert.to_vec()))?;
@@ -529,7 +531,17 @@ impl AttestationReport {
             .iter()
             .map(|cert| cert.to_trust_anchor())
             .collect();
-        let chain = vec![report_ca_cert];
+
+        let chain: Vec<&[u8]> = if report.certs.len() > 1 {
+            let mut c = report.certs[1..]
+                .iter()
+                .map(|c| &c[..])
+                .collect::<Vec<&[u8]>>();
+            c.push(report_ca_cert);
+            c
+        } else {
+            vec![report_ca_cert]
+        };
         let time = webpki::Time::try_from(SystemTime::now())
             .map_err(|_| anyhow!("Cannot convert time."))?;
         signing_cert.verify_is_valid_tls_server_cert(
@@ -616,7 +628,6 @@ pub mod tests {
     use serde_json::json;
     use std::io::Read;
     use std::untrusted::fs::File;
-    use teaclave_test_utils::*;
 
     fn tls_ra_cert_der_v3() -> Vec<u8> {
         let mut cert = vec![];
@@ -637,6 +648,14 @@ pub mod tests {
     fn ias_root_ca_cert_der() -> Vec<u8> {
         let mut cert = vec![];
         let mut f = File::open("fixtures/ias_root_ca_cert.der").unwrap();
+        f.read_to_end(&mut cert).unwrap();
+
+        cert
+    }
+
+    fn dcap_root_ca_cert_der() -> Vec<u8> {
+        let mut cert = vec![];
+        let mut f = File::open("fixtures/dcap_root_ca_cert.der").unwrap();
         f.read_to_end(&mut cert).unwrap();
 
         cert
@@ -674,15 +693,7 @@ pub mod tests {
         report
     }
 
-    pub fn run_tests() -> bool {
-        run_tests!(
-            test_sgx_quote_parse_from,
-            test_attestation_report_from_cert,
-            test_attestation_report_from_cert_api_version_not_compatible
-        )
-    }
-
-    fn test_sgx_quote_parse_from() {
+    pub fn test_sgx_quote_parse_from() {
         let attn_report = attesation_report();
         let sgx_quote_body_encoded = attn_report["isvEnclaveQuoteBody"].as_str().unwrap();
         let quote_raw = base64::decode(&sgx_quote_body_encoded.as_bytes()).unwrap();
@@ -742,20 +753,22 @@ pub mod tests {
         );
     }
 
-    fn test_attestation_report_from_cert() {
+    pub fn test_attestation_report_from_cert() {
         let tls_ra_cert = tls_ra_cert_der_v4();
-        let ias_root_ca_cert = ias_root_ca_cert_der();
-        let report = AttestationReport::from_cert(&tls_ra_cert, &ias_root_ca_cert);
+        let dcap_root_ca_cert = dcap_root_ca_cert_der();
+        let certs = vec![rustls::Certificate(tls_ra_cert)];
+        let report = AttestationReport::from_cert(&certs, &dcap_root_ca_cert);
         assert!(report.is_ok());
 
         let report = report.unwrap();
-        assert_eq!(report.sgx_quote_status, SgxQuoteStatus::GroupOutOfDate);
+        assert_eq!(report.sgx_quote_status, SgxQuoteStatus::OK);
     }
 
-    fn test_attestation_report_from_cert_api_version_not_compatible() {
+    pub fn test_attestation_report_from_cert_api_version_not_compatible() {
         let tls_ra_cert = tls_ra_cert_der_v3();
         let ias_root_ca_cert = ias_root_ca_cert_der();
-        let report = AttestationReport::from_cert(&tls_ra_cert, &ias_root_ca_cert);
+        let certs = vec![rustls::Certificate(tls_ra_cert)];
+        let report = AttestationReport::from_cert(&certs, &ias_root_ca_cert);
         assert!(report.is_err());
     }
 }

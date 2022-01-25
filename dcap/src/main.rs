@@ -37,13 +37,36 @@ use ring::signature;
 use rocket::{http, response};
 use sgx_types::*;
 
-const REPORT_SIGNING_CERT: &str = include_str!("../../keys/dcap_server_cert.pem");
-const REPORT_SIGNING_KEY: &str = include_str!("../../keys/dcap_server_key.pem");
-
 lazy_static! {
     static ref SIGNER: signature::RsaKeyPair = {
-        let der = pem::parse(REPORT_SIGNING_KEY).unwrap().contents;
+        let r = rocket::ignite();
+        let key_path: String = r
+            .config()
+            .extras
+            .get("attestation")
+            .expect("attestation config")
+            .get("key")
+            .expect("key")
+            .as_str()
+            .unwrap()
+            .to_string();
+        let key = std::fs::read_to_string(key_path).unwrap();
+        let der = pem::parse(key).unwrap().contents;
         signature::RsaKeyPair::from_pkcs8(&der).unwrap()
+    };
+    static ref REPORT_SIGNING_CERT: String = {
+        let r = rocket::ignite();
+        let cert_path: String = r
+            .config()
+            .extras
+            .get("attestation")
+            .expect("attestation config")
+            .get("certs")
+            .expect("certs")
+            .as_str()
+            .unwrap()
+            .to_string();
+        std::fs::read_to_string(cert_path).unwrap()
     };
 }
 
@@ -139,7 +162,7 @@ impl<'r> response::Responder<'r> for QuoteVerificationResponse {
                     .raw_header(
                         "X-DCAPReport-Signing-Certificate",
                         percent_encoding::utf8_percent_encode(
-                            REPORT_SIGNING_CERT,
+                            &REPORT_SIGNING_CERT,
                             percent_encoding::NON_ALPHANUMERIC,
                         ),
                     )
@@ -160,8 +183,10 @@ lazy_static! {
     format = "application/json",
     data = "<request>"
 )]
-fn verify_quote(request: String) -> QuoteVerificationResponse {
-    let v = match serde_json::from_str::<serde_json::Value>(&request) {
+fn verify_quote(request: rocket::Data) -> QuoteVerificationResponse {
+    let mut req = Vec::<u8>::with_capacity(512);
+    request.stream_to(&mut req).unwrap();
+    let v = match serde_json::from_slice::<serde_json::Value>(&req) {
         Ok(v) => v,
         Err(_) => return QuoteVerificationResponse::BadRequest,
     };
