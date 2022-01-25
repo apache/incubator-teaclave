@@ -315,7 +315,7 @@ extern "C" fn c_open_input(fid: *mut c_char, out_handle: *mut c_int) -> c_uint {
             FFI_OK
         }
         Err(e) => {
-            error!("c_open_file: {:?}", e);
+            error!("c_open_input: {:?}, fid: {:?}", e, &fid);
             FFI_FILE_ERROR
         }
     }
@@ -354,7 +354,7 @@ extern "C" fn c_create_output(fid: *mut c_char, out_handle: *mut c_int) -> c_uin
             FFI_OK
         }
         Err(e) => {
-            error!("c_open_file: {:?}", e);
+            error!("c_create_output: {:?}, fid: {:?}", e, fid);
             FFI_FILE_ERROR
         }
     }
