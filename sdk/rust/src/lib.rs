@@ -34,10 +34,11 @@ pub use teaclave_proto::teaclave_authentication_service::{
 pub use teaclave_proto::teaclave_frontend_service::GetFunctionResponse as Function;
 pub use teaclave_proto::teaclave_frontend_service::{
     ApproveTaskRequest, ApproveTaskResponse, AssignDataRequest, AssignDataResponse,
-    CreateTaskRequest, CreateTaskResponse, GetFunctionRequest, GetFunctionResponse, GetTaskRequest,
-    GetTaskResponse, InvokeTaskRequest, InvokeTaskResponse, RegisterFunctionRequest,
-    RegisterFunctionRequestBuilder, RegisterFunctionResponse, RegisterInputFileRequest,
-    RegisterInputFileResponse, RegisterOutputFileRequest, RegisterOutputFileResponse,
+    CancelTaskRequest, CancelTaskResponse, CreateTaskRequest, CreateTaskResponse,
+    GetFunctionRequest, GetFunctionResponse, GetTaskRequest, GetTaskResponse, InvokeTaskRequest,
+    InvokeTaskResponse, RegisterFunctionRequest, RegisterFunctionRequestBuilder,
+    RegisterFunctionResponse, RegisterInputFileRequest, RegisterInputFileResponse,
+    RegisterOutputFileRequest, RegisterOutputFileResponse,
 };
 pub use teaclave_types::{
     EnclaveInfo, Executor, FileCrypto, FunctionInput, FunctionOutput, TaskResult,
@@ -498,12 +499,43 @@ impl FrontendClient {
         loop {
             let request = GetTaskRequest::new(task_id.try_into()?);
             let response = self.get_task_with_request(request)?;
-            if let TaskResult::Ok(task_outputs) = response.result {
-                return Ok(task_outputs.return_value);
+            match response.result {
+                TaskResult::NotReady => {
+                    std::thread::sleep(std::time::Duration::from_secs(1));
+                }
+                TaskResult::Ok(task_outputs) => {
+                    return Ok(task_outputs.return_value);
+                }
+                TaskResult::Err(task_error) => {
+                    return Err(anyhow::anyhow!(task_error.reason));
+                }
             }
-            let one_second = std::time::Duration::from_secs(1);
-            std::thread::sleep(one_second);
         }
+    }
+
+    pub fn cancel_task_with_request(
+        &mut self,
+        request: CancelTaskRequest,
+    ) -> Result<CancelTaskResponse> {
+        let response = self.api_client.cancel_task(request)?;
+
+        Ok(response)
+    }
+
+    pub fn cancel_task_serialized(&mut self, serialized_request: &str) -> Result<String> {
+        let request: frontend_proto::CancelTaskRequest = serde_json::from_str(serialized_request)?;
+        let response: frontend_proto::CancelTaskResponse =
+            self.cancel_task_with_request(request.try_into()?)?.into();
+        let serialized_response = serde_json::to_string(&response)?;
+
+        Ok(serialized_response)
+    }
+
+    pub fn cancel_task(&mut self, task_id: &str) -> Result<()> {
+        let request = CancelTaskRequest::new(task_id.try_into()?);
+        let _ = self.cancel_task_with_request(request)?;
+
+        Ok(())
     }
 }
 
@@ -740,5 +772,43 @@ mod tests {
         let outputs = hashmap!("output" => data_id);
         client.assign_data(&task_id, None, Some(outputs)).unwrap();
         client.approve_task(&task_id).unwrap();
+    }
+
+    #[test]
+    fn test_cancel_task() {
+        let enclave_info = EnclaveInfo::from_file(ENCLAVE_INFO_PATH).unwrap();
+        let bytes = fs::read(AS_ROOT_CA_CERT_PATH).unwrap();
+        let as_root_ca_cert = pem::parse(bytes).unwrap().contents;
+        let mut client =
+            AuthenticationService::connect("localhost:7776", &enclave_info, &as_root_ca_cert)
+                .unwrap();
+        let token = client.user_login(ADMIN_ID, ADMIN_PASSWORD).unwrap();
+        client.set_credential(ADMIN_ID, &token);
+        let _ = client.user_register(USER_ID, USER_PASSWORD, "PlatformAdmin", "");
+        let token = client.user_login(USER_ID, USER_PASSWORD).unwrap();
+
+        let mut client =
+            FrontendService::connect("localhost:7777", &enclave_info, &as_root_ca_cert).unwrap();
+        client.set_credential(USER_ID, &token);
+        let function_id = "function-00000000-0000-0000-0000-000000000002";
+        let function_arguments = hashmap!("arg1" => "arg1_value");
+        let outputs_ownership = hashmap!("output" => vec![USER_ID.to_string()]);
+        let task_id = client
+            .create_task(
+                &function_id,
+                Some(function_arguments),
+                "mesapy",
+                None,
+                Some(outputs_ownership),
+            )
+            .unwrap();
+
+        print!("SDK DEBUG: task created");
+
+        let result = client.cancel_task(&task_id);
+        print!("SDK DEBUG: canceled, {:?}", result);
+
+        let task = client.get_task_result(&task_id);
+        assert!(task.is_err());
     }
 }

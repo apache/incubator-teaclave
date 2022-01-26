@@ -328,6 +328,28 @@ pub unsafe extern "C" fn teaclave_invoke_task(
     }
 }
 
+/// Cancel task with `task_id`. The function returns 0 for success. On error,
+/// the function returns 1.
+///
+/// # Safety
+///
+/// `task_id` should be C string (null terminated).
+#[no_mangle]
+pub unsafe extern "C" fn teaclave_cancel_task(
+    client: &mut FrontendClient,
+    task_id: *const c_char,
+) -> c_int {
+    if (client as *mut FrontendClient).is_null() || task_id.is_null() {
+        return 1;
+    }
+
+    let task_id = CStr::from_ptr(task_id).to_string_lossy().into_owned();
+    match client.invoke_task(&task_id) {
+        Ok(_) => 0,
+        Err(_) => 1,
+    }
+}
+
 /// Get task result of `task_id`. The result will be save in the `task_result`
 /// buffer, and set corresponding `task_result_len` argument. Note that this is
 /// a blocking function and wait for the return of the task. The function
@@ -467,6 +489,11 @@ generate_function_serialized!(
     FrontendClient,
     teaclave_invoke_task_serialized,
     invoke_task_serialized
+);
+generate_function_serialized!(
+    FrontendClient,
+    teaclave_cancel_task_serialized,
+    cancel_task_serialized
 );
 generate_function_serialized!(
     FrontendClient,
