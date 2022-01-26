@@ -232,8 +232,8 @@ fn handle_file_request(bytes: &[u8]) -> anyhow::Result<()> {
         anyhow::bail!("Spawned task join error!");
     }
     anyhow::ensure!(
-        task_results.into_iter().all(|x| x.unwrap().is_ok()),
-        "Some handle file task failed"
+        task_results.iter().all(|x| x.as_ref().unwrap().is_ok()),
+        format!("Some handle file task failed {:?}", task_results)
     );
     Ok(())
 }
