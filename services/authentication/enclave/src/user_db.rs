@@ -134,8 +134,7 @@ pub(crate) fn create_persistent_auth_db(base_dir: impl AsRef<Path>) -> DB {
 pub(crate) fn create_in_memory_auth_db(_base_dir: impl AsRef<Path>) -> DB {
     let opt = rusty_leveldb::in_memory();
     log::info!("open in_memory auth db");
-    let database = DB::open("authentication_db", opt).unwrap();
-    database
+    DB::open("authentication_db", opt).unwrap()
 }
 
 impl Database {
@@ -191,9 +190,7 @@ impl Database {
                             while let Some((_, ref value)) = iter.next() {
                                 let user: UserInfo =
                                     serde_json::from_slice(value).unwrap_or_default();
-                                if !request.key.is_empty() && user.has_attribute(&request.key) {
-                                    values.push(user.id);
-                                } else if request.key.is_empty() {
+                                if (!request.key.is_empty() && user.has_attribute(&request.key)) || request.key.is_empty() {
                                     values.push(user.id);
                                 }
                             }

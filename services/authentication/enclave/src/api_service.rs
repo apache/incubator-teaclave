@@ -129,7 +129,7 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
             !request.id.is_empty(),
             TeaclaveAuthenticationApiError::InvalidUserId
         );
-        if !self.db_client.get_user(&request.id).is_ok() {
+        if self.db_client.get_user(&request.id).is_err() {
             bail!(TeaclaveAuthenticationApiError::InvalidUserId);
         }
         let role = UserRole::new(&request.role, &request.attribute);
@@ -343,11 +343,7 @@ fn authorize_user_register(role: &UserRole, request: &UserRegisterRequest) -> bo
         }
         UserRole::FunctionOwner => {
             let request_role = UserRole::new(&request.role, &request.attribute);
-            if let UserRole::DataOwnerManager(_) = request_role {
-                true
-            } else {
-                false
-            }
+            matches!(request_role, UserRole::DataOwnerManager(_))
         }
         _ => false,
     }
@@ -509,7 +505,7 @@ pub mod tests {
             "",
         )
         .into_request();
-        request.metadata = metadata.clone();
+        request.metadata = metadata;
         assert!(service.user_register(request).is_ok());
 
         let request =
@@ -553,7 +549,7 @@ pub mod tests {
 
         let mut request =
             ResetUserPasswordRequest::new("test_reset_user_password_id").into_request();
-        request.metadata = metadata.clone();
+        request.metadata = metadata;
         let response = service.reset_user_password(request);
         assert!(response.is_ok());
 

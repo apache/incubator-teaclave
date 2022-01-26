@@ -299,9 +299,7 @@ pub mod tests {
 
 use std::ffi::CStr;
 
-/*
- * uint c_open_input(char* file_id, int* out_fd);
- */
+// uint c_open_input(char* file_id, int* out_fd);
 #[allow(unused)]
 #[no_mangle]
 extern "C" fn c_open_input(fid: *mut c_char, out_handle: *mut c_int) -> c_uint {
@@ -321,12 +319,13 @@ extern "C" fn c_open_input(fid: *mut c_char, out_handle: *mut c_int) -> c_uint {
     }
 }
 
-/*
- * int teaclave_open_input(char* file_id);
- */
+/// int teaclave_open_input(char* file_id);
+///
+/// # Safety
+/// FFI function and pointer arguments should be valid.
 #[allow(unused)]
 #[no_mangle]
-pub extern "C" fn wasm_open_input(_exec_env: *const c_void, fid: *mut c_char) -> c_int {
+pub unsafe extern "C" fn wasm_open_input(_exec_env: *const c_void, fid: *mut c_char) -> c_int {
     debug!("wasm_open_input");
     let fid = unsafe { CStr::from_ptr(fid).to_string_lossy().into_owned() };
     match rtc_open_input(&fid) {
@@ -338,9 +337,7 @@ pub extern "C" fn wasm_open_input(_exec_env: *const c_void, fid: *mut c_char) ->
     }
 }
 
-/*
- * uint c_create_output(char* file_id, int* out_fd);
- */
+// uint c_create_output(char* file_id, int* out_fd);
 #[allow(unused)]
 #[no_mangle]
 extern "C" fn c_create_output(fid: *mut c_char, out_handle: *mut c_int) -> c_uint {
@@ -360,14 +357,13 @@ extern "C" fn c_create_output(fid: *mut c_char, out_handle: *mut c_int) -> c_uin
     }
 }
 
-/*
- * int teaclave_create_output(char* file_id);
- *
- */
-
+/// int teaclave_create_output(char* file_id);
+/// 
+/// # Safety
+/// FFI function and pointer arguments should be valid.
 #[allow(unused)]
 #[no_mangle]
-pub extern "C" fn wasm_create_output(_exec_env: *const c_void, fid: *mut c_char) -> c_int {
+pub unsafe extern "C" fn wasm_create_output(_exec_env: *const c_void, fid: *mut c_char) -> c_int {
     debug!("wasm_create_output");
     let fid = unsafe { CStr::from_ptr(fid).to_string_lossy().into_owned() };
     match rtc_create_output(&fid) {
@@ -379,9 +375,7 @@ pub extern "C" fn wasm_create_output(_exec_env: *const c_void, fid: *mut c_char)
     }
 }
 
-/*
- * uint c_read_file(int fd, void* out_buf, size_t buf_size, size_t* out_size_read);
- */
+// uint c_read_file(int fd, void* out_buf, size_t buf_size, size_t* out_size_read);
 #[allow(unused)]
 #[no_mangle]
 extern "C" fn c_read_file(
@@ -407,12 +401,13 @@ extern "C" fn c_read_file(
     }
 }
 
-/*
- * int teaclave_read_file(int fd, void* out_buf, int buf_size);
- */
+/// int teaclave_read_file(int fd, void* out_buf, int buf_size);
+/// 
+/// # Safety
+/// FFI function and pointer arguments should be valid.
 #[allow(unused)]
 #[no_mangle]
-pub extern "C" fn wasm_read_file(
+pub unsafe extern "C" fn wasm_read_file(
     _exec_env: *const c_void,
     handle: c_int,
     out_buf: *mut c_uchar,
@@ -430,9 +425,7 @@ pub extern "C" fn wasm_read_file(
     }
 }
 
-/*
- * uint c_write_file(int fd, void* buf, size_t buf_size, size_t* out_size_written);
- */
+// uint c_write_file(int fd, void* buf, size_t buf_size, size_t* out_size_written);
 #[allow(unused)]
 #[no_mangle]
 extern "C" fn c_write_file(
@@ -458,12 +451,13 @@ extern "C" fn c_write_file(
     }
 }
 
-/*
- * int teaclave_write_file(int fd, void* buf, size_t buf_size);
- */
+/// int teaclave_write_file(int fd, void* buf, size_t buf_size);
+/// 
+/// # Safety
+/// FFI function and pointer arguments should be valid.
 #[allow(unused)]
 #[no_mangle]
-pub extern "C" fn wasm_write_file(
+pub unsafe extern "C" fn wasm_write_file(
     _exec_env: *const c_void,
     handle: c_int,
     in_buf: *mut c_uchar,
@@ -481,9 +475,7 @@ pub extern "C" fn wasm_write_file(
     }
 }
 
-/*
- * uint c_close_file(int fd);
- */
+// uint c_close_file(int fd);
 #[allow(unused)]
 #[no_mangle]
 extern "C" fn c_close_file(handle: c_int) -> c_uint {
@@ -497,9 +489,7 @@ extern "C" fn c_close_file(handle: c_int) -> c_uint {
     }
 }
 
-/*
- * int teaclave_close_file(int fd);
- */
+// int teaclave_close_file(int fd);
 #[allow(unused)]
 #[no_mangle]
 pub extern "C" fn wasm_close_file(_exec_env: *const c_void, handle: c_int) -> c_int {

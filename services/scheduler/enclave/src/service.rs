@@ -85,7 +85,7 @@ impl TeaclaveSchedulerDeamon {
             for (executor_id, last_heartbeat) in resources.executors_last_heartbeat.iter() {
                 if current_time
                     .duration_since(*last_heartbeat)
-                    .unwrap_or(Duration::from_secs(EXECUTOR_TIMEOUT_SECS + 1))
+                    .unwrap_or_else( |_| Duration::from_secs(EXECUTOR_TIMEOUT_SECS + 1))
                     > Duration::from_secs(EXECUTOR_TIMEOUT_SECS)
                 {
                     // executor lost
@@ -97,30 +97,27 @@ impl TeaclaveSchedulerDeamon {
             for executor_id in to_remove {
                 resources.executors_last_heartbeat.remove(&executor_id);
                 resources.executors_status.remove(&executor_id);
-                match resources.executors_tasks.remove(&executor_id) {
-                    Some(task_id) => {
-                        // report task faliure
-                        let ts = resources.get_task_state(&task_id)?;
-                        if ts.is_ended() {
-                            continue;
-                        }
-
-                        log::warn!("Executor {} lost, canceling task {}", executor_id, task_id);
-
-                        let mut task: Task<Fail> = ts.try_into()?;
-
-                        log::debug!("Task failed because of Executor lost: Task {:?}", task);
-                        // Only TaskStatus::Running/Staged is allowed here.
-                        let result_err =
-                            TaskResult::Err(TaskFailure::new("Runtime Error: Executor Timeout"));
-
-                        // Updating task result means we have finished execution
-                        task.update_result(result_err)?;
-
-                        let ts = TaskState::from(task);
-                        resources.put_into_db(&ts)?;
+                if let Some(task_id) = resources.executors_tasks.remove(&executor_id) {
+                    // report task faliure
+                    let ts = resources.get_task_state(&task_id)?;
+                    if ts.is_ended() {
+                        continue;
                     }
-                    None => {}
+
+                    log::warn!("Executor {} lost, canceling task {}", executor_id, task_id);
+
+                    let mut task: Task<Fail> = ts.try_into()?;
+
+                    log::debug!("Task failed because of Executor lost: Task {:?}", task);
+                    // Only TaskStatus::Running/Staged is allowed here.
+                    let result_err =
+                        TaskResult::Err(TaskFailure::new("Runtime Error: Executor Timeout"));
+
+                    // Updating task result means we have finished execution
+                    task.update_result(result_err)?;
+
+                    let ts = TaskState::from(task);
+                    resources.put_into_db(&ts)?;
                 }
             }
         }
@@ -294,8 +291,8 @@ impl TeaclaveScheduler for TeaclaveSchedulerService {
             .insert(executor_id, SystemTime::now());
 
         // check if the executor need to be stopped
-        match resources.executors_tasks.get(&executor_id) {
-            Some(task_id) => match status {
+        if let Some(task_id) = resources.executors_tasks.get(&executor_id) {
+            match status {
                 ExecutorStatus::Executing => {
                     if resources.tasks_to_cancel.contains(task_id) {
                         command = ExecutorCommand::Stop;
@@ -313,13 +310,12 @@ impl TeaclaveScheduler for TeaclaveSchedulerService {
                 ExecutorStatus::Idle => {
                     resources.executors_tasks.remove(&executor_id);
                 }
-            },
-            None => {}
-        };
+            }
+        }
 
-        if resources.task_queue.len() > 0 {
+        if !resources.task_queue.is_empty() {
             command = ExecutorCommand::NewTask;
-        };
+        }
 
         let response = HeartbeatResponse { command };
         Ok(response)

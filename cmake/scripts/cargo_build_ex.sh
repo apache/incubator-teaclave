@@ -17,6 +17,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
+set -e
 # extended cargo build script
 
 # if MT_RUSTC_WRAPPER is not empty, use it as rustc
