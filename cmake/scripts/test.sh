@@ -59,7 +59,7 @@ run_unit_tests() {
 
 cleanup() {
   # kill all background services
-  [[ -z "$(jobs -p)" ]] || kill -s SIGKILL $(jobs -p)
+  [[ -z "$(jobs -p -r)" ]] || kill -s SIGKILL $(jobs -p -r)
   sleep 1  # wait for resource release
 }
 

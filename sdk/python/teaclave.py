@@ -894,6 +894,20 @@ class FrontendService(TeaclaveService):
                 reason = response["request_error"]
             raise TeaclaveException(f"Failed to cancel task ({reason})")
 
+    def get_task(self, task_id: str) -> dict:
+        self.check_metadata()
+        self.check_channel()
+        request = GetTaskRequest(self.metadata, task_id)
+
+        _write_message(self.channel, request)
+        response = _read_message(self.channel)
+        if response["result"] != "ok":
+            reason = "unknown"
+            if "request_error" in response:
+                reason = response["request_error"]
+            raise TeaclaveException(f"Failed to get task result ({reason})")
+        return response["content"]
+
     def get_task_result(self, task_id: str):
         self.check_metadata()
         self.check_channel()

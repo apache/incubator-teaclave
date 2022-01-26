@@ -62,7 +62,14 @@ class MesaPyEchoExample:
         time.sleep(5)
         client.cancel_task(task_id)
 
+        time.sleep(5)
+
         print("[+] getting result")
+
+        result = client.get_task(task_id)
+        if result["status"] != 20:
+            print("[+] Task is not canceled, cancel again")
+            client.cancel_task(task_id)
 
         try:
             result = client.get_task_result(task_id)
