@@ -25,6 +25,10 @@ use teaclave_binder::TeeBinder;
 use teaclave_config::RuntimeConfig;
 use teaclave_types::{TeeServiceError, TeeServiceResult};
 
+extern "C" {
+    fn _exit(status: i32) -> !;
+}
+
 struct TeaclaveServiceLauncher {
     tee: TeeBinder,
     config: RuntimeConfig,
@@ -48,7 +52,14 @@ impl TeaclaveServiceLauncher {
             Err(e) => bail!("TEE invocation error: {:?}", e),
             Ok(Err(TeeServiceError::EnclaveForceTermination)) => {
                 log::info!("Exit");
-                std::process::exit(1);
+                if cfg!(sgx_sim) {
+                    // use _exit to force exit in simulation mode to avoid SIGSEG
+                    unsafe {
+                        _exit(1);
+                    }
+                } else {
+                    std::process::exit(1);
+                }
             }
             Ok(Err(e)) => bail!("Service exit with error: {:?}", e),
             _ => Ok(String::from("Service successfully exit")),
