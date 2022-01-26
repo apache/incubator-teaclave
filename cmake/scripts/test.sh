@@ -66,9 +66,7 @@ cleanup() {
 wait_port() {
   for port in "$@"
   do
-    while ! timeout 0.5 bash -c "2> /dev/null > /dev/tcp/localhost/$port"; do
-      sleep 0.5
-    done
+    timeout 10 bash -c 'until printf "" 2>>/dev/null >>/dev/tcp/$0/$1; do sleep 1; done' localhost "$port"
   done
 }
 
