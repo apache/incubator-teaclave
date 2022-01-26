@@ -62,6 +62,15 @@ cleanup() {
   [[ -z "$(jobs -p)" ]] || kill -s SIGKILL $(jobs -p)
 }
 
+wait_port() {
+  for port in "$@"
+  do
+    while ! timeout 0.5 bash -c "2> /dev/null > /dev/tcp/localhost/$port"; do
+      sleep 0.5
+    done
+  done
+}
+
 run_integration_tests() {
   trap cleanup INT TERM ERR
 
@@ -97,14 +106,14 @@ run_functional_tests() {
   pushd ${TEACLAVE_SERVICE_INSTALL_DIR}
   ./teaclave_authentication_service &
   ./teaclave_storage_service &
-  sleep 10    # wait for authentication and storage service
+  wait_port 7776 17776 17778 # wait for authentication and storage service
   ./teaclave_management_service &
   ./teaclave_scheduler_service &
-  sleep 3    # wait for management service and scheduler_service
+  wait_port 17777 17780 # wait for management service and scheduler_service
   ./teaclave_access_control_service &
   ./teaclave_frontend_service &
+  wait_port 17779 7777 # wait for other services
   popd
-  sleep 3    # wait for other services
 
   pushd ${TEACLAVE_TEST_INSTALL_DIR}
   # Run function tests for all except execution service
@@ -165,13 +174,13 @@ run_sdk_tests() {
   pushd ${TEACLAVE_SERVICE_INSTALL_DIR}
   ./teaclave_authentication_service &
   ./teaclave_storage_service &
-  sleep 10    # wait for authentication and storage service
+  wait_port 7776 17776 17778 # wait for authentication and storage service
   ./teaclave_management_service &
   ./teaclave_scheduler_service &
-  sleep 3    # wait for management service and scheduler_service
+  wait_port 17777 17780 # wait for management service and scheduler_service
   ./teaclave_access_control_service &
   ./teaclave_frontend_service &
-  sleep 3    # wait for other services
+  wait_port 17779 7777 # wait for other services
 
   start_storage_server
 
@@ -204,13 +213,13 @@ run_examples() {
   pushd ${TEACLAVE_SERVICE_INSTALL_DIR}
   ./teaclave_authentication_service &
   ./teaclave_storage_service &
-  sleep 3    # wait for authentication and storage service
+  wait_port 7776 17776 17778 # wait for authentication and storage service
   ./teaclave_management_service &
   ./teaclave_scheduler_service &
-  sleep 3    # wait for management service and scheduler_service
+  wait_port 17777 17780 # wait for management service and scheduler_service
   ./teaclave_access_control_service &
   ./teaclave_frontend_service &
-  sleep 3    # wait for other services
+  wait_port 17779 7777 # wait for other services
 
   start_storage_server
 
@@ -275,13 +284,13 @@ run_cancel_test() {
   pushd ${TEACLAVE_SERVICE_INSTALL_DIR}
   ./teaclave_authentication_service &
   ./teaclave_storage_service &
-  sleep 3    # wait for authentication and storage service
+  wait_port 7776 17776 17778 # wait for authentication and storage service
   ./teaclave_management_service &
   ./teaclave_scheduler_service &
-  sleep 3    # wait for management service and scheduler_service
+  wait_port 17777 17780 # wait for management service and scheduler_service
   ./teaclave_access_control_service &
   ./teaclave_frontend_service &
-  sleep 3    # wait for other services
+  wait_port 17779 7777 # wait for other services
 
   start_storage_server
 
@@ -299,7 +308,7 @@ run_cancel_test() {
   python3 mesapy_deadloop_cancel.py
   popd
 
-  sleep 3
+  sleep 10 # Wait for executor exit
 
   live_pids=0
   if ps -p $exe_pid1 > /dev/null
