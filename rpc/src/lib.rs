@@ -41,6 +41,7 @@ mod protocol;
 mod request;
 pub use request::{IntoRequest, Request};
 pub use teaclave_rpc_proc_macro::into_request;
+#[cfg(feature = "mesalock_sgx")]
 pub mod server;
 mod transport;
 mod utils;

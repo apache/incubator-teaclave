@@ -21,6 +21,9 @@ use crate::TeaclaveService;
 use anyhow::Result;
 use log::{debug, error, warn};
 use serde::{Deserialize, Serialize};
+use sgx_libc as libc;
+use sgx_libc::ocall::setsockopt;
+use std::{io, mem, os::unix::io::AsRawFd};
 
 pub struct SgxTrustedTlsServer<U, V>
 where
@@ -72,6 +75,19 @@ where
     {
         let pool = threadpool::ThreadPool::new(self.n_workers);
         let listener = std::net::TcpListener::bind(self.addr)?;
+        unsafe {
+            let optval: libc::c_int = 1;
+            let ret = setsockopt(
+                listener.as_raw_fd(),
+                libc::SOL_SOCKET,
+                libc::SO_REUSEPORT,
+                &optval as *const _ as *const libc::c_void,
+                mem::size_of_val(&optval) as libc::socklen_t,
+            );
+            if ret != 0 {
+                return Err(io::Error::last_os_error().into());
+            }
+        }
         let mut tls_config_ref = self.tls_config.server_config();
         for stream in listener.incoming() {
             match stream {
