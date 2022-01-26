@@ -85,7 +85,7 @@ impl TeaclaveSchedulerDeamon {
             for (executor_id, last_heartbeat) in resources.executors_last_heartbeat.iter() {
                 if current_time
                     .duration_since(*last_heartbeat)
-                    .unwrap_or_else( |_| Duration::from_secs(EXECUTOR_TIMEOUT_SECS + 1))
+                    .unwrap_or_else(|_| Duration::from_secs(EXECUTOR_TIMEOUT_SECS + 1))
                     > Duration::from_secs(EXECUTOR_TIMEOUT_SECS)
                 {
                     // executor lost

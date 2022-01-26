@@ -190,7 +190,9 @@ impl Database {
                             while let Some((_, ref value)) = iter.next() {
                                 let user: UserInfo =
                                     serde_json::from_slice(value).unwrap_or_default();
-                                if (!request.key.is_empty() && user.has_attribute(&request.key)) || request.key.is_empty() {
+                                if (!request.key.is_empty() && user.has_attribute(&request.key))
+                                    || request.key.is_empty()
+                                {
                                     values.push(user.id);
                                 }
                             }

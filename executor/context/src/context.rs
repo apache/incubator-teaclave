@@ -358,7 +358,7 @@ extern "C" fn c_create_output(fid: *mut c_char, out_handle: *mut c_int) -> c_uin
 }
 
 /// int teaclave_create_output(char* file_id);
-/// 
+///
 /// # Safety
 /// FFI function and pointer arguments should be valid.
 #[allow(unused)]
@@ -402,7 +402,7 @@ extern "C" fn c_read_file(
 }
 
 /// int teaclave_read_file(int fd, void* out_buf, int buf_size);
-/// 
+///
 /// # Safety
 /// FFI function and pointer arguments should be valid.
 #[allow(unused)]
@@ -452,7 +452,7 @@ extern "C" fn c_write_file(
 }
 
 /// int teaclave_write_file(int fd, void* buf, size_t buf_size);
-/// 
+///
 /// # Safety
 /// FFI function and pointer arguments should be valid.
 #[allow(unused)]

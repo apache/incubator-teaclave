@@ -83,7 +83,10 @@ impl TaskState {
     }
 
     pub fn is_ended(&self) -> bool {
-        matches!(self.status, TaskStatus::Finished | TaskStatus::Failed | TaskStatus::Canceled)
+        matches!(
+            self.status,
+            TaskStatus::Finished | TaskStatus::Failed | TaskStatus::Canceled
+        )
     }
 }
 
