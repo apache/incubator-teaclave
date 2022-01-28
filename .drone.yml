@@ -13,37 +13,40 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+x-isgx-1804-image: &isgx-1804-image
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.3
+
 kind: pipeline
 name: sgx-debug-ubuntu-1804
 
 steps:
 - name: prepare
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.3
+  <<: *isgx-1804-image
   commands:
   - . /root/.cargo/env
   - . /opt/sgxsdk/environment
   - mkdir -p build
   - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DTEST_MODE=ON ..
 - name: check
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.3
+  <<: *isgx-1804-image
   commands:
   - . /root/.cargo/env
   - . /opt/sgxsdk/environment
   - cd build && make check
 - name: compile
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.3
+  <<: *isgx-1804-image
   commands:
   - . /root/.cargo/env
   - . /opt/sgxsdk/environment
   - cd build && make VERBOSE=1 -j2
 - name: tvm example
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.3
+  <<: *isgx-1804-image
   commands:
   - . ~/.cargo/env
   - cd examples/python/wasm_tvm_mnist_payload
   - make
 - name: test
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.3
+  <<: *isgx-1804-image
   environment:
     AS_ALGO: sgx_epid
     AS_URL: https://api.trustedservices.intel.com:443
@@ -76,39 +79,42 @@ node:
   instance: mesatee-sgx
 
 ---
+
+x-dcap-1804-image: &dcap-1804-image
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-dcap-1.11:0.1.3
 
 kind: pipeline
 name: sgx-dcap-debug-ubuntu-1804
 
 steps:
 - name: prepare
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-dcap-1.11:0.1.3
+  <<: *dcap-1804-image
   commands:
   - . /root/.cargo/env
   - . /opt/sgxsdk/environment
   - mkdir -p build
   - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DTEST_MODE=ON -DDCAP=ON ..
 - name: check
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-dcap-1.11:0.1.3
+  <<: *dcap-1804-image
   commands:
   - . /root/.cargo/env
   - . /opt/sgxsdk/environment
   - cd build && make check
 - name: compile
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-dcap-1.11:0.1.3
+  <<: *dcap-1804-image
   commands:
   - . /root/.cargo/env
   - . /opt/sgxsdk/environment
   - sed -i 's/ias_root_ca_cert/dcap_root_ca_cert/' config/build.config.toml
   - cd build && make VERBOSE=1 -j2
 - name: tvm example
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.3
+  <<: *dcap-1804-image
   commands:
   - . ~/.cargo/env
   - cd examples/python/wasm_tvm_mnist_payload
   - make
 - name: test
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-dcap-1.11:0.1.3
+  <<: *dcap-1804-image
   environment:
     AS_ALGO: sgx_ecdsa
     AS_URL: https://localhost:8080
@@ -162,37 +168,40 @@ node:
 
 ---
 
+x-isgx-2004-image: &isgx-2004-image
+  image: teaclave/teaclave-build-ubuntu-2004-sgx-2.15.1:0.1.2
+
 kind: pipeline
 name: sgx-debug-ubuntu-2004
 
 steps:
 - name: prepare
-  image: teaclave/teaclave-build-ubuntu-2004-sgx-2.15.1:0.1.2
+  <<: *isgx-2004-image
   commands:
   - . /root/.cargo/env
   - . /opt/sgxsdk/environment
   - mkdir -p build
   - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DTEST_MODE=ON ..
 - name: check
-  image: teaclave/teaclave-build-ubuntu-2004-sgx-2.15.1:0.1.2
+  <<: *isgx-2004-image
   commands:
   - . /root/.cargo/env
   - . /opt/sgxsdk/environment
   - cd build && make check
 - name: compile
-  image: teaclave/teaclave-build-ubuntu-2004-sgx-2.15.1:0.1.2
+  <<: *isgx-2004-image
   commands:
   - . /root/.cargo/env
   - . /opt/sgxsdk/environment
   - cd build && make VERBOSE=1 -j2
 - name: tvm example
-  image: teaclave/teaclave-build-ubuntu-2004-sgx-2.15.1:0.1.2
+  <<: *isgx-2004-image
   commands:
   - . ~/.cargo/env
   - cd examples/python/wasm_tvm_mnist_payload
   - make
 - name: test
-  image: teaclave/teaclave-build-ubuntu-2004-sgx-2.15.1:0.1.2
+  <<: *isgx-2004-image
   environment:
     AS_ALGO: sgx_epid
     AS_URL: https://api.trustedservices.intel.com:443
@@ -226,25 +235,28 @@ node:
 
 ---
 
+x-dcap-2004-image: &dcap-2004-image
+  image: teaclave/teaclave-build-ubuntu-2004-sgx-dcap-1.12.1:0.1.2
+
 kind: pipeline
 name: sgx-dcap-debug-ubuntu-2004
 
 steps:
 - name: prepare
-  image: teaclave/teaclave-build-ubuntu-2004-sgx-dcap-1.12.1:0.1.2
+  <<: *dcap-2004-image
   commands:
   - . /root/.cargo/env
   - . /opt/sgxsdk/environment
   - mkdir -p build
   - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DTEST_MODE=ON -DDCAP=ON ..
 - name: check
-  image: teaclave/teaclave-build-ubuntu-2004-sgx-dcap-1.12.1:0.1.2
+  <<: *dcap-2004-image
   commands:
   - . /root/.cargo/env
   - . /opt/sgxsdk/environment
   - cd build && make check
 - name: compile
-  image: teaclave/teaclave-build-ubuntu-2004-sgx-dcap-1.12.1:0.1.2
+  <<: *dcap-2004-image
   commands:
   - . /root/.cargo/env
   - . /opt/sgxsdk/environment
@@ -257,7 +269,7 @@ steps:
   - cd examples/python/wasm_tvm_mnist_payload
   - make
 - name: test
-  image: teaclave/teaclave-build-ubuntu-2004-sgx-dcap-1.12.1:0.1.2
+  <<: *dcap-2004-image
   environment:
     AS_ALGO: sgx_ecdsa
     AS_URL: https://localhost:8080
@@ -311,37 +323,40 @@ node:
 
 ---
 
+x-isgx-1804-image: &isgx-1804-image
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.3
+
 kind: pipeline
 name: sgx-release-ubuntu-1804
 
 steps:
 - name: prepare
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.3
+  <<: *isgx-1804-image
   commands:
   - . /root/.cargo/env
   - . /opt/sgxsdk/environment
   - mkdir -p build
   - cd build && cmake -DCMAKE_BUILD_TYPE=Release -DTEST_MODE=OFF ..
 - name: check
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.3
+  <<: *isgx-1804-image
   commands:
   - . /root/.cargo/env
   - . /opt/sgxsdk/environment
   - cd build && make check
 - name: compile
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.3
+  <<: *isgx-1804-image
   commands:
   - . /root/.cargo/env
   - . /opt/sgxsdk/environment
   - cd build && make VERBOSE=1 -j2
 - name: tvm example
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.3
+  <<: *isgx-1804-image
   commands:
   - . ~/.cargo/env
   - cd examples/python/wasm_tvm_mnist_payload
   - make
 - name: test
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.3
+  <<: *isgx-1804-image
   privileged: true
   environment:
     AS_ALGO: sgx_epid
@@ -373,37 +388,40 @@ node:
 
 ---
 
+x-isgx-1804-image: &isgx-1804-image
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.3
+
 kind: pipeline
 name: sim-debug-ubuntu-1804
 
 steps:
 - name: prepare
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.3
+  <<: *isgx-1804-image
   commands:
   - . /root/.cargo/env
   - . /opt/sgxsdk/environment
   - mkdir -p build
   - cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DSGX_SIM_MODE=ON -DTEST_MODE=ON ..
 - name: check
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.3
+  <<: *isgx-1804-image
   commands:
   - . /root/.cargo/env
   - . /opt/sgxsdk/environment
   - cd build && make check
 - name: compile
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.3
+  <<: *isgx-1804-image
   commands:
   - . /root/.cargo/env
   - . /opt/sgxsdk/environment
   - cd build && make VERBOSE=1 -j2
 - name: tvm example
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.3
+  <<: *isgx-1804-image
   commands:
   - . ~/.cargo/env
   - cd examples/python/wasm_tvm_mnist_payload
   - make
 - name: test
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.3
+  <<: *isgx-1804-image
   environment:
     AS_ALGO: sgx_epid
     AS_URL: https://api.trustedservices.intel.com:443
@@ -421,37 +439,40 @@ node:
 
 ---
 
+x-isgx-1804-image: &isgx-1804-image
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.3
+
 kind: pipeline
 name: sim-release-ubuntu-1804
 
 steps:
 - name: prepare
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.3
+  <<: *isgx-1804-image
   commands:
   - . /root/.cargo/env
   - . /opt/sgxsdk/environment
   - mkdir -p build
   - cd build && cmake -DCMAKE_BUILD_TYPE=Release -DSGX_SIM_MODE=ON -DTEST_MODE=OFF ..
 - name: check
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.3
+  <<: *isgx-1804-image
   commands:
   - . /root/.cargo/env
   - . /opt/sgxsdk/environment
   - cd build && make check
 - name: compile
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.3
+  <<: *isgx-1804-image
   commands:
   - . /root/.cargo/env
   - . /opt/sgxsdk/environment
   - cd build && make VERBOSE=1 -j2
 - name: tvm example
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.3
+  <<: *isgx-1804-image
   commands:
   - . ~/.cargo/env
   - cd examples/python/wasm_tvm_mnist_payload
   - make
 - name: test
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.3
+  <<: *isgx-1804-image
   commands:
   - . /root/.cargo/env
   - . /opt/sgxsdk/environment
@@ -462,25 +483,28 @@ node:
 
 ---
 
+x-isgx-1804-image: &isgx-1804-image
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.3
+
 kind: pipeline
 name: lint
 
 steps:
 - name: prepare
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.3
+  <<: *isgx-1804-image
   commands:
   - . /root/.cargo/env
   - . /opt/sgxsdk/environment
   - mkdir -p build
   - cd build && cmake -DRUSTFLAGS="-D warnings" -DTEST_MODE=ON ..
 - name: check
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.3
+  <<: *isgx-1804-image
   commands:
   - . /root/.cargo/env
   - . /opt/sgxsdk/environment
   - cd build && make check
 - name: clippy
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.3
+  <<: *isgx-1804-image
   commands:
   - . /root/.cargo/env
   - . /opt/sgxsdk/environment
