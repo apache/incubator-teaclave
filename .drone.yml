@@ -323,6 +323,94 @@ node:
 
 ---
 
+x-dcap-2004-image: &dcap-2004-image
+  image: teaclave/teaclave-build-ubuntu-2004-sgx-dcap-1.12.1:0.1.2
+
+kind: pipeline
+name: sgx-dcap-release-ubuntu-2004
+
+steps:
+- name: prepare
+  <<: *dcap-2004-image
+  commands:
+  - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
+  - mkdir -p build
+  - cd build && cmake -DCMAKE_BUILD_TYPE=Release -DTEST_MODE=OFF -DDCAP=ON ..
+- name: check
+  <<: *dcap-2004-image
+  commands:
+  - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
+  - cd build && make check
+- name: compile
+  <<: *dcap-2004-image
+  commands:
+  - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
+  - sed -i 's/ias_root_ca_cert/dcap_root_ca_cert/' config/build.config.toml
+  - cd build && make VERBOSE=1 -j2
+- name: tvm example
+  <<: *dcap-2004-image
+  commands:
+  - . ~/.cargo/env
+  - cd examples/python/wasm_tvm_mnist_payload
+  - make
+- name: test
+  <<: *dcap-2004-image
+  environment:
+    AS_ALGO: sgx_ecdsa
+    AS_URL: https://localhost:8080
+    AS_KEY:
+      from_secret: V5_KEY
+    AS_SPID:
+      from_secret: V5_SPID
+  privileged: true
+  volumes:
+  - name: sgx
+    path: /dev/sgx
+  - name: sgx_enclave
+    path: /dev/sgx_enclave
+  - name: sgx_provision
+    path: /dev/sgx_provision
+  - name: aesmd
+    path: /var/run/aesmd/aesm.socket
+  - name: aesmd-conf
+    path: /etc/aesmd.conf
+  - name: qcnl
+    path: /etc/sgx_default_qcnl.conf
+  commands:
+  - echo "$(ip route | awk 'NR==1 {print $3}') pccs-server" >> /etc/hosts
+  - . /root/.cargo/env
+  - . /opt/sgxsdk/environment
+  - (cd release/dcap && ./teaclave_dcap_ref_as &)
+  - cd build && make run-examples
+
+volumes:
+- name: sgx
+  host:
+    path: /dev/sgx
+- name: sgx_enclave
+  host:
+    path: /dev/sgx_enclave
+- name: sgx_provision
+  host:
+    path: /dev/sgx_provision
+- name: aesmd
+  host:
+    path: /var/run/aesmd/aesm.socket
+- name: aesmd-conf
+  host:
+    path: /etc/aesmd.conf
+- name: qcnl
+  host:
+    path: /etc/sgx_default_qcnl.conf
+
+node:
+  instance: mesatee-sgx-dcap
+
+---
+
 x-isgx-1804-image: &isgx-1804-image
   image: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.3
 
