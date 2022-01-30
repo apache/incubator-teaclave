@@ -24,13 +24,15 @@ use uuid::Uuid;
 pub struct FunctionInput {
     pub name: String,
     pub description: String,
+    pub optional: bool,
 }
 
 impl FunctionInput {
-    pub fn new(name: impl Into<String>, description: impl Into<String>) -> Self {
+    pub fn new(name: impl Into<String>, description: impl Into<String>, optional: bool) -> Self {
         Self {
             name: name.into(),
             description: description.into(),
+            optional,
         }
     }
 }
@@ -39,13 +41,15 @@ impl FunctionInput {
 pub struct FunctionOutput {
     pub name: String,
     pub description: String,
+    pub optional: bool,
 }
 
 impl FunctionOutput {
-    pub fn new(name: impl Into<String>, description: impl Into<String>) -> Self {
+    pub fn new(name: impl Into<String>, description: impl Into<String>, optional: bool) -> Self {
         Self {
             name: name.into(),
             description: description.into(),
+            optional,
         }
     }
 }

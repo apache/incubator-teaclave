@@ -52,9 +52,9 @@ def entrypoint(argv):
     return summary
 "#;
 
-    let input1 = FunctionInput::new("InPartyA", "Input from party A");
-    let input2 = FunctionInput::new("InPartyB", "Input from party B");
-    let fusion_output = FunctionOutput::new("OutFusionData", "Output fusion data");
+    let input1 = FunctionInput::new("InPartyA", "Input from party A", false);
+    let input2 = FunctionInput::new("InPartyB", "Input from party B", false);
+    let fusion_output = FunctionOutput::new("OutFusionData", "Output fusion data", false);
     let request = RegisterFunctionRequestBuilder::new()
         .name("mesapy_data_fusion_demo")
         .description("Mesapy Data Fusion Function")
@@ -230,7 +230,7 @@ def entrypoint(argv):
     return "%s" % cnt
 "#;
 
-    let input_spec = FunctionInput::new("InputData", "Lines of Data");
+    let input_spec = FunctionInput::new("InputData", "Lines of Data", false);
     let request = RegisterFunctionRequestBuilder::new()
         .name("wlc")
         .description("Mesapy Word Line Count Function")

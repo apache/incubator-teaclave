@@ -135,12 +135,29 @@ impl Task<Create> {
 
         // check input fkeys
         let inputs_spec: HashSet<&String> = function.inputs.iter().map(|f| &f.name).collect();
-        let req_input_fkeys: HashSet<&String> = req_input_owners.keys().collect();
+        let mut req_input_fkeys: HashSet<&String> = req_input_owners.keys().collect();
+        // If an input/output file is marked with `optional: True`, users do not need to
+        // register the file.
+        let option_inputs_spec: HashSet<&String> = function
+            .inputs
+            .iter()
+            .filter(|f| f.optional)
+            .map(|f| &f.name)
+            .collect();
+        req_input_fkeys.extend(&option_inputs_spec);
+
         ensure!(inputs_spec == req_input_fkeys, "input keys mismatch");
 
         // check output fkeys
         let outputs_spec: HashSet<&String> = function.outputs.iter().map(|f| &f.name).collect();
-        let req_output_fkeys: HashSet<&String> = req_output_owners.keys().collect();
+        let mut req_output_fkeys: HashSet<&String> = req_output_owners.keys().collect();
+        let option_outputs_spec: HashSet<&String> = function
+            .outputs
+            .iter()
+            .filter(|f| f.optional)
+            .map(|f| &f.name)
+            .collect();
+        req_output_fkeys.extend(&option_outputs_spec);
         ensure!(outputs_spec == req_output_fkeys, "output keys mismatch");
 
         let ts = TaskState {

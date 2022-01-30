@@ -438,8 +438,8 @@ impl TeaclaveManagement for TeaclaveManagementService {
     // access control: none
     // when a task is created, following rules will be verified:
     // 1) arugments match function definition
-    // 2) input match function definition
-    // 3) output match function definition
+    // 2) input files match function definition
+    // 3) output files match function definition
     // 4) requested user_id in the user_allowlist
     fn create_task(
         &self,
@@ -466,7 +466,6 @@ impl TeaclaveManagement for TeaclaveManagementService {
                 return Err(TeaclaveManagementServiceError::PermissionDenied.into());
             }
         }
-
         let task = Task::<Create>::new(
             user_id,
             request.executor,
@@ -478,7 +477,6 @@ impl TeaclaveManagement for TeaclaveManagementService {
         .map_err(|_| TeaclaveManagementServiceError::BadTask)?;
 
         log::debug!("CreateTask: {:?}", task);
-
         let ts: TaskState = task.into();
         self.write_to_db(&ts)
             .map_err(|_| TeaclaveManagementServiceError::StorageError)?;
@@ -643,11 +641,8 @@ impl TeaclaveManagement for TeaclaveManagementService {
         })?;
 
         log::debug!("InvokeTask: get task: {:?}", task);
-
         let staged_task = task.stage_for_running(&user_id, function)?;
-
         log::debug!("InvokeTask: staged task: {:?}", staged_task);
-
         self.enqueue_to_db(StagedTask::get_queue_key().as_bytes(), &staged_task)?;
 
         let ts: TaskState = task.into();
@@ -831,10 +826,10 @@ impl TeaclaveManagementService {
         input_file.uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000002")?;
         self.write_to_db(&input_file)?;
 
-        let function_input = FunctionInput::new("input", "input_desc");
-        let function_output = FunctionOutput::new("output", "output_desc");
-        let function_input2 = FunctionInput::new("input2", "input_desc");
-        let function_output2 = FunctionOutput::new("output2", "output_desc");
+        let function_input = FunctionInput::new("input", "input_desc", false);
+        let function_output = FunctionOutput::new("output", "output_desc", false);
+        let function_input2 = FunctionInput::new("input2", "input_desc", false);
+        let function_output2 = FunctionOutput::new("output2", "output_desc", false);
 
         let function = FunctionBuilder::new()
             .id(Uuid::parse_str("00000000-0000-0000-0000-000000000001").unwrap())
@@ -850,7 +845,7 @@ impl TeaclaveManagementService {
 
         self.write_to_db(&function)?;
 
-        let function_output = FunctionOutput::new("output", "output_desc");
+        let function_output = FunctionOutput::new("output", "output_desc", false);
         let function = FunctionBuilder::new()
             .id(Uuid::parse_str("00000000-0000-0000-0000-000000000002").unwrap())
             .name("mock-func-2")
@@ -912,8 +907,8 @@ pub mod tests {
     }
 
     pub fn handle_function() {
-        let function_input = FunctionInput::new("input", "input_desc");
-        let function_output = FunctionOutput::new("output", "output_desc");
+        let function_input = FunctionInput::new("input", "input_desc", false);
+        let function_output = FunctionOutput::new("output", "output_desc", false);
         let function = FunctionBuilder::new()
             .id(Uuid::new_v4())
             .name("mock_function")

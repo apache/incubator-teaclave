@@ -126,8 +126,8 @@ fn test_get_input_file() {
 
 #[test_case]
 fn test_register_function() {
-    let function_input = FunctionInput::new("input", "input_desc");
-    let function_output = FunctionOutput::new("output", "output_desc");
+    let function_input = FunctionInput::new("input", "input_desc", false);
+    let function_output = FunctionOutput::new("output", "output_desc", false);
     let request = RegisterFunctionRequestBuilder::new()
         .name("mock_function")
         .executor_type(ExecutorType::Python)
@@ -146,8 +146,8 @@ fn test_register_function() {
 
 #[test_case]
 fn test_register_private_function() {
-    let function_input = FunctionInput::new("input", "input_desc");
-    let function_output = FunctionOutput::new("output", "output_desc");
+    let function_input = FunctionInput::new("input", "input_desc", false);
+    let function_output = FunctionOutput::new("output", "output_desc", false);
     let request = RegisterFunctionRequestBuilder::new()
         .name("mock_function")
         .executor_type(ExecutorType::Python)
@@ -167,8 +167,8 @@ fn test_register_private_function() {
 
 #[test_case]
 fn test_delete_function() {
-    let function_input = FunctionInput::new("input", "input_desc");
-    let function_output = FunctionOutput::new("output", "output_desc");
+    let function_input = FunctionInput::new("input", "input_desc", false);
+    let function_output = FunctionOutput::new("output", "output_desc", false);
     let request = RegisterFunctionRequestBuilder::new()
         .name("mock_function")
         .executor_type(ExecutorType::Python)
@@ -190,8 +190,8 @@ fn test_delete_function() {
 
 #[test_case]
 fn test_update_function() {
-    let function_input = FunctionInput::new("input", "input_desc");
-    let function_output = FunctionOutput::new("output", "output_desc");
+    let function_input = FunctionInput::new("input", "input_desc", false);
+    let function_output = FunctionOutput::new("output", "output_desc", false);
     let request = RegisterFunctionRequestBuilder::new()
         .name("mock_function")
         .executor_type(ExecutorType::Python)
@@ -206,8 +206,8 @@ fn test_update_function() {
     let response = client.register_function(request);
     let original_id = response.unwrap().function_id;
 
-    let function_input = FunctionInput::new("input", "input_desc");
-    let function_output = FunctionOutput::new("output", "output_desc");
+    let function_input = FunctionInput::new("input", "input_desc", false);
+    let function_output = FunctionOutput::new("output", "output_desc", false);
     let request = UpdateFunctionRequestBuilder::new()
         .function_id(original_id.clone())
         .name("mock_function")
@@ -241,8 +241,8 @@ fn test_list_functions() {
 
 #[test_case]
 fn test_get_function() {
-    let function_input = FunctionInput::new("input", "input_desc");
-    let function_output = FunctionOutput::new("output", "output_desc");
+    let function_input = FunctionInput::new("input", "input_desc", false);
+    let function_output = FunctionOutput::new("output", "output_desc", false);
     let request = RegisterFunctionRequestBuilder::new()
         .name("mock_function")
         .executor_type(ExecutorType::Python)
