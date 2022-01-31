@@ -18,6 +18,7 @@
 # under the License.
 
 set -eE
+export TEACLAVE_LOG=teaclave=info
 
 if [ -z "${TEACLAVE_PROJECT_ROOT}" ] \
 || [ -z "${SGX_SDK}" ] || [ -z "${SGX_MODE}" ]; then
