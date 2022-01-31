@@ -275,7 +275,7 @@ mod tests {
     fn test_get_single_file() {
         let s = "http://localhost:6789/fixtures/functions/mesapy/input.txt";
         let url = Url::parse(s).unwrap();
-        let dest = PathBuf::from("/tmp/input_test.txt");
+        let dest = PathBuf::from("/tmp/input_test_get_single_file.txt");
 
         let info = HandleFileInfo::new(&dest, &url);
         let req = FileAgentRequest::new(HandleFileCommand::Download, vec![info], "");
@@ -392,7 +392,7 @@ mod tests {
     #[test]
     fn test_data_scheme() {
         let url = Url::parse("data:text/plain;base64,SGVsbG8sIFdvcmxkIQ==").unwrap();
-        let dest = PathBuf::from("/tmp/input_test.txt");
+        let dest = PathBuf::from("/tmp/input_test_data_scheme.txt");
         let info = HandleFileInfo::new(&dest, &url);
         let req = FileAgentRequest::new(HandleFileCommand::Download, vec![info], "");
 
