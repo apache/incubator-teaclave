@@ -18,6 +18,7 @@
 # under the License.
 
 set -eE
+export TEACLAVE_LOG=teaclave=info
 
 if [ -z "${TEACLAVE_PROJECT_ROOT}" ] \
 || [ -z "${SGX_SDK}" ] || [ -z "${SGX_MODE}" ]; then
@@ -60,7 +61,8 @@ run_unit_tests() {
 cleanup() {
   # kill all background services
   [[ -z "$(jobs -p -r)" ]] || kill -s SIGKILL $(jobs -p -r)
-  sleep 1  # wait for resource release
+  wait # wait for resource release
+  echo "All jobs killed."
 }
 
 wait_port() {
