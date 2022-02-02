@@ -459,7 +459,7 @@ class AuthenticationService(TeaclaveService):
         _write_message(self.channel, request)
         response = _read_message(self.channel)
         if response["result"] == "ok":
-            return response["content"]["token"]
+            return response["content"]["password"]
         else:
             reason = "unknown"
             if "request_error" in response:
