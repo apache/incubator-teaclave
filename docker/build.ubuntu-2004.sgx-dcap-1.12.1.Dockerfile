@@ -138,6 +138,13 @@ RUN git clone https://github.com/apache/tvm /tvm                && \
     cmake -DUSE_LLVM=ON ..                                      && \
     make -j$(nproc)
 
+# Install llvm-cov version 11 from llvm-11
+RUN wget https://apt.llvm.org/llvm.sh                           && \
+    chmod +x llvm.sh                                            && \
+    ./llvm.sh 11                                                && \
+    update-alternatives --install /usr/bin/llvm-cov llvm-cov-11 /usr/bin/llvm-cov-11 11 && \
+    rm ./llvm.sh
+
 # clean up apt caches
 
 RUN apt-get clean && \

@@ -49,7 +49,7 @@ cd ${TEACLAVE_OUT_DIR} && ${LCOV} ${LCOVOPT} $(for tag in \
     `find ${TEACLAVE_PROJECT_ROOT} -name sgx_cov*.gcda | cut -d'.' -f2`; \
     do echo "--add modules_$tag.info"; done) \
     --add modules.info -o merged.info
-cd ${TEACLAVE_OUT_DIR} && python ${LCOV_REALPATH} merged.info > merged_realpath.info
+cd ${TEACLAVE_OUT_DIR} && python3 ${LCOV_REALPATH} merged.info > merged_realpath.info
 ${LCOV} ${LCOVOPT} --extract ${TEACLAVE_OUT_DIR}/merged_realpath.info \
     `find ${TEACLAVE_PROJECT_ROOT} -path ${TEACLAVE_PROJECT_ROOT}/third_party -prune -o \
     -path ${TEACLAVE_PROJECT_ROOT}/build -prune -o \
