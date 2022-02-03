@@ -44,10 +44,25 @@ if [ ! "$LIBENCLAVE_PATH" -nt "$SIGNED_PATH" ] \
     exit 0
 fi
 
-TEACLAVE_LINK_FLAGS="-L${TEACLAVE_OUT_DIR} -lpycomponent ffi.o -lpypy-c -lsgx_tlibc_ext -lffi"
-if [ "$TEACLAVE_EXECUTOR_WAMR" == "ON" ]; then
-    TEACLAVE_LINK_FLAGS+=" -lvmlib"
-fi
+TEACLAVE_LINK_FLAGS="-L${TEACLAVE_OUT_DIR}"
+
+case $CUR_PKG_NAME in
+
+  teaclave_access_control_service_enclave | teaclave_functional_tests_enclave )
+    TEACLAVE_LINK_FLAGS+=" -lpycomponent ffi.o -lpypy-c -lsgx_tlibc_ext -lffi"
+    ;;
+
+  teaclave_execution_service_enclave | teaclave_unit_tests_enclave |  teaclave_integration_tests_enclave)
+    TEACLAVE_LINK_FLAGS+=" -lpycomponent ffi.o -lpypy-c -lsgx_tlibc_ext -lffi"
+    if [ "$TEACLAVE_EXECUTOR_WAMR" == "ON" ]; then
+        TEACLAVE_LINK_FLAGS+=" -lvmlib"
+    fi
+    ;;
+
+  *)
+    ;;
+esac
+
 
 # Enable the security flags
 ENCLAVE_SECURITY_LINK_FLAGS="-Wl,-z,relro,-z,now,-z,noexecstack"
