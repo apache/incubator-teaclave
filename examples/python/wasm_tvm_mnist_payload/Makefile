@@ -15,7 +15,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
-TVM_HOME ?= /tvm
+# export TVM_HOME to prebuilt tvm-sys, don't change
+export TVM_HOME = /tvm
 export PYTHONPATH = $(shell printenv PYTHONPATH):${TVM_HOME}/python
 
 all:
