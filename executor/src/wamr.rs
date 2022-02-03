@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use anyhow::bail;
 use std::prelude::v1::*;
 
 use teaclave_executor_context::context::reset_thread_context;
@@ -100,6 +101,19 @@ extern "C" {
 #[derive(Default)]
 pub struct WAMicroRuntime;
 
+macro_rules! early_terminate {
+    ($cond:expr, $msg:expr, $func:block) => {
+        if !($cond) {
+            reset_thread_context()?;
+            #[allow(unused_unsafe)]
+            unsafe {
+                $func
+            };
+            bail!(stringify!($msg));
+        }
+    };
+}
+
 impl TeaclaveExecutor for WAMicroRuntime {
     fn execute(
         &self,
@@ -116,8 +130,7 @@ impl TeaclaveExecutor for WAMicroRuntime {
         set_thread_context(Context::new(runtime))?;
 
         let ret = unsafe { wasm_runtime_init() };
-        assert!(ret);
-
+        early_terminate!(ret, "wasm_runtime_init failed", {});
         // export native function
         let export_symbols: [NativeSymbol; 5] = [
             NativeSymbol {
@@ -159,7 +172,7 @@ impl TeaclaveExecutor for WAMicroRuntime {
                 export_symbols.len() as u32,
             )
         };
-        assert!(register_succeeded);
+        early_terminate!(register_succeeded, "register_succeeded failed", {});
 
         let module = unsafe {
             wasm_runtime_load(
@@ -170,7 +183,9 @@ impl TeaclaveExecutor for WAMicroRuntime {
             )
         };
 
-        assert!((module as usize) != 0);
+        early_terminate!(module as usize != 0, "wasm_runtime_load failed", {
+            wasm_runtime_destroy();
+        });
 
         error_buf = [0u8; DEFAULT_ERROR_BUF_SIZE];
         let module_instance = unsafe {
@@ -182,7 +197,14 @@ impl TeaclaveExecutor for WAMicroRuntime {
                 error_buf.len() as u32,
             )
         };
-        assert!((module_instance as usize) != 0);
+        early_terminate!(
+            module_instance as usize != 0,
+            "wasm_runtime_instantiate failed",
+            {
+                wasm_runtime_unload(module);
+                wasm_runtime_destroy();
+            }
+        );
 
         let entry_func = unsafe {
             wasm_runtime_lookup_function(
@@ -191,17 +213,33 @@ impl TeaclaveExecutor for WAMicroRuntime {
                 std::ptr::null(),
             )
         };
-        assert!((entry_func as usize) != 0);
+        early_terminate!(
+            (entry_func as usize) != 0,
+            "wasm_runtime_lookup_function failed",
+            {
+                wasm_runtime_deinstantiate(module_instance);
+                wasm_runtime_unload(module);
+                wasm_runtime_destroy();
+            }
+        );
 
         let exec_env = unsafe { wasm_runtime_create_exec_env(module_instance, DEFAULT_STACK_SIZE) };
-        assert!((exec_env as usize) != 0);
+        early_terminate!(
+            (exec_env as usize) != 0,
+            "wasm_runtime_create_exec_env failed",
+            {
+                wasm_runtime_deinstantiate(module_instance);
+                wasm_runtime_unload(module);
+                wasm_runtime_destroy();
+            }
+        );
 
         // prepare the arguments
         // for best compatibility with Teaclave, the function signature is `int entrypoint(int argc, char* argv[])`
         let cstr_argv: Vec<_> = wa_argv
             .iter()
-            .map(|arg| CString::new(arg.as_str()).unwrap())
-            .collect();
+            .map(|arg| CString::new(arg.as_str()))
+            .collect::<Result<_, _>>()?;
         let wasm_argc = 2;
         let p_argv: Vec<u32> = cstr_argv
             .iter() // do NOT into_iter()
