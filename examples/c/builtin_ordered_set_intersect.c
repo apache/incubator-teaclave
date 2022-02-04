@@ -62,12 +62,12 @@ const char *register_function_request_serialized = QUOTE(
     "payload": [],
     "arguments": ["order"],
     "inputs": [
-        {"name": "input_data1", "description": "Client 0 data."},
-        {"name": "input_data2", "description": "Client 1 data."}
+        {"name": "input_data1", "description": "Client 0 data.", "optional": false},
+        {"name": "input_data2", "description": "Client 1 data.", "optional": false}
     ],
     "outputs": [ 
-        {"name": "output_result1", "description": "Output data."},
-        {"name": "output_result2", "description": "Output data."}
+        {"name": "output_result1", "description": "Output data.", "optional": false},
+        {"name": "output_result2", "description": "Output data.", "optional": false}
     ],
     "user_allowlist": ["user0", "user1"]
 });

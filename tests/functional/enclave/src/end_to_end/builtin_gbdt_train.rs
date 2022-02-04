@@ -46,8 +46,8 @@ fn authorized_frontend_client() -> TeaclaveFrontendClient {
 }
 
 fn register_gbdt_function(client: &mut TeaclaveFrontendClient) -> ExternalID {
-    let fn_input = FunctionInput::new("training_data", "Input traning data file.");
-    let fn_output = FunctionOutput::new("trained_model", "Output trained model.");
+    let fn_input = FunctionInput::new("training_data", "Input traning data file.", false);
+    let fn_output = FunctionOutput::new("trained_model", "Output trained model.", false);
     let fn_args = vec![
         "feature_size",
         "max_depth",

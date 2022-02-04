@@ -98,11 +98,13 @@ message GetInputFileResponse {
 message FunctionInput {
   string name = 1;
   string description = 2;
+  bool optional = 3;
 }
 
 message FunctionOutput {
   string name = 1;
   string description = 2;
+  bool optional = 3;
 }
 
 message OwnerList {

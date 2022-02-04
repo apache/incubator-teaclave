@@ -209,11 +209,13 @@ class FunctionInput:
     Args:
         name: Name of input data.
         description: Description of the input data.
+        optional: [Default: False] Data owners do not need to register the data.
     """
 
-    def __init__(self, name: str, description: str):
+    def __init__(self, name: str, description: str, optional=False):
         self.name = name
         self.description = description
+        self.optional = optional
 
 
 class FunctionOutput:
@@ -222,11 +224,13 @@ class FunctionOutput:
     Args:
         name: Name of output data.
         description: Description of the output data.
+        optional: [Default: False] Data owners do not need to register the data.
     """
 
-    def __init__(self, name: str, description: str):
+    def __init__(self, name: str, description: str, optional=False):
         self.name = name
         self.description = description
+        self.optional = optional
 
 
 class OwnerList:

@@ -120,12 +120,12 @@ impl Client {
             None,
             Some(&["order"]),
             Some(vec![
-                teaclave_client_sdk::FunctionInput::new("input_data1", "Client 0 data."),
-                teaclave_client_sdk::FunctionInput::new("input_data2", "Client 1 data."),
+                teaclave_client_sdk::FunctionInput::new("input_data1", "Client 0 data.", false),
+                teaclave_client_sdk::FunctionInput::new("input_data2", "Client 1 data.", false),
             ]),
             Some(vec![
-                teaclave_client_sdk::FunctionOutput::new("output_result1", "Output data."),
-                teaclave_client_sdk::FunctionOutput::new("output_result2", "Output data."),
+                teaclave_client_sdk::FunctionOutput::new("output_result1", "Output data.", false),
+                teaclave_client_sdk::FunctionOutput::new("output_result2", "Output data.", false),
             ]),
         )?;
         self.client.get_function(&function_id)?;

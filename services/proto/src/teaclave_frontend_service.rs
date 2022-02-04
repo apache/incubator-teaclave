@@ -1051,6 +1051,7 @@ impl std::convert::TryFrom<proto::FunctionInput> for FunctionInput {
         let ret = Self {
             name: proto.name,
             description: proto.description,
+            optional: proto.optional,
         };
 
         Ok(ret)
@@ -1062,6 +1063,7 @@ impl From<FunctionInput> for proto::FunctionInput {
         Self {
             name: input.name,
             description: input.description,
+            optional: input.optional,
         }
     }
 }
@@ -1073,6 +1075,7 @@ impl std::convert::TryFrom<proto::FunctionOutput> for FunctionOutput {
         let ret = Self {
             name: proto.name,
             description: proto.description,
+            optional: proto.optional,
         };
 
         Ok(ret)
@@ -1084,6 +1087,7 @@ impl From<FunctionOutput> for proto::FunctionOutput {
         Self {
             name: output.name,
             description: output.description,
+            optional: output.optional,
         }
     }
 }
