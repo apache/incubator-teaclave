@@ -101,7 +101,7 @@ RUN apt-get update && apt-get install -q -y \
     libjpeg-dev \
     zlib1g-dev
 
-RUN pip3 install pyopenssl toml cryptography yapf requests Pillow
+RUN pip3 install pyopenssl==21.0.0 toml cryptography yapf requests Pillow
 
 # install TVM dependencies
 RUN apt-get install -q -y \
