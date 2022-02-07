@@ -20,7 +20,7 @@
 import sys
 import time
 
-from teaclave import FunctionInput, FunctionOutput, OwnerList, DataMap
+from teaclave import FunctionInput, FunctionOutput, OwnerList, DataMap, TaskStatus
 from utils import USER_ID, USER_PASSWORD, connect_authentication_service, connect_frontend_service, PlatformAdmin
 
 
@@ -58,8 +58,14 @@ class MesaPyEchoExample:
         print("[+] invoking task")
         client.invoke_task(task_id)
 
+        print("[+] waiting task")
+        while True:
+            task = client.get_task(task_id)
+            time.sleep(5)
+            if task['status'] == TaskStatus.Running:
+                break
+
         print("[+] canceling task")
-        time.sleep(5)
         client.cancel_task(task_id)
 
         time.sleep(5)
@@ -67,7 +73,7 @@ class MesaPyEchoExample:
         print("[+] getting result")
 
         result = client.get_task(task_id)
-        if result["status"] != 20:
+        if result["status"] != TaskStatus.Canceled:
             print("[+] Task is not canceled, cancel again")
             client.cancel_task(task_id)
 
