@@ -33,6 +33,7 @@ import ssl
 import socket
 
 from typing import Tuple, Dict, List, Any
+from enum import IntEnum
 
 import cryptography
 from cryptography import x509
@@ -48,6 +49,17 @@ __all__ = [
 ]
 
 Metadata = Dict[str, str]
+
+
+class TaskStatus(IntEnum):
+    Created = 0
+    DataAssigned = 1
+    Approved = 2
+    Staged = 3
+    Running = 4
+    Finished = 10
+    Canceled = 20
+    Failed = 99
 
 
 class Request:
