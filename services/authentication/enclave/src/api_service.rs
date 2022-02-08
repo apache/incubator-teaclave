@@ -15,10 +15,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use crate::error::TeaclaveAuthenticationApiError;
-use crate::user_db::{DbClient, DbError};
+use crate::error::AuthenticationError;
+use crate::error::AuthenticationServiceError;
+use crate::user_db::DbClient;
 use crate::user_info::UserInfo;
-use anyhow::anyhow;
+
 use std::prelude::v1::*;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use std::untrusted::time::SystemTimeEx;
@@ -50,15 +51,19 @@ impl TeaclaveAuthenticationApiService {
         &self,
         id: &str,
         token: &str,
-    ) -> Result<UserRole, TeaclaveAuthenticationApiError> {
+    ) -> Result<UserRole, AuthenticationError> {
         let user: UserInfo = match self.db_client.get_user(&id) {
             Ok(value) => value,
-            Err(_) => bail!(TeaclaveAuthenticationApiError::PermissionDenied),
+            Err(_) => bail!(AuthenticationError::InvalidUserId),
         };
+
+        if token.is_empty() {
+            bail!(AuthenticationError::InvalidToken);
+        }
 
         match user.validate_token(&self.jwt_secret, &token) {
             Ok(claims) => Ok(claims.get_role()),
-            Err(_) => bail!(TeaclaveAuthenticationApiError::PermissionDenied),
+            Err(_) => bail!(AuthenticationError::IncorrectToken),
         }
     }
 }
@@ -71,12 +76,12 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
         let id: String = request
             .metadata
             .get("id")
-            .ok_or_else(|| anyhow!("Missing credential"))?
+            .ok_or_else(|| AuthenticationServiceError::MissingUserId)?
             .into();
         let token: String = request
             .metadata
             .get("token")
-            .ok_or_else(|| anyhow!("Missing credential"))?
+            .ok_or_else(|| AuthenticationServiceError::MissingToken)?
             .into();
 
         let requester_role = self.validate_user_credential(&id, &token)?;
@@ -84,27 +89,26 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
         let request = request.message;
         ensure!(
             !request.id.is_empty(),
-            TeaclaveAuthenticationApiError::InvalidUserId
+            AuthenticationServiceError::InvalidUserId
         );
         if self.db_client.get_user(&request.id).is_ok() {
-            bail!(TeaclaveAuthenticationApiError::InvalidUserId);
+            bail!(AuthenticationServiceError::UserIdExist);
         }
         let role = UserRole::new(&request.role, &request.attribute);
         ensure!(
             role != UserRole::Invalid,
-            TeaclaveAuthenticationApiError::InvalidRole
+            AuthenticationServiceError::InvalidRole
         );
 
         ensure!(
             authorize_user_register(&requester_role, &request),
-            TeaclaveAuthenticationApiError::InvalidRole
+            AuthenticationServiceError::PermissionDenied
         );
 
         let new_user = UserInfo::new(&request.id, &request.password, role);
         match self.db_client.create_user(&new_user) {
             Ok(_) => Ok(UserRegisterResponse {}),
-            Err(DbError::UserExist) => Err(TeaclaveAuthenticationApiError::InvalidUserId.into()),
-            Err(_) => Err(TeaclaveAuthenticationApiError::ServiceUnavailable.into()),
+            Err(e) => Err(AuthenticationServiceError::Service(e.into()).into()),
         }
     }
 
@@ -115,39 +119,38 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
         let id: String = request
             .metadata
             .get("id")
-            .ok_or_else(|| anyhow!("Missing credential"))?
+            .ok_or_else(|| AuthenticationServiceError::MissingUserId)?
             .into();
         let token: String = request
             .metadata
             .get("token")
-            .ok_or_else(|| anyhow!("Missing credential"))?
+            .ok_or_else(|| AuthenticationServiceError::MissingToken)?
             .into();
         let requester_role = self.validate_user_credential(&id, &token)?;
 
         let request = request.message;
         ensure!(
             !request.id.is_empty(),
-            TeaclaveAuthenticationApiError::InvalidUserId
+            AuthenticationServiceError::InvalidUserId
         );
         if self.db_client.get_user(&request.id).is_err() {
-            bail!(TeaclaveAuthenticationApiError::InvalidUserId);
+            bail!(AuthenticationServiceError::InvalidUserId);
         }
         let role = UserRole::new(&request.role, &request.attribute);
         ensure!(
             role != UserRole::Invalid,
-            TeaclaveAuthenticationApiError::InvalidRole
+            AuthenticationServiceError::InvalidRole
         );
 
         ensure!(
             authorize_user_update(&requester_role, &request),
-            TeaclaveAuthenticationApiError::InvalidRole
+            AuthenticationServiceError::PermissionDenied
         );
 
         let updated_user = UserInfo::new(&request.id, &request.password, role);
         match self.db_client.update_user(&updated_user) {
             Ok(_) => Ok(UserUpdateResponse {}),
-            Err(DbError::UserNotExist) => Err(TeaclaveAuthenticationApiError::InvalidUserId.into()),
-            Err(_) => Err(TeaclaveAuthenticationApiError::ServiceUnavailable.into()),
+            Err(e) => Err(AuthenticationServiceError::Service(e.into()).into()),
         }
     }
 
@@ -156,28 +159,25 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
         request: Request<UserLoginRequest>,
     ) -> TeaclaveServiceResponseResult<UserLoginResponse> {
         let request = request.message;
-        ensure!(
-            !request.id.is_empty(),
-            TeaclaveAuthenticationApiError::InvalidUserId
-        );
+        ensure!(!request.id.is_empty(), AuthenticationError::InvalidUserId);
         ensure!(
             !request.password.is_empty(),
-            TeaclaveAuthenticationApiError::InvalidPassword
+            AuthenticationError::InvalidPassword
         );
         let user = self
             .db_client
             .get_user(&request.id)
-            .map_err(|_| TeaclaveAuthenticationApiError::PermissionDenied)?;
+            .map_err(|_| AuthenticationError::UserIdNotFound)?;
         if !user.verify_password(&request.password) {
-            bail!(TeaclaveAuthenticationApiError::PermissionDenied)
+            bail!(AuthenticationError::IncorrectPassword)
         } else {
             let now = SystemTime::now()
                 .duration_since(UNIX_EPOCH)
-                .map_err(|_| TeaclaveAuthenticationApiError::ServiceUnavailable)?;
+                .map_err(|e| AuthenticationServiceError::Service(e.into()))?;
             let exp = (now + Duration::from_secs(24 * 60 * 60)).as_secs();
             match user.get_token(exp, &self.jwt_secret) {
                 Ok(token) => Ok(UserLoginResponse { token }),
-                Err(_) => Err(TeaclaveAuthenticationApiError::ServiceUnavailable.into()),
+                Err(e) => Err(AuthenticationServiceError::Service(e).into()),
             }
         }
     }
@@ -189,26 +189,25 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
         let id: String = request
             .metadata
             .get("id")
-            .ok_or_else(|| anyhow!("Missing credential"))?
+            .ok_or_else(|| AuthenticationServiceError::MissingUserId)?
             .into();
         let token: String = request
             .metadata
             .get("token")
-            .ok_or_else(|| anyhow!("Missing credential"))?
+            .ok_or_else(|| AuthenticationServiceError::MissingToken)?
             .into();
         let requester_role = self.validate_user_credential(&id, &token)?;
 
         let request = request.message;
         ensure!(
             !request.password.is_empty(),
-            TeaclaveAuthenticationApiError::InvalidPassword
+            AuthenticationError::InvalidPassword
         );
         let updated_user = UserInfo::new(&id, &request.password, requester_role);
 
         match self.db_client.update_user(&updated_user) {
             Ok(_) => Ok(UserChangePasswordResponse {}),
-            Err(DbError::UserNotExist) => Err(TeaclaveAuthenticationApiError::InvalidUserId.into()),
-            Err(_) => Err(TeaclaveAuthenticationApiError::ServiceUnavailable.into()),
+            Err(e) => Err(AuthenticationServiceError::Service(e.into()).into()),
         }
     }
 
@@ -219,28 +218,28 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
         let id: String = request
             .metadata
             .get("id")
-            .ok_or_else(|| anyhow!("Missing credential"))?
+            .ok_or_else(|| AuthenticationServiceError::MissingUserId)?
             .into();
         let token: String = request
             .metadata
             .get("token")
-            .ok_or_else(|| anyhow!("Missing credential"))?
+            .ok_or_else(|| AuthenticationServiceError::MissingToken)?
             .into();
         let requester_role = self.validate_user_credential(&id, &token)?;
 
         let request = request.message;
         ensure!(
             !request.id.is_empty(),
-            TeaclaveAuthenticationApiError::InvalidUserId
+            AuthenticationServiceError::InvalidUserId
         );
         let user = self
             .db_client
             .get_user(&request.id)
-            .map_err(|_| TeaclaveAuthenticationApiError::InvalidUserId)?;
+            .map_err(|_| AuthenticationServiceError::PermissionDenied)?;
 
         ensure!(
             authorize_reset_user_password(&requester_role, &user),
-            TeaclaveAuthenticationApiError::InvalidRole
+            AuthenticationServiceError::PermissionDenied
         );
 
         let mut encode_buffer = uuid::Uuid::encode_buffer();
@@ -252,8 +251,7 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
             Ok(_) => Ok(ResetUserPasswordResponse {
                 password: new_password.to_string(),
             }),
-            Err(DbError::UserNotExist) => Err(TeaclaveAuthenticationApiError::InvalidUserId.into()),
-            Err(_) => Err(TeaclaveAuthenticationApiError::ServiceUnavailable.into()),
+            Err(e) => Err(AuthenticationServiceError::Service(e.into()).into()),
         }
     }
 
@@ -264,33 +262,32 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
         let id: String = request
             .metadata
             .get("id")
-            .ok_or_else(|| anyhow!("Missing credential"))?
+            .ok_or_else(|| AuthenticationServiceError::MissingUserId)?
             .into();
         let token: String = request
             .metadata
             .get("token")
-            .ok_or_else(|| anyhow!("Missing credential"))?
+            .ok_or_else(|| AuthenticationServiceError::MissingToken)?
             .into();
         let requester_role = self.validate_user_credential(&id, &token)?;
 
         let request = request.message;
         ensure!(
             !request.id.is_empty(),
-            TeaclaveAuthenticationApiError::InvalidUserId
+            AuthenticationServiceError::InvalidUserId
         );
         let user = self
             .db_client
             .get_user(&request.id)
-            .map_err(|_| TeaclaveAuthenticationApiError::InvalidUserId)?;
+            .map_err(|_| AuthenticationServiceError::PermissionDenied)?;
 
         ensure!(
             authorize_delete_user(&requester_role, &user),
-            TeaclaveAuthenticationApiError::InvalidRole
+            AuthenticationServiceError::PermissionDenied
         );
         match self.db_client.delete_user(&request.id) {
             Ok(_) => Ok(DeleteUserResponse {}),
-            Err(DbError::UserNotExist) => Err(TeaclaveAuthenticationApiError::InvalidUserId.into()),
-            Err(_) => Err(TeaclaveAuthenticationApiError::ServiceUnavailable.into()),
+            Err(e) => Err(AuthenticationServiceError::Service(e.into()).into()),
         }
     }
 
@@ -301,24 +298,24 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
         let id: String = request
             .metadata
             .get("id")
-            .ok_or_else(|| anyhow!("Missing credential"))?
+            .ok_or_else(|| AuthenticationServiceError::MissingUserId)?
             .into();
         let token: String = request
             .metadata
             .get("token")
-            .ok_or_else(|| anyhow!("Missing credential"))?
+            .ok_or_else(|| AuthenticationServiceError::MissingToken)?
             .into();
         let requester_role = self.validate_user_credential(&id, &token)?;
 
         let request = request.message;
         ensure!(
             !request.id.is_empty(),
-            TeaclaveAuthenticationApiError::InvalidUserId
+            AuthenticationServiceError::InvalidUserId
         );
 
         ensure!(
             authorize_list_users(&requester_role, &request),
-            TeaclaveAuthenticationApiError::InvalidRole
+            AuthenticationServiceError::PermissionDenied
         );
 
         let users = match requester_role {
@@ -328,8 +325,7 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
 
         match users {
             Ok(ids) => Ok(ListUsersResponse { ids }),
-            Err(DbError::UserNotExist) => Err(TeaclaveAuthenticationApiError::InvalidUserId.into()),
-            Err(_) => Err(TeaclaveAuthenticationApiError::ServiceUnavailable.into()),
+            Err(e) => Err(AuthenticationServiceError::Service(e.into()).into()),
         }
     }
 }

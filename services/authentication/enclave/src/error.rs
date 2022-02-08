@@ -21,33 +21,57 @@ use teaclave_types::TeaclaveServiceResponseError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub(crate) enum TeaclaveAuthenticationApiError {
-    #[error("permission denied")]
-    PermissionDenied,
-    #[error("invalid userid")]
+pub(crate) enum AuthenticationError {
+    #[error("invalid user id")]
     InvalidUserId,
+    #[error("invalid token")]
+    InvalidToken,
     #[error("invalid password")]
     InvalidPassword,
-    #[error("invalid role")]
-    InvalidRole,
-    #[error("service unavailable")]
-    ServiceUnavailable,
+    #[error("user id not found")]
+    UserIdNotFound,
+    #[error("Incorrect password")]
+    IncorrectPassword,
+    #[error("Incorrect token")]
+    IncorrectToken,
 }
 
-impl From<TeaclaveAuthenticationApiError> for TeaclaveServiceResponseError {
-    fn from(error: TeaclaveAuthenticationApiError) -> Self {
-        TeaclaveServiceResponseError::RequestError(error.to_string())
+impl From<AuthenticationError> for AuthenticationServiceError {
+    fn from(error: AuthenticationError) -> Self {
+        AuthenticationServiceError::Authentication(error)
+    }
+}
+
+impl From<AuthenticationError> for TeaclaveServiceResponseError {
+    fn from(error: AuthenticationError) -> Self {
+        TeaclaveServiceResponseError::RequestError(
+            AuthenticationServiceError::from(error).to_string(),
+        )
     }
 }
 
 #[derive(Error, Debug)]
-pub(crate) enum TeaclaveAuthenticationInternalError {
+pub(crate) enum AuthenticationServiceError {
     #[error("permission denied")]
     PermissionDenied,
+    #[error("authentication failed")]
+    Authentication(AuthenticationError),
+    #[error("invalid user id")]
+    InvalidUserId,
+    #[error("invalid role")]
+    InvalidRole,
+    #[error("user id exist")]
+    UserIdExist,
+    #[error("service internal error")]
+    Service(#[from] anyhow::Error),
+    #[error("missing user id")]
+    MissingUserId,
+    #[error("missing token")]
+    MissingToken,
 }
 
-impl From<TeaclaveAuthenticationInternalError> for TeaclaveServiceResponseError {
-    fn from(error: TeaclaveAuthenticationInternalError) -> Self {
+impl From<AuthenticationServiceError> for TeaclaveServiceResponseError {
+    fn from(error: AuthenticationServiceError) -> Self {
         TeaclaveServiceResponseError::RequestError(error.to_string())
     }
 }
