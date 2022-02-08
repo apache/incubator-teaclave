@@ -163,7 +163,7 @@ class TestAuthenticationService(unittest.TestCase):
 
         response = read_message(self.socket)
         self.assertEqual(
-            response, b'{"result":"err","request_error":"permission denied"}')
+            response, b'{"result":"err","request_error":"authentication failed"}')
 
 
 if __name__ == '__main__':
