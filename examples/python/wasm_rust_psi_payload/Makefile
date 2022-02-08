@@ -16,7 +16,7 @@
 # under the License.
 
 all:
-	@cargo build --target wasm32-unknown-unknown --release
+	@RUSTFLAGS='' cargo build --target wasm32-unknown-unknown --release
 	@wasm-gc target/wasm32-unknown-unknown/release/wasm_rust_psi_payload.wasm
 
 clean:
