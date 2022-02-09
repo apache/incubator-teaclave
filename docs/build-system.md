@@ -91,7 +91,7 @@ compile them separately or together using with these targets:
 These targets are automatically generated from the
 `cmake/tomls/Cargo.sgx_{}.toml` files. Basically, they are:
 
-- `test_name` can be: `function_tests`, `unit_tests`, `integration_tests`, etc.
+- `test_name` can be: `functional_tests`, `unit_tests`, `integration_tests`, etc.
 - `service_name` can be: `access_control_service`, `authentication_service`,
   `storage_service`, `execution_service`, `frontend_service`,
   `management_service`, `scheduler_service`, etc.
