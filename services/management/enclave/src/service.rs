@@ -397,8 +397,8 @@ impl TeaclaveManagement for TeaclaveManagementService {
 
     // access control: function.owner == user_id
     // disable function
-    // 1. `List functions` do not show this function
-    // 2. `Create new task` with the fucntion id fails
+    // 1. `List functions` does not show this function
+    // 2. `Create new task` with the function id fails
     fn disable_function(
         &self,
         request: Request<DisableFunctionRequest>,
@@ -420,7 +420,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
 
         // Updated function owner
         let mut u = User::default();
-        u.id = function.owner.clone().into();
+        u.id = function.owner.clone();
         let external_id = u.external_id();
         let user: Result<User> = self.read_from_db(&external_id);
         if let Ok(mut us) = user {

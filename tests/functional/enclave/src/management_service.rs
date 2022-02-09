@@ -206,7 +206,7 @@ fn test_disable_function() {
     let response = client.register_function(request);
     let function_id = response.unwrap().function_id;
 
-    let request = DeleteFunctionRequest::new(function_id);
+    let request = DisableFunctionRequest::new(function_id);
     let response = client.disable_function(request);
     assert!(response.is_ok());
 }
