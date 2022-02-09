@@ -250,6 +250,7 @@ run_examples() {
   python3 wasm_c_simple_add.py
   python3 wasm_rust_psi.py
   python3 wasm_tvm_mnist.py
+  python3 test_disable_function.py
   popd
 
   pushd ${TEACLAVE_PROJECT_ROOT}/examples/c

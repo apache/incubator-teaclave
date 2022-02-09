@@ -397,8 +397,8 @@ impl TeaclaveManagement for TeaclaveManagementService {
 
     // access control: function.owner == user_id
     // disable function
-    // 1. List functions do not show this function
-    // 2. Create new task with the fucntion id fails
+    // 1. `List functions` do not show this function
+    // 2. `Create new task` with the fucntion id fails
     fn disable_function(
         &self,
         request: Request<DisableFunctionRequest>,
@@ -416,6 +416,21 @@ impl TeaclaveManagement for TeaclaveManagementService {
                 TeaclaveManagementServiceError::PermissionDenied
             );
         }
+        let func_id = function.external_id().to_string();
+
+        // Updated function owner
+        let mut u = User::default();
+        u.id = function.owner.clone().into();
+        let external_id = u.external_id();
+        let user: Result<User> = self.read_from_db(&external_id);
+        if let Ok(mut us) = user {
+            us.allowed_functions.retain(|f| !f.eq(&func_id));
+            us.registered_functions.retain(|f| !f.eq(&func_id));
+            self.write_to_db(&us)
+                .map_err(|_| TeaclaveManagementServiceError::StorageError)?;
+        } else {
+            log::warn!("Invalid user id from functions");
+        }
 
         // Update allowed function list for users
         for user_id in &function.user_allowlist {
@@ -424,7 +439,8 @@ impl TeaclaveManagement for TeaclaveManagementService {
             let external_id = u.external_id();
             let user: Result<User> = self.read_from_db(&external_id);
             if let Ok(mut us) = user {
-                us.allowed_functions.clear();
+                us.allowed_functions.retain(|f| !f.eq(&func_id));
+                us.registered_functions.retain(|f| !f.eq(&func_id));
                 self.write_to_db(&us)
                     .map_err(|_| TeaclaveManagementServiceError::StorageError)?;
             } else {
