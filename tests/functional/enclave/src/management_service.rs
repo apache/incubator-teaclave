@@ -189,6 +189,29 @@ fn test_delete_function() {
 }
 
 #[test_case]
+fn test_disable_function() {
+    let function_input = FunctionInput::new("input", "input_desc", false);
+    let function_output = FunctionOutput::new("output", "output_desc", false);
+    let request = RegisterFunctionRequestBuilder::new()
+        .name("mock_function")
+        .executor_type(ExecutorType::Python)
+        .payload(b"def entrypoint:\n\treturn".to_vec())
+        .public(true)
+        .arguments(vec!["arg"])
+        .inputs(vec![function_input])
+        .outputs(vec![function_output])
+        .build();
+
+    let mut client = authorized_client("mock_user");
+    let response = client.register_function(request);
+    let function_id = response.unwrap().function_id;
+
+    let request = DeleteFunctionRequest::new(function_id);
+    let response = client.disable_function(request);
+    assert!(response.is_ok());
+}
+
+#[test_case]
 fn test_update_function() {
     let function_input = FunctionInput::new("input", "input_desc", false);
     let function_output = FunctionOutput::new("output", "output_desc", false);

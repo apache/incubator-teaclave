@@ -168,6 +168,13 @@ message DeleteFunctionRequest {
 
 message DeleteFunctionResponse { }
 
+message DisableFunctionRequest {
+  string function_id = 1;
+}
+
+message DisableFunctionResponse { }
+
+
 message ListFunctionsRequest {
   string user_id = 1;
 }
@@ -254,6 +261,7 @@ service TeaclaveFrontend {
   rpc UpdateFunction (UpdateFunctionRequest) returns (UpdateFunctionResponse);
   rpc ListFunctions (ListFunctionsRequest) returns (ListFunctionsResponse);
   rpc DeleteFunction (DeleteFunctionRequest) returns (DeleteFunctionResponse);
+  rpc DisableFunction (DisableFunctionRequest) returns (DisableFunctionResponse);
   rpc CreateTask (CreateTaskRequest) returns (CreateTaskResponse);
   rpc GetTask (GetTaskRequest) returns (GetTaskResponse);
   rpc AssignData (AssignDataRequest) returns (AssignDataResponse);

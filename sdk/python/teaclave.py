@@ -579,6 +579,14 @@ class DeleteFunctionRequest(Request):
         self.function_id = function_id
 
 
+class DisableFunctionRequest(Request):
+
+    def __init__(self, metadata: Metadata, function_id: str):
+        self.request = "disable_function"
+        self.metadata = metadata
+        self.function_id = function_id
+
+
 class GetFunctionRequest(Request):
 
     def __init__(self, metadata: Metadata, function_id: str):
@@ -795,6 +803,17 @@ class FrontendService(TeaclaveService):
             return response["content"]
         else:
             raise TeaclaveException("Failed to delete function")
+
+    def disable_function(self, function_id: str):
+        self.check_metadata()
+        self.check_channel()
+        request = DisableFunctionRequest(self.metadata, function_id)
+        _write_message(self.channel, request)
+        response = _read_message(self.channel)
+        if response["result"] == "ok":
+            return response["content"]
+        else:
+            raise TeaclaveException("Failed to disable function")
 
     def register_input_file(self, url: str, schema: str, key: List[int],
                             iv: List[int], cmac: List[int]):

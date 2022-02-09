@@ -24,15 +24,16 @@ use std::sync::{Arc, SgxMutex as Mutex};
 use teaclave_proto::teaclave_frontend_service::{
     ApproveTaskRequest, ApproveTaskResponse, AssignDataRequest, AssignDataResponse,
     CancelTaskRequest, CancelTaskResponse, CreateTaskRequest, CreateTaskResponse,
-    DeleteFunctionRequest, DeleteFunctionResponse, GetFunctionRequest, GetFunctionResponse,
-    GetInputFileRequest, GetInputFileResponse, GetOutputFileRequest, GetOutputFileResponse,
-    GetTaskRequest, GetTaskResponse, InvokeTaskRequest, InvokeTaskResponse, ListFunctionsRequest,
-    ListFunctionsResponse, RegisterFunctionRequest, RegisterFunctionResponse,
-    RegisterFusionOutputRequest, RegisterFusionOutputResponse, RegisterInputFileRequest,
-    RegisterInputFileResponse, RegisterInputFromOutputRequest, RegisterInputFromOutputResponse,
-    RegisterOutputFileRequest, RegisterOutputFileResponse, UpdateFunctionRequest,
-    UpdateFunctionResponse, UpdateInputFileRequest, UpdateInputFileResponse,
-    UpdateOutputFileRequest, UpdateOutputFileResponse,
+    DeleteFunctionRequest, DeleteFunctionResponse, DisableFunctionRequest, DisableFunctionResponse,
+    GetFunctionRequest, GetFunctionResponse, GetInputFileRequest, GetInputFileResponse,
+    GetOutputFileRequest, GetOutputFileResponse, GetTaskRequest, GetTaskResponse,
+    InvokeTaskRequest, InvokeTaskResponse, ListFunctionsRequest, ListFunctionsResponse,
+    RegisterFunctionRequest, RegisterFunctionResponse, RegisterFusionOutputRequest,
+    RegisterFusionOutputResponse, RegisterInputFileRequest, RegisterInputFileResponse,
+    RegisterInputFromOutputRequest, RegisterInputFromOutputResponse, RegisterOutputFileRequest,
+    RegisterOutputFileResponse, UpdateFunctionRequest, UpdateFunctionResponse,
+    UpdateInputFileRequest, UpdateInputFileResponse, UpdateOutputFileRequest,
+    UpdateOutputFileResponse,
 };
 use teaclave_proto::teaclave_management_service::TeaclaveManagement;
 use teaclave_proto::teaclave_storage_service::{
@@ -391,6 +392,50 @@ impl TeaclaveManagement for TeaclaveManagementService {
         self.delete_from_db(&request.message.function_id)
             .map_err(|_| TeaclaveManagementServiceError::PermissionDenied)?;
         let response = DeleteFunctionResponse {};
+        Ok(response)
+    }
+
+    // access control: function.owner == user_id
+    // disable function
+    // 1. List functions do not show this function
+    // 2. Create new task with the fucntion id fails
+    fn disable_function(
+        &self,
+        request: Request<DisableFunctionRequest>,
+    ) -> TeaclaveServiceResponseResult<DisableFunctionResponse> {
+        let user_id = self.get_request_user_id(request.metadata())?;
+        let role = self.get_request_role(request.metadata())?;
+
+        let mut function: Function = self
+            .read_from_db(&request.message.function_id)
+            .map_err(|_| TeaclaveManagementServiceError::PermissionDenied)?;
+
+        if role != UserRole::PlatformAdmin {
+            ensure!(
+                function.owner == user_id,
+                TeaclaveManagementServiceError::PermissionDenied
+            );
+        }
+
+        // Update allowed function list for users
+        for user_id in &function.user_allowlist {
+            let mut u = User::default();
+            u.id = user_id.into();
+            let external_id = u.external_id();
+            let user: Result<User> = self.read_from_db(&external_id);
+            if let Ok(mut us) = user {
+                us.allowed_functions.clear();
+                self.write_to_db(&us)
+                    .map_err(|_| TeaclaveManagementServiceError::StorageError)?;
+            } else {
+                log::warn!("Invalid user id from functions");
+            }
+        }
+
+        function.user_allowlist.clear();
+        self.write_to_db(&function)
+            .map_err(|_| TeaclaveManagementServiceError::StorageError)?;
+        let response = DisableFunctionResponse {};
         Ok(response)
     }
 
