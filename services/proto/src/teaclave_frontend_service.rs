@@ -552,6 +552,23 @@ impl DeleteFunctionRequest {
 #[derive(Debug)]
 pub struct DeleteFunctionResponse {}
 
+#[into_request(TeaclaveManagementRequest::DisableFunction)]
+#[into_request(TeaclaveFrontendRequest::DisableFunction)]
+#[derive(Debug)]
+pub struct DisableFunctionRequest {
+    pub function_id: ExternalID,
+}
+
+impl DisableFunctionRequest {
+    pub fn new(function_id: ExternalID) -> Self {
+        Self { function_id }
+    }
+}
+
+#[into_request(TeaclaveManagementResponse::DisableFunction)]
+#[derive(Debug)]
+pub struct DisableFunctionResponse {}
+
 #[into_request(TeaclaveManagementRequest::CreateTask)]
 #[into_request(TeaclaveFrontendRequest::CreateTask)]
 #[derive(Default)]
@@ -1282,6 +1299,20 @@ impl From<DeleteFunctionResponse> for proto::DeleteFunctionResponse {
     }
 }
 
+impl std::convert::TryFrom<proto::DisableFunctionResponse> for DisableFunctionResponse {
+    type Error = Error;
+
+    fn try_from(_proto: proto::DisableFunctionResponse) -> Result<Self> {
+        Ok(DisableFunctionResponse {})
+    }
+}
+
+impl From<DisableFunctionResponse> for proto::DisableFunctionResponse {
+    fn from(_response: DisableFunctionResponse) -> Self {
+        Self {}
+    }
+}
+
 impl std::convert::TryFrom<proto::ListFunctionsRequest> for ListFunctionsRequest {
     type Error = Error;
 
@@ -1336,6 +1367,25 @@ impl std::convert::TryFrom<proto::DeleteFunctionRequest> for DeleteFunctionReque
 
 impl From<DeleteFunctionRequest> for proto::DeleteFunctionRequest {
     fn from(request: DeleteFunctionRequest) -> Self {
+        Self {
+            function_id: request.function_id.to_string(),
+        }
+    }
+}
+
+impl std::convert::TryFrom<proto::DisableFunctionRequest> for DisableFunctionRequest {
+    type Error = Error;
+
+    fn try_from(proto: proto::DisableFunctionRequest) -> Result<Self> {
+        let function_id = proto.function_id.try_into()?;
+        let ret = Self { function_id };
+
+        Ok(ret)
+    }
+}
+
+impl From<DisableFunctionRequest> for proto::DisableFunctionRequest {
+    fn from(request: DisableFunctionRequest) -> Self {
         Self {
             function_id: request.function_id.to_string(),
         }

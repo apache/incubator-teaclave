@@ -28,15 +28,16 @@ use teaclave_proto::teaclave_common::UserCredential;
 use teaclave_proto::teaclave_frontend_service::{
     ApproveTaskRequest, ApproveTaskResponse, AssignDataRequest, AssignDataResponse,
     CancelTaskRequest, CancelTaskResponse, CreateTaskRequest, CreateTaskResponse,
-    DeleteFunctionRequest, DeleteFunctionResponse, GetFunctionRequest, GetFunctionResponse,
-    GetInputFileRequest, GetInputFileResponse, GetOutputFileRequest, GetOutputFileResponse,
-    GetTaskRequest, GetTaskResponse, InvokeTaskRequest, InvokeTaskResponse, ListFunctionsRequest,
-    ListFunctionsResponse, RegisterFunctionRequest, RegisterFunctionResponse,
-    RegisterFusionOutputRequest, RegisterFusionOutputResponse, RegisterInputFileRequest,
-    RegisterInputFileResponse, RegisterInputFromOutputRequest, RegisterInputFromOutputResponse,
-    RegisterOutputFileRequest, RegisterOutputFileResponse, TeaclaveFrontend, UpdateFunctionRequest,
-    UpdateFunctionResponse, UpdateInputFileRequest, UpdateInputFileResponse,
-    UpdateOutputFileRequest, UpdateOutputFileResponse,
+    DeleteFunctionRequest, DeleteFunctionResponse, DisableFunctionRequest, DisableFunctionResponse,
+    GetFunctionRequest, GetFunctionResponse, GetInputFileRequest, GetInputFileResponse,
+    GetOutputFileRequest, GetOutputFileResponse, GetTaskRequest, GetTaskResponse,
+    InvokeTaskRequest, InvokeTaskResponse, ListFunctionsRequest, ListFunctionsResponse,
+    RegisterFunctionRequest, RegisterFunctionResponse, RegisterFusionOutputRequest,
+    RegisterFusionOutputResponse, RegisterInputFileRequest, RegisterInputFileResponse,
+    RegisterInputFromOutputRequest, RegisterInputFromOutputResponse, RegisterOutputFileRequest,
+    RegisterOutputFileResponse, TeaclaveFrontend, UpdateFunctionRequest, UpdateFunctionResponse,
+    UpdateInputFileRequest, UpdateInputFileResponse, UpdateOutputFileRequest,
+    UpdateOutputFileResponse,
 };
 use teaclave_proto::teaclave_management_service::TeaclaveManagementClient;
 use teaclave_rpc::endpoint::Endpoint;
@@ -108,6 +109,7 @@ enum Endpoints {
     UpdateFunction,
     ListFunctions,
     DeleteFunction,
+    DisableFunction,
     CreateTask,
     GetTask,
     AssignData,
@@ -127,9 +129,10 @@ fn authorize(claims: &UserAuthClaims, request: Endpoints) -> bool {
     }
 
     match request {
-        Endpoints::RegisterFunction | Endpoints::UpdateFunction | Endpoints::DeleteFunction => {
-            role.is_function_owner()
-        }
+        Endpoints::RegisterFunction
+        | Endpoints::UpdateFunction
+        | Endpoints::DeleteFunction
+        | Endpoints::DisableFunction => role.is_function_owner(),
         Endpoints::RegisterInputFile
         | Endpoints::RegisterOutputFile
         | Endpoints::UpdateInputFile
@@ -335,6 +338,18 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
             request,
             delete_function,
             Endpoints::DeleteFunction
+        )
+    }
+
+    fn disable_function(
+        &self,
+        request: Request<DisableFunctionRequest>,
+    ) -> TeaclaveServiceResponseResult<DisableFunctionResponse> {
+        authentication_and_forward_to_management!(
+            self,
+            request,
+            disable_function,
+            Endpoints::DisableFunction
         )
     }
 
