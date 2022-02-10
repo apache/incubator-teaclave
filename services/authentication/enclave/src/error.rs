@@ -72,6 +72,7 @@ pub(crate) enum AuthenticationServiceError {
 
 impl From<AuthenticationServiceError> for TeaclaveServiceResponseError {
     fn from(error: AuthenticationServiceError) -> Self {
+        log::debug!("AuthenticationServiceError: {:?}", error);
         TeaclaveServiceResponseError::RequestError(error.to_string())
     }
 }

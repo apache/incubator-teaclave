@@ -108,7 +108,7 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
         let new_user = UserInfo::new(&request.id, &request.password, role);
         match self.db_client.create_user(&new_user) {
             Ok(_) => Ok(UserRegisterResponse {}),
-            Err(e) => Err(AuthenticationServiceError::Service(e.into()).into()),
+            Err(e) => bail!(AuthenticationServiceError::Service(e.into())),
         }
     }
 
@@ -150,7 +150,7 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
         let updated_user = UserInfo::new(&request.id, &request.password, role);
         match self.db_client.update_user(&updated_user) {
             Ok(_) => Ok(UserUpdateResponse {}),
-            Err(e) => Err(AuthenticationServiceError::Service(e.into()).into()),
+            Err(e) => bail!(AuthenticationServiceError::Service(e.into())),
         }
     }
 
@@ -177,7 +177,7 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
             let exp = (now + Duration::from_secs(24 * 60 * 60)).as_secs();
             match user.get_token(exp, &self.jwt_secret) {
                 Ok(token) => Ok(UserLoginResponse { token }),
-                Err(e) => Err(AuthenticationServiceError::Service(e).into()),
+                Err(e) => bail!(AuthenticationServiceError::Service(e)),
             }
         }
     }
@@ -207,7 +207,7 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
 
         match self.db_client.update_user(&updated_user) {
             Ok(_) => Ok(UserChangePasswordResponse {}),
-            Err(e) => Err(AuthenticationServiceError::Service(e.into()).into()),
+            Err(e) => bail!(AuthenticationServiceError::Service(e.into())),
         }
     }
 
@@ -251,7 +251,7 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
             Ok(_) => Ok(ResetUserPasswordResponse {
                 password: new_password.to_string(),
             }),
-            Err(e) => Err(AuthenticationServiceError::Service(e.into()).into()),
+            Err(e) => bail!(AuthenticationServiceError::Service(e.into())),
         }
     }
 
@@ -287,7 +287,7 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
         );
         match self.db_client.delete_user(&request.id) {
             Ok(_) => Ok(DeleteUserResponse {}),
-            Err(e) => Err(AuthenticationServiceError::Service(e.into()).into()),
+            Err(e) => bail!(AuthenticationServiceError::Service(e.into())),
         }
     }
 
@@ -325,7 +325,7 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
 
         match users {
             Ok(ids) => Ok(ListUsersResponse { ids }),
-            Err(e) => Err(AuthenticationServiceError::Service(e.into()).into()),
+            Err(e) => bail!(AuthenticationServiceError::Service(e.into())),
         }
     }
 }
