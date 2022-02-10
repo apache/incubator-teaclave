@@ -180,9 +180,11 @@ class TeaclaveService:
 
         store = X509Store()
         store.add_cert(as_root_ca_cert)
-        for c in certs:
-            store.add_cert(c)
-        store_ctx = X509StoreContext(store, as_root_ca_cert)
+        client_cert = certs[0]
+        if len(certs) > 1:
+            for c in certs[1:]:
+                store.add_cert(c)
+        store_ctx = X509StoreContext(store, client_cert)
 
         try:
             store_ctx.verify_certificate()
