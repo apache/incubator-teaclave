@@ -76,12 +76,12 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
         let id: String = request
             .metadata
             .get("id")
-            .ok_or_else(|| AuthenticationServiceError::MissingUserId)?
+            .ok_or(AuthenticationServiceError::MissingUserId)?
             .into();
         let token: String = request
             .metadata
             .get("token")
-            .ok_or_else(|| AuthenticationServiceError::MissingToken)?
+            .ok_or(AuthenticationServiceError::MissingToken)?
             .into();
 
         let requester_role = self.validate_user_credential(&id, &token)?;
@@ -119,12 +119,12 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
         let id: String = request
             .metadata
             .get("id")
-            .ok_or_else(|| AuthenticationServiceError::MissingUserId)?
+            .ok_or(AuthenticationServiceError::MissingUserId)?
             .into();
         let token: String = request
             .metadata
             .get("token")
-            .ok_or_else(|| AuthenticationServiceError::MissingToken)?
+            .ok_or(AuthenticationServiceError::MissingToken)?
             .into();
         let requester_role = self.validate_user_credential(&id, &token)?;
 
@@ -189,12 +189,12 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
         let id: String = request
             .metadata
             .get("id")
-            .ok_or_else(|| AuthenticationServiceError::MissingUserId)?
+            .ok_or(AuthenticationServiceError::MissingUserId)?
             .into();
         let token: String = request
             .metadata
             .get("token")
-            .ok_or_else(|| AuthenticationServiceError::MissingToken)?
+            .ok_or(AuthenticationServiceError::MissingToken)?
             .into();
         let requester_role = self.validate_user_credential(&id, &token)?;
 
@@ -218,12 +218,12 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
         let id: String = request
             .metadata
             .get("id")
-            .ok_or_else(|| AuthenticationServiceError::MissingUserId)?
+            .ok_or(AuthenticationServiceError::MissingUserId)?
             .into();
         let token: String = request
             .metadata
             .get("token")
-            .ok_or_else(|| AuthenticationServiceError::MissingToken)?
+            .ok_or(AuthenticationServiceError::MissingToken)?
             .into();
         let requester_role = self.validate_user_credential(&id, &token)?;
 
@@ -262,12 +262,12 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
         let id: String = request
             .metadata
             .get("id")
-            .ok_or_else(|| AuthenticationServiceError::MissingUserId)?
+            .ok_or(AuthenticationServiceError::MissingUserId)?
             .into();
         let token: String = request
             .metadata
             .get("token")
-            .ok_or_else(|| AuthenticationServiceError::MissingToken)?
+            .ok_or(AuthenticationServiceError::MissingToken)?
             .into();
         let requester_role = self.validate_user_credential(&id, &token)?;
 
@@ -298,12 +298,12 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
         let id: String = request
             .metadata
             .get("id")
-            .ok_or_else(|| AuthenticationServiceError::MissingUserId)?
+            .ok_or(AuthenticationServiceError::MissingUserId)?
             .into();
         let token: String = request
             .metadata
             .get("token")
-            .ok_or_else(|| AuthenticationServiceError::MissingToken)?
+            .ok_or(AuthenticationServiceError::MissingToken)?
             .into();
         let requester_role = self.validate_user_credential(&id, &token)?;
 

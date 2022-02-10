@@ -30,9 +30,9 @@ pub(crate) enum AuthenticationError {
     InvalidPassword,
     #[error("user id not found")]
     UserIdNotFound,
-    #[error("Incorrect password")]
+    #[error("incorrect password")]
     IncorrectPassword,
-    #[error("Incorrect token")]
+    #[error("incorrect token")]
     IncorrectToken,
 }
 
