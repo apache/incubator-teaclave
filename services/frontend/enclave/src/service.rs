@@ -15,8 +15,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use crate::error::TeaclaveFrontendError;
+use crate::error::AuthenticationError;
+use crate::error::FrontendServiceError;
 
+use anyhow::anyhow;
+use anyhow::ensure;
 use anyhow::Result;
 use std::prelude::v1::*;
 use std::sync::{Arc, SgxMutex as Mutex};
@@ -45,7 +48,7 @@ use teaclave_rpc::Request;
 use teaclave_service_enclave_utils::{bail, teaclave_service};
 use teaclave_types::{TeaclaveServiceResponseResult, UserAuthClaims, UserRole};
 
-#[teaclave_service(teaclave_frontend_service, TeaclaveFrontend, TeaclaveFrontendError)]
+#[teaclave_service(teaclave_frontend_service, TeaclaveFrontend, FrontendServiceError)]
 #[derive(Clone)]
 pub(crate) struct TeaclaveFrontendService {
     authentication_client: Arc<Mutex<TeaclaveAuthenticationInternalClient>>,
@@ -64,23 +67,23 @@ macro_rules! authentication_and_forward_to_management {
                         stringify!($endpoint),
                         stringify!($func)
                     );
-                    bail!(TeaclaveFrontendError::AuthenticationError);
+                    bail!(FrontendServiceError::PermissionDenied);
                 }
             }
-            _ => {
+            Err(e) => {
                 log::debug!(
                     "User is not authenticated to access endpoint: {}, func: {}",
                     stringify!($endpoint),
                     stringify!($func)
                 );
-                bail!(TeaclaveFrontendError::AuthenticationError)
+                bail!(e);
             }
         };
 
         let client = $service.management_client.clone();
-        let mut client = client
-            .lock()
-            .map_err(|_| TeaclaveFrontendError::LockError)?;
+        let mut client = client.lock().map_err(|_| {
+            FrontendServiceError::Service(anyhow!("failed to lock management client"))
+        })?;
         client.metadata_mut().clear();
         client.metadata_mut().extend($request.metadata);
         client
@@ -163,7 +166,7 @@ impl TeaclaveFrontendService {
             match authentication_service_endpoint.connect() {
                 Ok(channel) => break channel,
                 Err(_) => {
-                    anyhow::ensure!(i < 10, "failed to connect to authentication service");
+                    ensure!(i < 10, "failed to connect to authentication service");
                     log::warn!("Failed to connect to authentication service, retry {}", i);
                     i += 1;
                 }
@@ -179,7 +182,7 @@ impl TeaclaveFrontendService {
             match management_service_endpoint.connect() {
                 Ok(channel) => break channel,
                 Err(_) => {
-                    anyhow::ensure!(i < 10, "failed to connect to management service");
+                    ensure!(i < 10, "failed to connect to management service");
                     log::warn!("Failed to connect to management service, retry {}", i);
                     i += 1;
                 }
@@ -414,24 +417,29 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
 }
 
 impl TeaclaveFrontendService {
-    fn authenticate<T>(&self, request: &Request<T>) -> anyhow::Result<UserAuthClaims> {
-        use anyhow::anyhow;
+    fn authenticate<T>(
+        &self,
+        request: &Request<T>,
+    ) -> Result<UserAuthClaims, FrontendServiceError> {
         let id = request
             .metadata
             .get("id")
-            .ok_or_else(|| anyhow!("Missing credential"))?;
+            .ok_or(AuthenticationError::MissingUserId)?;
         let token = request
             .metadata
             .get("token")
-            .ok_or_else(|| anyhow!("Missing credential"))?;
+            .ok_or(AuthenticationError::MissingToken)?;
         let credential = UserCredential::new(id, token);
         let auth_request = UserAuthenticateRequest { credential };
         let claims = self
             .authentication_client
             .clone()
             .lock()
-            .map_err(|_| anyhow!("Cannot lock authentication client"))?
-            .user_authenticate(auth_request)?
+            .map_err(|_| {
+                FrontendServiceError::Service(anyhow!("failed to lock authentication client"))
+            })?
+            .user_authenticate(auth_request)
+            .map_err(|_| AuthenticationError::IncorrectCredential)?
             .claims;
 
         Ok(claims)

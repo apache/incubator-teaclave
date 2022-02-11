@@ -21,15 +21,34 @@ use teaclave_types::TeaclaveServiceResponseError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub(crate) enum TeaclaveFrontendError {
-    #[error("authentication error")]
-    AuthenticationError,
-    #[error("lock error")]
-    LockError,
+pub(crate) enum AuthenticationError {
+    #[error("missing user id")]
+    MissingUserId,
+    #[error("missing token")]
+    MissingToken,
+    #[error("incorrent credential")]
+    IncorrectCredential,
 }
 
-impl From<TeaclaveFrontendError> for TeaclaveServiceResponseError {
-    fn from(error: TeaclaveFrontendError) -> Self {
+impl From<AuthenticationError> for FrontendServiceError {
+    fn from(error: AuthenticationError) -> Self {
+        FrontendServiceError::Authentication(error)
+    }
+}
+
+#[derive(Error, Debug)]
+pub(crate) enum FrontendServiceError {
+    #[error("permission denied")]
+    PermissionDenied,
+    #[error("service internal error")]
+    Service(#[from] anyhow::Error),
+    #[error("authentication failed")]
+    Authentication(AuthenticationError),
+}
+
+impl From<FrontendServiceError> for TeaclaveServiceResponseError {
+    fn from(error: FrontendServiceError) -> Self {
+        log::debug!("FrontendServiceError: {:?}", error);
         TeaclaveServiceResponseError::RequestError(error.to_string())
     }
 }
