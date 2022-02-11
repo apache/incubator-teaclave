@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use crate::error::TeaclaveAuthenticationInternalError;
+use crate::error::AuthenticationError;
 use crate::user_db::DbClient;
 use crate::user_info::UserInfo;
 use std::prelude::v1::*;
@@ -23,7 +23,7 @@ use teaclave_proto::teaclave_authentication_service::{
     TeaclaveAuthenticationInternal, UserAuthenticateRequest, UserAuthenticateResponse,
 };
 use teaclave_rpc::Request;
-use teaclave_service_enclave_utils::teaclave_service;
+use teaclave_service_enclave_utils::{bail, teaclave_service};
 use teaclave_types::TeaclaveServiceResponseResult;
 
 #[teaclave_service(teaclave_authentication_service, TeaclaveAuthenticationInternal)]
@@ -48,16 +48,19 @@ impl TeaclaveAuthenticationInternal for TeaclaveAuthenticationInternalService {
         request: Request<UserAuthenticateRequest>,
     ) -> TeaclaveServiceResponseResult<UserAuthenticateResponse> {
         let request = request.message;
-        if request.credential.id.is_empty() || request.credential.token.is_empty() {
-            return Err(TeaclaveAuthenticationInternalError::PermissionDenied.into());
+        if request.credential.id.is_empty() {
+            bail!(AuthenticationError::InvalidUserId);
+        }
+        if request.credential.token.is_empty() {
+            bail!(AuthenticationError::InvalidToken);
         }
         let user: UserInfo = match self.db_client.get_user(&request.credential.id) {
             Ok(value) => value,
-            Err(_) => return Err(TeaclaveAuthenticationInternalError::PermissionDenied.into()),
+            Err(_) => bail!(AuthenticationError::InvalidUserId),
         };
         let claims = user
             .validate_token(&self.jwt_secret, &request.credential.token)
-            .map_err(|_| TeaclaveAuthenticationInternalError::PermissionDenied)?;
+            .map_err(|_| AuthenticationError::IncorrectToken)?;
         Ok(UserAuthenticateResponse { claims })
     }
 }
