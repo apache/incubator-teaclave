@@ -469,7 +469,7 @@ class AuthenticationService(TeaclaveService):
             user_id: User ID.
 
         Returns:
-            str: Restted new password.
+            str: New password.
         """
         self.check_channel()
         self.check_metadata()
