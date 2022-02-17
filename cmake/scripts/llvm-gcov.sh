@@ -17,4 +17,4 @@
 # specific language governing permissions and limitations
 # under the License.
 
-llvm-cov gcov $*
+llvm-cov-11 gcov $*

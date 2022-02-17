@@ -30,6 +30,7 @@ GENHTML=genhtml
 
 cd ${TEACLAVE_PROJECT_ROOT}
 find . \( -name "*.gcda" -and \( ! -name "teaclave*" \
+     -and -name "teaclave_proto*" \
      -and ! -name "sgx_cov*" \
      -and ! -name "rusty_leveldb*" \
      -and ! -name "sgx_tprotected_fs*" \
@@ -39,11 +40,11 @@ cd ${TEACLAVE_PROJECT_ROOT} && \
     do mkdir -p ${TEACLAVE_OUT_DIR}/cov_$tag && \
     find ${TEACLAVE_TARGET_DIR} -name *$tag* -exec cp {} ${TEACLAVE_OUT_DIR}/cov_$tag/ \; ; \
     ${LCOV} ${LCOVOPT} --capture \
-    --directory ${TEACLAVE_OUT_DIR}/cov_$tag/ --base-directory . \
+    --directory ${TEACLAVE_OUT_DIR}/cov_$tag/ --base-directory .  --exclude "*target*" \
     -o ${TEACLAVE_OUT_DIR}/modules_$tag.info; done 2>/dev/null
 rm -rf ${TEACLAVE_OUT_DIR}/cov_*
 cd ${TEACLAVE_PROJECT_ROOT} && ${LCOV} ${LCOVOPT} --capture \
-    --directory . --base-directory . \
+    --directory . --base-directory . --exclude "*target*" \
     -o ${TEACLAVE_OUT_DIR}/modules.info 2>/dev/null
 cd ${TEACLAVE_OUT_DIR} && ${LCOV} ${LCOVOPT} $(for tag in \
     `find ${TEACLAVE_PROJECT_ROOT} -name sgx_cov*.gcda | cut -d'.' -f2`; \

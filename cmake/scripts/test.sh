@@ -59,10 +59,10 @@ run_unit_tests() {
 }
 
 cleanup() {
-  # kill all background services
-  [[ -z "$(jobs -p -r)" ]] || kill -s SIGKILL $(jobs -p -r)
+  # gracefully terminate all background services with SIGTERM
+  [[ -z "$(jobs -p -r)" ]] || kill -s SIGTERM $(jobs -p -r)
   wait # wait for resource release
-  echo "All jobs killed."
+  echo "All jobs terminated."
 }
 
 wait_port() {
