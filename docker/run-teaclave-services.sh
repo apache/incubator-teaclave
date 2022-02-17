@@ -30,14 +30,14 @@ function sgx_dev_detect() {
 
     local ENCL_DEV=/dev/sgx/enclave
     local ENCL_DEV_EXIST=false
-    if [ -L "$ENCL_DEV" ] && [ -c $(readlink $ENCL_DEV) ]; then
+    if [ -L "$ENCL_DEV" ] && [ -c $(realpath $ENCL_DEV) ]; then
         echo "$ENCL_DEV device detected."
         ENCL_DEV_EXIST=true
     fi
 
     local PROV_DEV=/dev/sgx/provision
     local PROV_DEV_EXIST=false
-    if [ -L "$PROV_DEV" ] && [ -c $(readlink $PROV_DEV) ]; then
+    if [ -L "$PROV_DEV" ] && [ -c $(realpath $PROV_DEV) ]; then
         echo "$PROV_DEV device detected."
         PROV_DEV_EXIST=true
     fi
