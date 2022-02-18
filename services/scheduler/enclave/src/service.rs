@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use crate::error::TeaclaveSchedulerError;
+use crate::error::SchedulerServiceError;
 
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::convert::TryInto;
@@ -66,7 +66,7 @@ impl TeaclaveSchedulerDeamon {
             let mut resources = self
                 .resources
                 .lock()
-                .map_err(|_| anyhow!("Cannot lock scheduler resources"))?;
+                .map_err(|_| anyhow!("cannot lock scheduler resources"))?;
 
             let key = StagedTask::get_queue_key().as_bytes();
 
@@ -173,31 +173,35 @@ impl TeaclaveSchedulerResources {
         Ok(resources)
     }
 
-    fn pull_staged_task<T: Storable>(&self, key: &[u8]) -> TeaclaveServiceResponseResult<T> {
+    fn pull_staged_task<T: Storable>(
+        &self,
+        key: &[u8],
+    ) -> std::result::Result<T, SchedulerServiceError> {
         let dequeue_request = DequeueRequest::new(key);
         let dequeue_response = self
             .storage_client
             .clone()
             .lock()
-            .map_err(|_| TeaclaveSchedulerError::StorageError)?
-            .dequeue(dequeue_request)?;
-        T::from_slice(dequeue_response.value.as_slice())
-            .map_err(|_| TeaclaveSchedulerError::DataError.into())
+            .map_err(|_| anyhow!("cannot lock storage client"))?
+            .dequeue(dequeue_request)
+            .map_err(|_| SchedulerServiceError::StorageError)?;
+        T::from_slice(dequeue_response.value.as_slice()).map_err(SchedulerServiceError::Service)
     }
 
-    fn pull_cancel_queue(&self) -> Result<TaskState> {
+    fn pull_cancel_queue(&self) -> std::result::Result<TaskState, SchedulerServiceError> {
         let dequeue_request = DequeueRequest::new(CANCEL_QUEUE_KEY.as_bytes());
         let dequeue_response = self
             .storage_client
             .clone()
             .lock()
-            .map_err(|_| TeaclaveSchedulerError::StorageError)?
-            .dequeue(dequeue_request)?;
+            .map_err(|_| anyhow!("cannot lock storage client"))?
+            .dequeue(dequeue_request)
+            .map_err(|_| SchedulerServiceError::StorageError)?;
         TaskState::from_slice(dequeue_response.value.as_slice())
-            .map_err(|_| TeaclaveSchedulerError::DataError.into())
+            .map_err(SchedulerServiceError::Service)
     }
 
-    fn cancel_task(&self, task_id: Uuid) -> Result<()> {
+    fn cancel_task(&self, task_id: Uuid) -> std::result::Result<(), SchedulerServiceError> {
         let ts = self.get_task_state(&task_id)?;
         let mut task: Task<Cancel> = ts.try_into()?;
 
@@ -224,7 +228,7 @@ impl TeaclaveSchedulerResources {
             .storage_client
             .clone()
             .lock()
-            .map_err(|_| anyhow!("Cannot lock storage client"))?
+            .map_err(|_| anyhow!("cannot lock storage client"))?
             .get(get_request)?;
         T::from_slice(response.value.as_slice())
     }
@@ -237,7 +241,7 @@ impl TeaclaveSchedulerResources {
             .storage_client
             .clone()
             .lock()
-            .map_err(|_| anyhow!("Cannot lock storage client"))?
+            .map_err(|_| anyhow!("cannot lock storage client"))?
             .put(put_request)?;
         Ok(())
     }
@@ -254,7 +258,7 @@ impl TeaclaveScheduler for TeaclaveSchedulerService {
         let mut resources = self
             .resources
             .lock()
-            .map_err(|_| anyhow!("Cannot lock scheduler resources"))?;
+            .map_err(|_| anyhow!("cannot lock scheduler resources"))?;
 
         let staged_task = request.message.staged_task;
         resources.task_queue.push_back(staged_task);
@@ -277,7 +281,7 @@ impl TeaclaveScheduler for TeaclaveSchedulerService {
         let mut resources = self
             .resources
             .lock()
-            .map_err(|_| anyhow!("Cannot lock scheduler resources"))?;
+            .map_err(|_| anyhow!("cannot lock scheduler resources"))?;
 
         let mut command = ExecutorCommand::NoAction;
 
@@ -329,15 +333,13 @@ impl TeaclaveScheduler for TeaclaveSchedulerService {
         let mut resources = self
             .resources
             .lock()
-            .map_err(|_| anyhow!("Cannot lock scheduler resources"))?;
+            .map_err(|_| anyhow!("cannot lock scheduler resources"))?;
 
         match resources.task_queue.pop_front() {
             Some(task) => match resources.tasks_to_cancel.take(&task.task_id) {
                 Some(task_id) => {
                     resources.cancel_task(task_id)?;
-                    Err(TeaclaveServiceResponseError::InternalError(
-                        "Task to pull has been canceled".into(),
-                    ))
+                    Err(SchedulerServiceError::TaskCanceled.into())
                 }
                 None => {
                     resources
@@ -346,9 +348,7 @@ impl TeaclaveScheduler for TeaclaveSchedulerService {
                     Ok(PullTaskResponse::new(task))
                 }
             },
-            None => Err(TeaclaveServiceResponseError::InternalError(
-                "No staged task in task_queue".into(),
-            )),
+            None => Err(SchedulerServiceError::TaskQueueEmpty.into()),
         }
     }
 
@@ -359,7 +359,7 @@ impl TeaclaveScheduler for TeaclaveSchedulerService {
         let resources = self
             .resources
             .lock()
-            .map_err(|_| anyhow!("Cannot lock scheduler resources"))?;
+            .map_err(|_| anyhow!("cannot lock scheduler resources"))?;
 
         let request = request.message;
         let ts = resources.get_task_state(&request.task_id)?;
@@ -380,7 +380,7 @@ impl TeaclaveScheduler for TeaclaveSchedulerService {
         let resources = self
             .resources
             .lock()
-            .map_err(|_| anyhow!("Cannot lock scheduler resources"))?;
+            .map_err(|_| anyhow!("cannot lock scheduler resources"))?;
 
         let request = request.message;
         let ts = resources.get_task_state(&request.task_id)?;

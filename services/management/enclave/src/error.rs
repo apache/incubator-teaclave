@@ -45,6 +45,7 @@ pub(crate) enum ManagementServiceError {
 
 impl From<ManagementServiceError> for TeaclaveServiceResponseError {
     fn from(error: ManagementServiceError) -> Self {
+        log::debug!("ManagementServiceError: {:?}", error);
         TeaclaveServiceResponseError::RequestError(error.to_string())
     }
 }
