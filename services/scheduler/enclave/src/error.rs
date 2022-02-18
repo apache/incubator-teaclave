@@ -21,17 +21,20 @@ use teaclave_types::TeaclaveServiceResponseError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum TeaclaveSchedulerError {
-    #[error("scheduler service error")]
-    SchedulerServiceErr,
-    #[error("data error")]
-    DataError,
-    #[error("storage error")]
+pub enum SchedulerServiceError {
+    #[error("service internal error")]
+    Service(#[from] anyhow::Error),
+    #[error("task to pull has been canceled")]
+    TaskCanceled,
+    #[error("task queue is empty")]
+    TaskQueueEmpty,
+    #[error("storage service error")]
     StorageError,
 }
 
-impl From<TeaclaveSchedulerError> for TeaclaveServiceResponseError {
-    fn from(error: TeaclaveSchedulerError) -> Self {
+impl From<SchedulerServiceError> for TeaclaveServiceResponseError {
+    fn from(error: SchedulerServiceError) -> Self {
+        log::debug!("SchedulerServiceError: {:?}", error);
         TeaclaveServiceResponseError::RequestError(error.to_string())
     }
 }

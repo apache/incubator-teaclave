@@ -21,17 +21,18 @@ use teaclave_types::TeaclaveServiceResponseError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub(crate) enum TeaclaveStorageError {
-    #[error("connection error")]
-    Connection,
-    #[error("leveldb error")]
-    LevelDb(#[from] rusty_leveldb::Status),
-    #[error("none error")]
+pub(crate) enum StorageServiceError {
+    #[error("none")]
     None,
+    #[error("leveldb error")]
+    Database(#[from] rusty_leveldb::Status),
+    #[error("service internal error")]
+    Service(#[from] anyhow::Error),
 }
 
-impl From<TeaclaveStorageError> for TeaclaveServiceResponseError {
-    fn from(error: TeaclaveStorageError) -> Self {
+impl From<StorageServiceError> for TeaclaveServiceResponseError {
+    fn from(error: StorageServiceError) -> Self {
+        log::debug!("StorageServiceError: {:?}", error);
         TeaclaveServiceResponseError::RequestError(error.to_string())
     }
 }

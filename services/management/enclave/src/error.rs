@@ -20,21 +20,32 @@ use teaclave_types::TeaclaveServiceResponseError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub(crate) enum TeaclaveManagementServiceError {
-    #[error("invalid request")]
-    InvalidRequest,
-    #[error("data error")]
-    DataError,
-    #[error("storage error")]
-    StorageError,
+pub(crate) enum ManagementServiceError {
+    #[error("service internal error")]
+    Service(#[from] anyhow::Error),
     #[error("permission denied")]
     PermissionDenied,
-    #[error("bad task")]
-    BadTask,
+    #[error("missing user id")]
+    MissingUserId,
+    #[error("missing user role")]
+    MissingUserRole,
+    #[error("invalid data id")]
+    InvalidDataId,
+    #[error("invalid output file")]
+    InvalidOutputFile,
+    #[error("invalid function id")]
+    InvalidFunctionId,
+    #[error("invalid task id")]
+    InvalidTaskId,
+    #[error("invalid task")]
+    InvalidTask,
+    #[error("failed to change task state")]
+    TaskStateError,
 }
 
-impl From<TeaclaveManagementServiceError> for TeaclaveServiceResponseError {
-    fn from(error: TeaclaveManagementServiceError) -> Self {
+impl From<ManagementServiceError> for TeaclaveServiceResponseError {
+    fn from(error: ManagementServiceError) -> Self {
+        log::debug!("ManagementServiceError: {:?}", error);
         TeaclaveServiceResponseError::RequestError(error.to_string())
     }
 }

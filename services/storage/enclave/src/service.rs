@@ -15,8 +15,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use crate::error::TeaclaveStorageError;
+use crate::error::StorageServiceError;
 use crate::proxy::ProxyRequest;
+use anyhow::anyhow;
 use rusty_leveldb::DB;
 use std::cell::RefCell;
 use std::prelude::v1::*;
@@ -29,7 +30,7 @@ use teaclave_rpc::Request;
 use teaclave_service_enclave_utils::{bail, teaclave_service};
 use teaclave_types::TeaclaveServiceResponseResult;
 
-#[teaclave_service(teaclave_storage_service, TeaclaveStorage, TeaclaveStorageError)]
+#[teaclave_service(teaclave_storage_service, TeaclaveStorage, StorageServiceError)]
 pub(crate) struct TeaclaveStorageService {
     // Current LevelDB implementation is not concurrent, so we need to wrap the
     // DB with RefCell. This service is running in a single thread, it's safe to
@@ -101,49 +102,44 @@ impl<'a> DBQueue<'a> {
         DBQueue { database, key }
     }
 
-    pub fn enqueue(&mut self, value: &[u8]) -> TeaclaveServiceResponseResult<()> {
+    pub fn enqueue(&mut self, value: &[u8]) -> Result<(), StorageServiceError> {
         let tail_index = self.get_tail();
         // put element
         self.database
-            .put(&self.get_element_key(tail_index), value)
-            .map_err(TeaclaveStorageError::LevelDb)?;
+            .put(&self.get_element_key(tail_index), value)?;
 
         // update tail
         let tail_index = tail_index.wrapping_add(1);
         self.database
-            .put(&self.get_tail_key(), &tail_index.to_le_bytes())
-            .map_err(TeaclaveStorageError::LevelDb)?;
+            .put(&self.get_tail_key(), &tail_index.to_le_bytes())?;
 
-        self.database
-            .flush()
-            .map_err(TeaclaveStorageError::LevelDb)?;
+        self.database.flush()?;
         Ok(())
     }
 
-    pub fn dequeue(&mut self) -> TeaclaveServiceResponseResult<Vec<u8>> {
+    pub fn dequeue(&mut self) -> Result<Vec<u8>, StorageServiceError> {
         let head_index = self.get_head();
         let tail_index = self.get_tail();
         // check whether the queue is empty
         if head_index == tail_index {
-            Err(TeaclaveStorageError::None.into())
+            bail!(StorageServiceError::Service(anyhow!(
+                "head_index == tail_index"
+            )))
         } else {
             let element_key = self.get_element_key(head_index);
             let result = match self.database.get(&element_key) {
                 Some(value) => value,
-                None => bail!(TeaclaveStorageError::None),
+                None => bail!(StorageServiceError::Service(anyhow!(
+                    "cannot get element_key"
+                ))),
             };
 
             // update head
             let head_index = head_index.wrapping_add(1);
             self.database
-                .put(&self.get_head_key(), &head_index.to_le_bytes())
-                .map_err(TeaclaveStorageError::LevelDb)?;
-            self.database
-                .delete(&element_key)
-                .map_err(TeaclaveStorageError::LevelDb)?;
-            self.database
-                .compact_range(b"queue", b"queuf")
-                .map_err(TeaclaveStorageError::LevelDb)?;
+                .put(&self.get_head_key(), &head_index.to_le_bytes())?;
+            self.database.delete(&element_key)?;
+            self.database.compact_range(b"queue", b"queuf")?;
             Ok(result)
         }
     }
@@ -187,7 +183,7 @@ impl TeaclaveStorage for TeaclaveStorageService {
         let request = request.message;
         match self.database.borrow_mut().get(&request.key) {
             Some(value) => Ok(GetResponse { value }),
-            None => Err(TeaclaveStorageError::None.into()),
+            None => bail!(StorageServiceError::None),
         }
     }
 
@@ -196,12 +192,12 @@ impl TeaclaveStorage for TeaclaveStorageService {
         self.database
             .borrow_mut()
             .put(&request.key, &request.value)
-            .map_err(TeaclaveStorageError::LevelDb)?;
+            .map_err(StorageServiceError::Database)?;
 
         self.database
             .borrow_mut()
             .flush()
-            .map_err(TeaclaveStorageError::LevelDb)?;
+            .map_err(StorageServiceError::Database)?;
         Ok(PutResponse)
     }
 
@@ -213,12 +209,12 @@ impl TeaclaveStorage for TeaclaveStorageService {
         self.database
             .borrow_mut()
             .delete(&request.key)
-            .map_err(TeaclaveStorageError::LevelDb)?;
+            .map_err(StorageServiceError::Database)?;
 
         self.database
             .borrow_mut()
             .flush()
-            .map_err(TeaclaveStorageError::LevelDb)?;
+            .map_err(StorageServiceError::Database)?;
         Ok(DeleteResponse)
     }
 
@@ -229,7 +225,10 @@ impl TeaclaveStorage for TeaclaveStorageService {
         let request = request.message;
         let mut db = self.database.borrow_mut();
         let mut queue = DBQueue::open(&mut db, &request.key);
-        queue.enqueue(&request.value).map(|_| EnqueueResponse)
+        match queue.enqueue(&request.value) {
+            Ok(_) => Ok(EnqueueResponse {}),
+            Err(e) => bail!(e),
+        }
     }
 
     fn dequeue(
@@ -239,7 +238,10 @@ impl TeaclaveStorage for TeaclaveStorageService {
         let request = request.message;
         let mut db = self.database.borrow_mut();
         let mut queue = DBQueue::open(&mut db, &request.key);
-        queue.dequeue().map(|value| DequeueResponse { value })
+        match queue.dequeue() {
+            Ok(value) => Ok(DequeueResponse { value }),
+            Err(e) => bail!(e),
+        }
     }
 }
 
