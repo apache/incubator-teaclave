@@ -15,7 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use crate::error::TeaclaveStorageError;
+use crate::error::StorageServiceError;
+use anyhow::anyhow;
 use std::prelude::v1::*;
 use std::sync::mpsc::{channel, Sender};
 use teaclave_proto::teaclave_storage_service::{TeaclaveStorageRequest, TeaclaveStorageResponse};
@@ -43,10 +44,10 @@ impl teaclave_rpc::TeaclaveService<TeaclaveStorageRequest, TeaclaveStorageRespon
         let (sender, receiver) = channel();
         self.sender
             .send(ProxyRequest { sender, request })
-            .map_err(|_| TeaclaveStorageError::Connection)?;
+            .map_err(|_| StorageServiceError::Service(anyhow!("send ProxyRequest error")))?;
         receiver
             .recv()
-            .map_err(|_| TeaclaveStorageError::Connection)?
+            .map_err(|_| StorageServiceError::Service(anyhow!("recv ProxyRequest error")))?
     }
 }
 
