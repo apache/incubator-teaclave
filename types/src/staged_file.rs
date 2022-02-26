@@ -27,6 +27,7 @@ use std::prelude::v1::*;
 use std::untrusted::fs::File;
 
 use crate::FileAuthTag;
+use crate::FileCrypto;
 use anyhow::Context;
 use protected_fs::ProtectedFile;
 
@@ -64,15 +65,48 @@ impl StagedFileInfo {
         Ok(Box::new(f))
     }
 
-    pub fn convert_file(
+    pub fn convert_for_uploading(
+        &self,
+        dst: impl AsRef<Path>,
+        crypto_info: FileCrypto,
+    ) -> anyhow::Result<FileAuthTag> {
+        match crypto_info {
+            FileCrypto::TeaclaveFile128(cipher) => {
+                self.convert_to_teaclave_file(dst, cipher.to_owned())
+            }
+            FileCrypto::AesGcm128(cipher) => {
+                let mut src_file = ProtectedFile::open_ex(&self.path, &self.crypto_info.key)
+                    .context("Convert aes-gcm-128: failed to open src file")?;
+                let mut buffer = Vec::new();
+                src_file.read_to_end(&mut buffer)?;
+                let cmac = cipher.encrypt(&mut buffer)?;
+                let mut file = File::create(dst)?;
+                file.write_all(&buffer)?;
+                FileAuthTag::from_bytes(&cmac)
+            }
+            FileCrypto::AesGcm256(cipher) => {
+                let mut src_file = ProtectedFile::open_ex(&self.path, &self.crypto_info.key)
+                    .context("Convert aes-gcm-256: failed to open src file")?;
+                let mut buffer = Vec::new();
+                src_file.read_to_end(&mut buffer)?;
+                let cmac = cipher.encrypt(&mut buffer)?;
+                let mut file = File::create(dst)?;
+                file.write_all(&buffer)?;
+                FileAuthTag::from_bytes(&cmac)
+            }
+            FileCrypto::Raw => anyhow::bail!("OutputFile: unsupported type"),
+        }
+    }
+
+    pub fn convert_to_teaclave_file(
         &self,
         dst: impl AsRef<Path>,
         crypto: TeaclaveFile128Key,
-    ) -> anyhow::Result<StagedFileInfo> {
+    ) -> anyhow::Result<FileAuthTag> {
         let src_file = ProtectedFile::open_ex(&self.path, &self.crypto_info.key)
-            .context("Convert: failed to open src file")?;
+            .context("Convert teaclave_file: failed to open src file")?;
         let mut dest_file = ProtectedFile::create_ex(dst.as_ref(), &crypto.key)
-            .context("Convert: failed to create dst file")?;
+            .context("Convert teaclave_file: failed to create dst file")?;
 
         let mut reader = BufReader::with_capacity(4096, src_file);
         loop {
@@ -92,11 +126,11 @@ impl StagedFileInfo {
         }
         dest_file
             .flush()
-            .context("Convert: dst_file flush failed")?;
-        let tag = dest_file
+            .context("Convert teaclave_file: dst_file flush failed")?;
+        let mac = dest_file
             .current_meta_gmac()
-            .context("Convert: cannot get dst_file gmac")?;
-        Ok(StagedFileInfo::new(dst, crypto, tag))
+            .context("Convert teaclave_file: cannot get dst_file gmac")?;
+        FileAuthTag::from_bytes(&mac)
     }
 
     #[cfg(test_mode)]
