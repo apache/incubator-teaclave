@@ -226,22 +226,10 @@ impl InterOutput {
 
     fn convert_to_upload_file(&self) -> Result<FileAuthTag> {
         let dest = &self.upload_path;
-        let outfile = match self.file.crypto_info {
-            FileCrypto::TeaclaveFile128(crypto) => {
-                self.staged_info.convert_file(dest, crypto.to_owned())?
-            }
-
-            FileCrypto::AesGcm128(_) => {
-                anyhow::bail!("OutputFile: unsupported type");
-            }
-            FileCrypto::AesGcm256(_) => {
-                anyhow::bail!("OutputFile: unsupported type");
-            }
-            FileCrypto::Raw => {
-                anyhow::bail!("OutputFile: unsupported type");
-            }
-        };
-        Ok(outfile.cmac)
+        let cmac = self
+            .staged_info
+            .convert_for_uploading(dest, self.file.crypto_info.to_owned())?;
+        Ok(cmac)
     }
 }
 
@@ -337,8 +325,14 @@ pub mod tests {
                 .unwrap();
         let tag = FileAuthTag::from_hex("592f1e607649d89ff2aa8a2841a57cad").unwrap();
         let input_file = FunctionInputFile::new(input_url, tag, crypto);
+
+        let output_url =
+            Url::parse("http://localhost:6789/fixtures/functions/gbdt_training/result.aes_gcm_128")
+                .unwrap();
+        let output_file = FunctionOutputFile::new(output_url, crypto);
+
         let inputs = hashmap!("training_data" => input_file);
-        let outputs = hashmap!();
+        let outputs = hashmap!("result" => output_file);
         let task_id = Uuid::new_v4();
 
         let file_mgr = TaskFileManager::new(
@@ -349,7 +343,17 @@ pub mod tests {
             &outputs.into(),
         )
         .unwrap();
-        file_mgr.prepare_staged_inputs().unwrap();
-        file_mgr.prepare_staged_outputs().unwrap();
+
+        let input_files = file_mgr.prepare_staged_inputs().unwrap();
+        let output_files = file_mgr.prepare_staged_outputs().unwrap();
+        // sin_file has random key1
+        let sin_file = input_files.get("training_data").unwrap();
+        // sout_file has random key2
+        let sout_file = output_files.get("result").unwrap();
+        // convert sin_file to sout_file to simulate the executor's behavior
+        sin_file
+            .convert_to_teaclave_file(&sout_file.path, sout_file.crypto_info)
+            .unwrap();
+        file_mgr.upload_outputs().unwrap();
     }
 }
