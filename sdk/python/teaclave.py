@@ -960,13 +960,13 @@ class FrontendService(TeaclaveService):
                 raise TeaclaveException(
                     f"Failed to get task result ({reason})")
             time.sleep(1)
-            if response["content"]["status"] == 10:
+            if response["content"]["status"] == TaskStatus.Finished:
                 break
-            elif response["content"]["status"] == 20:
+            elif response["content"]["status"] == TaskStatus.Canceled:
                 raise TeaclaveException(
                     "Task Canceled, Error: " +
                     response["content"]["result"]["result"]["Err"]["reason"])
-            elif response["content"]["status"] == 99:
+            elif response["content"]["status"] == TaskStatus.Failed:
                 raise TeaclaveException(
                     "Task Failed, Error: " +
                     response["content"]["result"]["result"]["Err"]["reason"])
@@ -987,7 +987,7 @@ class FrontendService(TeaclaveService):
                 raise TeaclaveException(
                     f"Failed to get output cmac by tag ({reason})")
             time.sleep(1)
-            if response["content"]["status"] == 10:
+            if response["content"]["status"] == TaskStatus.Finished:
                 break
 
         return response["content"]["result"]["result"]["Ok"]["tags_map"][tag]
