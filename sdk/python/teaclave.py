@@ -117,7 +117,8 @@ class TeaclaveService:
             self._verify_report(self._as_root_ca_cert_path,
                                 self._enclave_info_path, cert, self._name)
         except Exception as e:
-            raise TeaclaveException(f"Failed to verify attesation report: {e}")
+            raise TeaclaveException(
+                f"Failed to verify attestation report: {e}")
         self.channel = channel
 
         return self
