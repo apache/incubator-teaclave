@@ -825,7 +825,7 @@ impl TeaclaveManagementService {
         Ok(response
             .keys
             .into_iter()
-            .map(|k| String::from_utf8(k))
+            .map(String::from_utf8)
             .collect::<Result<Vec<_>, _>>()
             .map_err(|_| anyhow!("cannot convert keys"))?)
     }

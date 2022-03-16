@@ -252,7 +252,7 @@ impl TeaclaveStorage for TeaclaveStorageService {
 
         let mut first_prefix = prefix.clone();
         first_prefix.push(b'-');
-        let mut last_prefix = prefix.clone();
+        let mut last_prefix = prefix;
         last_prefix.push(b'.');
 
         it.seek(&first_prefix[..]);
