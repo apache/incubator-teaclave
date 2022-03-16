@@ -57,10 +57,19 @@ message DequeueResponse {
   bytes value = 1;
 }
 
+message GetKeysByPrefixRequest {
+  bytes prefix = 1;
+}
+
+message GetKeysByPrefixResponse {
+  repeated bytes keys = 1;
+}
+
 service TeaclaveStorage {
   rpc Get(GetRequest) returns (GetResponse);
   rpc Put(PutRequest) returns (PutResponse);
   rpc Delete(DeleteRequest) returns (DeleteResponse);
   rpc Enqueue(EnqueueRequest) returns (EnqueueResponse);
   rpc Dequeue(DequeueRequest) returns (DequeueResponse);
+  rpc GetKeysByPrefix(GetKeysByPrefixRequest) returns (GetKeysByPrefixResponse);
 }
