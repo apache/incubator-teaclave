@@ -287,7 +287,8 @@ fn test_get_function() {
     let mut client = authorized_client("mock_unauthorized_user");
     let request = GetFunctionRequest::new(function_id);
     let response = client.get_function(request);
-    assert!(response.is_err());
+    // mock_unauthorized_user is PlatformAdmin
+    assert!(response.is_ok());
 
     let function_id =
         ExternalID::try_from("function-00000000-0000-0000-0000-000000000001").unwrap();
@@ -312,7 +313,8 @@ fn test_get_function() {
     let mut client = authorized_client("mock_unauthorized_user");
     let request = GetFunctionRequest::new(function_id);
     let response = client.get_function(request);
-    assert!(response.is_err());
+    // mock_unauthorized_user is PlatformAdmin
+    assert!(response.is_ok());
 }
 
 fn create_valid_task_request() -> CreateTaskRequest {
