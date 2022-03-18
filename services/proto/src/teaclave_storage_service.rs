@@ -133,6 +133,32 @@ impl DequeueResponse {
     }
 }
 
+#[into_request(TeaclaveStorageRequest::GetKeysByPrefix)]
+#[derive(Debug)]
+pub struct GetKeysByPrefixRequest {
+    pub prefix: Vec<u8>,
+}
+
+impl GetKeysByPrefixRequest {
+    pub fn new(prefix: impl Into<Vec<u8>>) -> Self {
+        Self {
+            prefix: prefix.into(),
+        }
+    }
+}
+
+#[into_request(TeaclaveStorageResponse::GetKeysByPrefix)]
+#[derive(Default, Debug)]
+pub struct GetKeysByPrefixResponse {
+    pub keys: Vec<Vec<u8>>,
+}
+
+impl GetKeysByPrefixResponse {
+    pub fn new(keys: Vec<Vec<u8>>) -> Self {
+        Self { keys }
+    }
+}
+
 impl std::convert::TryFrom<proto::GetRequest> for GetRequest {
     type Error = Error;
 
@@ -297,6 +323,42 @@ impl From<DequeueResponse> for proto::DequeueResponse {
     fn from(response: DequeueResponse) -> Self {
         Self {
             value: response.value,
+        }
+    }
+}
+
+impl std::convert::TryFrom<proto::GetKeysByPrefixRequest> for GetKeysByPrefixRequest {
+    type Error = Error;
+
+    fn try_from(proto: proto::GetKeysByPrefixRequest) -> Result<Self> {
+        let ret = Self {
+            prefix: proto.prefix,
+        };
+
+        Ok(ret)
+    }
+}
+
+impl From<GetKeysByPrefixRequest> for proto::GetKeysByPrefixRequest {
+    fn from(request: GetKeysByPrefixRequest) -> Self {
+        Self {
+            prefix: request.prefix,
+        }
+    }
+}
+
+impl std::convert::TryFrom<proto::GetKeysByPrefixResponse> for GetKeysByPrefixResponse {
+    type Error = Error;
+
+    fn try_from(proto: proto::GetKeysByPrefixResponse) -> Result<Self> {
+        Ok(Self { keys: proto.keys })
+    }
+}
+
+impl From<GetKeysByPrefixResponse> for proto::GetKeysByPrefixResponse {
+    fn from(response: GetKeysByPrefixResponse) -> Self {
+        Self {
+            keys: response.keys,
         }
     }
 }

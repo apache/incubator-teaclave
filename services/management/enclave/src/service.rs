@@ -36,7 +36,8 @@ use teaclave_proto::teaclave_frontend_service::{
 };
 use teaclave_proto::teaclave_management_service::TeaclaveManagement;
 use teaclave_proto::teaclave_storage_service::{
-    DeleteRequest, EnqueueRequest, GetRequest, PutRequest, TeaclaveStorageClient,
+    DeleteRequest, EnqueueRequest, GetKeysByPrefixRequest, GetRequest, PutRequest,
+    TeaclaveStorageClient,
 };
 use teaclave_rpc::endpoint::Endpoint;
 use teaclave_rpc::Request;
@@ -313,7 +314,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
         Ok(response)
     }
 
-    // access control: function.public || function.owner == user_id
+    // access control: function.public || function.owner == user_id || request.role == PlatformAdmin
     fn get_function(
         &self,
         request: Request<GetFunctionRequest>,
@@ -323,8 +324,9 @@ impl TeaclaveManagement for TeaclaveManagementService {
         let function: Function = self
             .read_from_db(&request.message.function_id)
             .map_err(|_| ManagementServiceError::InvalidFunctionId)?;
+        let role = get_request_role(&request)?;
 
-        if function.public || function.owner == user_id {
+        if function.public || role == UserRole::PlatformAdmin || function.owner == user_id {
             let response = GetFunctionResponse {
                 name: function.name,
                 description: function.description,
@@ -454,7 +456,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
             );
         }
 
-        if let UserRole::DataOwner(s) = role {
+        if let UserRole::DataOwner(s) = &role {
             request_user_id = s.into();
         }
 
@@ -465,10 +467,16 @@ impl TeaclaveManagement for TeaclaveManagementService {
         let user = self.read_from_db::<User>(&external_id);
         match user {
             Ok(us) => {
-                let response = ListFunctionsResponse {
+                let mut response = ListFunctionsResponse {
                     registered_functions: us.registered_functions,
                     allowed_functions: us.allowed_functions,
                 };
+                if role == UserRole::PlatformAdmin {
+                    let allowed_functions =
+                        self.get_keys_by_prefix_from_db(Function::key_prefix())?;
+                    response.allowed_functions = allowed_functions;
+                }
+
                 Ok(response)
             }
             Err(_) => {
@@ -800,6 +808,26 @@ impl TeaclaveManagementService {
             .get(request)
             .map_err(|e| ManagementServiceError::Service(e.into()))?;
         T::from_slice(response.value.as_slice()).map_err(ManagementServiceError::Service)
+    }
+
+    fn get_keys_by_prefix_from_db(
+        &self,
+        prefix: impl Into<Vec<u8>>,
+    ) -> Result<Vec<String>, ManagementServiceError> {
+        let request = GetKeysByPrefixRequest::new(prefix.into());
+        let response = self
+            .storage_client
+            .clone()
+            .lock()
+            .map_err(|_| anyhow!("cannot lock storage client"))?
+            .get_keys_by_prefix(request)
+            .map_err(|e| ManagementServiceError::Service(e.into()))?;
+        Ok(response
+            .keys
+            .into_iter()
+            .map(String::from_utf8)
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|_| anyhow!("cannot convert keys"))?)
     }
 
     fn delete_from_db(&self, key: &ExternalID) -> Result<(), ManagementServiceError> {

@@ -18,14 +18,12 @@
 use crate::error::StorageServiceError;
 use crate::proxy::ProxyRequest;
 use anyhow::anyhow;
+use rusty_leveldb::LdbIterator;
 use rusty_leveldb::DB;
 use std::cell::RefCell;
 use std::prelude::v1::*;
 use std::sync::mpsc::Receiver;
-use teaclave_proto::teaclave_storage_service::{
-    DeleteRequest, DeleteResponse, DequeueRequest, DequeueResponse, EnqueueRequest,
-    EnqueueResponse, GetRequest, GetResponse, PutRequest, PutResponse, TeaclaveStorage,
-};
+use teaclave_proto::teaclave_storage_service::*;
 use teaclave_rpc::Request;
 use teaclave_service_enclave_utils::{bail, teaclave_service};
 use teaclave_types::TeaclaveServiceResponseResult;
@@ -243,6 +241,41 @@ impl TeaclaveStorage for TeaclaveStorageService {
             Err(e) => bail!(e),
         }
     }
+
+    fn get_keys_by_prefix(
+        &self,
+        request: Request<GetKeysByPrefixRequest>,
+    ) -> TeaclaveServiceResponseResult<GetKeysByPrefixResponse> {
+        let prefix = request.message.prefix;
+        let mut db = self.database.borrow_mut();
+        let mut it = db.new_iter().map_err(StorageServiceError::Database)?;
+
+        let mut first_prefix = prefix.clone();
+        first_prefix.push(b'-');
+        let mut last_prefix = prefix;
+        last_prefix.push(b'.');
+
+        it.seek(&first_prefix[..]);
+        if !it.valid() {
+            return Ok(GetKeysByPrefixResponse::default());
+        }
+        let mut key = Vec::new();
+        let mut value = Vec::new();
+        let mut keys = Vec::new();
+        if !it.current(&mut key, &mut value) {
+            return Ok(GetKeysByPrefixResponse::default());
+        }
+        keys.push(key);
+
+        while let Some((k, _)) = it.next() {
+            if k >= last_prefix {
+                break;
+            }
+            keys.push(k);
+        }
+
+        Ok(GetKeysByPrefixResponse { keys })
+    }
 }
 
 #[cfg(feature = "enclave_unit_test")]
@@ -311,5 +344,31 @@ pub mod tests {
         assert_eq!(service.dequeue(request).unwrap().value, b"1");
         let request = DequeueRequest::new("test_dequeue_key").into_request();
         assert_eq!(service.dequeue(request).unwrap().value, b"2");
+    }
+
+    pub fn test_get_keys_by_prefix() {
+        let service = get_mock_service();
+        let request = PutRequest::new("function-1", "test_put_value").into_request();
+        assert!(service.put(request).is_ok());
+        let request = PutRequest::new("function-22", "test_put_value").into_request();
+        assert!(service.put(request).is_ok());
+        let request = PutRequest::new("function-333", "test_put_value").into_request();
+        assert!(service.put(request).is_ok());
+        let request = PutRequest::new("task-444", "test_put_value").into_request();
+        assert!(service.put(request).is_ok());
+        let request = PutRequest::new("function-5", "test_put_value").into_request();
+        assert!(service.put(request).is_ok());
+        let request = GetKeysByPrefixRequest::new("function").into_request();
+        let response = service.get_keys_by_prefix(request);
+        assert!(response.is_ok());
+        assert_eq!(
+            response.unwrap().keys,
+            std::vec![
+                b"function-1".to_vec(),
+                b"function-22".to_vec(),
+                b"function-333".to_vec(),
+                b"function-5".to_vec()
+            ]
+        );
     }
 }

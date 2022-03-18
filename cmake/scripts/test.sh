@@ -51,6 +51,7 @@ run_unit_tests() {
 
   start_storage_server
   echo_title "encalve unit tests"
+  rm -rf mock_db_unit_test
   ./teaclave_unit_tests
 
   popd
