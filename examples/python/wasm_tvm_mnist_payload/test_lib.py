@@ -30,10 +30,11 @@ loaded_lib = tvm.runtime.load_module(lib_path)
 print(loaded_lib)
 
 dev = tvm.runtime.cpu()
-module = graph_executor.create(open(json_path).read(), loaded_lib, dev)
+with open(json_path) as jsonfile, open(param_path, "rb") as paramfile:
+    module = graph_executor.create(jsonfile.read(), loaded_lib, dev)
 
-loaded_param = bytearray(open(param_path, "rb").read())
-module.load_params(loaded_param)
+    loaded_param = bytearray(paramfile.read())
+    module.load_params(loaded_param)
 
 # Resize it to 28X28
 resized_image = Image.open(img_path).resize((28, 28))
