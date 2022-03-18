@@ -21,8 +21,9 @@ if __name__ == '__main__':
     from acs_engine import *
 
     model_path = os.path.join(os.path.dirname(__file__), '../model.conf')
-    test_model = open(model_path).read()
-    acs_setup_model(test_model)
+    with open(model_path) as modelfile:
+        test_model = modelfile.read()
+        acs_setup_model(test_model)
 
     FUSION_TASK               = "data_fusion"
     FUSION_TASK_PARTY_1       = "usr_party1"
