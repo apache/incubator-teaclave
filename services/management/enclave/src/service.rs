@@ -736,7 +736,9 @@ impl TeaclaveManagement for TeaclaveManagementService {
                 // race will not affect correctness/privacy
                 let mut task: Task<Cancel> = ts.try_into().map_err(|e| {
                     log::warn!("Cancel state error: {:?}", e);
-                    ManagementServiceError::TaskCancelError("task is finished".to_string())
+                    ManagementServiceError::TaskCancelError(
+                        "task has already been canceled".to_string(),
+                    )
                 })?;
 
                 log::debug!("Canceled Task: {:?}", task);

@@ -78,7 +78,7 @@ class MesaPyEchoExample:
             try:
                 client.cancel_task(task_id)
             except Exception as e:
-                # this happens when task is already finished
+                # this happens when the task has already been canceled
                 print(f"[-] cancel task failed, reason: {str(e)}")
 
         try:
