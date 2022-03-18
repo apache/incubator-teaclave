@@ -600,7 +600,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
 
         let mut task: Task<Assign> = ts.try_into().map_err(|e| {
             log::warn!("Assign state error: {:?}", e);
-            ManagementServiceError::TaskStateError
+            ManagementServiceError::TaskAssignDataError
         })?;
 
         for (data_name, data_id) in request.inputs.iter() {
@@ -643,7 +643,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
 
         let mut task: Task<Approve> = ts.try_into().map_err(|e| {
             log::warn!("Approve state error: {:?}", e);
-            ManagementServiceError::TaskStateError
+            ManagementServiceError::TaskApproveError
         })?;
 
         task.approve(&user_id)
@@ -685,7 +685,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
 
         let mut task: Task<Stage> = ts.try_into().map_err(|e| {
             log::warn!("Stage state error: {:?}", e);
-            ManagementServiceError::TaskStateError
+            ManagementServiceError::TaskInvokeError
         })?;
 
         log::debug!("InvokeTask: get task: {:?}", task);
@@ -736,7 +736,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
                 // race will not affect correctness/privacy
                 let mut task: Task<Cancel> = ts.try_into().map_err(|e| {
                     log::warn!("Cancel state error: {:?}", e);
-                    ManagementServiceError::TaskStateError
+                    ManagementServiceError::TaskCancelError("task is finished".to_string())
                 })?;
 
                 log::debug!("Canceled Task: {:?}", task);
@@ -744,7 +744,9 @@ impl TeaclaveManagement for TeaclaveManagementService {
                 task.update_result(TaskResult::Err(TaskFailure {
                     reason: "Task canceled".to_string(),
                 }))
-                .map_err(|_| ManagementServiceError::TaskStateError)?;
+                .map_err(|_| {
+                    ManagementServiceError::TaskCancelError("cannot update result".to_string())
+                })?;
                 let ts: TaskState = task.into();
                 self.write_to_db(&ts)?;
 
