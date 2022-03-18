@@ -84,17 +84,13 @@ class MesaPyEchoExample:
         try:
             result = client.get_task_result(task_id)
         except Exception as e:
+            # this is expected, since the task is cancelled
             print(f"[-] getting result failed, reason: {str(e)}")
-            sys.exit(1)
-
-        return result
 
 
 def main():
     example = MesaPyEchoExample(USER_ID, USER_PASSWORD)
-    rv = example.deadloop()
-
-    print("[+] function return: ", rv)
+    example.deadloop()
 
 
 if __name__ == '__main__':
