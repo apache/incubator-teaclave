@@ -75,22 +75,22 @@ class MesaPyEchoExample:
         result = client.get_task(task_id)
         if result["status"] != TaskStatus.Canceled:
             print("[+] Task is not canceled, cancel again")
-            client.cancel_task(task_id)
+            try:
+                client.cancel_task(task_id)
+            except Exception as e:
+                # this happens when the task has already been canceled
+                print(f"[-] cancel task failed, reason: {str(e)}")
 
         try:
             result = client.get_task_result(task_id)
         except Exception as e:
-            print(f"[+] result: {str(e)}")
-            result = str(e)
-
-        return result
+            # this is expected, since the task is cancelled
+            print(f"[-] getting result failed, reason: {str(e)}")
 
 
 def main():
     example = MesaPyEchoExample(USER_ID, USER_PASSWORD)
-    rv = example.deadloop()
-
-    print("[+] function return: ", rv)
+    example.deadloop()
 
 
 if __name__ == '__main__':

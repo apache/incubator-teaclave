@@ -39,8 +39,14 @@ pub(crate) enum ManagementServiceError {
     InvalidTaskId,
     #[error("invalid task")]
     InvalidTask,
-    #[error("failed to change task state")]
-    TaskStateError,
+    #[error("failed to assign data to task")]
+    TaskAssignDataError,
+    #[error("failed to approve task")]
+    TaskApproveError,
+    #[error("failed to invoke task")]
+    TaskInvokeError,
+    #[error("failed to cancel task, reason: {0}")]
+    TaskCancelError(String),
 }
 
 impl From<ManagementServiceError> for TeaclaveServiceResponseError {
