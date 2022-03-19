@@ -55,6 +55,7 @@ platform, making computation on privacy-sensitive data safe and simple.
 
 ### Contribute to Teaclave
 
+- [Release Guide](release-guide.md)
 - [Rust Development Guideline](docs/rust-guideline.md)
 - [Development Tips](docs/development-tips.md)
 
