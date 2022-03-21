@@ -25,6 +25,7 @@ permalink: /docs/
 
 ## Contribute
 
+- [Release Guide](release-guide.md)
 - [Development Tips](development-tips.md)
 - [Rust Development Guideline](rust-guideline.md)
 
