@@ -394,7 +394,7 @@
 					"$(PROJECT_DIR)",
 					"$(PROJECT_DIR)/../../rust/target/universal/debug",
 				);
-				MARKETING_VERSION = 0.2.0;
+				MARKETING_VERSION = 0.4.0;
 				MODULEMAP_FILE = "$(SRCROOT)/TeaclaveClientSDK/TeaclaveClientSDK.modulemap";
 				PRODUCT_BUNDLE_IDENTIFIER = org.apache.teaclave.TeaclaveClientSDK;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
@@ -433,7 +433,7 @@
 					"$(PROJECT_DIR)",
 					"$(PROJECT_DIR)/../../rust/target/universal/debug",
 				);
-				MARKETING_VERSION = 0.2.0;
+				MARKETING_VERSION = 0.4.0;
 				MODULEMAP_FILE = "$(SRCROOT)/TeaclaveClientSDK/TeaclaveClientSDK.modulemap";
 				PRODUCT_BUNDLE_IDENTIFIER = org.apache.teaclave.TeaclaveClientSDK;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
