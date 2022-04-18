@@ -227,6 +227,7 @@ svn ci --username $ASF_USERNAME --password "$ASF_PASSWORD" -m "Add 1.0.0"
 
 To upload the binaries to Apache mirrors, you copy the binaries from the dev
 directory (this should be where they are voted) to the dist directory.
+These artifacts will be automatically propagated to the CDN service.
 
 ```
 export SVN_EDITOR=vim
@@ -243,8 +244,10 @@ Merge commits in the release branch to the main branch, create a new release tag
 
 ```
 git checkout master
+## merge the release branch and use --ff-only to ensure the commit hash for voting is also in the master branch
 git merge release-v1.0.0 --ff-only
 git tag v1.0.0
+git push origin v1.0.0
 git push --delete origin v1.0.0-rc.1
 git push --delete origin release-v1.0.0
 ```
