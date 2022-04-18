@@ -715,7 +715,7 @@ dependencies = [
 
 [[package]]
 name = "protected_fs_rs"
-version = "0.2.0"
+version = "0.4.0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
@@ -1026,7 +1026,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_crypto"
-version = "0.2.0"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "hex",
@@ -1039,7 +1039,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_file_agent"
-version = "0.2.0"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "base64",
@@ -1061,7 +1061,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_test_utils"
-version = "0.2.0"
+version = "0.4.0"
 dependencies = [
  "inventory",
  "teaclave_test_utils_proc_macro",
@@ -1078,7 +1078,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_types"
-version = "0.2.0"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "hex",

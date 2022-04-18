@@ -489,7 +489,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_proto_gen"
-version = "0.2.0"
+version = "0.4.0"
 dependencies = [
  "askama",
  "prost",

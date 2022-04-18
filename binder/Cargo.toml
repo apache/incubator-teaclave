@@ -17,7 +17,7 @@
 
 [package]
 name = "teaclave_binder"
-version = "0.2.0"
+version = "0.4.0"
 authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
 description = "Abstract communication interfaces between TEE untrusted/trusted worlds."
 license = "Apache-2.0"

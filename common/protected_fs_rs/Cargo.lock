@@ -25,7 +25,7 @@ checksum = "12b8adadd720df158f4d70dfe7ccc6adb0472d7c55ca83445f6a5ab3e36f8fb6"
 
 [[package]]
 name = "protected_fs_rs"
-version = "0.2.0"
+version = "0.4.0"
 dependencies = [
  "cfg-if",
  "libc",
