@@ -84,7 +84,7 @@ function aesm_detect() {
 
     local AESM_VOL=aesmd-socket
     local AESM_VOL_EXIST=false
-    if docker volume inspect $AESM_VOL 2>&1 > /dev/null ; then
+    if docker volume inspect $AESM_VOL > /dev/null 2>&1; then
         echo "$AESM_VOL volume detected."
         AESM_VOL_EXIST=true
     fi
