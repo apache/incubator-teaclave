@@ -1,0 +1,28 @@
+[package]
+name = "Helloworldsampleenclave"
+version = "1.0.0"
+authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
+description = "sample test"
+license = "Apache-2.0"
+edition = "2018"
+
+[lib]
+name = "helloworldsampleenclave"
+crate-type = ["staticlib"]
+
+[features]
+default = []
+
+[dependencies]
+tvm-graph-rt    = { path = "../../../tvm-graph-rt" }
+lazy_static     = { version = "1.4.0", features = ["spin_no_std"] }
+ndarray         = { git = "https://github.com/mesalock-linux/ndarray-sgx.git", features = ["serde"] }
+serde           = { git = "https://github.com/mesalock-linux/serde-sgx.git",  features = ["derive"] }
+serde_json      = { git = "https://github.com/mesalock-linux/serde-json-sgx.git" }
+image           = { git = "https://github.com/mesalock-linux/image-sgx.git" }
+
+
+[target.'cfg(not(target_env = "sgx"))'.dependencies]
+sgx_types = { rev = "v1.1.3", git = "https://github.com/apache/teaclave-sgx-sdk.git" }
+sgx_tstd = { rev = "v1.1.3", git = "https://github.com/apache/teaclave-sgx-sdk.git" }
+sgx_tunittest = {rev = "v1.1.3", git = "https://github.com/apache/teaclave-sgx-sdk.git" }

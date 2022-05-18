@@ -1,0 +1,14 @@
+[package]
+name = "app"
+version = "1.0.0"
+authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
+description = "sample test"
+license = "Apache-2.0"
+edition = "2018"
+build = "build.rs"
+
+[dependencies]
+sgx_types = { rev = "v1.1.3", git = "https://github.com/apache/teaclave-sgx-sdk.git" }
+sgx_urts = { rev = "v1.1.3", git = "https://github.com/apache/teaclave-sgx-sdk.git" }
+dirs = "1.0.2"
+image = "0.20"
