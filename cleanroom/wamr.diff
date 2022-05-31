@@ -1,0 +1,2928 @@
+diff --git a/core/iwasm/aot/aot_runtime.c b/core/iwasm/aot/aot_runtime.c
+index 0d9dd49..2e80aac 100644
+--- a/core/iwasm/aot/aot_runtime.c
++++ b/core/iwasm/aot/aot_runtime.c
+@@ -1574,6 +1574,10 @@ aot_create_exec_env_and_call_function(AOTModuleInstance *module_inst,
+ #if WASM_ENABLE_REF_TYPES != 0
+     wasm_runtime_finalize_call_function(exec_env, func, ret, argv);
+ #endif
++    
++#if WASM_ENABLE_MEMORY_PROFILING != 0
++    wasm_runtime_dump_mem_consumption(exec_env);
++#endif
+ 
+     /* don't destroy the exec_env if it's searched from the cluster */
+     if (!existing_exec_env)
+diff --git a/core/iwasm/common/wasm_application.c b/core/iwasm/common/wasm_application.c
+index 03771b1..9af6f6a 100644
+--- a/core/iwasm/common/wasm_application.c
++++ b/core/iwasm/common/wasm_application.c
+@@ -11,6 +11,8 @@
+ #include "../aot/aot_runtime.h"
+ #endif
+ 
++extern void rust_printf(char * msg);
++
+ static void
+ set_error_buf(char *error_buf, uint32 error_buf_size, const char *string)
+ {
+@@ -101,9 +103,10 @@ wasm_application_execute_main(WASMModuleInstanceCommon *module_inst, int32 argc,
+            which initializes the wasi envrionment and then calls
+            the actual main function. Directly call main function
+            may cause exception thrown. */
+-        if ((func = wasm_runtime_lookup_wasi_start_function(module_inst)))
++        if ((func = wasm_runtime_lookup_wasi_start_function(module_inst))){
+             return wasm_runtime_create_exec_env_and_call_wasm(module_inst, func,
+                                                               0, NULL);
++        }
+         /* If no start function was found, we execute
+            the main function as normal */
+     }
+@@ -116,6 +119,7 @@ wasm_application_execute_main(WASMModuleInstanceCommon *module_inst, int32 argc,
+         return false;
+     }
+ 
++
+ #if WASM_ENABLE_INTERP != 0
+     if (module_inst->module_type == Wasm_Module_Bytecode) {
+         is_import_func = ((WASMFunctionInstance *)func)->is_import_func;
+@@ -182,6 +186,8 @@ wasm_application_execute_main(WASMModuleInstanceCommon *module_inst, int32 argc,
+     if (ret && func_type->result_count > 0 && argc > 0 && argv)
+         /* copy the return value */
+         *(int *)argv = (int)argv1[0];
++    
++
+ 
+     if (argv_buf_offset)
+         wasm_runtime_module_free(module_inst, argv_buf_offset);
+diff --git a/core/iwasm/common/wasm_memory.c b/core/iwasm/common/wasm_memory.c
+index 42f52ca..6c11aad 100644
+--- a/core/iwasm/common/wasm_memory.c
++++ b/core/iwasm/common/wasm_memory.c
+@@ -86,7 +86,7 @@ wasm_runtime_memory_pool_size()
+     if (memory_mode == MEMORY_MODE_POOL)
+         return global_pool_size;
+     else
+-        return 1 * BH_GB;
++        return 1.8 * BH_GB;
+ }
+ 
+ static inline void *
+diff --git a/core/iwasm/common/wasm_runtime_common.c b/core/iwasm/common/wasm_runtime_common.c
+index e97b81a..1acff2f 100644
+--- a/core/iwasm/common/wasm_runtime_common.c
++++ b/core/iwasm/common/wasm_runtime_common.c
+@@ -68,6 +68,7 @@ static void
+ wasm_externref_map_destroy();
+ #endif /* WASM_ENABLE_REF_TYPES */
+ 
++
+ static void
+ set_error_buf(char *error_buf, uint32 error_buf_size, const char *string)
+ {
+@@ -1513,9 +1514,8 @@ wasm_runtime_create_exec_env_and_call_wasm(
+     uint32 argc, uint32 argv[])
+ {
+     bool ret = false;
+-
+ #if WASM_ENABLE_INTERP != 0
+-    if (module_inst->module_type == Wasm_Module_Bytecode)
++    if (module_inst->module_type == Wasm_Module_Bytecode) 
+         ret = wasm_create_exec_env_and_call_function(
+             (WASMModuleInstance *)module_inst, (WASMFunctionInstance *)function,
+             argc, argv, true);
+@@ -2073,7 +2073,7 @@ wasm_runtime_init_wasi(WASMModuleInstanceCommon *module_inst,
+     if (!fd_table_init(curfds)) {
+         set_error_buf(error_buf, error_buf_size,
+                       "Init wasi environment failed: "
+-                      "init fd table failed");
++                      "init fd table failed Baozi");
+         goto fail;
+     }
+     fd_table_inited = true;
+@@ -2081,7 +2081,7 @@ wasm_runtime_init_wasi(WASMModuleInstanceCommon *module_inst,
+     if (!fd_prestats_init(prestats)) {
+         set_error_buf(error_buf, error_buf_size,
+                       "Init wasi environment failed: "
+-                      "init fd prestats failed");
++                      "init fd prestats failed 123");
+         goto fail;
+     }
+     fd_prestats_inited = true;
+@@ -2115,7 +2115,6 @@ wasm_runtime_init_wasi(WASMModuleInstanceCommon *module_inst,
+                          dir_list[i], errno);
+             goto fail;
+         }
+-
+         raw_fd = open(path, O_RDONLY | O_DIRECTORY, 0);
+         if (raw_fd == -1) {
+             if (error_buf)
+@@ -2124,9 +2123,15 @@ wasm_runtime_init_wasi(WASMModuleInstanceCommon *module_inst,
+                          dir_list[i], errno);
+             goto fail;
+         }
+-
+         fd_table_insert_existing(curfds, wasm_fd, raw_fd);
+         fd_prestats_insert(prestats, dir_list[i], wasm_fd);
++
++#ifdef TEACLAVE_CLEANROOM
++        extern WorkDir cleanroom_opendir[];
++        cleanroom_opendir[i].dirfd = raw_fd;
++        strcpy(cleanroom_opendir[i].open_dir, dir_list[i]);
++        cleanroom_opendir[i].opened_file_num = 0;
++#endif
+     }
+ 
+     wasi_ctx->curfds = curfds;
+diff --git a/core/iwasm/include/wasm_export.h b/core/iwasm/include/wasm_export.h
+index 6b66953..d5d133d 100644
+--- a/core/iwasm/include/wasm_export.h
++++ b/core/iwasm/include/wasm_export.h
+@@ -975,6 +975,8 @@ wasm_externref_retain(uint32_t externref_idx);
+ WASM_RUNTIME_API_EXTERN void
+ wasm_runtime_dump_call_stack(wasm_exec_env_t exec_env);
+ 
++
++
+ /* clang-format on */
+ 
+ #ifdef __cplusplus
+diff --git a/core/iwasm/interpreter/wasm_interp_classic.c b/core/iwasm/interpreter/wasm_interp_classic.c
+index 419d6d4..c53170b 100644
+--- a/core/iwasm/interpreter/wasm_interp_classic.c
++++ b/core/iwasm/interpreter/wasm_interp_classic.c
+@@ -20,6 +20,8 @@ typedef int32 CellType_I32;
+ typedef int64 CellType_I64;
+ typedef float32 CellType_F32;
+ typedef float64 CellType_F64;
++extern void rust_printf(char * msg);
++
+ 
+ #define BR_TABLE_TMP_BUF_LEN 32
+ 
+diff --git a/core/iwasm/interpreter/wasm_runtime.c b/core/iwasm/interpreter/wasm_runtime.c
+index f12c9eb..f46df04 100644
+--- a/core/iwasm/interpreter/wasm_runtime.c
++++ b/core/iwasm/interpreter/wasm_runtime.c
+@@ -20,6 +20,8 @@
+ #include "../libraries/debug-engine/debug_engine.h"
+ #endif
+ 
++extern void rust_printf(char * msg);
++
+ static void
+ set_error_buf(char *error_buf, uint32 error_buf_size, const char *string)
+ {
+@@ -1733,6 +1735,9 @@ wasm_create_exec_env_and_call_function(WASMModuleInstance *module_inst,
+ #if WASM_ENABLE_THREAD_MGR != 0
+     /* don't destroy the exec_env if it's searched from the cluster */
+     if (!existing_exec_env)
++#endif
++#if WASM_ENABLE_MEMORY_PROFILING != 0
++        wasm_runtime_dump_mem_consumption(exec_env);
+ #endif
+         wasm_exec_env_destroy(exec_env);
+ 
+diff --git a/core/iwasm/libraries/libc-wasi/libc_wasi_wrapper.c b/core/iwasm/libraries/libc-wasi/libc_wasi_wrapper.c
+index a8ecb23..06abd33 100644
+--- a/core/iwasm/libraries/libc-wasi/libc_wasi_wrapper.c
++++ b/core/iwasm/libraries/libc-wasi/libc_wasi_wrapper.c
+@@ -2,11 +2,29 @@
+  * Copyright (C) 2019 Intel Corporation.  All rights reserved.
+  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+  */
+-
+ #include "libc_wasi_wrapper.h"
+ #include "bh_platform.h"
+ #include "wasm_export.h"
+ 
++#ifdef TEACLAVE_CLEANROOM
++extern WorkDir cleanroom_opendir[];
++extern int global_std_in;
++extern int global_std_out;
++extern int global_std_err;
++extern uint
++c_open_input(char *file_id, int *out_fd);
++extern uint
++c_read_file(int fd, void *out_buf, size_t buf_size, size_t *out_size_read);
++extern uint
++c_write_file(int fd, void *buf, size_t buf_size, size_t *out_size_written);
++extern uint
++c_close_file(int fd);
++#endif
++
++#define CLEANROOM_LOG(MESSAGE)                              \
++    if (bh_cleanroom_get_log_level() != BH_LOG_LEVEL_FATAL) \
++    os_printf("[Log] %s %s %s %d\n", MESSAGE, __FILE__, __FUNCTION__, __LINE__)
++
+ void
+ wasm_runtime_set_exception(wasm_module_inst_t module, const char *exception);
+ 
+@@ -62,6 +80,8 @@ wasm_runtime_get_wasi_ctx(wasm_module_inst_t module_inst);
+ static inline struct fd_table *
+ wasi_ctx_get_curfds(wasm_module_inst_t module_inst, wasi_ctx_t wasi_ctx)
+ {
++
++    CLEANROOM_LOG("WASI_LIBC: ");
+     if (!wasi_ctx)
+         return NULL;
+     return wasi_ctx->curfds;
+@@ -70,6 +90,8 @@ wasi_ctx_get_curfds(wasm_module_inst_t module_inst, wasi_ctx_t wasi_ctx)
+ static inline struct argv_environ_values *
+ wasi_ctx_get_argv_environ(wasm_module_inst_t module_inst, wasi_ctx_t wasi_ctx)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
++
+     if (!wasi_ctx)
+         return NULL;
+     return wasi_ctx->argv_environ;
+@@ -78,6 +100,8 @@ wasi_ctx_get_argv_environ(wasm_module_inst_t module_inst, wasi_ctx_t wasi_ctx)
+ static inline struct fd_prestats *
+ wasi_ctx_get_prestats(wasm_module_inst_t module_inst, wasi_ctx_t wasi_ctx)
+ {
++
++    CLEANROOM_LOG("WASI_LIBC: ");
+     if (!wasi_ctx)
+         return NULL;
+     return wasi_ctx->prestats;
+@@ -86,6 +110,8 @@ wasi_ctx_get_prestats(wasm_module_inst_t module_inst, wasi_ctx_t wasi_ctx)
+ static wasi_errno_t
+ wasi_args_get(wasm_exec_env_t exec_env, uint32 *argv_offsets, char *argv_buf)
+ {
++
++    CLEANROOM_LOG("WASI_LIBC: ");
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct argv_environ_values *argv_environ =
+@@ -132,6 +158,8 @@ static wasi_errno_t
+ wasi_args_sizes_get(wasm_exec_env_t exec_env, uint32 *argc_app,
+                     uint32 *argv_buf_size_app)
+ {
++
++    CLEANROOM_LOG("WASI_LIBC: ");
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct argv_environ_values *argv_environ;
+@@ -161,6 +189,8 @@ wasi_clock_res_get(wasm_exec_env_t exec_env,
+                    wasi_clockid_t clock_id, /* uint32 clock_id */
+                    wasi_timestamp_t *resolution /* uint64 *resolution */)
+ {
++
++    CLEANROOM_LOG("WASI_LIBC: ");
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+ 
+     if (!validate_native_addr(resolution, sizeof(wasi_timestamp_t)))
+@@ -175,6 +205,8 @@ wasi_clock_time_get(wasm_exec_env_t exec_env,
+                     wasi_timestamp_t precision, /* uint64 precision */
+                     wasi_timestamp_t *time /* uint64 *time */)
+ {
++
++    CLEANROOM_LOG("WASI_LIBC: ");
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+ 
+     if (!validate_native_addr(time, sizeof(wasi_timestamp_t)))
+@@ -187,6 +219,8 @@ static wasi_errno_t
+ wasi_environ_get(wasm_exec_env_t exec_env, uint32 *environ_offsets,
+                  char *environ_buf)
+ {
++
++    CLEANROOM_LOG("WASI_LIBC: ");
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct argv_environ_values *argv_environ =
+@@ -235,6 +269,8 @@ static wasi_errno_t
+ wasi_environ_sizes_get(wasm_exec_env_t exec_env, uint32 *environ_count_app,
+                        uint32 *environ_buf_size_app)
+ {
++
++    CLEANROOM_LOG("WASI_LIBC: ");
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct argv_environ_values *argv_environ =
+@@ -264,6 +300,8 @@ static wasi_errno_t
+ wasi_fd_prestat_get(wasm_exec_env_t exec_env, wasi_fd_t fd,
+                     wasi_prestat_app_t *prestat_app)
+ {
++
++    CLEANROOM_LOG("WASI_LIBC: ");
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_prestats *prestats = wasi_ctx_get_prestats(module_inst, wasi_ctx);
+@@ -289,6 +327,8 @@ static wasi_errno_t
+ wasi_fd_prestat_dir_name(wasm_exec_env_t exec_env, wasi_fd_t fd, char *path,
+                          uint32 path_len)
+ {
++
++    CLEANROOM_LOG("WASI_LIBC: ");
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_prestats *prestats = wasi_ctx_get_prestats(module_inst, wasi_ctx);
+@@ -302,6 +342,8 @@ wasi_fd_prestat_dir_name(wasm_exec_env_t exec_env, wasi_fd_t fd, char *path,
+ static wasi_errno_t
+ wasi_fd_close(wasm_exec_env_t exec_env, wasi_fd_t fd)
+ {
++
++    CLEANROOM_LOG("WASI_LIBC: ");
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_table *curfds = wasi_ctx_get_curfds(module_inst, wasi_ctx);
+@@ -309,6 +351,11 @@ wasi_fd_close(wasm_exec_env_t exec_env, wasi_fd_t fd)
+ 
+     if (!wasi_ctx)
+         return (wasi_errno_t)-1;
++    /*
++    if (bh_cleanroom_get_log_level() != BH_LOG_LEVEL_FATAL) {
++        printf("[Log] fd = %u\n", fd);
++    }
++    */
+ 
+     return wasmtime_ssp_fd_close(curfds, prestats, fd);
+ }
+@@ -316,13 +363,19 @@ wasi_fd_close(wasm_exec_env_t exec_env, wasi_fd_t fd)
+ static wasi_errno_t
+ wasi_fd_datasync(wasm_exec_env_t exec_env, wasi_fd_t fd)
+ {
++
++    CLEANROOM_LOG("WASI_LIBC: ");
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_table *curfds = wasi_ctx_get_curfds(module_inst, wasi_ctx);
+ 
+     if (!wasi_ctx)
+         return (wasi_errno_t)-1;
+-
++    /*
++    if (bh_cleanroom_get_log_level() != BH_LOG_LEVEL_FATAL) {
++        printf("[Log] fd = %u\n", fd);
++    }
++    */
+     return wasmtime_ssp_fd_datasync(curfds, fd);
+ }
+ 
+@@ -330,6 +383,8 @@ static wasi_errno_t
+ wasi_fd_pread(wasm_exec_env_t exec_env, wasi_fd_t fd, iovec_app_t *iovec_app,
+               uint32 iovs_len, wasi_filesize_t offset, uint32 *nread_app)
+ {
++
++    CLEANROOM_LOG("WASI_LIBC: ");
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_table *curfds = wasi_ctx_get_curfds(module_inst, wasi_ctx);
+@@ -384,6 +439,8 @@ wasi_fd_pwrite(wasm_exec_env_t exec_env, wasi_fd_t fd,
+                const iovec_app_t *iovec_app, uint32 iovs_len,
+                wasi_filesize_t offset, uint32 *nwritten_app)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
++
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_table *curfds = wasi_ctx_get_curfds(module_inst, wasi_ctx);
+@@ -437,12 +494,14 @@ static wasi_errno_t
+ wasi_fd_read(wasm_exec_env_t exec_env, wasi_fd_t fd,
+              const iovec_app_t *iovec_app, uint32 iovs_len, uint32 *nread_app)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
++
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_table *curfds = wasi_ctx_get_curfds(module_inst, wasi_ctx);
+     wasi_iovec_t *iovec, *iovec_begin;
+     uint64 total_size;
+-    size_t nread;
++    size_t nread = 0;
+     uint32 i;
+     wasi_errno_t err;
+ 
+@@ -469,11 +528,35 @@ wasi_fd_read(wasm_exec_env_t exec_env, wasi_fd_t fd,
+         }
+         iovec->buf = (void *)addr_app_to_native(iovec_app->buf_offset);
+         iovec->buf_len = iovec_app->buf_len;
++#ifdef TEACLAVE_CLEANROOM
++        if (iovec->buf_len > 0 && fd == 0) {
++            size_t in_read = 0;
++            c_read_file(global_std_in, iovec->buf, iovec->buf_len, &in_read);
++            if (in_read != iovec->buf_len) {
++                os_printf(
++                    "in_read = %zu iovec->buf_len = %zu read stdin failed",
++                    in_read, iovec->buf_len);
++            }
++            nread += in_read;
++        }
++        else if (iovec->buf_len > 0) {
++            size_t in_read = 0;
++            c_read_file(fd, iovec->buf, iovec->buf_len, &in_read);
++            if (in_read != iovec->buf_len) {
++                os_printf("read file failed");
++            }
++            nread += in_read;
++        }
++        else {
++        }
++#endif
+     }
+ 
++#ifndef TEACLAVE_CLEANROOM
+     err = wasmtime_ssp_fd_read(curfds, fd, iovec_begin, iovs_len, &nread);
+     if (err)
+         goto fail;
++#endif
+ 
+     *nread_app = (uint32)nread;
+ 
+@@ -488,6 +571,8 @@ fail:
+ static wasi_errno_t
+ wasi_fd_renumber(wasm_exec_env_t exec_env, wasi_fd_t from, wasi_fd_t to)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
++
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_table *curfds = wasi_ctx_get_curfds(module_inst, wasi_ctx);
+@@ -503,6 +588,8 @@ static wasi_errno_t
+ wasi_fd_seek(wasm_exec_env_t exec_env, wasi_fd_t fd, wasi_filedelta_t offset,
+              wasi_whence_t whence, wasi_filesize_t *newoffset)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
++
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_table *curfds = wasi_ctx_get_curfds(module_inst, wasi_ctx);
+@@ -519,6 +606,8 @@ wasi_fd_seek(wasm_exec_env_t exec_env, wasi_fd_t fd, wasi_filedelta_t offset,
+ static wasi_errno_t
+ wasi_fd_tell(wasm_exec_env_t exec_env, wasi_fd_t fd, wasi_filesize_t *newoffset)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
++
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_table *curfds = wasi_ctx_get_curfds(module_inst, wasi_ctx);
+@@ -528,7 +617,11 @@ wasi_fd_tell(wasm_exec_env_t exec_env, wasi_fd_t fd, wasi_filesize_t *newoffset)
+ 
+     if (!validate_native_addr(newoffset, sizeof(wasi_filesize_t)))
+         return (wasi_errno_t)-1;
+-
++    /*
++    if (bh_cleanroom_get_log_level() != BH_LOG_LEVEL_FATAL) {
++        printf("[Log] fd = %u\n", fd);
++    }
++    */
+     return wasmtime_ssp_fd_tell(curfds, fd, newoffset);
+ }
+ 
+@@ -536,6 +629,8 @@ static wasi_errno_t
+ wasi_fd_fdstat_get(wasm_exec_env_t exec_env, wasi_fd_t fd,
+                    wasi_fdstat_t *fdstat_app)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
++
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_table *curfds = wasi_ctx_get_curfds(module_inst, wasi_ctx);
+@@ -551,7 +646,6 @@ wasi_fd_fdstat_get(wasm_exec_env_t exec_env, wasi_fd_t fd,
+     err = wasmtime_ssp_fd_fdstat_get(curfds, fd, &fdstat);
+     if (err)
+         return err;
+-
+     memcpy(fdstat_app, &fdstat, sizeof(wasi_fdstat_t));
+     return 0;
+ }
+@@ -560,6 +654,8 @@ static wasi_errno_t
+ wasi_fd_fdstat_set_flags(wasm_exec_env_t exec_env, wasi_fd_t fd,
+                          wasi_fdflags_t flags)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
++
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_table *curfds = wasi_ctx_get_curfds(module_inst, wasi_ctx);
+@@ -575,6 +671,8 @@ wasi_fd_fdstat_set_rights(wasm_exec_env_t exec_env, wasi_fd_t fd,
+                           wasi_rights_t fs_rights_base,
+                           wasi_rights_t fs_rights_inheriting)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
++
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_table *curfds = wasi_ctx_get_curfds(module_inst, wasi_ctx);
+@@ -589,6 +687,8 @@ wasi_fd_fdstat_set_rights(wasm_exec_env_t exec_env, wasi_fd_t fd,
+ static wasi_errno_t
+ wasi_fd_sync(wasm_exec_env_t exec_env, wasi_fd_t fd)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
++
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_table *curfds = wasi_ctx_get_curfds(module_inst, wasi_ctx);
+@@ -604,15 +704,19 @@ wasi_fd_write(wasm_exec_env_t exec_env, wasi_fd_t fd,
+               const iovec_app_t *iovec_app, uint32 iovs_len,
+               uint32 *nwritten_app)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_table *curfds = wasi_ctx_get_curfds(module_inst, wasi_ctx);
+     wasi_ciovec_t *ciovec, *ciovec_begin;
+     uint64 total_size;
+-    size_t nwritten;
++    size_t nwritten = 0;
+     uint32 i;
+     wasi_errno_t err;
+-
++    os_printf("fd = %d\n", fd);
++    if (fd != 1 && fd != 2) {
++        return (wasi_errno_t)-1;
++    }
+     if (!wasi_ctx)
+         return (wasi_errno_t)-1;
+ 
+@@ -636,11 +740,40 @@ wasi_fd_write(wasm_exec_env_t exec_env, wasi_fd_t fd,
+         }
+         ciovec->buf = (char *)addr_app_to_native(iovec_app->buf_offset);
+         ciovec->buf_len = iovec_app->buf_len;
++#ifdef TEACLAVE_CLEANROOM
++        if (ciovec->buf_len > 0 && fd == 1) {
++            size_t out_written = 0;
++            c_write_file(global_std_out, ciovec->buf, ciovec->buf_len,
++                         &out_written);
++            if (out_written != ciovec->buf_len) {
++                os_printf("Write failed");
++            }
++            nwritten += out_written;
++        }        
++        extern const int32_t DEBUG_FLAG;
++        if ((fd == 2) && (DEBUG_FLAG == 0)) {
++            err = __WASI_EACCES;
++                if (err)
++                    goto fail;
++        }
++        if (ciovec->buf_len > 0 && fd == 2 && DEBUG_FLAG) {
++            size_t out_written = 0;
++            c_write_file(global_std_err, ciovec->buf, ciovec->buf_len,
++                         &out_written);
++            if (out_written != ciovec->buf_len) {
++                os_printf("Write failed");
++            }
++            nwritten += out_written;
++        }
++
++#endif
+     }
+ 
++#ifndef TEACLAVE_CLEANROOM
+     err = wasmtime_ssp_fd_write(curfds, fd, ciovec_begin, iovs_len, &nwritten);
+     if (err)
+         goto fail;
++#endif
+ 
+     *nwritten_app = (uint32)nwritten;
+ 
+@@ -656,6 +789,8 @@ static wasi_errno_t
+ wasi_fd_advise(wasm_exec_env_t exec_env, wasi_fd_t fd, wasi_filesize_t offset,
+                wasi_filesize_t len, wasi_advice_t advice)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
++
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_table *curfds = wasi_ctx_get_curfds(module_inst, wasi_ctx);
+@@ -670,6 +805,7 @@ static wasi_errno_t
+ wasi_fd_allocate(wasm_exec_env_t exec_env, wasi_fd_t fd, wasi_filesize_t offset,
+                  wasi_filesize_t len)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_table *curfds = wasi_ctx_get_curfds(module_inst, wasi_ctx);
+@@ -684,6 +820,8 @@ static wasi_errno_t
+ wasi_path_create_directory(wasm_exec_env_t exec_env, wasi_fd_t fd,
+                            const char *path, uint32 path_len)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
++
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_table *curfds = wasi_ctx_get_curfds(module_inst, wasi_ctx);
+@@ -700,6 +838,8 @@ wasi_path_link(wasm_exec_env_t exec_env, wasi_fd_t old_fd,
+                uint32 old_path_len, wasi_fd_t new_fd, const char *new_path,
+                uint32 new_path_len)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
++
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_table *curfds = wasi_ctx_get_curfds(module_inst, wasi_ctx);
+@@ -712,6 +852,8 @@ wasi_path_link(wasm_exec_env_t exec_env, wasi_fd_t old_fd,
+                                   old_path_len, new_fd, new_path, new_path_len);
+ }
+ 
++
++
+ static wasi_errno_t
+ wasi_path_open(wasm_exec_env_t exec_env, wasi_fd_t dirfd,
+                wasi_lookupflags_t dirflags, const char *path, uint32 path_len,
+@@ -719,6 +861,8 @@ wasi_path_open(wasm_exec_env_t exec_env, wasi_fd_t dirfd,
+                wasi_rights_t fs_rights_inheriting, wasi_fdflags_t fs_flags,
+                wasi_fd_t *fd_app)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
++
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_table *curfds = wasi_ctx_get_curfds(module_inst, wasi_ctx);
+@@ -730,11 +874,11 @@ wasi_path_open(wasm_exec_env_t exec_env, wasi_fd_t dirfd,
+ 
+     if (!validate_native_addr(fd_app, sizeof(wasi_fd_t)))
+         return (wasi_errno_t)-1;
+-
+     err = wasmtime_ssp_path_open(curfds, dirfd, dirflags, path, path_len,
+                                  oflags, fs_rights_base, fs_rights_inheriting,
+                                  fs_flags, &fd);
+ 
++
+     *fd_app = fd;
+     return err;
+ }
+@@ -743,6 +887,7 @@ static wasi_errno_t
+ wasi_fd_readdir(wasm_exec_env_t exec_env, wasi_fd_t fd, void *buf,
+                 uint32 buf_len, wasi_dircookie_t cookie, uint32 *bufused_app)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_table *curfds = wasi_ctx_get_curfds(module_inst, wasi_ctx);
+@@ -768,6 +913,8 @@ wasi_path_readlink(wasm_exec_env_t exec_env, wasi_fd_t fd, const char *path,
+                    uint32 path_len, char *buf, uint32 buf_len,
+                    uint32 *bufused_app)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
++
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_table *curfds = wasi_ctx_get_curfds(module_inst, wasi_ctx);
+@@ -794,6 +941,8 @@ wasi_path_rename(wasm_exec_env_t exec_env, wasi_fd_t old_fd,
+                  const char *old_path, uint32 old_path_len, wasi_fd_t new_fd,
+                  const char *new_path, uint32 new_path_len)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
++
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_table *curfds = wasi_ctx_get_curfds(module_inst, wasi_ctx);
+@@ -809,6 +958,8 @@ static wasi_errno_t
+ wasi_fd_filestat_get(wasm_exec_env_t exec_env, wasi_fd_t fd,
+                      wasi_filestat_t *filestat)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
++
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_table *curfds = wasi_ctx_get_curfds(module_inst, wasi_ctx);
+@@ -827,6 +978,8 @@ wasi_fd_filestat_set_times(wasm_exec_env_t exec_env, wasi_fd_t fd,
+                            wasi_timestamp_t st_atim, wasi_timestamp_t st_mtim,
+                            wasi_fstflags_t fstflags)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
++
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_table *curfds = wasi_ctx_get_curfds(module_inst, wasi_ctx);
+@@ -842,6 +995,8 @@ static wasi_errno_t
+ wasi_fd_filestat_set_size(wasm_exec_env_t exec_env, wasi_fd_t fd,
+                           wasi_filesize_t st_size)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
++
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_table *curfds = wasi_ctx_get_curfds(module_inst, wasi_ctx);
+@@ -857,6 +1012,8 @@ wasi_path_filestat_get(wasm_exec_env_t exec_env, wasi_fd_t fd,
+                        wasi_lookupflags_t flags, const char *path,
+                        uint32 path_len, wasi_filestat_t *filestat)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
++
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_table *curfds = wasi_ctx_get_curfds(module_inst, wasi_ctx);
+@@ -877,6 +1034,8 @@ wasi_path_filestat_set_times(wasm_exec_env_t exec_env, wasi_fd_t fd,
+                              uint32 path_len, wasi_timestamp_t st_atim,
+                              wasi_timestamp_t st_mtim, wasi_fstflags_t fstflags)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
++
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_table *curfds = wasi_ctx_get_curfds(module_inst, wasi_ctx);
+@@ -893,6 +1052,8 @@ wasi_path_symlink(wasm_exec_env_t exec_env, const char *old_path,
+                   uint32 old_path_len, wasi_fd_t fd, const char *new_path,
+                   uint32 new_path_len)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
++
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_table *curfds = wasi_ctx_get_curfds(module_inst, wasi_ctx);
+@@ -909,6 +1070,8 @@ static wasi_errno_t
+ wasi_path_unlink_file(wasm_exec_env_t exec_env, wasi_fd_t fd, const char *path,
+                       uint32 path_len)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
++
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_table *curfds = wasi_ctx_get_curfds(module_inst, wasi_ctx);
+@@ -923,6 +1086,8 @@ static wasi_errno_t
+ wasi_path_remove_directory(wasm_exec_env_t exec_env, wasi_fd_t fd,
+                            const char *path, uint32 path_len)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
++
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_table *curfds = wasi_ctx_get_curfds(module_inst, wasi_ctx);
+@@ -937,6 +1102,8 @@ static wasi_errno_t
+ wasi_poll_oneoff(wasm_exec_env_t exec_env, const wasi_subscription_t *in,
+                  wasi_event_t *out, uint32 nsubscriptions, uint32 *nevents_app)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
++
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_table *curfds = wasi_ctx_get_curfds(module_inst, wasi_ctx);
+@@ -962,6 +1129,8 @@ wasi_poll_oneoff(wasm_exec_env_t exec_env, const wasi_subscription_t *in,
+ static void
+ wasi_proc_exit(wasm_exec_env_t exec_env, wasi_exitcode_t rval)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
++
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     /* Here throwing exception is just to let wasm app exit,
+        the upper layer should clear the exception and return
+@@ -972,6 +1141,8 @@ wasi_proc_exit(wasm_exec_env_t exec_env, wasi_exitcode_t rval)
+ static wasi_errno_t
+ wasi_proc_raise(wasm_exec_env_t exec_env, wasi_signal_t sig)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
++
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     char buf[32];
+     snprintf(buf, sizeof(buf), "%s%d", "wasi proc raise ", sig);
+@@ -983,6 +1154,8 @@ wasi_proc_raise(wasm_exec_env_t exec_env, wasi_signal_t sig)
+ static wasi_errno_t
+ wasi_random_get(wasm_exec_env_t exec_env, void *buf, uint32 buf_len)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
++
+     return wasmtime_ssp_random_get(buf, buf_len);
+ }
+ 
+@@ -991,6 +1164,8 @@ wasi_sock_recv(wasm_exec_env_t exec_env, wasi_fd_t sock, iovec_app_t *ri_data,
+                uint32 ri_data_len, wasi_riflags_t ri_flags,
+                uint32 *ro_datalen_app, wasi_roflags_t *ro_flags)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
++
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_table *curfds = wasi_ctx_get_curfds(module_inst, wasi_ctx);
+@@ -1046,6 +1221,8 @@ wasi_sock_send(wasm_exec_env_t exec_env, wasi_fd_t sock,
+                const iovec_app_t *si_data, uint32 si_data_len,
+                wasi_siflags_t si_flags, uint32 *so_datalen_app)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
++
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_table *curfds = wasi_ctx_get_curfds(module_inst, wasi_ctx);
+@@ -1098,6 +1275,8 @@ fail:
+ static wasi_errno_t
+ wasi_sock_shutdown(wasm_exec_env_t exec_env, wasi_fd_t sock, wasi_sdflags_t how)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
++
+     wasm_module_inst_t module_inst = get_module_inst(exec_env);
+     wasi_ctx_t wasi_ctx = get_wasi_ctx(module_inst);
+     struct fd_table *curfds = wasi_ctx_get_curfds(module_inst, wasi_ctx);
+@@ -1111,6 +1290,8 @@ wasi_sock_shutdown(wasm_exec_env_t exec_env, wasi_fd_t sock, wasi_sdflags_t how)
+ static wasi_errno_t
+ wasi_sched_yield(wasm_exec_env_t exec_env)
+ {
++    CLEANROOM_LOG("WASI_LIBC: ");
++
+     return wasmtime_ssp_sched_yield();
+ }
+ 
+diff --git a/core/iwasm/libraries/libc-wasi/sandboxed-system-primitives/src/posix.c b/core/iwasm/libraries/libc-wasi/sandboxed-system-primitives/src/posix.c
+index 94eb002..372e083 100644
+--- a/core/iwasm/libraries/libc-wasi/sandboxed-system-primitives/src/posix.c
++++ b/core/iwasm/libraries/libc-wasi/sandboxed-system-primitives/src/posix.c
+@@ -22,6 +22,24 @@
+ #include "rights.h"
+ #include "str.h"
+ 
++int
++os_printf(const char *message, ...);
++
++#ifdef TEACLAVE_CLEANROOM
++extern WorkDir cleanroom_opendir[];
++extern int global_std_in;
++extern int global_std_out;
++extern int global_std_err;
++extern uint
++c_open_input(char *file_id, int *out_fd);
++extern uint
++c_read_file(int fd, void *out_buf, size_t buf_size, size_t *out_size_read);
++extern uint
++c_write_file(int fd, void *buf, size_t buf_size, size_t *out_size_written);
++extern uint
++c_close_file(int fd);
++#endif
++
+ #if 0 /* TODO: -std=gnu99 causes compile error, comment them first */
+ // struct iovec must have the same layout as __wasi_iovec_t.
+ static_assert(offsetof(struct iovec, iov_base) ==
+@@ -457,6 +475,40 @@ fd_determine_type_rights(int fd, __wasi_filetype_t *type,
+                          __wasi_rights_t *rights_inheriting)
+ {
+     struct stat sb;
++
++    // Cleanroom SGX Start
++    #ifdef TEACLAVE_CLEANROOM
++    if (fd == 0) {
++        *type = __WASI_FILETYPE_CHARACTER_DEVICE;
++        *rights_base = RIGHTS_TTY_BASE;
++        *rights_inheriting = RIGHTS_TTY_INHERITING;
++        *rights_base &= ~(__wasi_rights_t)__WASI_RIGHT_FD_WRITE;
++        return 0;
++    }
++    if (fd == 1) {
++        *type = __WASI_FILETYPE_CHARACTER_DEVICE;
++        *rights_base = RIGHTS_TTY_BASE;
++        *rights_inheriting = RIGHTS_TTY_INHERITING;
++        *rights_base &= ~(__wasi_rights_t)__WASI_RIGHT_FD_READ;
++        return 0;
++    }
++    if (fd == 2) {
++        *type = __WASI_FILETYPE_CHARACTER_DEVICE;
++        *rights_base = RIGHTS_TTY_BASE;
++        *rights_inheriting = RIGHTS_TTY_INHERITING;
++        *rights_base &= ~(__wasi_rights_t)__WASI_RIGHT_FD_READ;
++        return 0;
++    }
++    if (fd >= 3) {
++        *type = __WASI_FILETYPE_DIRECTORY;
++        *rights_base = RIGHTS_DIRECTORY_BASE;
++        *rights_inheriting = RIGHTS_DIRECTORY_INHERITING;
++        *rights_base &= ~(__wasi_rights_t)__WASI_RIGHT_FD_WRITE;
++        return 0;
++    }
++    // Cleanroom SGX End
++    #endif
++
+     if (fstat(fd, &sb) < 0)
+         return convert_errno(errno);
+     if (S_ISBLK(sb.st_mode)) {
+@@ -716,7 +768,6 @@ wasmtime_ssp_fd_prestat_dir_name(
+     bh_memcpy_s(path, (uint32)path_len, prestat->dir, (uint32)path_len);
+ 
+     rwlock_unlock(&prestats->lock);
+-
+     return 0;
+ }
+ 
+@@ -1444,6 +1495,14 @@ path_get(struct fd_table *curfds, struct path_access *pa, __wasi_fd_t fd,
+         return error;
+     }
+ 
++#ifdef TEACLAVE_CLEANROOM
++    pa->fd = fd_number(fo);
++    pa->path = pa->path_start = path;
++    pa->follow = (flags & __WASI_LOOKUP_SYMLINK_FOLLOW) != 0;
++    pa->fd_object = fo;
++    return 0;
++#endif
++
+ #if CONFIG_HAS_CAP_ENTER
+     // Rely on the kernel to constrain access to automatically constrain
+     // access to files stored underneath this directory.
+@@ -1514,10 +1573,12 @@ path_get(struct fd_table *curfds, struct path_access *pa, __wasi_fd_t fd,
+             // components. In other words, a pathname component that must be a
+             // directory. First attempt to obtain a directory file descriptor
+             // for it.
++
+             int newdir =
+ #ifdef O_SEARCH
+                 openat(fds[curfd], file, O_SEARCH | O_DIRECTORY | O_NOFOLLOW);
+ #else
++
+                 openat(fds[curfd], file, O_RDONLY | O_DIRECTORY | O_NOFOLLOW);
+ #endif
+             if (newdir != -1) {
+@@ -1781,6 +1842,18 @@ wasmtime_ssp_path_link(
+     return 0;
+ }
+ 
++char *
++my_strcat(char *dest, const char *src)
++{
++    char *rdest = dest;
++
++    while (*dest)
++        dest++;
++    while ((*dest++ = *src++))
++        ;
++    return rdest;
++}
++
+ __wasi_errno_t
+ wasmtime_ssp_path_open(
+ #if !defined(WASMTIME_SSP_STATIC_CURFDS)
+@@ -1804,7 +1877,7 @@ wasmtime_ssp_path_open(
+             | __WASI_RIGHT_FD_ALLOCATE | __WASI_RIGHT_FD_FILESTAT_SET_SIZE))
+         != 0;
+     int noflags = write ? read ? O_RDWR : O_WRONLY : O_RDONLY;
+-
++    os_printf("Path Debug %d", __LINE__);
+     // Which rights are needed on the directory file descriptor.
+     __wasi_rights_t needed_base = __WASI_RIGHT_PATH_OPEN;
+     __wasi_rights_t needed_inheriting = rights_base | rights_inheriting;
+@@ -1850,16 +1923,48 @@ wasmtime_ssp_path_open(
+     }
+     if (write && (noflags & (O_APPEND | O_TRUNC)) == 0)
+         needed_inheriting |= __WASI_RIGHT_FD_SEEK;
++    os_printf("Path Debug %d", __LINE__);
+ 
+     struct path_access pa;
+     __wasi_errno_t error =
+         path_get(curfds, &pa, dirfd, dirflags, path, pathlen, needed_base,
+                  needed_inheriting, (oflags & __WASI_O_CREAT) != 0);
++    os_printf("Path Debug %d error %d", __LINE__, error);
++
+     if (error != 0)
+         return error;
+     if (!pa.follow)
+         noflags |= O_NOFOLLOW;
+ 
++#ifdef TEACLAVE_CLEANROOM
++    for (int i = 0; i < 3; ++i) {
++        os_printf("%d %d\n", cleanroom_opendir[i].dirfd, pa.fd);
++        if (cleanroom_opendir[i].dirfd == pa.fd) {
++            char full_path[256];
++            __wasi_fd_t tmp_fd = (__wasi_fd_t)-1; /* set fd_app -1 if path open failed */
++            if (!strcmp(cleanroom_opendir[i].open_dir, ".")) {
++                strcpy(full_path, path);
++            }
++            else {
++                strcpy(full_path, cleanroom_opendir[i].open_dir);
++                my_strcat(full_path, "/");
++                my_strcat(full_path, path);
++            }
++            os_printf("DIR = %s,", cleanroom_opendir[i].open_dir);
++            os_printf("Full_path = %s", full_path);
++            int ret = c_open_input(full_path, &tmp_fd);
++            if (ret == 0) {
++                int opened_file_num = cleanroom_opendir[i].opened_file_num;
++                cleanroom_opendir[i].file_fd[opened_file_num] = tmp_fd;
++                ++cleanroom_opendir[i].opened_file_num;
++                *fd = tmp_fd;
++                os_printf("Open file successfully fd = %d\n", tmp_fd);
++                return 0;
++            }
++        }
++    }
++#endif
++
+     int nfd = openat(pa.fd, pa.path, noflags, 0666);
+     if (nfd < 0) {
+         int openat_errno = errno;
+diff --git a/core/shared/platform/teaclave-sgx/platform_internal.h b/core/shared/platform/teaclave-sgx/platform_internal.h
+new file mode 100644
+index 0000000..3911416
+--- /dev/null
++++ b/core/shared/platform/teaclave-sgx/platform_internal.h
+@@ -0,0 +1,80 @@
++/*
++ * Copyright (C) 2019 Intel Corporation.  All rights reserved.
++ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++ */
++
++#ifndef _PLATFORM_INTERNAL_H
++#define _PLATFORM_INTERNAL_H
++
++#include <inttypes.h>
++#include <stdbool.h>
++#include <assert.h>
++#include <time.h>
++#include <string.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <math.h>
++#include <unistd.h>
++#include <stdarg.h>
++#include <ctype.h>
++#include <limits.h>
++#include <errno.h>
++#include <sgx_thread.h>
++#include <pthread.h>
++
++#include "sgx_error.h"
++#include "sgx_file.h"
++#include "sgx_pthread.h"
++#include "sgx_time.h"
++#include "sgx_socket.h"
++#include "sgx_signal.h"
++
++#ifdef __cplusplus
++extern "C" {
++
++#endif
++
++#ifndef BH_PLATFORM_LINUX_SGX
++#define BH_PLATFORM_LINUX_SGX
++#endif
++
++#define STD_INPUT "input_file" 
++#define STD_OUTPUT "output_file"
++#define STD_ERROR "log_file"
++#define MAX_PATH_LENGTH 256
++#define MAX_FILE_NUMBER 64
++
++typedef struct WorkDir {
++   int dirfd;
++   char open_dir[MAX_PATH_LENGTH];
++   int opened_file_num;
++   int  file_fd[MAX_FILE_NUMBER];
++} WorkDir;
++
++
++#define _STACK_SIZE_ADJUSTMENT (32 * 1024)
++
++/* Stack size of applet threads's native part.  */
++#define BH_APPLET_PRESERVED_STACK_SIZE (8 * 1024 + _STACK_SIZE_ADJUSTMENT)
++
++/* Default thread priority */
++#define BH_THREAD_DEFAULT_PRIORITY 0
++
++typedef pthread_t korp_thread;
++typedef pthread_t korp_tid;
++typedef pthread_mutex_t korp_mutex;
++typedef pthread_cond_t korp_cond;
++
++typedef void (*os_print_function_t)(const char *message);
++void
++os_set_print_function(os_print_function_t pf);
++
++char *
++strcpy(char *dest, const char *src);
++
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* end of _PLATFORM_INTERNAL_H */
+diff --git a/core/shared/platform/teaclave-sgx/sgx_file.c b/core/shared/platform/teaclave-sgx/sgx_file.c
+new file mode 100644
+index 0000000..4ec7698
+--- /dev/null
++++ b/core/shared/platform/teaclave-sgx/sgx_file.c
+@@ -0,0 +1,334 @@
++/*
++ * Copyright (C) 2019 Intel Corporation.  All rights reserved.
++ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++ */
++
++#include "platform_api_vmcore.h"
++#include "sgx_error.h"
++#include "sgx_file.h"
++
++#ifndef SGX_DISABLE_WASI
++
++#define TRACE_FUNC() os_printf("undefined %s\n", __FUNCTION__)
++#define TRACE_OCALL_FAIL() os_printf("ocall %s failed!\n", __FUNCTION__)
++
++extern void
++teaclave_sgx_log(char *msg);
++
++extern int
++os_printf(const char *message, ...);
++
++// Fake open libc call
++int
++open(const char *pathname, int flags, ...)
++{
++    static int fd = 3;
++    teaclave_sgx_log(__FUNCTION__);
++
++    return fd++;
++}
++
++int
++openat(int dirfd, const char *pathname, int flags, ...)
++{
++    teaclave_sgx_log(__FUNCTION__);
++
++    return -1;
++}
++
++int
++close(int fd)
++{
++    teaclave_sgx_log(__FUNCTION__);
++    // Ocall
++    return -1;
++}
++
++ssize_t
++read(int fd, void *buf, size_t size)
++{
++    teaclave_sgx_log(__FUNCTION__);
++
++    return -1;
++}
++
++DIR *
++fdopendir(int fd)
++{
++    teaclave_sgx_log(__FUNCTION__);
++    return NULL;
++}
++
++struct dirent *
++readdir(DIR *dirp)
++{
++    teaclave_sgx_log(__FUNCTION__);
++
++    return NULL;
++}
++
++void
++rewinddir(DIR *dirp)
++{
++    teaclave_sgx_log(__FUNCTION__);
++}
++
++void
++seekdir(DIR *dirp, long loc)
++{
++    teaclave_sgx_log(__FUNCTION__);
++}
++
++long
++telldir(DIR *dirp)
++{
++    teaclave_sgx_log(__FUNCTION__);
++    return -1;
++}
++
++int
++closedir(DIR *dirp)
++{
++    teaclave_sgx_log(__FUNCTION__);
++    // Ocall
++    return -1;
++}
++
++static ssize_t
++readv_internal(int fd, const struct iovec *iov, int iovcnt, bool has_offset,
++               off_t offset)
++{
++    teaclave_sgx_log(__FUNCTION__);
++    return 0;
++}
++
++static ssize_t
++writev_internal(int fd, const struct iovec *iov, int iovcnt, bool has_offset,
++                off_t offset)
++{
++
++    teaclave_sgx_log(__FUNCTION__);
++    return 0;
++}
++
++ssize_t
++readv(int fd, const struct iovec *iov, int iovcnt)
++{
++    teaclave_sgx_log(__FUNCTION__);
++    return readv_internal(fd, iov, iovcnt, false, 0);
++}
++
++ssize_t
++writev(int fd, const struct iovec *iov, int iovcnt)
++{
++    teaclave_sgx_log(__FUNCTION__);
++    return writev_internal(fd, iov, iovcnt, false, 0);
++}
++
++ssize_t
++preadv(int fd, const struct iovec *iov, int iovcnt, off_t offset)
++{
++    teaclave_sgx_log(__FUNCTION__);
++    return readv_internal(fd, iov, iovcnt, true, offset);
++}
++
++ssize_t
++pwritev(int fd, const struct iovec *iov, int iovcnt, off_t offset)
++{
++    teaclave_sgx_log(__FUNCTION__);
++    return writev_internal(fd, iov, iovcnt, true, offset);
++}
++
++off_t
++lseek(int fd, off_t offset, int whence)
++{
++    teaclave_sgx_log(__FUNCTION__);
++    // Ocall
++
++    return -1;
++}
++
++int
++ftruncate(int fd, off_t length)
++{
++
++    // Ocall
++    teaclave_sgx_log(__FUNCTION__);
++    return -1;
++}
++
++int
++stat(const char *pathname, struct stat *statbuf)
++{
++    teaclave_sgx_log(__FUNCTION__);
++
++    // Ocall
++
++    return -1;
++}
++
++int
++fstat(int fd, struct stat *statbuf)
++{
++    teaclave_sgx_log(__FUNCTION__);
++    return -1;
++}
++
++int
++fstatat(int dirfd, const char *pathname, struct stat *statbuf, int flags)
++{
++    teaclave_sgx_log(__FUNCTION__);
++    return -1;
++}
++
++int
++fsync(int fd)
++{
++    // Ocall
++    teaclave_sgx_log(__FUNCTION__);
++    return -1;
++}
++
++int
++fdatasync(int fd)
++{
++
++    // Ocall
++    teaclave_sgx_log(__FUNCTION__);
++    return -1;
++}
++
++int
++mkdirat(int dirfd, const char *pathname, mode_t mode)
++{
++    // Ocall
++    teaclave_sgx_log(__FUNCTION__);
++    return -1;
++}
++
++int
++link(const char *oldpath, const char *newpath)
++{
++    // Ocall
++    teaclave_sgx_log(__FUNCTION__);
++    return -1;
++}
++
++int
++linkat(int olddirfd, const char *oldpath, int newdirfd, const char *newpath,
++       int flags)
++{
++    // Ocall
++    teaclave_sgx_log(__FUNCTION__);
++    return -1;
++}
++
++int
++unlinkat(int dirfd, const char *pathname, int flags)
++{
++    // Ocall
++    teaclave_sgx_log(__FUNCTION__);
++    return -1;
++}
++
++ssize_t
++readlinkat(int dirfd, const char *pathname, char *buf, size_t bufsiz)
++{
++
++    // Ocall
++    teaclave_sgx_log(__FUNCTION__);
++    return 0;
++}
++
++int
++symlinkat(const char *target, int newdirfd, const char *linkpath)
++{
++    teaclave_sgx_log(__FUNCTION__);
++    return -1;
++}
++
++int
++renameat(int olddirfd, const char *oldpath, int newdirfd, const char *newpath)
++{
++    teaclave_sgx_log(__FUNCTION__);
++
++    return -1;
++}
++
++int
++ioctl(int fd, unsigned long request, ...)
++{
++    teaclave_sgx_log(__FUNCTION__);
++    return -1;
++}
++
++int
++fcntl(int fd, int cmd, ... /* arg */)
++{
++    os_printf("%s: %d", __FUNCTION__, fd);
++    teaclave_sgx_log(__FUNCTION__);
++    return 0;
++}
++
++int
++isatty(int fd)
++{
++    // Ocall
++    teaclave_sgx_log(__FUNCTION__);
++    return -1;
++}
++
++char *
++realpath(const char *path, char *resolved_path)
++{
++    teaclave_sgx_log(__FUNCTION__);
++    strcpy(resolved_path, path);
++    return resolved_path;
++}
++
++int
++posix_fallocate(int fd, off_t offset, off_t len)
++{
++
++    // Ocall
++    teaclave_sgx_log(__FUNCTION__);
++    return -1;
++}
++
++int
++poll(struct pollfd *fds, nfds_t nfds, int timeout)
++{
++
++    // Ocall
++    return -1;
++}
++
++int
++getopt(int argc, char *const argv[], const char *optstring)
++{
++    teaclave_sgx_log(__FUNCTION__);
++    return -1;
++}
++
++int
++sched_yield(void)
++{
++    teaclave_sgx_log(__FUNCTION__);
++    return -1;
++}
++
++ssize_t
++getrandom(void *buf, size_t buflen, unsigned int flags)
++{
++    teaclave_sgx_log(__FUNCTION__);
++    return 0;
++}
++
++int
++getentropy(void *buffer, size_t length)
++{
++    teaclave_sgx_log(__FUNCTION__);
++    return -1;
++}
++
++#endif
+diff --git a/core/shared/platform/teaclave-sgx/sgx_file.h b/core/shared/platform/teaclave-sgx/sgx_file.h
+new file mode 100644
+index 0000000..10ea7be
+--- /dev/null
++++ b/core/shared/platform/teaclave-sgx/sgx_file.h
+@@ -0,0 +1,265 @@
++/*
++ * Copyright (C) 2019 Intel Corporation.  All rights reserved.
++ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++ */
++
++#ifndef _SGX_FILE_H
++#define _SGX_FILE_H
++
++#include "sgx_time.h"
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++
++
++#define F_DUPFD 0
++#define F_GETFD 1
++#define F_SETFD 2
++#define F_GETFL 3
++#define F_SETFL 4
++
++#define FD_CLOEXEC 1
++
++#define O_PATH 010000000
++#define O_SEARCH O_PATH
++#define O_EXEC O_PATH
++
++#define O_ACCMODE (03 | O_SEARCH)
++#define O_RDONLY 00
++#define O_WRONLY 01
++#define O_RDWR 02
++
++#define O_CREAT 0100
++#define O_EXCL 0200
++#define O_NOCTTY 0400
++#define O_TRUNC 01000
++#define O_APPEND 02000
++#define O_NONBLOCK 04000
++#define O_DSYNC 010000
++#define O_SYNC 04010000
++#define O_RSYNC 04010000
++#define O_DIRECTORY 0200000
++#define O_NOFOLLOW 0400000
++#define O_CLOEXEC 02000000
++
++#define O_ASYNC 020000
++#define O_DIRECT 040000
++#define O_LARGEFILE 0
++#define O_NOATIME 01000000
++#define O_PATH 010000000
++#define O_TMPFILE 020200000
++#define O_NDELAY O_NONBLOCK
++
++#define S_IFMT 0170000
++#define S_IFDIR 0040000
++#define S_IFCHR 0020000
++#define S_IFBLK 0060000
++#define S_IFREG 0100000
++#define S_IFIFO 0010000
++#define S_IFLNK 0120000
++#define S_IFSOCK 0140000
++
++#define SEEK_SET 0
++#define SEEK_CUR 1
++#define SEEK_END 2
++
++#define S_ISDIR(mode) (((mode)&S_IFMT) == S_IFDIR)
++#define S_ISCHR(mode) (((mode)&S_IFMT) == S_IFCHR)
++#define S_ISBLK(mode) (((mode)&S_IFMT) == S_IFBLK)
++#define S_ISREG(mode) (((mode)&S_IFMT) == S_IFREG)
++#define S_ISFIFO(mode) (((mode)&S_IFMT) == S_IFIFO)
++#define S_ISLNK(mode) (((mode)&S_IFMT) == S_IFLNK)
++#define S_ISSOCK(mode) (((mode)&S_IFMT) == S_IFSOCK)
++
++#define DT_UNKNOWN 0
++#define DT_FIFO 1
++#define DT_CHR 2
++#define DT_DIR 4
++#define DT_BLK 6
++#define DT_REG 8
++#define DT_LNK 10
++#define DT_SOCK 12
++#define DT_WHT 14
++
++#define AT_SYMLINK_NOFOLLOW 0x100
++#define AT_REMOVEDIR 0x200
++#define AT_SYMLINK_FOLLOW 0x400
++
++#define POLLIN 0x001
++#define POLLPRI 0x002
++#define POLLOUT 0x004
++#define POLLERR 0x008
++#define POLLHUP 0x010
++#define POLLNVAL 0x020
++#define POLLRDNORM 0x040
++#define POLLRDBAND 0x080
++#define POLLWRNORM 0x100
++#define POLLWRBAND 0x200
++
++#define FIONREAD 0x541B
++
++#define PATH_MAX 4096
++
++/* Special value used to indicate openat should use the current
++   working directory. */
++#define AT_FDCWD -100
++
++typedef long __syscall_slong_t;
++
++typedef unsigned long dev_t;
++typedef unsigned long ino_t;
++typedef unsigned mode_t;
++typedef unsigned long nlink_t;
++typedef unsigned socklen_t;
++typedef long blksize_t;
++typedef long blkcnt_t;
++
++typedef int pid_t;
++typedef unsigned gid_t;
++typedef unsigned uid_t;
++
++typedef unsigned long nfds_t;
++
++typedef uintptr_t DIR;
++
++struct dirent {
++    ino_t d_ino;
++    off_t d_off;
++    unsigned short d_reclen;
++    unsigned char d_type;
++    char d_name[256];
++};
++
++struct stat {
++    dev_t st_dev;
++    ino_t st_ino;
++    nlink_t st_nlink;
++
++    mode_t st_mode;
++    uid_t st_uid;
++    gid_t st_gid;
++    unsigned int __pad0;
++    dev_t st_rdev;
++    off_t st_size;
++    blksize_t st_blksize;
++    blkcnt_t st_blocks;
++
++    struct timespec st_atim;
++    struct timespec st_mtim;
++    struct timespec st_ctim;
++    long __unused[3];
++};
++
++struct iovec {
++    void *iov_base;
++    size_t iov_len;
++};
++
++struct pollfd {
++    int fd;
++    short events;
++    short revents;
++};
++
++int
++open(const char *pathname, int flags, ...);
++int
++openat(int dirfd, const char *pathname, int flags, ...);
++int
++close(int fd);
++
++DIR *
++fdopendir(int fd);
++int
++closedir(DIR *dirp);
++void
++rewinddir(DIR *dirp);
++void
++seekdir(DIR *dirp, long loc);
++struct dirent *
++readdir(DIR *dirp);
++long
++telldir(DIR *dirp);
++
++ssize_t
++read(int fd, void *buf, size_t count);
++ssize_t
++readv(int fd, const struct iovec *iov, int iovcnt);
++ssize_t
++writev(int fd, const struct iovec *iov, int iovcnt);
++ssize_t
++preadv(int fd, const struct iovec *iov, int iovcnt, off_t offset);
++ssize_t
++pwritev(int fd, const struct iovec *iov, int iovcnt, off_t offset);
++
++off_t
++lseek(int fd, off_t offset, int whence);
++int
++ftruncate(int fd, off_t length);
++
++int
++stat(const char *pathname, struct stat *statbuf);
++int
++fstat(int fd, struct stat *statbuf);
++int
++fstatat(int dirfd, const char *pathname, struct stat *statbuf, int flags);
++
++int
++fsync(int fd);
++int
++fdatasync(int fd);
++
++int
++mkdirat(int dirfd, const char *pathname, mode_t mode);
++int
++link(const char *oldpath, const char *newpath);
++int
++linkat(int olddirfd, const char *oldpath, int newdirfd, const char *newpath,
++       int flags);
++int
++unlinkat(int dirfd, const char *pathname, int flags);
++ssize_t
++readlinkat(int dirfd, const char *pathname, char *buf, size_t bufsiz);
++int
++symlinkat(const char *target, int newdirfd, const char *linkpath);
++int
++renameat(int olddirfd, const char *oldpath, int newdirfd, const char *newpath);
++
++int
++ioctl(int fd, unsigned long request, ...);
++int
++fcntl(int fd, int cmd, ... /* arg */);
++
++int
++isatty(int fd);
++
++char *
++realpath(const char *path, char *resolved_path);
++
++int
++posix_fallocate(int fd, off_t offset, off_t len);
++
++int
++poll(struct pollfd *fds, nfds_t nfds, int timeout);
++
++int
++getopt(int argc, char *const argv[], const char *optstring);
++
++int
++sched_yield(void);
++
++ssize_t
++getrandom(void *buf, size_t buflen, unsigned int flags);
++int
++getentropy(void *buffer, size_t length);
++
++int
++get_errno(void);
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* end of _SGX_FILE_H */
+diff --git a/core/shared/platform/teaclave-sgx/sgx_platform.c b/core/shared/platform/teaclave-sgx/sgx_platform.c
+new file mode 100644
+index 0000000..9702d3f
+--- /dev/null
++++ b/core/shared/platform/teaclave-sgx/sgx_platform.c
+@@ -0,0 +1,258 @@
++/*
++ * Copyright (C) 2019 Intel Corporation.  All rights reserved.
++ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++ */
++
++#include "platform_api_vmcore.h"
++#include "platform_api_extension.h"
++#include "sgx_rsrv_mem_mngr.h"
++#include "bh_platform.h"
++
++#define FIXED_BUFFER_SIZE (1 << 9)
++
++static os_print_function_t print_function = NULL;
++
++extern void
++teaclave_sgx_log(char *msg);
++extern void
++rust_printf(const char *msg);
++extern uint
++c_create_output(char *file_id, int *out_fd);
++extern uint
++c_open_input(char *file_id, int *out_fd);
++extern uint
++c_read_file(int fd, void *out_buf, size_t buf_size, size_t *out_size_read);
++extern uint
++c_write_file(int fd, void *buf, size_t buf_size, size_t *out_size_written);
++extern uint
++c_close_file(int fd);
++
++int global_std_in = -1;
++int global_std_out = -1;
++int global_std_err = -1;
++int global_num_open_directory = -1;
++WorkDir cleanroom_opendir[3];
++
++void
++enclave_print(const char *message)
++{
++    rust_printf(message);
++}
++
++int
++bh_platform_init()
++{
++    int std_out, std_in, std_err;
++    int status;
++    extern const int32_t DEBUG_FLAG;
++    os_printf("Debug Value %d", DEBUG_FLAG);
++    global_num_open_directory = 0;
++    bh_cleanroom_wasi_set_log();
++    os_set_print_function(enclave_print);
++    memset(cleanroom_opendir, 0, sizeof(WorkDir) * 3);
++    status = c_create_output(STD_OUTPUT, &std_out);
++    if (status == 0) {
++        os_printf("open output successfully");
++        global_std_out = std_out;
++    }
++    else {
++        os_printf("Fail to Open stdout");
++        return 1;
++    }
++    status = c_open_input(STD_INPUT, &std_in);
++    if (status == 0) {
++        os_printf("Open input successfully");
++        global_std_in = std_in;
++    }
++    else {
++        os_printf("Fail to open stdin");
++        return 1;
++    }
++    if (DEBUG_FLAG) {
++        os_printf("file %s", STD_ERROR);
++        status = c_create_output(STD_ERROR, &std_err);
++        if (status == 0) {
++            os_printf("Open STDERR successfully");
++            global_std_err = std_err;
++        }
++        else {
++            os_printf("Fail to open stderr");
++            return 1;
++        }
++    }
++
++    return 0;
++}
++
++void
++bh_platform_destroy()
++{
++    int status_stdout, status_stdin, status_stderr;
++    status_stdout = c_close_file(global_std_out);
++    status_stdin = c_close_file(global_std_in);
++    if (status_stdin != 0 || status_stdout != 0) {
++        os_printf("Close files failed");
++        return;
++    }
++    extern const int32_t DEBUG_FLAG;
++    if (DEBUG_FLAG) {
++        status_stderr = c_close_file(global_std_err);
++        if (status_stderr != 0) {
++            os_printf("Close files failed");
++            return;
++        }
++    }
++    os_printf("Close files succeed");
++    return;
++}
++
++void *
++os_malloc(unsigned size)
++{
++    return malloc(size);
++}
++
++void *
++os_realloc(void *ptr, unsigned size)
++{
++    return realloc(ptr, size);
++}
++
++void
++os_free(void *ptr)
++{
++    free(ptr);
++}
++
++int
++putchar(int c)
++{
++    return 0;
++}
++
++int
++puts(const char *s)
++{
++    return 0;
++}
++
++void
++os_set_print_function(os_print_function_t pf)
++{
++    print_function = pf;
++}
++
++int
++os_printf(const char *message, ...)
++{
++    if (print_function != NULL) {
++        char msg[FIXED_BUFFER_SIZE] = { '\0' };
++        va_list ap;
++        va_start(ap, message);
++        vsnprintf(msg, FIXED_BUFFER_SIZE, message, ap);
++        va_end(ap);
++        print_function(msg);
++    }
++
++    return 0;
++}
++
++int
++os_vprintf(const char *format, va_list arg)
++{
++    if (print_function != NULL) {
++        char msg[FIXED_BUFFER_SIZE] = { '\0' };
++        vsnprintf(msg, FIXED_BUFFER_SIZE, format, arg);
++        print_function(msg);
++    }
++
++    return 0;
++}
++
++char *
++strcpy(char *dest, const char *src)
++{
++    const unsigned char *s = src;
++    unsigned char *d = dest;
++
++    while ((*d++ = *s++))
++        ;
++    return dest;
++}
++
++void *
++os_mmap(void *hint, size_t size, int prot, int flags)
++{
++    int mprot = 0;
++    uint64 aligned_size, page_size;
++    void *ret = NULL;
++    sgx_status_t st = 0;
++
++    page_size = getpagesize();
++    aligned_size = (size + page_size - 1) & ~(page_size - 1);
++
++    if (aligned_size >= UINT32_MAX)
++        return NULL;
++
++    ret = sgx_alloc_rsrv_mem(aligned_size);
++    if (ret == NULL) {
++        os_printf("os_mmap(size=%u, aligned size=%lu, prot=0x%x) failed.", size,
++                  aligned_size, prot);
++        return NULL;
++    }
++
++    if (prot & MMAP_PROT_READ)
++        mprot |= SGX_PROT_READ;
++    if (prot & MMAP_PROT_WRITE)
++        mprot |= SGX_PROT_WRITE;
++    if (prot & MMAP_PROT_EXEC)
++        mprot |= SGX_PROT_EXEC;
++
++    st = sgx_tprotect_rsrv_mem(ret, aligned_size, mprot);
++    if (st != SGX_SUCCESS) {
++        os_printf("os_mmap(size=%u, prot=0x%x) failed to set protect.", size,
++                  prot);
++        sgx_free_rsrv_mem(ret, aligned_size);
++        return NULL;
++    }
++
++    return ret;
++}
++
++void
++os_munmap(void *addr, size_t size)
++{
++    uint64 aligned_size, page_size;
++
++    page_size = getpagesize();
++    aligned_size = (size + page_size - 1) & ~(page_size - 1);
++    sgx_free_rsrv_mem(addr, aligned_size);
++}
++
++int
++os_mprotect(void *addr, size_t size, int prot)
++{
++    int mprot = 0;
++    sgx_status_t st = 0;
++    uint64 aligned_size, page_size;
++
++    page_size = getpagesize();
++    aligned_size = (size + page_size - 1) & ~(page_size - 1);
++
++    if (prot & MMAP_PROT_READ)
++        mprot |= SGX_PROT_READ;
++    if (prot & MMAP_PROT_WRITE)
++        mprot |= SGX_PROT_WRITE;
++    if (prot & MMAP_PROT_EXEC)
++        mprot |= SGX_PROT_EXEC;
++    st = sgx_tprotect_rsrv_mem(addr, aligned_size, mprot);
++    if (st != SGX_SUCCESS)
++        os_printf("os_mprotect(addr=0x%" PRIx64 ", size=%u, prot=0x%x) failed.",
++                  (uintptr_t)addr, size, prot);
++
++    return (st == SGX_SUCCESS ? 0 : -1);
++}
++
++void
++os_dcache_flush(void)
++{}
+diff --git a/core/shared/platform/teaclave-sgx/sgx_pthread.c b/core/shared/platform/teaclave-sgx/sgx_pthread.c
+new file mode 100644
+index 0000000..15e0f30
+--- /dev/null
++++ b/core/shared/platform/teaclave-sgx/sgx_pthread.c
+@@ -0,0 +1,71 @@
++/*
++ * Copyright (C) 2019 Intel Corporation.  All rights reserved.
++ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++ */
++
++#include "platform_api_vmcore.h"
++#include "sgx_pthread.h"
++#include "sgx_error.h"
++
++#ifndef SGX_DISABLE_WASI
++
++#define TRACE_FUNC() os_printf("undefined %s\n", __FUNCTION__)
++#define TRACE_OCALL_FAIL() os_printf("ocall %s failed!\n", __FUNCTION__)
++
++
++extern void teaclave_sgx_log(char * msg);
++
++#ifndef SGX_THREAD_LOCK_INITIALIZER /* defined since sgxsdk-2.11 */
++/* sgxsdk doesn't support pthread_rwlock related APIs until
++   version 2.11, we implement them by ourselves. */
++int
++ocall_pthread_rwlock_init(int *p_ret, void **rwlock, void *attr);
++
++int
++ocall_pthread_rwlock_destroy(int *p_ret, void **rwlock);
++
++int
++ocall_pthread_rwlock_rdlock(int *p_ret, void **rwlock);
++
++int
++ocall_pthread_rwlock_wrlock(int *p_ret, void **rwlock);
++
++int
++ocall_pthread_rwlock_unlock(int *p_ret, void **rwlock);
++
++int
++pthread_rwlock_init(pthread_rwlock_t *rwlock, void *attr)
++{
++    return 0;
++}
++
++int
++pthread_rwlock_destroy(pthread_rwlock_t *rwlock)
++{
++
++    return 0;
++}
++
++int
++pthread_rwlock_rdlock(pthread_rwlock_t *rwlock)
++{
++    teaclave_sgx_log(__FUNCTION__);
++    return 0;
++}
++
++int
++pthread_rwlock_wrlock(pthread_rwlock_t *rwlock)
++{
++    teaclave_sgx_log(__FUNCTION__);
++    return 0;
++}
++
++int
++pthread_rwlock_unlock(pthread_rwlock_t *rwlock)
++{
++    teaclave_sgx_log(__FUNCTION__);
++    return 0;
++}
++#endif /* end of SGX_THREAD_LOCK_INITIALIZER */
++
++#endif
+diff --git a/core/shared/platform/teaclave-sgx/sgx_pthread.h b/core/shared/platform/teaclave-sgx/sgx_pthread.h
+new file mode 100644
+index 0000000..01a3ae0
+--- /dev/null
++++ b/core/shared/platform/teaclave-sgx/sgx_pthread.h
+@@ -0,0 +1,35 @@
++/*
++ * Copyright (C) 2019 Intel Corporation.  All rights reserved.
++ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++ */
++
++#ifndef _SGX_PTHREAD_H
++#define _SGX_PTHREAD_H
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++#ifndef SGX_THREAD_LOCK_INITIALIZER /* defined since sgxsdk-2.11 */
++/* sgxsdk doesn't support pthread_rwlock related APIs until
++   version 2.11, we implement them by ourselves. */
++typedef uintptr_t pthread_rwlock_t;
++
++int
++pthread_rwlock_init(pthread_rwlock_t *rwlock, void *attr);
++int
++pthread_rwlock_destroy(pthread_rwlock_t *rwlock);
++
++int
++pthread_rwlock_wrlock(pthread_rwlock_t *rwlock);
++int
++pthread_rwlock_rdlock(pthread_rwlock_t *rwlock);
++int
++pthread_rwlock_unlock(pthread_rwlock_t *rwlock);
++#endif /* end of SGX_THREAD_LOCK_INITIALIZER */
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* end of _SGX_PTHREAD_H */
+diff --git a/core/shared/platform/teaclave-sgx/sgx_rsrv_mem_mngr.h b/core/shared/platform/teaclave-sgx/sgx_rsrv_mem_mngr.h
+new file mode 100644
+index 0000000..5555d4d
+--- /dev/null
++++ b/core/shared/platform/teaclave-sgx/sgx_rsrv_mem_mngr.h
+@@ -0,0 +1,95 @@
++/*
++ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ *   * Redistributions of source code must retain the above copyright
++ *     notice, this list of conditions and the following disclaimer.
++ *   * Redistributions in binary form must reproduce the above copyright
++ *     notice, this list of conditions and the following disclaimer in
++ *     the documentation and/or other materials provided with the
++ *     distribution.
++ *   * Neither the name of Intel Corporation nor the names of its
++ *     contributors may be used to endorse or promote products derived
++ *     from this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ *
++ */
++
++/*
++ * This file is copied from
++ * https://github.com/intel/linux-sgx/blob/4589daddd58bec7367a6a9de3fe301e6de17671a/common/inc/internal/sgx_rsrv_mem_mngr.h
++ * The reason we copied here is that the official SGX SDK release has
++ * not included this header file yet.
++ */
++
++#pragma once
++
++#ifndef _SGX_RSRV_MEM_MNGR_H_
++#define _SGX_RSRV_MEM_MNGR_H_
++
++#include "stdint.h"
++#include "sgx_error.h"
++
++#define SGX_PROT_READ 0x1  /* page can be read */
++#define SGX_PROT_WRITE 0x2 /* page can be written */
++#define SGX_PROT_EXEC 0x4  /* page can be executed */
++#define SGX_PROT_NONE 0x0  /* page can not be accessed */
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++/* Allocate a range of EPC memory from the reserved memory area with RW
++ * permission
++ *
++ * Parameters:
++ * Inputs: length [in]: Size of region to be allocated in bytes. Page aligned.
++ * Return: Starting address of the new allocated memory area on success;
++ * otherwise NULL
++ */
++void *
++sgx_alloc_rsrv_mem(size_t length);
++
++/* Free a range of EPC memory from the reserved memory area
++ *
++ * Parameters:
++ * Inputs: addr[in]: Starting address of region to be freed. Page aligned.
++ *         length[in]: The length of the memory to be freed in bytes.
++ *                     Page aligned.
++ * Return: 0 on success; otherwise -1
++ */
++int
++sgx_free_rsrv_mem(void *addr, size_t length);
++
++/* Modify the access permissions of the pages in the reserved memory area.
++ *
++ * Parameters:
++ * Inputs: addr[in]: Starting address of region which needs to change access
++ *                   permission. Page aligned.
++ *         length[in]: The length of the memory to be manipulated in bytes.
++ *                     Page aligned.
++ *         prot[in]: The target memory protection.
++ * Return: sgx_status_t - SGX_SUCCESS or failure as defined in sgx_error.h
++ */
++sgx_status_t
++sgx_tprotect_rsrv_mem(void *addr, size_t len, int prot);
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif
+diff --git a/core/shared/platform/teaclave-sgx/sgx_signal.c b/core/shared/platform/teaclave-sgx/sgx_signal.c
+new file mode 100644
+index 0000000..1a4d593
+--- /dev/null
++++ b/core/shared/platform/teaclave-sgx/sgx_signal.c
+@@ -0,0 +1,23 @@
++/*
++ * Copyright (C) 2019 Intel Corporation.  All rights reserved.
++ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++ */
++
++#include "platform_api_vmcore.h"
++
++#ifndef SGX_DISABLE_WASI
++
++#define TRACE_OCALL_FAIL() os_printf("ocall %s failed!\n", __FUNCTION__)
++extern void teaclave_sgx_log(char * msg);
++
++
++int
++raise(int sig)
++{
++    int ret;
++    // Ocall
++    teaclave_sgx_log(__FUNCTION__);
++    return ret;
++}
++
++#endif
+diff --git a/core/shared/platform/teaclave-sgx/sgx_signal.h b/core/shared/platform/teaclave-sgx/sgx_signal.h
+new file mode 100644
+index 0000000..494342b
+--- /dev/null
++++ b/core/shared/platform/teaclave-sgx/sgx_signal.h
+@@ -0,0 +1,57 @@
++/*
++ * Copyright (C) 2019 Intel Corporation.  All rights reserved.
++ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++ */
++
++#ifndef _SGX_SIGNAL_H
++#define _SGX_SIGNAL_H
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++/* Signals.  */
++#define SIGHUP 1       /* Hangup (POSIX).  */
++#define SIGINT 2       /* Interrupt (ANSI).  */
++#define SIGQUIT 3      /* Quit (POSIX).  */
++#define SIGILL 4       /* Illegal instruction (ANSI).  */
++#define SIGTRAP 5      /* Trace trap (POSIX).  */
++#define SIGABRT 6      /* Abort (ANSI).  */
++#define SIGIOT 6       /* IOT trap (4.2 BSD).  */
++#define SIGBUS 7       /* BUS error (4.2 BSD).  */
++#define SIGFPE 8       /* Floating-point exception (ANSI).  */
++#define SIGKILL 9      /* Kill, unblockable (POSIX).  */
++#define SIGUSR1 10     /* User-defined signal 1 (POSIX).  */
++#define SIGSEGV 11     /* Segmentation violation (ANSI).  */
++#define SIGUSR2 12     /* User-defined signal 2 (POSIX).  */
++#define SIGPIPE 13     /* Broken pipe (POSIX).  */
++#define SIGALRM 14     /* Alarm clock (POSIX).  */
++#define SIGTERM 15     /* Termination (ANSI).  */
++#define SIGSTKFLT 16   /* Stack fault.  */
++#define SIGCLD SIGCHLD /* Same as SIGCHLD (System V).  */
++#define SIGCHLD 17     /* Child status has changed (POSIX).  */
++#define SIGCONT 18     /* Continue (POSIX).  */
++#define SIGSTOP 19     /* Stop, unblockable (POSIX).  */
++#define SIGTSTP 20     /* Keyboard stop (POSIX).  */
++#define SIGTTIN 21     /* Background read from tty (POSIX).  */
++#define SIGTTOU 22     /* Background write to tty (POSIX).  */
++#define SIGURG 23      /* Urgent condition on socket (4.2 BSD).  */
++#define SIGXCPU 24     /* CPU limit exceeded (4.2 BSD).  */
++#define SIGXFSZ 25     /* File size limit exceeded (4.2 BSD).  */
++#define SIGVTALRM 26   /* Virtual alarm clock (4.2 BSD).  */
++#define SIGPROF 27     /* Profiling alarm clock (4.2 BSD).  */
++#define SIGWINCH 28    /* Window size change (4.3 BSD, Sun).  */
++#define SIGPOLL SIGIO  /* Pollable event occurred (System V).  */
++#define SIGIO 29       /* I/O now possible (4.2 BSD).  */
++#define SIGPWR 30      /* Power failure restart (System V).  */
++#define SIGSYS 31      /* Bad system call.  */
++#define SIGUNUSED 31
++
++int
++raise(int sig);
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* end of _SGX_SIGNAL_H */
+diff --git a/core/shared/platform/teaclave-sgx/sgx_socket.c b/core/shared/platform/teaclave-sgx/sgx_socket.c
+new file mode 100644
+index 0000000..fbefcec
+--- /dev/null
++++ b/core/shared/platform/teaclave-sgx/sgx_socket.c
+@@ -0,0 +1,55 @@
++/*
++ * Copyright (C) 2019 Intel Corporation.  All rights reserved.
++ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++ */
++
++#include "platform_api_vmcore.h"
++
++#ifndef SGX_DISABLE_WASI
++
++#define TRACE_OCALL_FAIL() os_printf("ocall %s failed!\n", __FUNCTION__)
++
++extern void teaclave_sgx_log(char * msg);
++
++
++int
++socket(int domain, int type, int protocol)
++{
++
++    // Ocall
++    teaclave_sgx_log(__FUNCTION__);
++    return -1;
++}
++
++int
++getsockopt(int sockfd, int level, int optname, void *optval, socklen_t *optlen)
++{
++    teaclave_sgx_log(__FUNCTION__);
++    // Ocall
++    return -1;
++}
++
++ssize_t
++sendmsg(int sockfd, const struct msghdr *msg, int flags)
++{
++    teaclave_sgx_log(__FUNCTION__);
++    // Ocall
++    return -1;
++}
++
++ssize_t
++recvmsg(int sockfd, struct msghdr *msg, int flags)
++{
++    // Ocall
++    teaclave_sgx_log(__FUNCTION__);
++    return -1;
++}
++
++int
++shutdown(int sockfd, int how)
++{
++    teaclave_sgx_log(__FUNCTION__);
++    return -1;
++}
++
++#endif
+diff --git a/core/shared/platform/teaclave-sgx/sgx_socket.h b/core/shared/platform/teaclave-sgx/sgx_socket.h
+new file mode 100644
+index 0000000..6e5b043
+--- /dev/null
++++ b/core/shared/platform/teaclave-sgx/sgx_socket.h
+@@ -0,0 +1,76 @@
++/*
++ * Copyright (C) 2019 Intel Corporation.  All rights reserved.
++ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++ */
++
++#ifndef _SGX_SOCKET_H
++#define _SGX_SOCKET_H
++
++#include "sgx_file.h"
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++#define SOL_SOCKET 1
++
++#define SOCK_STREAM 1
++#define SOCK_DGRAM 2
++
++#define SO_TYPE 3
++
++#define MSG_OOB 0x0001
++#define MSG_PEEK 0x0002
++#define MSG_DONTROUTE 0x0004
++#define MSG_CTRUNC 0x0008
++#define MSG_PROXY 0x0010
++#define MSG_TRUNC 0x0020
++#define MSG_DONTWAIT 0x0040
++#define MSG_EOR 0x0080
++#define MSG_WAITALL 0x0100
++#define MSG_FIN 0x0200
++#define MSG_SYN 0x0400
++#define MSG_CONFIRM 0x0800
++#define MSG_RST 0x1000
++#define MSG_ERRQUEUE 0x2000
++#define MSG_NOSIGNAL 0x4000
++#define MSG_MORE 0x8000
++#define MSG_WAITFORONE 0x10000
++#define MSG_BATCH 0x40000
++#define MSG_FASTOPEN 0x20000000
++#define MSG_CMSG_CLOEXEC 0x40000000
++
++#define SHUT_RD 0
++#define SHUT_WR 1
++#define SHUT_RDWR 2
++
++struct msghdr {
++    void *msg_name;
++    socklen_t msg_namelen;
++    struct iovec *msg_iov;
++    int msg_iovlen;
++    void *msg_control;
++    socklen_t msg_controllen;
++    int msg_flags;
++};
++
++int
++socket(int domain, int type, int protocol);
++
++int
++getsockopt(int sockfd, int level, int optname, void *optval, socklen_t *optlen);
++
++ssize_t
++sendmsg(int sockfd, const struct msghdr *msg, int flags);
++
++ssize_t
++recvmsg(int sockfd, struct msghdr *msg, int flags);
++
++int
++shutdown(int sockfd, int how);
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* end of _SGX_SOCKET_H */
+diff --git a/core/shared/platform/teaclave-sgx/sgx_thread.c b/core/shared/platform/teaclave-sgx/sgx_thread.c
+new file mode 100644
+index 0000000..17853e2
+--- /dev/null
++++ b/core/shared/platform/teaclave-sgx/sgx_thread.c
+@@ -0,0 +1,198 @@
++/*
++ * Copyright (C) 2019 Intel Corporation.  All rights reserved.
++ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++ */
++
++#include "platform_api_vmcore.h"
++#include "platform_api_extension.h"
++
++#ifndef SGX_DISABLE_PTHREAD
++typedef struct {
++    thread_start_routine_t start;
++    void *arg;
++} thread_wrapper_arg;
++extern void teaclave_sgx_log(char * msg);
++
++
++static void *
++os_thread_wrapper(void *arg)
++{
++    thread_wrapper_arg *targ = arg;
++    thread_start_routine_t start_func = targ->start;
++    void *thread_arg = targ->arg;
++    os_printf("THREAD CREATED %p\n", &targ);
++    BH_FREE(targ);
++    start_func(thread_arg);
++    return NULL;
++}
++
++int
++os_thread_create_with_prio(korp_tid *tid, thread_start_routine_t start,
++                           void *arg, unsigned int stack_size, int prio)
++{
++    thread_wrapper_arg *targ;
++
++    assert(tid);
++    assert(start);
++
++    targ = (thread_wrapper_arg *)BH_MALLOC(sizeof(*targ));
++    if (!targ) {
++        return BHT_ERROR;
++    }
++
++    targ->start = start;
++    targ->arg = arg;
++
++    if (pthread_create(tid, NULL, os_thread_wrapper, targ) != 0) {
++        BH_FREE(targ);
++        return BHT_ERROR;
++    }
++
++    return BHT_OK;
++}
++
++int
++os_thread_create(korp_tid *tid, thread_start_routine_t start, void *arg,
++                 unsigned int stack_size)
++{
++    return os_thread_create_with_prio(tid, start, arg, stack_size,
++                                      BH_THREAD_DEFAULT_PRIORITY);
++}
++#endif
++
++korp_tid
++os_self_thread()
++{
++#ifndef SGX_DISABLE_PTHREAD
++    return pthread_self();
++#else
++    return 0;
++#endif
++}
++
++int
++os_mutex_init(korp_mutex *mutex)
++{
++#ifndef SGX_DISABLE_PTHREAD
++    pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
++    *mutex = m;
++#endif
++    return BHT_OK;
++}
++
++int
++os_mutex_destroy(korp_mutex *mutex)
++{
++#ifndef SGX_DISABLE_PTHREAD
++    pthread_mutex_destroy(mutex);
++#endif
++    return BHT_OK;
++}
++
++int
++os_mutex_lock(korp_mutex *mutex)
++{
++#ifndef SGX_DISABLE_PTHREAD
++    return pthread_mutex_lock(mutex);
++#else
++    return 0;
++#endif
++}
++
++int
++os_mutex_unlock(korp_mutex *mutex)
++{
++#ifndef SGX_DISABLE_PTHREAD
++    return pthread_mutex_unlock(mutex);
++#else
++    return 0;
++#endif
++}
++
++int
++os_cond_init(korp_cond *cond)
++{
++#ifndef SGX_DISABLE_PTHREAD
++    pthread_cond_t c = PTHREAD_COND_INITIALIZER;
++    *cond = c;
++#endif
++    return BHT_OK;
++}
++
++int
++os_cond_destroy(korp_cond *cond)
++{
++#ifndef SGX_DISABLE_PTHREAD
++    pthread_cond_destroy(cond);
++#endif
++    return BHT_OK;
++}
++
++int
++os_cond_wait(korp_cond *cond, korp_mutex *mutex)
++{
++#ifndef SGX_DISABLE_PTHREAD
++    assert(cond);
++    assert(mutex);
++
++    if (pthread_cond_wait(cond, mutex) != BHT_OK)
++        return BHT_ERROR;
++
++#endif
++    return BHT_OK;
++}
++
++int
++os_cond_reltimedwait(korp_cond *cond, korp_mutex *mutex, uint64 useconds)
++{
++    os_printf("warning: SGX pthread_cond_timedwait isn't supported, "
++              "calling pthread_cond_wait instead!\n");
++    return BHT_ERROR;
++}
++
++int
++os_cond_signal(korp_cond *cond)
++{
++#ifndef SGX_DISABLE_PTHREAD
++    assert(cond);
++
++    if (pthread_cond_signal(cond) != BHT_OK)
++        return BHT_ERROR;
++
++#endif
++    return BHT_OK;
++}
++
++int
++os_thread_join(korp_tid thread, void **value_ptr)
++{
++#ifndef SGX_DISABLE_PTHREAD
++    return pthread_join(thread, value_ptr);
++#else
++    return 0;
++#endif
++}
++
++int
++os_thread_detach(korp_tid thread)
++{
++    /* SGX pthread_detach isn't provided, return directly. */
++    return 0;
++}
++
++void
++os_thread_exit(void *retval)
++{
++#ifndef SGX_DISABLE_PTHREAD
++    pthread_exit(retval);
++#else
++    return;
++#endif
++}
++
++uint8 *
++os_thread_get_stack_boundary()
++{
++    /* TODO: get sgx stack boundary */
++    return NULL;
++}
+diff --git a/core/shared/platform/teaclave-sgx/sgx_time.c b/core/shared/platform/teaclave-sgx/sgx_time.c
+new file mode 100644
+index 0000000..2b4d993
+--- /dev/null
++++ b/core/shared/platform/teaclave-sgx/sgx_time.c
+@@ -0,0 +1,65 @@
++/*
++ * Copyright (C) 2019 Intel Corporation.  All rights reserved.
++ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++ */
++
++#include "platform_api_vmcore.h"
++
++#define TRACE_FUNC() os_printf("undefined %s\n", __FUNCTION__)
++#define TRACE_OCALL_FAIL() os_printf("ocall %s failed!\n", __FUNCTION__)
++
++extern void teaclave_sgx_log(char * msg);
++
++
++uint64
++os_time_get_boot_microsecond()
++{
++    /* TODO */
++    teaclave_sgx_log(__FUNCTION__);
++    return 0;
++}
++
++#ifndef SGX_DISABLE_WASI
++
++int
++clock_getres(int clock_id, struct timespec *res)
++{
++    teaclave_sgx_log(__FUNCTION__);
++    return -1;
++}
++
++int
++clock_gettime(clockid_t clock_id, struct timespec *tp)
++{
++
++    teaclave_sgx_log(__FUNCTION__);
++    //chrono::system_clock::now() may throw an exception if the return value is -1
++    return 0;
++}
++
++int
++utimensat(int dirfd, const char *pathname, const struct timespec times[2],
++          int flags)
++{
++    teaclave_sgx_log(__FUNCTION__);
++    return -1;
++}
++
++int
++futimens(int fd, const struct timespec times[2])
++{
++    teaclave_sgx_log(__FUNCTION__);
++    // Ocall
++    return -1;
++}
++
++int
++clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *request,
++                struct timespec *remain)
++{
++    // Ocall
++    teaclave_sgx_log(__FUNCTION__);
++    return -1;
++}
++
++#endif
+diff --git a/core/shared/platform/teaclave-sgx/sgx_time.h b/core/shared/platform/teaclave-sgx/sgx_time.h
+new file mode 100644
+index 0000000..8267f1f
+--- /dev/null
++++ b/core/shared/platform/teaclave-sgx/sgx_time.h
+@@ -0,0 +1,50 @@
++/*
++ * Copyright (C) 2019 Intel Corporation.  All rights reserved.
++ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++ */
++
++#ifndef _SGX_TIME_H
++#define _SGX_TIME_H
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++#define CLOCK_REALTIME 0
++#define CLOCK_MONOTONIC 1
++#define CLOCK_PROCESS_CPUTIME_ID 2
++#define CLOCK_THREAD_CPUTIME_ID 3
++
++#define UTIME_NOW 0x3fffffff
++#define UTIME_OMIT 0x3ffffffe
++#define TIMER_ABSTIME 1
++
++typedef long int time_t;
++
++typedef int clockid_t;
++
++struct timespec {
++    time_t tv_sec;
++    long tv_nsec;
++};
++
++int
++clock_getres(int clock_id, struct timespec *res);
++
++int
++clock_gettime(clockid_t clock_id, struct timespec *tp);
++
++int
++utimensat(int dirfd, const char *pathname, const struct timespec times[2],
++          int flags);
++int
++futimens(int fd, const struct timespec times[2]);
++int
++clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *request,
++                struct timespec *remain);
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* end of _SGX_TIME_H */
+diff --git a/core/shared/platform/teaclave-sgx/shared_platform.cmake b/core/shared/platform/teaclave-sgx/shared_platform.cmake
+new file mode 100644
+index 0000000..02b1eec
+--- /dev/null
++++ b/core/shared/platform/teaclave-sgx/shared_platform.cmake
+@@ -0,0 +1,34 @@
++# Copyright (C) 2019 Intel Corporation.  All rights reserved.
++# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++
++set (PLATFORM_SHARED_DIR ${CMAKE_CURRENT_LIST_DIR})
++
++add_definitions(-DBH_PLATFORM_LINUX_SGX)
++add_definitions(-DTEACLAVE_CLEANROOM)
++
++include_directories(${PLATFORM_SHARED_DIR})
++include_directories(${PLATFORM_SHARED_DIR}/../include)
++
++if ("$ENV{SGX_SDK}" STREQUAL "")
++  set (SGX_SDK_DIR "/opt/intel/sgxsdk")
++else()
++  set (SGX_SDK_DIR $ENV{SGX_SDK})
++endif()
++
++include_directories (${SGX_SDK_DIR}/include)
++if (NOT BUILD_UNTRUST_PART EQUAL 1)
++  include_directories (${SGX_SDK_DIR}/include/tlibc
++                       ${SGX_SDK_DIR}/include/libcxx)
++endif ()
++
++if (NOT WAMR_BUILD_LIBC_WASI EQUAL 1)
++  add_definitions(-DSGX_DISABLE_WASI)
++endif ()
++
++if (NOT WAMR_BUILD_THREAD_MGR EQUAL 1)
++  add_definitions(-DSGX_DISABLE_PTHREAD)
++endif ()
++
++file (GLOB source_all ${PLATFORM_SHARED_DIR}/*.c)
++
++set (PLATFORM_SHARED_SOURCE ${source_all})
+diff --git a/core/shared/utils/bh_log.c b/core/shared/utils/bh_log.c
+index 04d3e98..0927119 100644
+--- a/core/shared/utils/bh_log.c
++++ b/core/shared/utils/bh_log.c
+@@ -11,6 +11,30 @@
+  */
+ static uint32 log_verbose_level = BH_LOG_LEVEL_WARNING;
+ 
++static uint32 log_cleanroom_wasi = BH_LOG_LEVEL_FATAL;
++static uint32 cleanroom_diagnostic = 0;
++
++void
++bh_cleanroom_wasi_set_log()
++{
++    log_cleanroom_wasi = BH_LOG_LEVEL_VERBOSE;
++}
++
++uint32 bh_cleanroom_get_log_level(){
++    return log_cleanroom_wasi;
++}
++
++void
++cleanroom_set_diagnostic()
++{
++    cleanroom_diagnostic = BH_LOG_LEVEL_VERBOSE;
++}
++
++uint32 cleanroom_get_diagnostic(){
++    return cleanroom_diagnostic;
++}
++
++
+ void
+ bh_log_set_verbose_level(uint32 level)
+ {
+diff --git a/core/shared/utils/bh_log.h b/core/shared/utils/bh_log.h
+index 1578028..a8049ac 100644
+--- a/core/shared/utils/bh_log.h
++++ b/core/shared/utils/bh_log.h
+@@ -35,6 +35,17 @@ typedef enum {
+     BH_LOG_LEVEL_VERBOSE = 4
+ } LogLevel;
+ 
++void
++bh_cleanroom_wasi_set_log();
++
++uint32
++bh_cleanroom_get_log_level();
++
++uint32 cleanroom_get_diagnostic();
++
++void
++cleanroom_set_diagnostic();
++
+ void
+ bh_log_set_verbose_level(uint32 level);
+ 
+diff --git a/product-mini/platforms/teaclave-sgx/CMakeLists.txt b/product-mini/platforms/teaclave-sgx/CMakeLists.txt
+new file mode 100644
+index 0000000..cd1daaa
+--- /dev/null
++++ b/product-mini/platforms/teaclave-sgx/CMakeLists.txt
+@@ -0,0 +1,82 @@
++# Copyright (C) 2019 Intel Corporation.  All rights reserved.
++# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++
++cmake_minimum_required (VERSION 2.8)
++
++project (iwasm)
++
++set (WAMR_BUILD_PLATFORM "teaclave-sgx")
++
++# Reset default linker flags
++set (CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
++set (CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "")
++
++# Set WAMR_BUILD_TARGET
++if (NOT DEFINED WAMR_BUILD_TARGET)
++  if (CMAKE_SIZEOF_VOID_P EQUAL 8)
++    # Build as X86_64 by default in 64-bit platform
++    set (WAMR_BUILD_TARGET "X86_64")
++  else ()
++    # Build as X86_32 by default in 32-bit platform
++    set (WAMR_BUILD_TARGET "X86_32")
++  endif ()
++endif ()
++
++if (NOT CMAKE_BUILD_TYPE)
++	set(CMAKE_BUILD_TYPE Release)
++endif ()
++
++if (NOT DEFINED WAMR_BUILD_INTERP)
++  # Enable Interpreter by default
++  set (WAMR_BUILD_INTERP 1)
++endif ()
++
++if (NOT DEFINED WAMR_BUILD_AOT)
++  # Enable AOT by default
++  # Please install Intel SGX SDKv2.8 or later.
++  set (WAMR_BUILD_AOT 1)
++endif ()
++
++if (NOT DEFINED WAMR_BUILD_JIT)
++  # Disable JIT by default.
++  set (WAMR_BUILD_JIT 0)
++endif ()
++
++if (NOT DEFINED WAMR_BUILD_LIBC_BUILTIN)
++  # Enable libc builtin support by default
++  set (WAMR_BUILD_LIBC_BUILTIN 1)
++endif ()
++
++if (NOT DEFINED WAMR_BUILD_LIBC_WASI)
++  # Enable libc wasi support by default
++  set (WAMR_BUILD_LIBC_WASI 1)
++endif ()
++
++if (NOT DEFINED WAMR_BUILD_FAST_INTERP)
++  # Enable fast interpreter
++  set (WAMR_BUILD_FAST_INTERP 0)
++endif ()
++
++if (NOT DEFINED WAMR_BUILD_MULTI_MODULE)
++  # Enable multiple modules
++  set (WAMR_BUILD_MULTI_MODULE 0)
++endif ()
++
++if (NOT DEFINED WAMR_BUILD_LIB_PTHREAD)
++  # Enable pthread library by default
++  set (WAMR_BUILD_LIB_PTHREAD 0)
++endif ()
++
++if (COLLECT_CODE_COVERAGE EQUAL 1)
++  set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-arcs -ftest-coverage")
++endif ()
++
++set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--gc-sections")
++set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -ffunction-sections -fdata-sections \
++                                     -Wall -Wno-unused-parameter -Wno-pedantic \
++                                     -nostdinc -fvisibility=hidden -fpie" )
++
++set (WAMR_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../..)
++
++include (${WAMR_ROOT_DIR}/build-scripts/runtime_lib.cmake)
++add_library(vmlib ${WAMR_RUNTIME_LIB_SOURCE})
