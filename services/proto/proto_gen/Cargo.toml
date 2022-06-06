@@ -31,7 +31,7 @@ path = "main.rs"
 structopt   = { version = "0.3" }
 prost-build = { version = "0.6.0" }
 prost       = { version = "0.6.0" }
-prost-types = { version = "0.6.0" }
+prost-types = { version = "0.8.0" }
 askama      = { version = "0.8" }
 
 [workspace]
