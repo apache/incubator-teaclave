@@ -38,7 +38,7 @@ set_strvar_from_env_or(SGX_SDK "/opt/sgxsdk" "Path of SGX SDK")
 set_strvar_from_env_or(RUSTFLAGS "" "Rust flags")
 set_strvar_from_env_or(TEACLAVE_CMAKE_DBG ""
                        "set to turn on debug message for cmake")
-set(MESAPY_VERSION 947fb3f598eede83ba0e33b5b5655b9a9597c2d8)
+set(MESAPY_VERSION v1.0.0-sgx)
 set(RUSTUP_TOOLCHAIN "nightly-2020-10-25")
 option(COV "Turn on/off coverage" OFF)
 option(OFFLINE "Turn on/off cargo offline" ON)
@@ -193,8 +193,8 @@ if(USE_PREBUILT_MESAPY)
 add_custom_command(
   OUTPUT ${MESAPY_OUTPUTS}
   COMMAND
-    wget -qN https://mesapy.org/release/${MESAPY_VERSION}-mesapy-sgx.tar.gz &&
-    tar xzf ${MESAPY_VERSION}-mesapy-sgx.tar.gz
+    wget -qN https://github.com/mesatee/mesapy/releases/download/${MESAPY_VERSION}/mesapy-${MESAPY_VERSION}.tar.gz &&
+    tar xzf mesapy-${MESAPY_VERSION}.tar.gz
   DEPENDS prep
   WORKING_DIRECTORY ${TEACLAVE_OUT_DIR})
 else()
