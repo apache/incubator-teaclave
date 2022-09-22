@@ -43,6 +43,7 @@ echo_title() {
 
 start_storage_server() {
   python3 ${TEACLAVE_PROJECT_ROOT}/tests/scripts/simple_http_server.py 6789 &
+  wait_port 6789
 }
 
 run_unit_tests() {
@@ -235,6 +236,13 @@ run_examples() {
   make
   popd
 
+  rust_toolchain=${RUSTUP_TOOLCHAIN}
+  unset RUSTUP_TOOLCHAIN
+  pushd ${TEACLAVE_PROJECT_ROOT}/examples/python/wasm_tvm_mnist_payload
+  make
+  popd
+  export RUSTUP_TOOLCHAIN=${rust_toolchain}
+
   pushd ${TEACLAVE_PROJECT_ROOT}/examples/python
   export PYTHONPATH=${TEACLAVE_PROJECT_ROOT}/sdk/python
   python3 builtin_echo.py
@@ -266,7 +274,7 @@ run_examples() {
   RUSTFLAGS=${RUSTFLAGS} cargo run
   popd
   popd
-  
+
   # kill all background services
   cleanup
 }
