@@ -15,49 +15,31 @@
 # specific language governing permissions and limitations
 # under the License.
 
-name: "Code scanning"
-
+name: Test-ubuntu-18.04
 on:
-  push:
-  pull_request:
   schedule:
     - cron: '36 22 * * 3'
   workflow_dispatch:
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
-  analyze-cpp:
-    name: Analyze cpp
-    runs-on: ubuntu-latest
-
+  sim-debug-all:
+    runs-on: ubuntu-20.04
+    container: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.5
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
-      with:
-        submodules: 'true'
-
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2
-      with:
-        languages: cpp
-
-    - name: Build C projects
-      run: cd examples/c && make
-
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
-
-  analyze-python:
-    name: Analyze python
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
-
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2
-      with:
-        languages: python
-
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+      - uses: actions/checkout@v2
+      - name: Build
+        run: |
+          . cmake/scripts/build_in_ci.sh
+      - name: Run tests and examples
+        run: |
+          export AS_SPID="00000000000000000000000000000000" &&
+          export AS_KEY="00000000000000000000000000000000" &&
+          export AS_ALGO="sgx_epid" &&
+          export AS_URL="https://api.trustedservices.intel.com:443" &&
+          . ~/.cargo/env &&
+          cd build &&
+          make run-tests
