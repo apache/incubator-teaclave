@@ -25,7 +25,7 @@ jobs:
   teaclave-client-sdk-macos:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: 'true'
       - name: Install dependencies
@@ -47,7 +47,7 @@ jobs:
     runs-on: ubuntu-20.04
     container: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.5
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setting up $HOME
         run: |
           cp /root/.bashrc $HOME/.bashrc &&
@@ -64,7 +64,7 @@ jobs:
     runs-on: ubuntu-20.04
     container: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.5
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setting up $HOME
         run: |
           cp /root/.bashrc $HOME/.bashrc &&
@@ -80,6 +80,6 @@ jobs:
   license:
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Check License Header
         uses: apache/skywalking-eyes@main 
