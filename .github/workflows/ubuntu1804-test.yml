@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-20.04
     container: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.5
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Build
         run: |
           . cmake/scripts/build_in_ci.sh
