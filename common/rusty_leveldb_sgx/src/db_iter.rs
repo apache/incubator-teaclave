@@ -62,7 +62,7 @@ impl DBIterator {
 
     /// record_read_sample records a read sample using the current contents of self.keybuf, which
     /// should be an InternalKey.
-    fn record_read_sample<'a>(&mut self, len: usize) {
+    fn record_read_sample(&mut self, len: usize) {
         self.byte_count -= len as isize;
         if self.byte_count < 0 {
             let v = self.vset.borrow().current();
@@ -284,7 +284,7 @@ impl LdbIterator for DBIterator {
 }
 
 fn random_period() -> isize {
-    rand::random::<isize>() % 2 * READ_BYTES_PERIOD
+    rand::random::<isize>() % (2 * READ_BYTES_PERIOD)
 }
 
 #[cfg(feature = "enclave_unit_test")]
@@ -292,6 +292,7 @@ pub mod tests {
     use super::*;
     use crate::db_impl::testutil::*;
     use crate::db_impl::DB;
+    use crate::options;
     use crate::test_util::LdbIteratorIter;
     use crate::types::{current_key_val, Direction};
 
@@ -309,6 +310,7 @@ pub mod tests {
             db_iter_deleted_entry_not_returned,
             db_iter_deleted_entry_not_returned_memtable,
             db_iter_repeated_open_close,
+            db_iter_allow_empty_key,
         )
     }
 
@@ -493,5 +495,13 @@ pub mod tests {
                 assert!(!non_existing.contains(&k));
             }
         }
+    }
+
+    fn db_iter_allow_empty_key() {
+        let opt = options::for_test();
+        let mut db = DB::open("db", opt).unwrap();
+        assert!(db.new_iter().unwrap().next().is_none());
+        db.put(&[], &[]).unwrap();
+        assert!(db.new_iter().unwrap().next().is_some());
     }
 }

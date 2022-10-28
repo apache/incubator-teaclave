@@ -40,8 +40,6 @@ pub fn int_to_compressiontype(i: u32) -> Option<CompressionType> {
 
 /// Options contains general parameters for a LevelDB instance. Most of the names are
 /// self-explanatory; the defaults are defined in the `Default` implementation.
-///
-/// Note: Compression is not yet implemented.
 #[derive(Clone)]
 pub struct Options {
     pub cmp: Rc<Box<dyn Cmp>>,

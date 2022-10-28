@@ -39,7 +39,7 @@ impl BlockBuilder {
         self.counter
     }
 
-    pub fn last_key<'a>(&'a self) -> &'a [u8] {
+    pub fn last_key(&self) -> &[u8] {
         &self.last_key
     }
 
