@@ -891,8 +891,8 @@ pub fn set_current_file<P: AsRef<Path>>(
     let tempfile = temp_file_name(dbname, manifest_file_num);
     {
         let mut f = env.open_writable_file(Path::new(&tempfile))?;
-        f.write(manifest_base.as_os_str().as_bytes())?;
-        f.write("\n".as_bytes())?;
+        f.write_all(manifest_base.as_os_str().as_bytes())?;
+        f.write_all("\n".as_bytes())?;
     }
     let currentfile = current_file_name(dbname);
     if let Err(e) = env.rename(Path::new(&tempfile), Path::new(&currentfile)) {

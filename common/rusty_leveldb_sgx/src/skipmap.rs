@@ -236,7 +236,7 @@ impl InnerSkipMap {
         }
 
         // Construct new node
-        let mut new_skips = Vec::with_capacity(new_height);
+        let mut new_skips = Vec::new();
         new_skips.resize(new_height, None);
         let mut new = Box::new(Node {
             skips: new_skips,

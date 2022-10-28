@@ -135,7 +135,7 @@ impl VersionEdit {
             buf.write_varint(EditTag::Comparator as u32).unwrap();
             // data is prefixed by a varint32 describing the length of the following chunk
             buf.write_varint(cmp.len()).unwrap();
-            buf.write(cmp.as_bytes()).unwrap();
+            buf.write_all(cmp.as_bytes()).unwrap();
         }
 
         if let Some(lognum) = self.log_number {
@@ -162,7 +162,7 @@ impl VersionEdit {
             buf.write_varint(EditTag::CompactPointer as u32).unwrap();
             buf.write_varint(cptr.level).unwrap();
             buf.write_varint(cptr.key.len()).unwrap();
-            buf.write(cptr.key.as_ref()).unwrap();
+            buf.write_all(cptr.key.as_ref()).unwrap();
         }
 
         for df in self.deleted.iter() {
@@ -178,9 +178,9 @@ impl VersionEdit {
             buf.write_varint(nf.1.size).unwrap();
 
             buf.write_varint(nf.1.smallest.len()).unwrap();
-            buf.write(nf.1.smallest.as_ref()).unwrap();
+            buf.write_all(nf.1.smallest.as_ref()).unwrap();
             buf.write_varint(nf.1.largest.len()).unwrap();
-            buf.write(nf.1.largest.as_ref()).unwrap();
+            buf.write_all(nf.1.largest.as_ref()).unwrap();
         }
 
         buf

@@ -57,7 +57,7 @@ impl Logger {
         Logger { dst: w }
     }
 
-    pub fn log(&mut self, message: &String) {
+    pub fn log(&mut self, message: &str) {
         let _ = self.dst.write(message.as_bytes());
         let _ = self.dst.write("\n".as_bytes());
     }

@@ -70,6 +70,13 @@ impl Status {
         }
         return Status { code, err };
     }
+
+    pub fn annotate<S: AsRef<str>>(self, msg: S) -> Status {
+        Status {
+            code: self.code,
+            err: format!("{}: {}", msg.as_ref(), self.err),
+        }
+    }
 }
 
 /// LevelDB's result type
@@ -90,7 +97,7 @@ impl From<io::Error> for Status {
             _ => StatusCode::IOError,
         };
 
-        Status::new(c, e.description())
+        Status::new(c, &e.to_string())
     }
 }
 
@@ -104,7 +111,23 @@ impl From<snap::Error> for Status {
     fn from(e: snap::Error) -> Status {
         Status {
             code: StatusCode::CompressionError,
-            err: e.description().to_string(),
+            err: e.to_string(),
         }
+    }
+}
+
+#[cfg(feature = "enclave_unit_test")]
+pub mod tests {
+    use super::{Status, StatusCode};
+    use std::prelude::v1::*;
+    use teaclave_test_utils::*;
+
+    pub fn run_tests() -> bool {
+        run_tests!(test_status_to_string,)
+    }
+
+    fn test_status_to_string() {
+        let s = Status::new(StatusCode::InvalidData, "Invalid data!");
+        assert_eq!("InvalidData: Invalid data!", s.to_string());
     }
 }

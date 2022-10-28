@@ -1,10 +1,10 @@
 [package]
 name = "rusty-leveldb"
-version = "0.3.0"
+version = "1.0.4"
 authors = ["Lewin Bormann <lbo@spheniscida.de>"]
 description = "A compatible re-implementation of LevelDB in Rust"
 homepage = "https://github.com/dermesser/leveldb-rs"
-repository = "https://borgac.net/lbo/hg/"
+repository = "https://github.com/dermesser/leveldb-rs"
 readme = "README.md"
 keywords = ["LevelDB", "key-value", "database", "SSTable", "Google"]
 license = "MIT"

@@ -102,6 +102,7 @@ pub mod tests {
             db_impl::tests::run_tests(),
             db_iter::tests::run_tests(),
             disk_env::tests::run_tests(),
+            error::tests::run_tests(),
             filter::tests::run_tests(),
             filter_block::tests::run_tests(),
             key_types::tests::run_tests(),

@@ -2,7 +2,7 @@
 use std::prelude::v1::*;
 
 use std::collections::HashMap;
-use std::mem::{replace, swap};
+use std::mem::swap;
 
 // No clone, no copy! That asserts that an LRUHandle exists only once.
 type LRUHandle<T> = *mut LRUNode<T>;
@@ -88,7 +88,7 @@ impl<T> LRUList<T> {
             // Set up the node after the new one
             self.head.next.as_mut().unwrap().prev = Some(newp);
             // Replace head.next with None and set the new node's next to that
-            new.next = replace(&mut self.head.next, None);
+            new.next = self.head.next.take();
             self.head.next = Some(new);
 
             newp
@@ -111,21 +111,18 @@ impl<T> LRUList<T> {
     }
 
     fn remove_last(&mut self) -> Option<T> {
-        if self.head.prev.is_some() {
-            let mut lasto = unsafe {
-                replace(
-                    &mut (*((*self.head.prev.unwrap()).prev.unwrap())).next,
-                    None,
-                )
-            };
+        if self.count() == 0 {
+            return None;
+        }
+        let mut lasto = unsafe { (*((*self.head.prev.unwrap()).prev.unwrap())).next.take() };
 
-            if let Some(ref mut last) = lasto {
-                self.head.prev = last.prev;
-                self.count -= 1;
-                return replace(&mut (*last).data, None);
-            } else {
-                None
-            }
+        assert!(lasto.is_some());
+        if let Some(ref mut last) = lasto {
+            assert!(last.prev.is_some());
+            assert!(self.head.prev.is_some());
+            self.head.prev = last.prev;
+            self.count -= 1;
+            (*last).data.take()
         } else {
             None
         }
@@ -133,21 +130,20 @@ impl<T> LRUList<T> {
 
     fn remove(&mut self, node_handle: LRUHandle<T>) -> T {
         unsafe {
-            // If has next
-            if let Some(ref mut nextp) = (*node_handle).next {
-                (**nextp).prev = (*node_handle).prev;
+            let d = (*node_handle).data.take().unwrap();
+            // Take ownership of node to be removed.
+            let mut current = (*(*node_handle).prev.unwrap()).next.take().unwrap();
+            let prev = current.prev.unwrap();
+            // Update previous node's successor.
+            if current.next.is_some() {
+                // Update next node's predecessor.
+                current.next.as_mut().unwrap().prev = current.prev.take();
             }
-            // If has prev
-            if let Some(ref mut prevp) = (*node_handle).prev {
-                // swap prev.next
-                // (node_handle will own itself now)
-                swap(&mut (**prevp).next, &mut (*node_handle).next);
-            }
+            (*prev).next = current.next.take();
 
             self.count -= 1;
-            // node_handle now only has references/objects that point to itself,
-            // so it's safe to drop
-            replace(&mut (*node_handle).data, None).unwrap()
+
+            d
         }
     }
 
