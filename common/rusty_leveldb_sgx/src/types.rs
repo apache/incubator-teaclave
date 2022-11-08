@@ -10,6 +10,10 @@ use std::rc::Rc;
 
 pub const NUM_LEVELS: usize = 7;
 
+// SGX protected fs saves the recovery file in the same directory as the original file.
+// It should not be pared for db use.
+pub static SGX_RECOVERY_FILE_SUFFIX: &str = "_recovery";
+
 /// Represents a sequence number of a single entry.
 pub type SequenceNumber = u64;
 
@@ -211,5 +215,6 @@ pub mod tests {
         assert!(parse_file_name("01a.sst").is_err());
         assert!(parse_file_name("0011.abc").is_err());
         assert!(parse_file_name("MANIFEST-trolol").is_err());
+        assert!(parse_file_name("000167.log_recovery").is_err());
     }
 }
