@@ -344,7 +344,7 @@ pub unsafe extern "C" fn teaclave_cancel_task(
     }
 
     let task_id = CStr::from_ptr(task_id).to_string_lossy().into_owned();
-    match client.invoke_task(&task_id) {
+    match client.cancel_task(&task_id) {
         Ok(_) => 0,
         Err(_) => 1,
     }
