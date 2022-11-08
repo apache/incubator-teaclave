@@ -12,7 +12,7 @@ use crate::db_iter::DBIterator;
 
 use crate::cmp::{Cmp, InternalKeyCmp};
 use crate::env::{Env, FileLock};
-use crate::error::{err, Result, StatusCode};
+use crate::error::{err, Result, Status, StatusCode};
 use crate::filter::{BoxedFilterPolicy, InternalFilterPolicy};
 use crate::infolog::Logger;
 use crate::key_types::{parse_internal_key, InternalKey, LookupKey, ValueType};
@@ -25,7 +25,7 @@ use crate::table_builder::TableBuilder;
 use crate::table_cache::{table_file_name, TableCache};
 use crate::types::{
     parse_file_name, share, FileMetaData, FileNum, FileType, LdbIterator, SequenceNumber, Shared,
-    MAX_SEQUENCE_NUMBER, NUM_LEVELS,
+    MAX_SEQUENCE_NUMBER, NUM_LEVELS, SGX_RECOVERY_FILE_SUFFIX,
 };
 use crate::version::Version;
 use crate::version_edit::VersionEdit;
@@ -191,6 +191,14 @@ impl DB {
         let mut log_files = vec![];
 
         for file in &filenames {
+            if file
+                .to_str()
+                .ok_or_else(|| Status::new(StatusCode::InvalidArgument, "not valid UTF-8"))?
+                .ends_with(SGX_RECOVERY_FILE_SUFFIX)
+            {
+                continue;
+            }
+
             match parse_file_name(&file) {
                 Ok((num, typ)) => {
                     expected.remove(&num);
@@ -310,6 +318,14 @@ impl DB {
         let files = self.vset.borrow().live_files();
         let filenames = self.opt.env.children(Path::new(&self.path))?;
         for name in filenames {
+            if name
+                .to_str()
+                .ok_or_else(|| Status::new(StatusCode::InvalidArgument, "not valid UTF-8"))?
+                .ends_with(SGX_RECOVERY_FILE_SUFFIX)
+            {
+                continue;
+            }
+
             if let Ok((num, typ)) = parse_file_name(&name) {
                 match typ {
                     FileType::Log => {
