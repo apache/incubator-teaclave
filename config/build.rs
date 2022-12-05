@@ -37,15 +37,16 @@ fn main() {
     let target_dir = Path::new(&env::var("TEACLAVE_SYMLINKS").expect("TEACLAVE_SYMLINKS"))
         .join("teaclave_build/target/config_gen");
     let unix_toml_dir = env::var("MT_SGXAPP_TOML_DIR").expect("MT_SGXAPP_TOML_DIR");
+    // Use CARGO_ENCODED_RUSTFLAGS to override RUSTFLAGS which makes the run fail.
     let c = Command::new("cargo")
+        .env("CARGO_ENCODED_RUSTFLAGS", "")
         .current_dir(&unix_toml_dir)
-        .args(&[
+        .args([
             "run",
             "--target-dir",
             &target_dir.to_string_lossy(),
             "--manifest-path",
             "config/config_gen/Cargo.toml",
-            "--offline",
             "--",
             "-t",
             "config/build.config.toml",

@@ -18,7 +18,6 @@
 use crate::error::AuthenticationError;
 use crate::user_db::DbClient;
 use crate::user_info::UserInfo;
-use std::prelude::v1::*;
 use teaclave_proto::teaclave_authentication_service::{
     TeaclaveAuthenticationInternal, UserAuthenticateRequest, UserAuthenticateResponse,
 };
@@ -72,6 +71,7 @@ pub mod tests {
     use crate::user_info::*;
     use rand::RngCore;
     use std::time::{Duration, SystemTime, UNIX_EPOCH};
+    #[allow(unused_imports)]
     use std::untrusted::time::SystemTimeEx;
     use std::vec;
     use teaclave_proto::teaclave_common::UserCredential;
@@ -120,7 +120,7 @@ pub mod tests {
             &service.jwt_secret,
         );
         let response = get_authenticate_response(id, &token, &service);
-        assert!(!response.is_ok());
+        assert!(response.is_err());
         let error = validate_token(id, &service.jwt_secret, &token);
         assert!(error.is_err());
         match *error.unwrap_err().kind() {
@@ -136,7 +136,7 @@ pub mod tests {
         my_claims.iss = "wrong issuer".to_string();
         let token = gen_token(my_claims, None, &service.jwt_secret);
         let response = get_authenticate_response(id, &token, &service);
-        assert!(!response.is_ok());
+        assert!(response.is_err());
         let error = validate_token(id, &service.jwt_secret, &token);
         assert!(error.is_err());
         match *error.unwrap_err().kind() {
@@ -152,7 +152,7 @@ pub mod tests {
         my_claims.exp -= 24 * 60 + 1;
         let token = gen_token(my_claims, None, &service.jwt_secret);
         let response = get_authenticate_response(id, &token, &service);
-        assert!(!response.is_ok());
+        assert!(response.is_err());
         let error = validate_token(id, &service.jwt_secret, &token);
         assert!(error.is_err());
         match *error.unwrap_err().kind() {
@@ -169,7 +169,7 @@ pub mod tests {
         my_claims.role = UserRole::PlatformAdmin.to_string();
         let token = gen_token(my_claims, None, &service.jwt_secret);
         let response = get_authenticate_response(id, &token, &service);
-        assert!(!response.is_ok());
+        assert!(response.is_err());
         let error = validate_token(id, &service.jwt_secret, &token);
         assert!(error.is_err());
         match *error.unwrap_err().kind() {
@@ -184,7 +184,7 @@ pub mod tests {
         let my_claims = get_correct_claim(id);
         let token = gen_token(my_claims, None, b"bad secret");
         let response = get_authenticate_response(id, &token, &service);
-        assert!(!response.is_ok());
+        assert!(response.is_err());
         let error = validate_token(id, &service.jwt_secret, &token);
         assert!(error.is_err());
         match *error.unwrap_err().kind() {
@@ -211,8 +211,10 @@ pub mod tests {
         bad_alg: Option<jsonwebtoken::Algorithm>,
         secret: &[u8],
     ) -> String {
-        let mut header = jsonwebtoken::Header::default();
-        header.alg = bad_alg.unwrap_or(JWT_ALG);
+        let header = jsonwebtoken::Header {
+            alg: bad_alg.unwrap_or(JWT_ALG),
+            ..Default::default()
+        };
         let secret = jsonwebtoken::EncodingKey::from_secret(secret);
         jsonwebtoken::encode(&header, &claim, &secret).unwrap()
     }

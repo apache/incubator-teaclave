@@ -17,7 +17,6 @@
 
 use crate::utils::*;
 use std::convert::TryFrom;
-use std::prelude::v1::*;
 use teaclave_proto::teaclave_management_service::*;
 use teaclave_proto::teaclave_scheduler_service::*;
 use teaclave_test_utils::test_case;

@@ -19,7 +19,6 @@ use anyhow::Result;
 use rustls::internal::pemfile;
 use serde::{Deserialize, Serialize};
 use std::io;
-use std::prelude::v1::*;
 use std::untrusted::fs;
 use teaclave_rpc::channel::*;
 use teaclave_rpc::config::*;
@@ -108,7 +107,6 @@ pub fn run_tests() -> bool {
 }
 
 fn start_echo_service() {
-    use super::*;
     use std::thread;
     use std::time::Duration;
     thread::spawn(move || {
@@ -121,7 +119,7 @@ fn start_echo_service() {
                 .unwrap()[0];
         let addr = "127.0.0.1:12345".parse().unwrap();
         let config = SgxTrustedTlsServerConfig::new()
-            .server_cert(&cert[0].as_ref(), &private_key.0)
+            .server_cert(cert[0].as_ref(), &private_key.0)
             .unwrap();
         let mut server = SgxTrustedTlsServer::<EchoResponse, EchoRequest>::new(addr, config);
         server.start(EchoService).unwrap();
@@ -130,8 +128,6 @@ fn start_echo_service() {
 }
 
 fn echo_success() {
-    use super::*;
-
     let channel = Endpoint::new("localhost:12345").connect().unwrap();
     let mut client = EchoClient::new(channel).unwrap();
     let request = SayRequest {

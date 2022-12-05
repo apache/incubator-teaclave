@@ -21,21 +21,23 @@ version = "0.4.0"
 authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
 description = "Teaclave enclave utils"
 license = "Apache-2.0"
-edition = "2018"
+edition = "2021"
 
 [features]
 default = []
 mesalock_sgx = [
-    "sgx_tstd",
+    "env_logger/termcolor",
+    "env_logger/humantime",
+    "env_logger/regex",
     "teaclave_types/mesalock_sgx",
     "teaclave_attestation/mesalock_sgx",
     "teaclave_rpc/mesalock_sgx",
 ]
-cov = ["sgx_cov", "sgx_trts"]
+cov = ["sgx_cov", "sgx_macros"]
 
 [dependencies]
 anyhow     = { version = "1.0.26" }
-env_logger = { version = "0.7.1" }
+env_logger = { version = "0.9.3", default_features = false }
 log        = { version = "0.4.6", features = ["release_max_level_info"] }
 
 teaclave_service_enclave_utils_proc_macro = { path = "./proc_macro" }
@@ -44,6 +46,5 @@ teaclave_attestation = { path = "../../../attestation" }
 teaclave_rpc         = { path = "../../../rpc" }
 teaclave_config      = { path = "../../../config" }
 
-sgx_cov  = { version = "1.1.3", optional = true }
-sgx_trts = { version = "1.1.3", optional = true }
-sgx_tstd = { version = "1.1.3", features = ["net", "backtrace"], optional = true }
+sgx_cov  = { version = "2.0.0", optional = true }
+sgx_macros  = { version = "2.0.0", optional = true }

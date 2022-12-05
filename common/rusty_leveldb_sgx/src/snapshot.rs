@@ -118,7 +118,6 @@ impl InnerSnapshotList {
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
-    use std::prelude::v1::*;
     use teaclave_test_utils::*;
 
     pub fn run_tests() -> bool {

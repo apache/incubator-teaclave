@@ -20,27 +20,25 @@
 //! Service is used for RA.
 
 #![allow(clippy::nonstandard_macro_braces)]
-#![allow(clippy::unknown_clippy_lints)]
-#![cfg_attr(feature = "mesalock_sgx", no_std)]
-#[cfg(feature = "mesalock_sgx")]
-#[macro_use]
-extern crate sgx_tstd as std;
 
-use std::prelude::v1::*;
+extern crate sgx_types;
+
 use std::sync::Arc;
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
+use sgx_types::error::SgxStatus;
+use sgx_types::types::Spid;
 
 /// Errors that can happen during attestation and verification process
 #[derive(thiserror::Error, Debug)]
 pub enum AttestationError {
     #[error("OCall error")]
-    OCallError(sgx_types::sgx_status_t),
+    OCallError(SgxStatus),
     #[error("Attestation Service error")]
     AttestationServiceError,
     #[error("Platform error")]
-    PlatformError(sgx_types::sgx_status_t),
+    PlatformError(SgxStatus),
     #[error("Report error")]
     ReportError,
     #[error("Report error")]
@@ -79,6 +77,7 @@ impl AttestationAlgorithm {
 
 /// Attestation Service Configuration
 #[derive(Clone)]
+#[allow(dead_code)]
 pub struct AttestationServiceConfig {
     /// Algorithm to use
     algo: AttestationAlgorithm,
@@ -87,7 +86,7 @@ pub struct AttestationServiceConfig {
     /// IAS API Key
     api_key: String,
     /// SPID
-    spid: sgx_types::sgx_spid_t,
+    spid: Spid,
 }
 
 pub struct DcapConfig {}
@@ -104,9 +103,7 @@ impl AttestationConfig {
             return Ok(Self::no_attestation());
         }
 
-        use core::convert::TryFrom;
-
-        let mut spid = sgx_types::sgx_spid_t::default();
+        let mut spid = Spid::default();
         let hex = hex::decode(spid_str).context("Illegal SPID provided")?;
         spid.id = <[u8; 16]>::try_from(hex.as_slice()).context("Illegal SPID provided")?;
 

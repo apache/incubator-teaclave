@@ -21,8 +21,7 @@
 
 use std::collections::VecDeque;
 #[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
-use std::sync::{Arc, SgxMutex as Mutex};
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 

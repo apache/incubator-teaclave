@@ -15,15 +15,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
-
 use std::collections::HashMap;
 
 use anyhow::{bail, ensure, Result};
 use serde::{Deserialize, Deserializer};
+use sgx_types::types::SHA256_HASH_SIZE;
 
-pub type SgxMeasurement = [u8; sgx_types::SGX_HASH_SIZE];
+pub type SgxMeasurement = [u8; SHA256_HASH_SIZE];
 
 #[derive(Debug, Deserialize, Copy, Clone, Eq, PartialEq)]
 pub struct EnclaveMeasurement {
@@ -50,7 +48,7 @@ where
     use serde::de::Error;
     String::deserialize(deserializer).and_then(|string| {
         let v = hex::decode(&string).map_err(|_| Error::custom("ParseError"))?;
-        let mut array = [0; sgx_types::SGX_HASH_SIZE];
+        let mut array = [0; SHA256_HASH_SIZE];
         let bytes = &v[..array.len()]; // panics if not enough data
         array.copy_from_slice(bytes);
         Ok(array)
@@ -136,12 +134,10 @@ impl EnclaveInfo {
     }
 
     pub fn get_enclave_attr(&self, service_name: &str) -> Option<EnclaveAttr> {
-        if let Some(measurement) = self.measurements.get(service_name) {
-            Some(EnclaveAttr {
+        self.measurements
+            .get(service_name)
+            .map(|measurement| EnclaveAttr {
                 measurement: *measurement,
             })
-        } else {
-            None
-        }
     }
 }

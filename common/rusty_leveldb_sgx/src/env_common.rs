@@ -1,8 +1,6 @@
-#[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
-
 use std::time;
 #[cfg(feature = "mesalock_sgx")]
+#[allow(unused_imports)]
 use std::untrusted::time::SystemTimeEx;
 
 pub fn micros() -> u64 {

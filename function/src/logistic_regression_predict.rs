@@ -15,8 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
+use super::logistic_regression_train::Model;
 
 use std::format;
 use std::io::{self, BufRead, BufReader, Write};
@@ -24,7 +23,6 @@ use std::io::{self, BufRead, BufReader, Write};
 use teaclave_types::{FunctionArguments, FunctionRuntime};
 
 use rusty_machine::learning::logistic_reg::LogisticRegressor;
-use rusty_machine::learning::optim::grad_desc::GradientDesc;
 use rusty_machine::learning::SupModel;
 use rusty_machine::linalg;
 
@@ -51,7 +49,12 @@ impl LogisticRegressionPredict {
         let mut f = runtime.open_input(MODEL_FILE)?;
         f.read_to_string(&mut model_json)?;
 
-        let lr: LogisticRegressor<GradientDesc> = serde_json::from_str(&model_json)?;
+        let model: Model = serde_json::from_str(&model_json)?;
+        let alg = model.alg();
+        let para = model.parameters();
+        let mut lr = LogisticRegressor::new(alg);
+        lr.set_parameters(para);
+
         let feature_size = lr
             .parameters()
             .ok_or_else(|| anyhow::anyhow!("Model parameter is None"))?

@@ -21,13 +21,12 @@ version = "0.4.0"
 authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
 description = "Abstract communication interfaces between TEE untrusted/trusted worlds."
 license = "Apache-2.0"
-edition = "2018"
+edition = "2021"
 
 [features]
 default = []
-app = ["sgx_urts"]
+app = ["sgx_urts/capi"]
 mesalock_sgx = [
-    "sgx_tstd",
     "teaclave_binder_attribute",
     "teaclave_types/mesalock_sgx",
     "teaclave_config/mesalock_sgx",
@@ -38,7 +37,6 @@ app_unit_test = []
 [dependencies]
 cfg-if     = { version = "0.1.9" }
 anyhow       = { version = "1.0.26" }
-env_logger   = { version = "0.7.1" }
 log          = { version = "0.4.6", features = ["release_max_level_info"] }
 serde        = { version = "1.0.92", features = ["derive"] }
 serde_json   = { version = "1.0.39" }
@@ -49,6 +47,5 @@ teaclave_types = { path = "../types" }
 teaclave_config = { path = "../config" }
 teaclave_binder_attribute = { path = "./attribute", optional = true }
 
-sgx_types = { version = "1.1.3" }
-sgx_urts  = { version = "1.1.3", features = ["global_init"], optional = true }
-sgx_tstd  = { version = "1.1.3", features = ["net", "backtrace"], optional = true }
+sgx_types = { version = "2.0.0" }
+sgx_urts  = { version = "2.0.0", optional = true }

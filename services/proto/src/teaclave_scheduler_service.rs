@@ -19,7 +19,6 @@
 #![allow(unused_variables)]
 
 use std::collections::HashMap;
-use std::prelude::v1::*;
 
 use crate::teaclave_common::{
     i32_from_task_status, i32_to_task_status, ExecutorCommand, ExecutorStatus,

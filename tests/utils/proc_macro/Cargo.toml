@@ -18,7 +18,7 @@
 [package]
 name = "teaclave_test_utils_proc_macro"
 version = "0.0.1"
-edition = "2018"
+edition = "2021"
 publish = false
 
 [lib]

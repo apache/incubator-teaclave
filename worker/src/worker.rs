@@ -16,8 +16,6 @@
 // under the License.
 
 #[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
-
 use std::collections::HashMap;
 use std::format;
 
@@ -54,16 +52,16 @@ impl Default for Worker {
         // Register supported executors
         #[cfg(executor_mesapy)]
         worker.register_executor((ExecutorType::Python, Executor::MesaPy), || {
-            Box::new(MesaPy::default())
+            Box::<MesaPy>::default()
         });
         #[cfg(executor_builtin)]
         worker.register_executor((ExecutorType::Builtin, Executor::Builtin), || {
-            Box::new(BuiltinFunctionExecutor::default())
+            Box::<BuiltinFunctionExecutor>::default()
         });
         #[cfg(executor_wamr)]
         worker.register_executor(
             (ExecutorType::WAMicroRuntime, Executor::WAMicroRuntime),
-            || Box::new(WAMicroRuntime::default()),
+            || Box::<WAMicroRuntime>::default(),
         );
 
         worker

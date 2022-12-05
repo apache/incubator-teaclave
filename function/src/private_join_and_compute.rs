@@ -21,8 +21,6 @@ use std::convert::TryFrom;
 use std::fmt;
 use std::format;
 use std::io::Write;
-#[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
 use teaclave_types::{FunctionArguments, FunctionRuntime};
 
 const IN_DATA: &str = "input_data";
@@ -83,7 +81,7 @@ impl PrivateJoinAndCompute {
         for i in 0..num_user {
             let output_file_name = format!("{}{}", OUT_RESULT, i);
             let mut output = runtime.create_output(&output_file_name)?;
-            output.write_all(&output_bytes)?;
+            output.write_all(output_bytes)?;
         }
 
         let summary = format!("{} users join the task in total.", num_user);
@@ -191,9 +189,9 @@ pub mod tests {
             .run(arguments, runtime)
             .unwrap();
 
-        let user0 = fs::read_to_string(&user0_output).unwrap();
-        let user1 = fs::read_to_string(&user1_output).unwrap();
-        let user2 = fs::read_to_string(&user2_output).unwrap();
+        let user0 = fs::read_to_string(user0_output).unwrap();
+        let user1 = fs::read_to_string(user1_output).unwrap();
+        let user2 = fs::read_to_string(user2_output).unwrap();
         assert_eq!(&user0[..], &user1[..]);
         assert_eq!(&user1[..], &user2[..]);
         assert_eq!(summary, "3 users join the task in total.")

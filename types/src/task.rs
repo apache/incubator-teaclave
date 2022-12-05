@@ -184,7 +184,7 @@ impl std::convert::TryFrom<HashMap<String, Vec<u8>>> for OutputsTags {
     fn try_from(input: HashMap<String, Vec<u8>>) -> Result<Self> {
         let mut ret = HashMap::with_capacity(input.len());
         for (k, v) in input.iter() {
-            let tag = FileAuthTag::from_bytes(&v)?;
+            let tag = FileAuthTag::from_bytes(v)?;
             ret.insert(k.to_string(), tag);
         }
         Ok(OutputsTags::new(ret))
@@ -264,7 +264,7 @@ impl ExternalID {
 
 impl ToString for ExternalID {
     fn to_string(&self) -> String {
-        format!("{}-{}", self.prefix, self.uuid.to_string())
+        format!("{}-{}", self.prefix, self.uuid)
     }
 }
 

@@ -20,8 +20,6 @@ extern crate image;
 #[cfg(feature = "mesalock_sgx")]
 extern crate rustface;
 
-use std::prelude::v1::*;
-
 use std::convert::TryFrom;
 use teaclave_types::{FunctionArguments, FunctionRuntime};
 

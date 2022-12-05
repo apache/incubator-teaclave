@@ -16,7 +16,6 @@
 // under the License.
 
 use crate::utils::*;
-use std::prelude::v1::*;
 use teaclave_proto::teaclave_access_control_service::*;
 use teaclave_test_utils::test_case;
 

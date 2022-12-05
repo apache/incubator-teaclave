@@ -15,8 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use std::prelude::v1::*;
-
 use serde_json::json;
 use teaclave_crypto::TeaclaveFile128Key;
 use teaclave_types::{

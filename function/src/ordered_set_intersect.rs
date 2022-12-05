@@ -20,12 +20,9 @@ use std::cmp;
 use std::convert::TryFrom;
 use std::format;
 use std::io::{self, BufRead, BufReader, Write};
-#[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
 use teaclave_types::{FunctionArguments, FunctionRuntime};
 
 extern crate hex;
-extern crate sgx_tstd as std;
 
 // Input data should be a list of sorted hash values.
 

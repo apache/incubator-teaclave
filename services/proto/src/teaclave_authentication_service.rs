@@ -18,7 +18,6 @@
 use anyhow::anyhow;
 use anyhow::{Error, Result};
 use core::convert::TryInto;
-use std::prelude::v1::*;
 use teaclave_rpc::into_request;
 
 use crate::teaclave_authentication_service_proto as proto;

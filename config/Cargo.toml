@@ -21,11 +21,11 @@ version = "0.4.0"
 authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
 description = "Build and runtime configurations."
 license = "Apache-2.0"
-edition = "2018"
+edition = "2021"
 
 [features]
 default = []
-mesalock_sgx = ["sgx_tstd"]
+mesalock_sgx = []
 build_config = []
 
 [dependencies]
@@ -34,5 +34,3 @@ log    = { version = "0.4.6", features = ["release_max_level_info"] }
 serde  = { version = "1.0.92", features = ["derive"] }
 toml   = { version = "0.5.1" }
 url    = { version = "2.1.1" }
-
-sgx_tstd = { version = "1.1.3", optional = true }

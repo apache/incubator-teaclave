@@ -15,8 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
 use std::vec;
 
 use ring::{rand, signature};
@@ -60,15 +58,18 @@ impl RsaSign {
         let mut key = Vec::new();
         let mut f = runtime.open_input(IN_DATA)?;
         f.read_to_end(&mut key)?;
-        let key_pair = signature::RsaKeyPair::from_der(&key)?;
+        let key_pair =
+            signature::RsaKeyPair::from_der(&key).map_err(|e| anyhow::anyhow!(e.to_string()))?;
         let mut sig = vec![0; key_pair.public_modulus_len()];
         let rng = rand::SystemRandom::new();
-        key_pair.sign(
-            &signature::RSA_PKCS1_SHA256,
-            &rng,
-            args.data.as_bytes(),
-            &mut sig,
-        )?;
+        key_pair
+            .sign(
+                &signature::RSA_PKCS1_SHA256,
+                &rng,
+                args.data.as_bytes(),
+                &mut sig,
+            )
+            .map_err(|e| anyhow::anyhow!(e.to_string()))?;
 
         let output_base64 = base64::encode(&sig);
         Ok(output_base64)
@@ -107,8 +108,8 @@ pub mod tests {
         let runtime = Box::new(RawIoRuntime::new(input_files, output_files));
 
         let summary = RsaSign::new().run(arguments, runtime).unwrap();
-        let mut expected_string = fs::read_to_string(&expected_output).unwrap();
-        expected_string = expected_string.replace("\n", "");
+        let mut expected_string = fs::read_to_string(expected_output).unwrap();
+        expected_string = expected_string.replace('\n', "");
         assert_eq!(summary, expected_string);
     }
 }

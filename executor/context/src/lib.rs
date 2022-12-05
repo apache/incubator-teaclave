@@ -15,13 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#![cfg_attr(feature = "mesalock_sgx", no_std)]
-#[cfg(feature = "mesalock_sgx")]
-extern crate sgx_tstd as std;
-
-#[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
-
 #[macro_use]
 extern crate log;
 

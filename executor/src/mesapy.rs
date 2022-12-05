@@ -15,8 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use std::prelude::v1::*;
-
 use teaclave_executor_context::context::reset_thread_context;
 use teaclave_executor_context::context::set_thread_context;
 use teaclave_executor_context::context::Context;
@@ -33,7 +31,7 @@ extern "C" {
     fn mesapy_exec(
         input: *const u8,
         argc: usize,
-        argv: *const *const sgx_types::c_char,
+        argv: *const *const sgx_types::types::c_char,
         output: *mut u8,
         buflen: u64,
     ) -> i64;

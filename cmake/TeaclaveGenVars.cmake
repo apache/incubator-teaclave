@@ -59,15 +59,16 @@ set(SGX_LIBRARY_PATH ${SGX_SDK}/lib64)
 
 set(SGX_COMMON_CFLAGS -m64 -O2)
 set(SGX_UNTRUSTED_CFLAGS ${SGX_COMMON_CFLAGS} -fPIC -Wno-attributes
-                         -I${SGX_SDK}/include -I${RUST_SGX_SDK}/edl)
+                         -I${SGX_SDK}/include -I${RUST_SGX_SDK}/sgx_edl/edl)
 set(SGX_TRUSTED_CFLAGS
     ${SGX_COMMON_CFLAGS}
     -nostdinc
     -fvisibility=hidden
     -fpie
     -fstack-protector
-    -I${RUST_SGX_SDK}/edl
+    -I${RUST_SGX_SDK}/sgx_edl/edl
     -I${RUST_SGX_SDK}/common/inc
+    -I${RUST_SGX_SDK}/common/inc/tlibc
     -I${SGX_SDK}/include
     -I${SGX_SDK}/include/tlibc
     -I${SGX_SDK}/include/stlport
@@ -84,7 +85,8 @@ else()
   set(Service_Library_Name sgx_tservice)
 endif()
 
-set(SGX_ENCLAVE_FEATURES -Z package-features --features mesalock_sgx)
+set(SGX_LIB_TARGET "x86_64-unknown-linux-sgx")
+set(SGX_ENCLAVE_FEATURES --features mesalock_sgx)
 string(TOLOWER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_LOWER)
 if(CMAKE_BUILD_TYPE_LOWER STREQUAL "release")
   set(TARGET release)
@@ -95,7 +97,7 @@ else()
 
   if(COV)
     check_exe_dependencies(lcov llvm-cov)
-    set(SGX_ENCLAVE_FEATURES -Z package-features --features "mesalock_sgx cov")
+    set(SGX_ENCLAVE_FEATURES --features "mesalock_sgx cov")
     set(CARGO_INCREMENTAL 0)
     set(RUSTFLAGS "${RUSTFLAGS} -D warnings -Zprofile -Ccodegen-units=1 \
 -Cllvm_args=-inline-threshold=0 -Coverflow-checks=off")
@@ -166,7 +168,8 @@ set(TARGET_SGXLIB_ENVS
     Service_Library_Name=${Service_Library_Name}
     Trts_Library_Name=${Trts_Library_Name}
     TRUSTED_TARGET_DIR=${TRUSTED_TARGET_DIR}
-    TARGET=${TARGET})
+    TARGET=${TARGET}
+    SGX_LIB_TARGET=${SGX_LIB_TARGET})
 
 message("SGX_SDK=${SGX_SDK}")
 message("SGX_MODE=${SGX_MODE}")

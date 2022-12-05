@@ -28,9 +28,9 @@ endif()
 find_package(Git)
 find_package(OpenSSL)
 check_exe_dependencies(rustup pypy)
-pkg_check_modules(INTEL_SGX_SDK QUIET libsgx_urts>=2.12.100.3)
+pkg_check_modules(INTEL_SGX_SDK QUIET libsgx_urts>=2.17.101.1)
 if(NOT INTEL_SGX_SDK_FOUND)
-  message(FATAL_ERROR "Intel SGX SDK (version 2.12.100.3) is not found or version not matched.")
+  message(FATAL_ERROR "Intel SGX SDK (version 2.17.1) is not found or version not matched.")
 endif()
 
 # ====== VARIABLES FOR CMAKE -D{VAR}=VAL CONFIGURATION BEGIN ======
@@ -39,9 +39,9 @@ set_strvar_from_env_or(RUSTFLAGS "" "Rust flags")
 set_strvar_from_env_or(TEACLAVE_CMAKE_DBG ""
                        "set to turn on debug message for cmake")
 set(MESAPY_VERSION v1.0.0-sgx)
-set(RUSTUP_TOOLCHAIN "nightly-2020-10-25")
+set(RUSTUP_TOOLCHAIN "nightly-2022-10-22")
 option(COV "Turn on/off coverage" OFF)
-option(OFFLINE "Turn on/off cargo offline" ON)
+option(OFFLINE "Turn on/off cargo offline" OFF)
 option(TEST_MODE "Turn on/off test mode" OFF)
 option(SGX_SIM_MODE "Turn on/off sgx simulation mode" OFF)
 option(DCAP "Turn on/off DCAP attestation" OFF)
@@ -259,6 +259,44 @@ endif()
 target_compile_options(pycomponent PUBLIC -UWITH_THREAD -O2 -fPIC -Wimplicit
                                           -I/usr/lib/pypy/include)
 
+# std Aware Cargo
+set(DEFAULT_STD_PATH ${TRUSTED_TARGET_DIR}/default_std/sysroot/lib/rustlib/${SGX_LIB_TARGET}/lib)
+set(COV_STD_PATH ${TRUSTED_TARGET_DIR}/cov_std/sysroot/lib/rustlib/${SGX_LIB_TARGET}/lib)
+
+add_custom_target(
+    default_std
+    COMMAND
+      ${CMAKE_COMMAND} -E env ${TEACLAVE_COMMON_ENVS} RUSTFLAGS=""
+      cargo build --target-dir ${TRUSTED_TARGET_DIR}/default_std
+      --features backtrace,capi,env,net,thread,untrusted_time,unsupported_process -Zbuild-std=core,alloc
+      --target ${RUST_SGX_SDK}/rustlib/${SGX_LIB_TARGET}.json
+    COMMAND
+    mkdir -p ${DEFAULT_STD_PATH}
+    COMMAND
+      cp -r ${TRUSTED_TARGET_DIR}/default_std/${SGX_LIB_TARGET}/${TARGET}/deps/*
+      ${DEFAULT_STD_PATH}
+    DEPENDS prep
+    COMMENT "Building default std"
+    WORKING_DIRECTORY ${RUST_SGX_SDK}/rustlib/std
+    ) # default_std
+
+add_custom_target(
+    cov_std
+    COMMAND
+      ${CMAKE_COMMAND} -E env ${TEACLAVE_COMMON_ENVS} RUSTFLAGS=""
+      cargo build --target-dir ${TRUSTED_TARGET_DIR}/cov_std
+      --features backtrace,capi,env,net,profiler,thread,untrusted_time,unsupported_process -Zbuild-std=core,alloc
+      --target ${RUST_SGX_SDK}/rustlib/${SGX_LIB_TARGET}.json
+    COMMAND
+    mkdir -p ${COV_STD_PATH}
+    COMMAND
+      cp -r ${TRUSTED_TARGET_DIR}/cov_std/${SGX_LIB_TARGET}/${TARGET}/deps/*
+      ${COV_STD_PATH}
+    DEPENDS prep
+    COMMENT "Building cov std"
+    WORKING_DIRECTORY ${RUST_SGX_SDK}/rustlib/std
+    ) # cov_std
+
 # sgx_trusted_lib
 list(LENGTH SGX_LIBS SGX_LIB_LEN)
 set(SGX_LIB_DEPENDS prep mesapy pycomponent)
@@ -271,6 +309,12 @@ foreach(_i RANGE ${SGX_LIB_LAST_INDEX})
 
   if(EXECUTOR_WAMR)
     list(APPEND SGX_LIB_DEPENDS wamr)
+  endif()
+
+  if(COV)
+    list(APPEND SGX_LIB_DEPENDS cov_std)
+  else()
+    list(APPEND SGX_LIB_DEPENDS default_std)
   endif()
 
   add_sgx_build_target(
@@ -289,7 +333,7 @@ add_cargo_build_dylib_staticlib_target(teaclave_client_sdk
   TARGET_NAME "teaclave_client_sdk"
   TOML_DIR ${MT_UNIX_TOML_DIR}
   TARGET_DIR ${UNIX_TARGET_DIR}
-  DEPENDS prep )
+  DEPENDS prep)
 
 # example/quickstart_c link_directories(${TEACLAVE_LIB_INSTALL_DIR})
 # add_executable(quickstart_c

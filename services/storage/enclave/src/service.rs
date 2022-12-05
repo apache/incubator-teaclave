@@ -21,7 +21,6 @@ use anyhow::anyhow;
 use rusty_leveldb::LdbIterator;
 use rusty_leveldb::DB;
 use std::cell::RefCell;
-use std::prelude::v1::*;
 use std::sync::mpsc::Receiver;
 use teaclave_proto::teaclave_storage_service::*;
 use teaclave_rpc::Request;

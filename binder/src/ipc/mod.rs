@@ -16,7 +16,6 @@
 // under the License.
 
 use serde::{Deserialize, Serialize};
-use std::prelude::v1::*;
 
 use crate::error::IpcError;
 

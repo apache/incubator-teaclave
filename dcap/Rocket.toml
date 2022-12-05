@@ -16,7 +16,7 @@
 # under the License.
 
 [global]
-port = 8080
+port = 443
 
 # The certificate is self-signed. DO NOT use in production.
 [global.tls]

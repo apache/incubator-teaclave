@@ -214,13 +214,19 @@ function(add_sgx_build_target sgx_lib_path pkg_name)
     set(_enclave_info "/dev/null")
   endif()
 
+  if(COV)
+    set(RUSTFLAGS "${RUSTFLAGS} --sysroot ${TRUSTED_TARGET_DIR}/cov_std/sysroot")
+  else()
+    set(RUSTFLAGS "${RUSTFLAGS} --sysroot ${TRUSTED_TARGET_DIR}/default_std/sysroot")
+  endif()
+
   add_custom_target(
     ${_target_name} ALL
     COMMAND
       ${CMAKE_COMMAND} -E env ${TEACLAVE_COMMON_ENVS} RUSTFLAGS=${RUSTFLAGS}
       ${MT_SCRIPT_DIR}/cargo_build_ex.sh -p ${pkg_name} --target-dir
       ${TRUSTED_TARGET_DIR} ${CARGO_BUILD_FLAGS} ${SGX_ENCLAVE_FEATURES}
-      ${MTEE_EXTRA_CARGO_FLAGS}
+      ${MTEE_EXTRA_CARGO_FLAGS} --target ${RUST_SGX_SDK}/rustlib/${SGX_LIB_TARGET}.json
     COMMAND
       ${CMAKE_COMMAND} -E env ${TARGET_SGXLIB_ENVS}
       SGX_COMMON_CFLAGS=${STR_SGX_COMMON_CFLAGS} CUR_PKG_NAME=${pkg_name}

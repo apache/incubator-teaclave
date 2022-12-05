@@ -1,6 +1,4 @@
 //! An in-memory implementation of Env.
-#[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
 
 use crate::env::{path_to_str, path_to_string, Env, FileLock, Logger, RandomAccess};
 use crate::env_common::micros;
@@ -12,7 +10,7 @@ use std::io::{self, Read, Write};
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 
-use std::sync::{Arc, SgxMutex as Mutex};
+use std::sync::{Arc, Mutex};
 
 /// BufferBackedFile is a simple type implementing RandomAccess on a Vec<u8>.
 pub type BufferBackedFile = Vec<u8>;

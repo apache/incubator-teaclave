@@ -260,7 +260,7 @@ impl Task<Stage> {
         function: Function,
     ) -> Result<StagedTask> {
         ensure!(
-            self.state.has_creator(&requester),
+            self.state.has_creator(requester),
             "Requestor is not the task creater"
         );
 

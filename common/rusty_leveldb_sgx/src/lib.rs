@@ -20,13 +20,8 @@
 //! db.flush().unwrap();
 //! ```
 //!
-#![cfg_attr(feature = "mesalock_sgx", no_std)]
 #![allow(dead_code)]
 #![allow(clippy::all)]
-
-#[cfg(feature = "mesalock_sgx")]
-#[macro_use]
-extern crate sgx_tstd as std;
 
 extern crate protected_fs;
 extern crate sgx_libc as libc;
@@ -89,7 +84,6 @@ pub use disk_env::PosixDiskEnv;
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
-    use std::prelude::v1::*;
     use teaclave_test_utils::check_all_passed;
 
     pub fn run_tests() -> bool {

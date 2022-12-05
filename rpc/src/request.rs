@@ -17,7 +17,6 @@
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::prelude::v1::*;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Request<T> {

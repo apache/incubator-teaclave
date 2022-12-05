@@ -1,6 +1,3 @@
-#[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
-
 use crate::cmp::{Cmp, MemtableKeyCmp};
 use crate::key_types::{build_memtable_key, parse_internal_key, parse_memtable_key, ValueType};
 use crate::key_types::{LookupKey, UserKey};

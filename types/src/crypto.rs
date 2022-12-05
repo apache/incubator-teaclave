@@ -15,13 +15,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
-
 use anyhow::{bail, ensure, Context, Result};
 use serde::{Deserialize, Serialize};
 use std::convert::TryInto;
-use std::format;
 
 use teaclave_crypto::*;
 
@@ -36,7 +32,7 @@ impl FileAuthTag {
     pub fn from_bytes(input: &[u8]) -> Result<Self> {
         ensure!(input.len() == FILE_AUTH_TAG_LENGTH, "Invalid length");
         let mut file_auth_tag = FileAuthTag::default();
-        file_auth_tag.tag.clone_from_slice(&input);
+        file_auth_tag.tag.clone_from_slice(input);
         Ok(file_auth_tag)
     }
 
@@ -50,7 +46,7 @@ impl FileAuthTag {
     }
 
     pub fn to_hex(&self) -> String {
-        hex::encode(&self.tag)
+        hex::encode(self.tag)
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {

@@ -3,9 +3,6 @@
 #![allow(unused_attributes)]
 
 #[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
-
-#[cfg(feature = "mesalock_sgx")]
 use std::untrusted::path::PathEx;
 
 use crate::db_iter::DBIterator;

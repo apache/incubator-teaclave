@@ -112,7 +112,7 @@ pub unsafe extern "C" fn teaclave_close_authentication_service(
         return 1;
     }
 
-    Box::from_raw(client);
+    let _ = Box::from_raw(client);
 
     0
 }
@@ -254,7 +254,7 @@ pub unsafe extern "C" fn teaclave_close_frontend_service(client: *mut FrontendCl
         return 1;
     }
 
-    Box::from_raw(client);
+    let _ = Box::from_raw(client);
 
     0
 }

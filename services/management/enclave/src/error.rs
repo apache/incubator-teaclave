@@ -15,7 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use std::prelude::v1::*;
 use teaclave_types::TeaclaveServiceResponseError;
 use thiserror::Error;
 

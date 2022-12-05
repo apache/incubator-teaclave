@@ -20,7 +20,7 @@ $ docker run --rm \
   -v/var/run/aesmd/aesm.socket:/var/run/aesmd/aesm.socket \
   -v`pwd`:/teaclave \
   -w /teaclave \
-  -it teaclave/teaclave-build-ubuntu-1804-sgx-2.9:latest \
+  -it teaclave/teaclave-build-ubuntu-1804-sgx-2.17.1:latest \
   /bin/bash
 ```
 

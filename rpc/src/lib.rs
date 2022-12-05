@@ -15,10 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#![cfg_attr(feature = "mesalock_sgx", no_std)]
 #[cfg(feature = "mesalock_sgx")]
-#[macro_use]
-extern crate sgx_tstd as std;
+extern crate sgx_trts;
 
 use serde::{Deserialize, Serialize};
 use teaclave_types::TeaclaveServiceResponseError;
@@ -44,4 +42,3 @@ pub use teaclave_rpc_proc_macro::into_request;
 #[cfg(feature = "mesalock_sgx")]
 pub mod server;
 mod transport;
-mod utils;

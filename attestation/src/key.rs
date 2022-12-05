@@ -19,11 +19,8 @@
 //! can export private key to a DER format or create a certificate with
 //! extension for TLS-based remote attestation.
 
-use std::prelude::v1::*;
-
 use anyhow::Result;
-use sgx_tcrypto::SgxEccHandle;
-use sgx_types::{sgx_ec256_private_t, sgx_ec256_public_t};
+use sgx_crypto::ecc::{EcKeyPair, EcPublicKey};
 
 /// Validation days of cert for TLS connection.
 const CERT_VALID_DAYS: i64 = 90i64;
@@ -31,22 +28,18 @@ const CERT_VALID_DAYS: i64 = 90i64;
 /// NistP256KeyPair stores a pair of ECDSA (private, public) key based on the
 /// NIST P-256 curve (a.k.a secp256r1).
 pub struct NistP256KeyPair {
-    prv_k: sgx_ec256_private_t,
-    pub_k: sgx_ec256_public_t,
+    inner: EcKeyPair,
 }
 
 impl NistP256KeyPair {
     /// Generate a ECDSA key pair.
     pub fn new() -> Result<Self> {
-        let ecc_handle = SgxEccHandle::new();
-        ecc_handle.open()?;
-        let (prv_k, pub_k) = ecc_handle.create_key_pair()?;
-        ecc_handle.close()?;
-        Ok(Self { prv_k, pub_k })
+        let inner = EcKeyPair::create()?;
+        Ok(Self { inner })
     }
 
-    pub fn pub_k(&self) -> sgx_ec256_public_t {
-        self.pub_k
+    pub fn pub_k(&self) -> EcPublicKey {
+        self.inner.public_key()
     }
 
     pub(crate) fn private_key_into_der(&self) -> Vec<u8> {
@@ -102,6 +95,7 @@ impl NistP256KeyPair {
         use num_bigint::BigUint;
         use std::time::SystemTime;
         use std::time::UNIX_EPOCH;
+        #[allow(unused_imports)]
         use std::untrusted::time::SystemTimeEx;
         use yasna::construct_der;
         use yasna::models::{ObjectIdentifier, UTCTime};
@@ -117,11 +111,13 @@ impl NistP256KeyPair {
 
         // UNIX_EPOCH is the earliest time stamp. This unwrap should constantly succeed.
         let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-        let issue_ts = chrono::Utc.timestamp(now.as_secs() as i64, 0);
+        let issue_ts = chrono::Utc.timestamp_opt(now.as_secs() as i64, 0).unwrap();
 
         // This is guaranteed to be a valid duration.
         let expire = now + chrono::Duration::days(CERT_VALID_DAYS).to_std().unwrap();
-        let expire_ts = chrono::Utc.timestamp(expire.as_secs() as i64, 0);
+        let expire_ts = chrono::Utc
+            .timestamp_opt(expire.as_secs() as i64, 0)
+            .unwrap();
 
         // Construct certificate with payload in extension in DER.
         let tbs_cert_der = construct_der(|writer| {
@@ -160,17 +156,15 @@ impl NistP256KeyPair {
 
         // There will be serious problems if this call fails. We might as well
         // panic in this case, thus unwrap()
-        let ecc_handle = SgxEccHandle::new();
-        ecc_handle.open().unwrap();
-
-        let sig = ecc_handle
-            .ecdsa_sign_slice(&tbs_cert_der.as_slice(), &self.prv_k)
+        let sig = self
+            .inner
+            .private_key()
+            .sign(tbs_cert_der.as_slice())
             .unwrap();
-
-        ecc_handle.close().unwrap();
 
         let sig_der = yasna::construct_der(|writer| {
             writer.write_sequence(|writer| {
+                let sig = sig.signature();
                 let mut sig_x = sig.x;
                 sig_x.reverse();
                 let mut sig_y = sig.y;
@@ -182,11 +176,11 @@ impl NistP256KeyPair {
 
         yasna::construct_der(|writer| {
             writer.write_sequence(|writer| {
-                writer.next().write_der(&tbs_cert_der.as_slice());
+                writer.next().write_der(tbs_cert_der.as_slice());
                 CertSignAlgo::dump(writer.next(), asn1_seq!(ecdsa_with_sha256_oid.clone()));
                 writer
                     .next()
-                    .write_bitvec(&BitVec::from_bytes(&sig_der.as_slice()));
+                    .write_bitvec(&BitVec::from_bytes(sig_der.as_slice()));
             });
         })
     }
@@ -194,14 +188,16 @@ impl NistP256KeyPair {
     fn public_key_into_bytes(&self) -> Vec<u8> {
         // The first byte must be 4, which indicates the uncompressed encoding.
         let mut pub_key_bytes: Vec<u8> = vec![4];
-        pub_key_bytes.extend(self.pub_k.gx.iter().rev());
-        pub_key_bytes.extend(self.pub_k.gy.iter().rev());
+        let public_key = self.pub_k().public_key();
+        pub_key_bytes.extend(public_key.gx.iter().rev());
+        pub_key_bytes.extend(public_key.gy.iter().rev());
         pub_key_bytes
     }
 
     fn private_key_into_bytes(&self) -> Vec<u8> {
         let mut prv_key_bytes: Vec<u8> = vec![];
-        prv_key_bytes.extend(self.prv_k.r.iter().rev());
+        let private_key = self.inner.private_key().private_key();
+        prv_key_bytes.extend(private_key.r.iter().rev());
         prv_key_bytes
     }
 }

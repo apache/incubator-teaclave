@@ -17,16 +17,15 @@
 
 //! This module provide attestation public APIs in server side.
 
-use std::prelude::v1::*;
-
 use crate::key;
 use crate::AttestationConfig;
 use crate::AttestedTlsConfig;
 use crate::EndorsedAttestationReport;
 
-use std::sync::{Arc, SgxRwLock as RwLock};
+use std::sync::{Arc, RwLock};
 use std::thread;
 use std::time::{Duration, SystemTime};
+#[allow(unused_imports)]
 use std::untrusted::time::SystemTimeEx;
 
 use anyhow::{anyhow, Result};
@@ -78,7 +77,7 @@ impl AttestedTlsConfig {
         let report = match attestation_config {
             AttestationConfig::NoAttestation => EndorsedAttestationReport::default(),
             AttestationConfig::WithAttestation(config) => {
-                EndorsedAttestationReport::new(&config, key_pair.pub_k())?
+                EndorsedAttestationReport::new(config, key_pair.pub_k())?
             }
         };
 

@@ -15,16 +15,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#![cfg_attr(feature = "mesalock_sgx", no_std)]
-#[cfg(feature = "mesalock_sgx")]
-#[macro_use]
-extern crate sgx_tstd as std;
-
 #[macro_use]
 extern crate log;
+extern crate sgx_types;
 use anyhow::{anyhow, Result};
 
-use std::prelude::v1::*;
 use teaclave_attestation::{verifier, AttestationConfig, RemoteAttestation};
 use teaclave_binder::proto::{
     ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
@@ -49,7 +44,7 @@ mod service;
 
 fn start_service(config: &RuntimeConfig) -> Result<()> {
     let listen_address = config.internal_endpoints.access_control.listen_address;
-    let attestation_config = AttestationConfig::from_teaclave_config(&config)?;
+    let attestation_config = AttestationConfig::from_teaclave_config(config)?;
     let attested_tls_config = RemoteAttestation::new(attestation_config)
         .generate_and_endorse()?
         .attested_tls_config()

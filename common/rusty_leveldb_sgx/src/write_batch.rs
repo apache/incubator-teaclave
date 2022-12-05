@@ -1,6 +1,3 @@
-#[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
-
 use crate::key_types::ValueType;
 use crate::memtable::MemTable;
 use crate::types::SequenceNumber;

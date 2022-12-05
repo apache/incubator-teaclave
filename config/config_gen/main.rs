@@ -15,7 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use askama;
 use askama::Template;
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -54,12 +53,16 @@ fn display_config_source(config: &ConfigSource) -> String {
     match config {
         ConfigSource::Path(p) => match p.extension().and_then(std::ffi::OsStr::to_str) {
             Some("pem") => {
-                let content = &fs::read(p).expect(&format!("Failed to read file: {}", p.display()));
+                let content = &fs::read(p).unwrap_or_else(|e| {
+                    panic!("Failed to read file: {}, error: {:?}", p.display(), e)
+                });
                 let pem = pem::parse(content).expect("Cannot parse PEM file");
                 format!("{:?}", pem.contents)
             }
             _ => {
-                let content = &fs::read(p).expect(&format!("Failed to read file: {}", p.display()));
+                let content = &fs::read(p).unwrap_or_else(|e| {
+                    panic!("Failed to read file: {}, error: {:?}", p.display(), e)
+                });
                 format!("{:?}", content)
             }
         },
@@ -94,9 +97,10 @@ fn generate_build_config(toml: &Path, out: &Path) {
         attestation_validity_secs: config.attestation_validity_secs,
         inbound: config.inbound,
     };
-    let mut f = File::create(out).expect(&format!("Failed to create file: {}", out.display()));
-    f.write_all(&config_template.render().unwrap().as_bytes())
-        .expect(&format!("Failed to write file: {}", out.display()));
+    let mut f = File::create(out)
+        .unwrap_or_else(|e| panic!("Failed to create file: {}, error: {:?}", out.display(), e));
+    f.write_all(config_template.render().unwrap().as_bytes())
+        .unwrap_or_else(|e| panic!("Failed to write file: {}, error: {:?}", out.display(), e));
 }
 
 #[derive(Debug, StructOpt)]

@@ -15,7 +15,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use sgx_types::*;
+use sgx_types::error::SgxStatus;
+use sgx_types::function::{
+    sgx_get_quote_ex, sgx_get_quote_size_ex, sgx_init_quote_ex, sgx_select_att_key_id,
+};
+use sgx_types::types::*;
 use std::ptr;
 
 #[cfg(sgx_sim)]
@@ -26,38 +30,35 @@ extern "C" {
     fn sgx_select_att_key_id(
         p_att_key_id_list: *const u8,
         att_key_idlist_size: u32,
-        p_att_key_id: *mut sgx_att_key_id_t,
-    ) -> sgx_status_t;
+        p_att_key_id: *mut AttKeyId,
+    ) -> SgxStatus;
 
     fn sgx_init_quote_ex(
-        p_att_key_id: *const sgx_att_key_id_t,
-        p_qe_target_info: *mut sgx_target_info_t,
+        p_att_key_id: *const AttKeyId,
+        p_qe_target_info: *mut TargetInfo,
         p_pub_key_id_size: *mut usize,
         p_pub_key_id: *mut u8,
-    ) -> sgx_status_t;
+    ) -> SgxStatus;
 
-    fn sgx_get_quote_size_ex(
-        p_att_key_id: *const sgx_att_key_id_t,
-        p_quote_size: *mut u32,
-    ) -> sgx_status_t;
+    fn sgx_get_quote_size_ex(p_att_key_id: *const AttKeyId, p_quote_size: *mut u32) -> SgxStatus;
 
     fn sgx_get_quote_ex(
-        p_isv_enclave_report: *const sgx_report_t,
-        p_att_key_id: *const sgx_att_key_id_t,
-        p_qe_report: *mut sgx_qe_report_info_t,
+        p_isv_enclave_report: *const Report,
+        p_att_key_id: *const AttKeyId,
+        p_qe_report: *mut QeReportInfo,
         p_quote: *mut u8,
         quote_size: u32,
-    ) -> sgx_status_t;
+    ) -> SgxStatus;
 }
 
 #[no_mangle]
 pub extern "C" fn ocall_sgx_init_quote(
-    p_att_key_id: *mut sgx_att_key_id_t,
-    p_qe_target_info: *mut sgx_target_info_t,
-) -> sgx_status_t {
+    p_att_key_id: *mut AttKeyId,
+    p_qe_target_info: *mut TargetInfo,
+) -> SgxStatus {
     let ret = unsafe { sgx_select_att_key_id(ptr::null(), 0, p_att_key_id) };
 
-    if ret != sgx_status_t::SGX_SUCCESS {
+    if ret != SgxStatus::Success {
         return ret;
     }
 
@@ -72,7 +73,7 @@ pub extern "C" fn ocall_sgx_init_quote(
         )
     };
 
-    if ret != sgx_status_t::SGX_SUCCESS {
+    if ret != SgxStatus::Success {
         return ret;
     }
 
@@ -91,20 +92,20 @@ pub extern "C" fn ocall_sgx_init_quote(
 
 #[no_mangle]
 pub extern "C" fn ocall_sgx_get_quote_size(
-    p_att_key_id: *const sgx_att_key_id_t,
+    p_att_key_id: *const AttKeyId,
     p_quote_size: *mut u32,
-) -> sgx_status_t {
+) -> SgxStatus {
     unsafe { sgx_get_quote_size_ex(p_att_key_id as _, p_quote_size) }
 }
 
 #[no_mangle]
 pub extern "C" fn ocall_sgx_get_quote(
-    p_report: *const sgx_report_t,
-    p_att_key_id: *const sgx_att_key_id_t,
-    p_qe_report_info: *mut sgx_qe_report_info_t,
+    p_report: *const Report,
+    p_att_key_id: *const AttKeyId,
+    p_qe_report_info: *mut QeReportInfo,
     p_quote: *mut u8,
     quote_size: u32,
-) -> sgx_status_t {
+) -> SgxStatus {
     unsafe {
         sgx_get_quote_ex(
             p_report,

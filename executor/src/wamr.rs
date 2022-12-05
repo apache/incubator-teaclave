@@ -15,8 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use std::prelude::v1::*;
-
 use teaclave_executor_context::context::reset_thread_context;
 use teaclave_executor_context::context::set_thread_context;
 use teaclave_executor_context::context::Context;
@@ -343,8 +341,8 @@ pub mod tests {
 
         assert_eq!(summary, "7");
 
-        let output = fs::read_to_string(&output).unwrap();
-        let expected = fs::read_to_string(&expected_output).unwrap();
+        let output = fs::read_to_string(output).unwrap();
+        let expected = fs::read_to_string(expected_output).unwrap();
         assert_eq!(&output[..], &expected[..]);
     }
 }

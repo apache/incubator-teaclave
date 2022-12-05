@@ -179,10 +179,10 @@ pub fn test_data_fusion_success() {
     let fusion_id = task.assigned_outputs.get("OutFusionData").unwrap();
     let fusion_owners = task.outputs_ownership.get("OutFusionData").unwrap();
 
-    let fusion_input = register_fusion_input_from_output(&mut c2, &fusion_id);
+    let fusion_input = register_fusion_input_from_output(&mut c2, fusion_id);
     let function_id = register_word_count_function(&mut c2);
 
-    let task_id = create_wlc_task(&mut c2, &function_id, &fusion_owners);
+    let task_id = create_wlc_task(&mut c2, &function_id, fusion_owners);
     assign_data_for_task(
         &mut c2,
         &task_id,

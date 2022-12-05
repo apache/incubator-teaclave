@@ -19,7 +19,6 @@ use crate::storage::Storable;
 use crate::{FileAuthTag, FileCrypto, OwnerList};
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
-use std::prelude::v1::*;
 use url::Url;
 use uuid::Uuid;
 

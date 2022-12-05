@@ -32,7 +32,7 @@ if [ $# -eq 0 ]; then
 fi
 edl_lib_name="$1"
 
-LIBENCLAVE_PATH="${TRUSTED_TARGET_DIR}/${TARGET}/lib${CUR_PKG_NAME}.a"
+LIBENCLAVE_PATH="${TRUSTED_TARGET_DIR}/${SGX_LIB_TARGET}/${TARGET}/lib${CUR_PKG_NAME}.a"
 CONFIG_PATH="${TEACLAVE_PROJECT_ROOT}/${CUR_PKG_PATH}/Enclave.config.xml"
 SIGNED_PATH="${CUR_INSTALL_DIR}/${CUR_PKG_NAME}.signed.so"
 CUR_ENCLAVE_INFO_PATH="${TEACLAVE_OUT_DIR}/${CUR_PKG_NAME}_info.toml"
@@ -54,12 +54,9 @@ ENCLAVE_SECURITY_LINK_FLAGS="-Wl,-z,relro,-z,now,-z,noexecstack"
 
 ENCLAVE_LINK_FLAGS="${ENCLAVE_SECURITY_LINK_FLAGS} \
                    -Wl,--no-undefined -nostdlib -nodefaultlibs -nostartfiles -L${SGX_LIBRARY_PATH} \
-                   -Wl,--whole-archive -l${Trts_Library_Name} -Wl,--no-whole-archive \
                    -Wl,--start-group \
-                   -l${Service_Library_Name} -lsgx_tprotected_fs -lsgx_tkey_exchange \
-                   -lsgx_tstdc -lsgx_tcxx -lsgx_tservice -lsgx_tcrypto \
                    ${TEACLAVE_LINK_FLAGS} \
-                   -L${TRUSTED_TARGET_DIR}/${TARGET} -l${CUR_PKG_NAME} \
+                   -L${TRUSTED_TARGET_DIR}/${SGX_LIB_TARGET}/${TARGET} -l${CUR_PKG_NAME} \
                    -Wl,--end-group \
                    -Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefined \
                    -Wl,-pie,-eenclave_entry -Wl,--export-dynamic  \

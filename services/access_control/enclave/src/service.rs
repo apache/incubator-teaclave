@@ -17,7 +17,6 @@
 
 use crate::acs::{AccessControlModule, EnforceRequest};
 use crate::error::TeaclavAccessControlError;
-use std::prelude::v1::*;
 use teaclave_proto::teaclave_access_control_service::{
     AuthorizeDataRequest, AuthorizeDataResponse, AuthorizeFunctionRequest,
     AuthorizeFunctionResponse, AuthorizeStagedTaskRequest, AuthorizeStagedTaskResponse,

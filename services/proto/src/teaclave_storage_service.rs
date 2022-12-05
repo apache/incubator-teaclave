@@ -16,7 +16,6 @@
 // under the License.
 
 use anyhow::{Error, Result};
-use std::prelude::v1::*;
 
 use crate::teaclave_storage_service_proto as proto;
 pub use proto::TeaclaveStorage;

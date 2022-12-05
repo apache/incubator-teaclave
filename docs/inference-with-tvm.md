@@ -24,7 +24,7 @@ in Teaclave and we will finally build a MNIST inference function for Teaclave.
 
 All the dependencies has been installed or built in our docker image. If you do
 not want to waste time on this step, you can skip this section with [our
-image](https://hub.docker.com/layers/teaclave/teaclave-build-ubuntu-1804-sgx-2.14/0.1.2/images/sha256-7573f25acecddca48c57b20acb6f0fe9fe505503c33a9dc9905470f95ebd7829)
+image](https://hub.docker.com/layers/teaclave/teaclave-build-ubuntu-1804-sgx-2.17.1/0.1.0/images/sha256-fd6c0e8a0bac53327408091ac8e11f911711477747116ecb4f3bf1094fb24c17)
 prepared.
 
 TVM provides detailed build instruction in [the

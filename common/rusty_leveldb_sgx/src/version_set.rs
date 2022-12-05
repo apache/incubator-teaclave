@@ -1,6 +1,3 @@
-#[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
-
 use crate::cmp::{Cmp, InternalKeyCmp};
 use crate::env::Env;
 use crate::error::{err, Result, Status, StatusCode};

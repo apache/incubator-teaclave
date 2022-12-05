@@ -19,7 +19,6 @@ use crate::user_info::UserInfo;
 use rusty_leveldb::LdbIterator;
 use rusty_leveldb::DB;
 use std::path::Path;
-use std::prelude::v1::*;
 use std::sync::mpsc::{channel, Sender};
 use std::thread;
 use thiserror::Error;

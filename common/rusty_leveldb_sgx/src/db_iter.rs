@@ -1,6 +1,3 @@
-#[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
-
 use crate::cmp::Cmp;
 use crate::key_types::{parse_internal_key, truncate_to_userkey, LookupKey, ValueType};
 use crate::merging_iter::MergingIter;

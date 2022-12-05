@@ -16,16 +16,13 @@
 // under the License.
 
 #[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
-
 use std::cell::RefCell;
 use std::slice;
 use std::thread_local;
 
-use sgx_types::{c_char, c_int, c_uchar, c_uint, size_t};
+use sgx_types::types::{c_char, c_int, c_uchar, c_uint, size_t};
 
 use std::collections::HashMap;
-use std::format;
 
 use teaclave_types::TeaclaveRuntime;
 
@@ -255,10 +252,10 @@ pub mod tests {
     fn test_file_handle_encoding() {
         assert_eq!(5, 5.into_read_handle());
         assert_eq!(0x4000_0006, 6.into_write_handle());
-        assert_eq!(true, 0x4000_0000.is_write_handle());
-        assert_eq!(false, 0x4000_0000.is_read_handle());
-        assert_eq!(true, 0x9.is_read_handle());
-        assert_eq!(false, 0xff.is_write_handle());
+        assert!(0x4000_0000.is_write_handle());
+        assert!(!0x4000_0000.is_read_handle());
+        assert!(0x9.is_read_handle());
+        assert!(!0xff.is_write_handle());
     }
 
     fn test_rtc_api() {
@@ -279,7 +276,7 @@ pub mod tests {
         set_thread_context(Context::new(runtime)).unwrap();
 
         let expected_input = b"Hello\nWorld";
-        let f = rtc_open_input(&in_fid).unwrap();
+        let f = rtc_open_input(in_fid).unwrap();
         let mut buf = [0u8; 128];
         let size = rtc_read_handle(f, &mut buf).unwrap();
         assert_eq!(&expected_input[..], &buf[..size]);
@@ -287,7 +284,7 @@ pub mod tests {
         assert!(rtc_close_handle(f).is_ok());
         assert!(rtc_close_handle(f).is_err());
 
-        let f = rtc_create_output(&out_fid).unwrap();
+        let f = rtc_create_output(out_fid).unwrap();
         let size = rtc_write_handle(f, &expected_input[..]).unwrap();
         assert_eq!(size, expected_input.len());
 
@@ -329,7 +326,7 @@ pub unsafe extern "C" fn wasm_open_input(_exec_env: *const c_void, fid: *mut c_c
     debug!("wasm_open_input");
     let fid = unsafe { CStr::from_ptr(fid).to_string_lossy().into_owned() };
     match rtc_open_input(&fid) {
-        Ok(handle) => handle as i32,
+        Ok(handle) => handle,
         Err(e) => {
             error!("wasm_open_input: {:?}", e);
             FFI_FILE_ERROR_WASM
@@ -367,7 +364,7 @@ pub unsafe extern "C" fn wasm_create_output(_exec_env: *const c_void, fid: *mut 
     debug!("wasm_create_output");
     let fid = unsafe { CStr::from_ptr(fid).to_string_lossy().into_owned() };
     match rtc_create_output(&fid) {
-        Ok(handle) => handle as i32,
+        Ok(handle) => handle,
         Err(e) => {
             error!("wasm_create_output: {:?}", e);
             FFI_FILE_ERROR_WASM

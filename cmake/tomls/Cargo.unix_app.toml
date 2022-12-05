@@ -31,6 +31,10 @@ exclude = [
 
 [patch.crates-io]
 
-# sgx_urts = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.3" }
-sgx_types = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.3" }
-sgx_ucrypto = { git = "https://github.com/apache/teaclave-sgx-sdk", rev = "v1.1.3" }
+sgx_cov    = { path = "../../../third_party/rust-sgx-sdk/sgx_tests/cov" }
+sgx_crypto = { path = "../../../third_party/rust-sgx-sdk/sgx_crypto" }
+sgx_libc   = { path = "../../../third_party/rust-sgx-sdk/sgx_libc" }
+sgx_rand   = { path = "../../../third_party/rust-sgx-sdk/sgx_rand" }
+sgx_types  = { path = "../../../third_party/rust-sgx-sdk/sgx_types" }
+sgx_tse    = { path = "../../../third_party/rust-sgx-sdk/sgx_tse" }
+sgx_trts   = { path = "../../../third_party/rust-sgx-sdk/sgx_trts" }
