@@ -1,7 +1,5 @@
 //! An `env` is an abstraction layer that allows the database to run both on different platforms as
 //! well as persisting data on disk or in memory.
-#[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
 
 use crate::error::Result;
 

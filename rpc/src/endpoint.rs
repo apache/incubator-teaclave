@@ -19,7 +19,6 @@ use crate::channel::SgxTrustedTlsChannel;
 use crate::config::SgxTrustedTlsClientConfig;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use std::prelude::v1::*;
 
 pub struct Endpoint {
     url: String,

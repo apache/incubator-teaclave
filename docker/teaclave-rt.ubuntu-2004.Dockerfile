@@ -17,9 +17,9 @@
 
 FROM ubuntu:20.04
 
-ENV VERSION 2.15.101.1-focal1
-ENV SGX_DOWNLOAD_URL_BASE "https://download.01.org/intel-sgx/sgx-linux/2.15.1/distro/ubuntu20.04-server/"
-ENV SGX_LINUX_X64_SDK sgx_linux_x64_sdk_2.15.101.1.bin
+ENV VERSION 2.17.100.3-focal1
+ENV SGX_DOWNLOAD_URL_BASE "https://download.01.org/intel-sgx/sgx-linux/2.17.1/distro/ubuntu20.04-server/"
+ENV SGX_LINUX_X64_SDK sgx_linux_x64_sdk_2.17.101.1.bin
 ENV SGX_LINUX_X64_SDK_URL "$SGX_DOWNLOAD_URL_BASE/$SGX_LINUX_X64_SDK"
 
 ENV DEBIAN_FRONTEND=noninteractive

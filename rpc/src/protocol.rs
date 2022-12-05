@@ -16,12 +16,10 @@
 // under the License.
 
 #![allow(clippy::nonstandard_macro_braces)]
-#![allow(clippy::unknown_clippy_lints)]
 
 use log::trace;
 use serde::{Deserialize, Serialize};
 use std::io;
-use std::prelude::v1::*;
 use std::vec::Vec;
 use teaclave_types::TeaclaveServiceResponseError;
 use thiserror::Error;

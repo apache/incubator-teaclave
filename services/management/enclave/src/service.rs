@@ -18,8 +18,7 @@
 use crate::error::ManagementServiceError;
 use anyhow::anyhow;
 use std::convert::TryInto;
-use std::prelude::v1::*;
-use std::sync::{Arc, SgxMutex as Mutex};
+use std::sync::{Arc, Mutex};
 use teaclave_proto::teaclave_frontend_service::{
     ApproveTaskRequest, ApproveTaskResponse, AssignDataRequest, AssignDataResponse,
     CancelTaskRequest, CancelTaskResponse, CreateTaskRequest, CreateTaskResponse,
@@ -257,8 +256,10 @@ impl TeaclaveManagement for TeaclaveManagementService {
 
         self.write_to_db(&function)?;
 
-        let mut u = User::default();
-        u.id = user_id;
+        let mut u = User {
+            id: user_id,
+            ..Default::default()
+        };
         let external_id = u.external_id();
 
         let user = self.read_from_db::<User>(&external_id);
@@ -277,8 +278,10 @@ impl TeaclaveManagement for TeaclaveManagementService {
 
         // Update allowed function list for users
         for user_id in &function.user_allowlist {
-            let mut u = User::default();
-            u.id = user_id.into();
+            let mut u = User {
+                id: user_id.into(),
+                ..Default::default()
+            };
             let external_id = u.external_id();
             let user = self.read_from_db::<User>(&external_id);
             match user {
@@ -406,8 +409,10 @@ impl TeaclaveManagement for TeaclaveManagementService {
         let func_id = function.external_id().to_string();
 
         // Updated function owner
-        let mut u = User::default();
-        u.id = function.owner.clone();
+        let u = User {
+            id: function.owner.clone(),
+            ..Default::default()
+        };
         let external_id = u.external_id();
         let user = self.read_from_db::<User>(&external_id);
         if let Ok(mut us) = user {
@@ -420,8 +425,10 @@ impl TeaclaveManagement for TeaclaveManagementService {
 
         // Update allowed function list for users
         for user_id in &function.user_allowlist {
-            let mut u = User::default();
-            u.id = user_id.into();
+            let u = User {
+                id: user_id.into(),
+                ..Default::default()
+            };
             let external_id = u.external_id();
             let user = self.read_from_db::<User>(&external_id);
             if let Ok(mut us) = user {
@@ -460,8 +467,10 @@ impl TeaclaveManagement for TeaclaveManagementService {
             request_user_id = s.into();
         }
 
-        let mut u = User::default();
-        u.id = request_user_id;
+        let u = User {
+            id: request_user_id,
+            ..Default::default()
+        };
         let external_id = u.external_id();
 
         let user = self.read_from_db::<User>(&external_id);
@@ -605,7 +614,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
 
         for (data_name, data_id) in request.inputs.iter() {
             let file: TeaclaveInputFile = self
-                .read_from_db(&data_id)
+                .read_from_db(data_id)
                 .map_err(|_| ManagementServiceError::InvalidDataId)?;
             task.assign_input(&user_id, data_name, file)
                 .map_err(|_| ManagementServiceError::PermissionDenied)?;
@@ -613,7 +622,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
 
         for (data_name, data_id) in request.outputs.iter() {
             let file: TeaclaveOutputFile = self
-                .read_from_db(&data_id)
+                .read_from_db(data_id)
                 .map_err(|_| ManagementServiceError::InvalidDataId)?;
             task.assign_output(&user_id, data_name, file)
                 .map_err(|_| ManagementServiceError::PermissionDenied)?;
@@ -945,7 +954,7 @@ fn get_request_role<T>(request: &Request<T>) -> Result<UserRole, ManagementServi
 
 fn create_fusion_data(owners: impl Into<OwnerList>) -> anyhow::Result<TeaclaveOutputFile> {
     let uuid = Uuid::new_v4();
-    let url = format!("fusion:///TEACLAVE_FUSION_BASE/{}.fusion", uuid.to_string());
+    let url = format!("fusion:///TEACLAVE_FUSION_BASE/{}.fusion", uuid);
     let url = Url::parse(&url).map_err(|_| anyhow!("invalid url"))?;
     let crypto_info = FileCrypto::default();
 

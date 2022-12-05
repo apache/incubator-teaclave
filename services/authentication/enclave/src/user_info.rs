@@ -21,7 +21,6 @@ use rand::prelude::RngCore;
 use ring::{digest, pbkdf2};
 use serde::{Deserialize, Serialize};
 use std::num;
-use std::prelude::v1::*;
 use std::vec;
 
 use teaclave_types::{UserAuthClaims, UserRole};
@@ -85,8 +84,10 @@ impl UserInfo {
             iss,
             exp,
         };
-        let mut header = jwt::Header::default();
-        header.alg = JWT_ALG;
+        let header = jwt::Header {
+            alg: JWT_ALG,
+            ..Default::default()
+        };
         let secret = jwt::EncodingKey::from_secret(secret);
         let token = jwt::encode(&header, &claims, &secret)?;
         Ok(token)

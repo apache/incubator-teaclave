@@ -17,9 +17,9 @@
 
 FROM ubuntu:18.04
 
-ENV VERSION 2.14.100.2-bionic1
-ENV SGX_DOWNLOAD_URL_BASE "https://download.01.org/intel-sgx/sgx-linux/2.14/distro/ubuntu18.04-server"
-ENV SGX_LINUX_X64_SDK sgx_linux_x64_sdk_2.14.100.2.bin
+ENV VERSION 2.17.100.3-bionic1
+ENV SGX_DOWNLOAD_URL_BASE "https://download.01.org/intel-sgx/sgx-linux/2.17.1/distro/ubuntu18.04-server"
+ENV SGX_LINUX_X64_SDK sgx_linux_x64_sdk_2.17.101.1.bin
 ENV SGX_LINUX_X64_SDK_URL "$SGX_DOWNLOAD_URL_BASE/$SGX_LINUX_X64_SDK"
 
 RUN apt-get update && apt-get install -q -y \

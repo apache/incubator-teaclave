@@ -17,9 +17,8 @@
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::prelude::v1::*;
 use std::sync::mpsc;
-use std::sync::{Arc, SgxMutex as Mutex};
+use std::sync::{Arc, Mutex};
 use std::thread;
 
 use crate::task_file_manager::TaskFileManager;
@@ -36,6 +35,7 @@ static WORKER_BASE_DIR: &str = "/tmp/teaclave_agent/";
 
 #[derive(Clone)]
 pub(crate) struct TeaclaveExecutionService {
+    #[allow(dead_code)]
     worker: Arc<Worker>,
     scheduler_client: Arc<Mutex<TeaclaveSchedulerClient>>,
     fusion_base: PathBuf,
@@ -94,10 +94,8 @@ impl TeaclaveExecutionService {
                             current_task = Arc::new(Some(task));
                             let task_copy = current_task.clone();
                             let handle = thread::spawn(move || {
-                                let result = invoke_task(
-                                    &task_copy.as_ref().as_ref().unwrap(),
-                                    &fusion_base,
-                                );
+                                let result =
+                                    invoke_task(task_copy.as_ref().as_ref().unwrap(), &fusion_base);
                                 tx_task.send(result).unwrap();
                             });
                             task_handle = Some(handle);
@@ -227,7 +225,7 @@ fn invoke_task(task: &StagedTask, fusion_base: &PathBuf) -> Result<TaskOutputs> 
         &task.input_data,
         &task.output_data,
     )?;
-    let invocation = prepare_task(&task, &file_mgr)?;
+    let invocation = prepare_task(task, &file_mgr)?;
 
     log::debug!("Invoke function: {:?}", invocation);
     let worker = Worker::default();
@@ -316,12 +314,7 @@ pub mod tests {
             env!("TEACLAVE_TEST_INSTALL_DIR")
         );
         let input_url = Url::parse(&format!("{}/train.enc", fixture_dir)).unwrap();
-        let output_url = Url::parse(&format!(
-            "{}/model-{}.enc.out",
-            fixture_dir,
-            task_id.to_string()
-        ))
-        .unwrap();
+        let output_url = Url::parse(&format!("{}/model-{}.enc.out", fixture_dir, task_id)).unwrap();
         let crypto = TeaclaveFile128Key::new(&[0; 16]).unwrap();
         let input_cmac = FileAuthTag::from_hex("881adca6b0524472da0a9d0bb02b9af9").unwrap();
         let training_input_data = FunctionInputFile::new(input_url, input_cmac, crypto);

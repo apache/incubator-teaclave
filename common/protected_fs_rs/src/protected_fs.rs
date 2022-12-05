@@ -17,11 +17,7 @@
 
 //! Filesystem manipulation operations.
 
-#[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
-
-use crate::deps::sgx_aes_gcm_128bit_tag_t;
-use crate::deps::sgx_key_128bit_t;
+use crate::deps::{Key128bit, Mac128bit};
 use crate::sgx_fs_inner as fs_imp;
 use std::io::{self, Read, Seek, SeekFrom, Write};
 use std::path::Path;
@@ -58,19 +54,19 @@ impl ProtectedFile {
         OpenOptions::default().write(true).open(path.as_ref())
     }
 
-    pub fn open_ex<P: AsRef<Path>>(path: P, key: &sgx_key_128bit_t) -> io::Result<ProtectedFile> {
+    pub fn open_ex<P: AsRef<Path>>(path: P, key: &Key128bit) -> io::Result<ProtectedFile> {
         OpenOptions::default()
             .read(true)
             .open_ex(path.as_ref(), key)
     }
 
-    pub fn append_ex<P: AsRef<Path>>(path: P, key: &sgx_key_128bit_t) -> io::Result<ProtectedFile> {
+    pub fn append_ex<P: AsRef<Path>>(path: P, key: &Key128bit) -> io::Result<ProtectedFile> {
         OpenOptions::default()
             .append(true)
             .open_ex(path.as_ref(), key)
     }
 
-    pub fn create_ex<P: AsRef<Path>>(path: P, key: &sgx_key_128bit_t) -> io::Result<ProtectedFile> {
+    pub fn create_ex<P: AsRef<Path>>(path: P, key: &Key128bit) -> io::Result<ProtectedFile> {
         OpenOptions::default()
             .write(true)
             .open_ex(path.as_ref(), key)
@@ -88,8 +84,8 @@ impl ProtectedFile {
         self.inner.clear_cache()
     }
 
-    pub fn current_meta_gmac(&self) -> io::Result<sgx_aes_gcm_128bit_tag_t> {
-        let mut meta_gmac = sgx_aes_gcm_128bit_tag_t::default();
+    pub fn current_meta_gmac(&self) -> io::Result<Mac128bit> {
+        let mut meta_gmac = Mac128bit::default();
         self.inner.get_current_meta_gmac(&mut meta_gmac)?;
         Ok(meta_gmac)
     }
@@ -162,14 +158,6 @@ impl<'a> Seek for &'a ProtectedFile {
 }
 
 impl OpenOptions {
-    /// Creates a blank new set of options ready for configuration.
-    ///
-    /// All options are initially set to `false`.
-    ///
-    pub fn default() -> OpenOptions {
-        OpenOptions(fs_imp::OpenOptions::new())
-    }
-
     /// Sets the option for read access.
     ///
     /// This option, when true, will indicate that the file should be
@@ -234,11 +222,7 @@ impl OpenOptions {
         self._open(path.as_ref())
     }
 
-    pub fn open_ex<P: AsRef<Path>>(
-        &self,
-        path: P,
-        key: &sgx_key_128bit_t,
-    ) -> io::Result<ProtectedFile> {
+    pub fn open_ex<P: AsRef<Path>>(&self, path: P, key: &Key128bit) -> io::Result<ProtectedFile> {
         self._open_ex(path.as_ref(), key)
     }
 
@@ -247,9 +231,19 @@ impl OpenOptions {
         Ok(ProtectedFile { inner })
     }
 
-    fn _open_ex(&self, path: &Path, key: &sgx_key_128bit_t) -> io::Result<ProtectedFile> {
+    fn _open_ex(&self, path: &Path, key: &Key128bit) -> io::Result<ProtectedFile> {
         let inner = fs_imp::SgxFile::open_ex(path, &self.0, key)?;
         Ok(ProtectedFile { inner })
+    }
+}
+
+impl Default for OpenOptions {
+    /// Creates a blank new set of options ready for configuration.
+    ///
+    /// All options are initially set to `false`.
+    ///
+    fn default() -> OpenOptions {
+        OpenOptions(fs_imp::OpenOptions::new())
     }
 }
 
@@ -258,12 +252,12 @@ pub fn remove_protected_file<P: AsRef<Path>>(path: P) -> io::Result<()> {
 }
 
 #[cfg(feature = "mesalock_sgx")]
-pub fn export_auto_key<P: AsRef<Path>>(path: P) -> io::Result<sgx_key_128bit_t> {
+pub fn export_auto_key<P: AsRef<Path>>(path: P) -> io::Result<Key128bit> {
     fs_imp::export_auto_key(path.as_ref())
 }
 
 #[cfg(feature = "mesalock_sgx")]
-pub fn import_auto_key<P: AsRef<Path>>(path: P, key: &sgx_key_128bit_t) -> io::Result<()> {
+pub fn import_auto_key<P: AsRef<Path>>(path: P, key: &Key128bit) -> io::Result<()> {
     fs_imp::import_auto_key(path.as_ref(), key)
 }
 

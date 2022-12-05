@@ -19,16 +19,18 @@
 use cfg_if::cfg_if;
 cfg_if! {
     if #[cfg(feature = "mesalock_sgx")] {
-        pub(crate) use sgx_trts::libc::c_void;
-        pub(crate) use sgx_trts::c_str::CStr;
+        pub(crate) use sgx_types::types::c_void;
+        pub(crate) use std::ffi::CStr;
 
-        pub(crate) use sgx_types::size_t;
-        pub(crate) use sgx_types::sgx_key_128bit_t;
-        pub(crate) use sgx_types::sgx_aes_gcm_128bit_tag_t;
+        pub(crate) use sgx_types::types::size_t;
+        pub(crate) use sgx_types::types::Key128bit;
+        pub(crate) use sgx_types::types::Mac128bit;
 
-        pub(crate) use sgx_types::{c_char, c_int};
-        pub(crate) use sgx_types::{int32_t, int64_t};
-        pub(crate) use sgx_types::{SysError, SysResult};
+        pub(crate) use sgx_types::types::{c_char, c_int};
+        pub(crate) use sgx_types::types::{int32_t, int64_t};
+        pub(crate) use sgx_types::error::OsError as OsErrorNum;
+        pub(crate) type OsError = std::result::Result<(), OsErrorNum>;
+        pub(crate) use sgx_types::error::OsResult;
         pub(crate) use sgx_trts::error::errno;
 
         pub(crate) use core::cmp;
@@ -37,15 +39,15 @@ cfg_if! {
         pub(crate) use std::ffi::CStr;
 
         pub(crate) use libc::size_t;
-        pub(crate) type sgx_key_128bit_t = [u8; 16];
-        pub(crate) type sgx_aes_gcm_128bit_tag_t = [u8; 16];
+        pub(crate) type Key128bit = [u8; 16];
+        pub(crate) type Mac128bit = [u8; 16];
 
         pub(crate) use std::os::raw::{c_char, c_int};
         pub(crate) type int32_t = i32;
         pub(crate) type int64_t = i64;
-        pub(crate) type sys_error_t = int32_t;
-        pub(crate) type SysError = std::result::Result<(), sys_error_t>;
-        pub(crate) type SysResult<T> = std::result::Result<T, sys_error_t>;
+        pub(crate) type os_error_t = int32_t;
+        pub(crate) type OsError = std::result::Result<(), os_error_t>;
+        pub(crate) type OsResult<T> = std::result::Result<T, os_error_t>;
 
         pub(crate) fn errno() -> i32 {
             std::io::Error::last_os_error().raw_os_error().unwrap_or(0)

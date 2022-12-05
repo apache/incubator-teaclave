@@ -15,15 +15,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#![cfg_attr(feature = "mesalock_sgx", no_std)]
-#[cfg(feature = "mesalock_sgx")]
-#[macro_use]
-extern crate sgx_tstd as std;
-
 #[macro_use]
 extern crate log;
-
-use std::prelude::v1::*;
+extern crate sgx_types;
 
 use teaclave_binder::proto::{
     ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
@@ -47,7 +41,7 @@ fn handle_run_test(_: &RunTestInput) -> TeeServiceResult<RunTestOutput> {
         teaclave_rpc::run_tests(),
         teaclave_worker::run_tests()
     );
-    assert_eq!(ret, true);
+    assert!(ret);
 
     Ok(RunTestOutput)
 }

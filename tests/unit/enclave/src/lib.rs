@@ -15,11 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#![cfg_attr(feature = "mesalock_sgx", no_std)]
-#[cfg(feature = "mesalock_sgx")]
-extern crate sgx_tstd as std;
-
-use std::prelude::v1::*;
+extern crate sgx_types;
 
 use teaclave_binder::proto::{
     ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,

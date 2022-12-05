@@ -1,6 +1,3 @@
-#[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
-
 use crate::cmp::{Cmp, DefaultCmp};
 use crate::types::{current_key_val, LdbIterator};
 

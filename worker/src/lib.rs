@@ -15,9 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#![cfg_attr(feature = "mesalock_sgx", no_std)]
-#[cfg(feature = "mesalock_sgx")]
-extern crate sgx_tstd as std;
+extern crate sgx_types;
 
 mod worker;
 pub use worker::Worker;

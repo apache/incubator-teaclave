@@ -16,7 +16,6 @@
 // under the License.
 
 use crate::utils::*;
-use std::prelude::v1::*;
 use teaclave_proto::teaclave_frontend_service::*;
 use teaclave_types::*;
 use url::Url;

@@ -24,7 +24,7 @@ defaults:
 jobs:
   sim-debug-unit:
     runs-on: ubuntu-20.04
-    container: teaclave/teaclave-build-ubuntu-2004-sgx-2.15.1:0.1.3
+    container: teaclave/teaclave-build-ubuntu-2004-sgx-2.17.1:0.1.0
     steps:
       - uses: actions/checkout@v3
       - name: Build
@@ -41,7 +41,7 @@ jobs:
           make run-unit-tests
   sim-debug-integration:
     runs-on: ubuntu-20.04
-    container: teaclave/teaclave-build-ubuntu-2004-sgx-2.15.1:0.1.3
+    container: teaclave/teaclave-build-ubuntu-2004-sgx-2.17.1:0.1.0
     steps:
       - uses: actions/checkout@v3
       - name: Build
@@ -58,7 +58,7 @@ jobs:
           make run-integration-tests
   sim-debug-functional:
     runs-on: ubuntu-20.04
-    container: teaclave/teaclave-build-ubuntu-2004-sgx-2.15.1:0.1.3
+    container: teaclave/teaclave-build-ubuntu-2004-sgx-2.17.1:0.1.0
     steps:
       - uses: actions/checkout@v3
       - name: Build
@@ -75,7 +75,7 @@ jobs:
           make run-functional-tests
   sim-debug-sdk:
     runs-on: ubuntu-20.04
-    container: teaclave/teaclave-build-ubuntu-2004-sgx-2.15.1:0.1.3
+    container: teaclave/teaclave-build-ubuntu-2004-sgx-2.17.1:0.1.0
     steps:
       - uses: actions/checkout@v3
       - name: Build
@@ -92,7 +92,7 @@ jobs:
           make run-sdk-tests
   sim-debug-example:
     runs-on: ubuntu-20.04
-    container: teaclave/teaclave-build-ubuntu-2004-sgx-2.15.1:0.1.3
+    container: teaclave/teaclave-build-ubuntu-2004-sgx-2.17.1:0.1.0
     steps:
       - uses: actions/checkout@v3
       - name: Build
@@ -109,7 +109,7 @@ jobs:
           make run-examples
   sim-debug-cancel:
     runs-on: ubuntu-20.04
-    container: teaclave/teaclave-build-ubuntu-2004-sgx-2.15.1:0.1.3
+    container: teaclave/teaclave-build-ubuntu-2004-sgx-2.17.1:0.1.0
     steps:
       - uses: actions/checkout@v3
       - name: Build

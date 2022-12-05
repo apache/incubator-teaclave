@@ -24,15 +24,15 @@ use crate::AttestationServiceConfig;
 use crate::EndorsedAttestationReport;
 
 use std::collections::HashMap;
-use std::io::{Read, Write};
+use std::io::{ErrorKind, Read, Write};
 use std::net::TcpStream;
-use std::prelude::v1::*;
 use std::sync::Arc;
 
 use anyhow::{anyhow, bail, Result};
-use log::{debug, trace};
+use log::{debug, trace, warn};
 use serde_json::json;
-use sgx_types::*;
+use sgx_crypto::ecc::EcPublicKey;
+use sgx_types::types::QlAttKeyId;
 
 /// Root certification of the DCAP attestation service provider.
 #[cfg(dcap)]
@@ -73,13 +73,13 @@ pub(crate) enum AttestationServiceError {
 impl EndorsedAttestationReport {
     pub fn new(
         att_service_cfg: &AttestationServiceConfig,
-        pub_k: sgx_types::sgx_ec256_public_t,
+        pub_k: EcPublicKey,
     ) -> anyhow::Result<Self> {
         let (mut ak_id, qe_target_info) = platform::init_sgx_quote()?;
 
         // For IAS-based attestation, we need to fill our SPID (obtained from Intel)
         // into the attestation key id. For DCAP-based attestation, SPID should be 0
-        const SPID_OFFSET: usize = std::mem::size_of::<sgx_ql_att_key_id_t>();
+        const SPID_OFFSET: usize = std::mem::size_of::<QlAttKeyId>();
         ak_id.att_key_id[SPID_OFFSET..(SPID_OFFSET + att_service_cfg.spid.id.len())]
             .clone_from_slice(&att_service_cfg.spid.id);
 
@@ -155,7 +155,13 @@ fn get_report(
     let mut stream = new_tls_stream(url).map_err(|_| AttestationServiceError::TlsError)?;
     stream.write_all(request.as_bytes())?;
     let mut response = Vec::new();
-    stream.read_to_end(&mut response)?;
+    if let Err(e) = stream.read_to_end(&mut response) {
+        match e.kind() {
+            // Server may send CloseNotify ConnectionAborted for Connection:Close request
+            ErrorKind::ConnectionAborted => warn!("connection aborted: {:?}", e),
+            _ => bail!("{:?} is not allowed", e),
+        }
+    };
 
     trace!("{}", String::from_utf8_lossy(&response));
 
@@ -208,23 +214,23 @@ fn get_report(
     debug!("ias header_map: {:?}", header_map);
 
     debug!("get_content_length");
-    if !header_map.contains_key("Content-Length")
+    if !header_map.contains_key("content-length")
         || header_map
-            .get("Content-Length")
-            .ok_or_else(|| AttestationServiceError::MissingHeader("Content-Length".to_string()))?
+            .get("content-length")
+            .ok_or_else(|| AttestationServiceError::MissingHeader("content-length".to_string()))?
             .parse::<u32>()
             .unwrap_or(0)
             == 0
     {
         bail!(AttestationServiceError::MissingHeader(
-            "Content-Length".to_string()
+            "content-length".to_string()
         ));
     }
 
     debug!("get_signature");
     let signature_header = match algo {
-        AttestationAlgorithm::SgxEpid => "X-IASReport-Signature",
-        AttestationAlgorithm::SgxEcdsa => "X-DCAPReport-Signature",
+        AttestationAlgorithm::SgxEpid => "x-iasreport-signature",
+        AttestationAlgorithm::SgxEcdsa => "x-dcapreport-signature",
     };
     let signature = header_map
         .get(signature_header)
@@ -233,8 +239,8 @@ fn get_report(
 
     debug!("get_signing_cert");
     let signing_cert_header = match algo {
-        AttestationAlgorithm::SgxEpid => "X-IASReport-Signing-Certificate",
-        AttestationAlgorithm::SgxEcdsa => "X-DCAPReport-Signing-Certificate",
+        AttestationAlgorithm::SgxEpid => "x-iasreport-signing-certificate",
+        AttestationAlgorithm::SgxEcdsa => "x-dcapreport-signing-certificate",
     };
     let certs: Vec<Vec<u8>> = {
         let cert_str = header_map.get(signing_cert_header).ok_or_else(|| {
@@ -260,7 +266,8 @@ fn parse_headers(resp: &httparse::Response) -> HashMap<String, String> {
     let mut header_map = HashMap::new();
     for h in resp.headers.iter() {
         header_map.insert(
-            h.name.to_owned(),
+            // HTTP header name is case insensitive
+            h.name.to_lowercase(),
             String::from_utf8_lossy(h.value).into_owned(),
         );
     }

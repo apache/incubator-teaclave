@@ -20,7 +20,7 @@ name = "teaclave_rpc_proc_macro"
 version = "0.4.0"
 authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
 license = "Apache-2.0"
-edition = "2018"
+edition = "2021"
 
 [lib]
 proc-macro = true

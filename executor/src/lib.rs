@@ -15,14 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#![cfg_attr(feature = "mesalock_sgx", no_std)]
-#[cfg(feature = "mesalock_sgx")]
-extern crate sgx_tstd as std;
-
-#[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
-
 extern crate log;
+extern crate sgx_types;
 
 #[cfg(executor_builtin)]
 mod builtin;
@@ -42,6 +36,7 @@ pub use wamr::WAMicroRuntime;
 pub mod tests {
     use super::*;
 
+    #[allow(clippy::vec_init_then_push)]
     pub fn run_tests() -> bool {
         let mut v: Vec<bool> = Vec::new();
         #[cfg(executor_mesapy)]

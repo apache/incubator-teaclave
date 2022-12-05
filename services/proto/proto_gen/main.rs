@@ -54,8 +54,8 @@ impl Service {
         let mut methods = vec![];
         let package_name = prost_service.package.trim_end_matches("_proto");
         for m in prost_service.methods.iter() {
-            let impl_input_type = convert_to_impl_type(&package_name, &m.input_type);
-            let impl_output_type = convert_to_impl_type(&package_name, &m.output_type);
+            let impl_input_type = convert_to_impl_type(package_name, &m.input_type);
+            let impl_output_type = convert_to_impl_type(package_name, &m.output_type);
 
             let method = Method {
                 name: m.name.clone(),

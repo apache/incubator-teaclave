@@ -25,7 +25,7 @@ ifeq ($(DCAP),ON)
 endif
 
 target/debug/libteaclave_client_sdk.so:
-	RUSTFLAGS="$(RUSTFLAGS)" cargo build --manifest-path ../../sdk/rust/Cargo.toml --target-dir target
+	RUSTFLAGS="$(RUSTFLAGS)" RUSTUP_TOOLCHAIN=nightly-2022-10-22 cargo build --manifest-path ../../sdk/rust/Cargo.toml --target-dir target
 
 builtin_echo: builtin_echo.c target/debug/libteaclave_client_sdk.so
 	gcc -o $@ builtin_echo.c $(CFLAGS)

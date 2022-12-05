@@ -17,7 +17,6 @@
 
 use crate::teaclave_access_control_service_proto as proto;
 use anyhow::{Error, Result};
-use std::prelude::v1::*;
 use teaclave_rpc::into_request;
 
 pub use proto::TeaclaveAccessControl;

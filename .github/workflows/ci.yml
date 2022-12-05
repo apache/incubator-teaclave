@@ -23,7 +23,7 @@ defaults:
 
 jobs:
   teaclave-client-sdk-macos:
-    runs-on: macos-11
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
         with:
@@ -33,7 +33,7 @@ jobs:
           brew install cmake openssl@1.1
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           export PATH=~/.cargo/bin:$PATH
-          rustup default nightly-2020-10-25 && rustup target add aarch64-apple-ios x86_64-apple-ios
+          rustup default nightly-2022-10-22 && rustup target add aarch64-apple-ios x86_64-apple-ios
       - name: Building Teaclave Client SDK
         run: |
           export PKG_CONFIG_PATH="/usr/local/opt/openssl@1.1/lib/pkgconfig:/usr/local/opt/libssh2/lib/pkgconfig/"
@@ -45,14 +45,15 @@ jobs:
           cd sdk/swift/TeaclaveClientSDK && xcodebuild -scheme TeaclaveClientSDK
   format:
     runs-on: ubuntu-20.04
-    container: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.5
+    container: teaclave/teaclave-build-ubuntu-2004-sgx-2.17.1:0.1.0
     steps:
       - uses: actions/checkout@v3
       - name: Setting up $HOME
         run: |
           cp /root/.bashrc $HOME/.bashrc &&
           ln -sf /root/.rustup ~/.rustup &&
-          ln -sf /root/.cargo ~/.cargo
+          ln -sf /root/.cargo ~/.cargo &&
+          git config --global --add safe.directory /__w/incubator-teaclave/incubator-teaclave
       - name: Checking code format
         run: |
           . /root/.cargo/env &&
@@ -62,14 +63,15 @@ jobs:
           make check
   lint:
     runs-on: ubuntu-20.04
-    container: teaclave/teaclave-build-ubuntu-1804-sgx-2.14:0.1.5
+    container: teaclave/teaclave-build-ubuntu-2004-sgx-2.17.1:0.1.0
     steps:
       - uses: actions/checkout@v3
       - name: Setting up $HOME
         run: |
           cp /root/.bashrc $HOME/.bashrc &&
           ln -sf /root/.rustup ~/.rustup &&
-          ln -sf /root/.cargo ~/.cargo
+          ln -sf /root/.cargo ~/.cargo &&
+          git config --global --add safe.directory /__w/incubator-teaclave/incubator-teaclave
       - name: Code linting with Clippy
         run: |
           . /opt/sgxsdk/environment &&

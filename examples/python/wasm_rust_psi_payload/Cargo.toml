@@ -21,7 +21,7 @@ version = "0.1.0"
 authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
 description = "Teaclave WAMR example payload to solve Private Set Intersection"
 license = "Apache-2.0"
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 teaclave_context = {path = "../../../sdk/payload/wasm/teaclave_context/"}

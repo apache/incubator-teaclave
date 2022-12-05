@@ -69,12 +69,12 @@ function build_edl() {
     do
         # $FILE_NAME.edl to $FILE_NAME_t.c
         ${SGX_EDGER8R} --trusted ${edl} --search-path ${SGX_SDK}/include \
-            --search-path ${RUST_SGX_SDK}/edl --search-path ${TEACLAVE_PROJECT_ROOT}/edl \
+            --search-path ${RUST_SGX_SDK}/sgx_edl/edl --search-path ${TEACLAVE_PROJECT_ROOT}/edl \
             --trusted-dir ${TEACLAVE_OUT_DIR}
 
         # $FILE_NAME.edl to $FILE_NAME_u.c
         ${SGX_EDGER8R} --untrusted ${edl} --search-path ${SGX_SDK}/include \
-            --search-path ${RUST_SGX_SDK}/edl --search-path ${TEACLAVE_PROJECT_ROOT}/edl \
+            --search-path ${RUST_SGX_SDK}/sgx_edl/edl --search-path ${TEACLAVE_PROJECT_ROOT}/edl \
             --untrusted-dir ${TEACLAVE_OUT_DIR}
 
         fname=$(basename "$edl" .edl)

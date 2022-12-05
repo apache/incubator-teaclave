@@ -17,16 +17,11 @@
 
 use anyhow::ensure;
 use anyhow::Result;
-use sgx_types::sgx_status_t;
-use std::prelude::v1::*;
+use sgx_types::error::SgxStatus;
 use teaclave_types::FileAgentRequest;
 
 extern "C" {
-    fn ocall_handle_file_request(
-        p_retval: *mut u32,
-        in_buf: *const u8,
-        in_len: u32,
-    ) -> sgx_status_t;
+    fn ocall_handle_file_request(p_retval: *mut u32, in_buf: *const u8, in_len: u32) -> SgxStatus;
 }
 
 #[allow(dead_code)]
@@ -37,11 +32,7 @@ pub(crate) fn handle_file_request(request: FileAgentRequest) -> Result<()> {
     let res =
         unsafe { ocall_handle_file_request(&mut rt as _, bytes.as_ptr() as _, buf_len as u32) };
 
-    ensure!(
-        res == sgx_status_t::SGX_SUCCESS,
-        "ocall sgx_error = {:?}",
-        res
-    );
+    ensure!(res == SgxStatus::Success, "ocall sgx_error = {:?}", res);
     ensure!(rt == 0, "ocall error = {:?}", rt);
     Ok(())
 }

@@ -17,7 +17,6 @@
 
 use std::collections::hash_map::{IntoIter, Iter, IterMut};
 use std::collections::HashMap;
-use std::prelude::v1::*;
 
 use serde::{Deserialize, Serialize};
 use url::Url;

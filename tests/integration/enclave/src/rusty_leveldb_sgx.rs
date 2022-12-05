@@ -18,10 +18,10 @@
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use std::iter;
-use std::prelude::v1::*;
 use std::string::String;
 use std::time::Instant;
 #[cfg(feature = "mesalock_sgx")]
+#[allow(unused_imports)]
 use std::untrusted::time::InstantEx;
 
 use rusty_leveldb::CompressionType;
@@ -38,7 +38,7 @@ const VAL_LEN: usize = 48;
 fn gen_string(len: usize) -> String {
     let mut rng = rand::thread_rng();
     iter::repeat(())
-        .map(|()| rng.sample(Alphanumeric))
+        .map(|()| rng.sample(Alphanumeric) as char)
         .take(len)
         .collect()
 }
@@ -53,10 +53,10 @@ fn fill_db(db: &mut DB, entries: usize) -> Result<(), Box<dyn Error>> {
             let v2 = db
                 .get(k.as_bytes())
                 .ok_or_else(|| Box::new(io::Error::new(ErrorKind::NotFound, "Key not found")))?;
-            assert_eq!(&v.as_bytes()[..], &v2[..]);
+            assert_eq!(v.as_bytes()[..], v2[..]);
 
             db.delete(k.as_bytes())?;
-            assert_eq!(true, db.get(k.as_bytes()).is_none());
+            assert!(db.get(k.as_bytes()).is_none());
         }
 
         if i % 100 == 0 {
@@ -82,7 +82,7 @@ fn validate_sequential_elements(db: &mut DB, entries: usize) -> Result<(), Box<d
             error!("key: {}", k);
             Box::new(io::Error::new(ErrorKind::NotFound, "Key not found"))
         })?;
-        assert_eq!(&v_expected.as_bytes()[..], &v[..]);
+        assert_eq!(v_expected.as_bytes()[..], v[..]);
     }
     Ok(())
 }
@@ -114,14 +114,14 @@ fn test_write_and_reopen() {
     {
         let mut opt = Options::new_disk_db_with(key);
         opt.compression_type = CompressionType::CompressionSnappy;
-        let mut db = DB::open(&db_location, opt).unwrap();
+        let mut db = DB::open(db_location, opt).unwrap();
         fill_db_with_sequential_elements(&mut db, elements_count).unwrap();
     }
 
     {
         let mut opt = Options::new_disk_db_with(key);
         opt.compression_type = CompressionType::CompressionSnappy;
-        let mut db = DB::open(&db_location, opt).unwrap();
+        let mut db = DB::open(db_location, opt).unwrap();
         validate_sequential_elements(&mut db, 2000).unwrap();
     }
 

@@ -18,7 +18,6 @@
 use anyhow::Result;
 use lazy_static::lazy_static;
 use std::collections::HashMap;
-use std::prelude::v1::*;
 use teaclave_attestation::verifier;
 use teaclave_config::build::AS_ROOT_CA_CERT;
 use teaclave_config::RuntimeConfig;
@@ -121,7 +120,7 @@ pub fn create_frontend_client(
     service_addr: &str,
     cred: UserCredential,
 ) -> Result<TeaclaveFrontendClient> {
-    let tls_config = create_client_config(&enclave_info, "teaclave_frontend_service")?;
+    let tls_config = create_client_config(enclave_info, "teaclave_frontend_service")?;
     let channel = Endpoint::new(service_addr).config(tls_config).connect()?;
 
     let mut metadata = HashMap::new();
@@ -136,7 +135,7 @@ pub fn create_authentication_api_client(
     enclave_info: &EnclaveInfo,
     service_addr: &str,
 ) -> Result<TeaclaveAuthenticationApiClient> {
-    let tls_config = create_client_config(&enclave_info, "teaclave_authentication_service")?;
+    let tls_config = create_client_config(enclave_info, "teaclave_authentication_service")?;
     let channel = Endpoint::new(service_addr).config(tls_config).connect()?;
 
     let client = TeaclaveAuthenticationApiClient::new(channel)?;
@@ -148,7 +147,7 @@ pub fn create_authentication_api_client_with_credential(
     service_addr: &str,
     cred: &UserCredential,
 ) -> Result<TeaclaveAuthenticationApiClient> {
-    let tls_config = create_client_config(&enclave_info, "teaclave_authentication_service")?;
+    let tls_config = create_client_config(enclave_info, "teaclave_authentication_service")?;
     let channel = Endpoint::new(service_addr).config(tls_config).connect()?;
 
     let mut metadata = HashMap::new();

@@ -15,7 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use std::prelude::v1::*;
 use teaclave_attestation::verifier;
 use teaclave_config::build::AS_ROOT_CA_CERT;
 use teaclave_config::RuntimeConfig;
@@ -166,7 +165,7 @@ fn test_authenticate_fail() {
     let request = UserAuthenticateRequest::new(credential);
     let response_result = internal_client.user_authenticate(request);
     debug!("{:?}", response_result);
-    assert!(!response_result.is_ok());
+    assert!(response_result.is_err());
 }
 
 #[test_case]

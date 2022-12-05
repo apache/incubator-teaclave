@@ -15,11 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#![cfg_attr(feature = "mesalock_sgx", no_std)]
-#[cfg(feature = "mesalock_sgx")]
-#[macro_use]
-extern crate sgx_tstd as std;
-
 use std::string::String;
 use std::vec::Vec;
 
@@ -31,6 +26,7 @@ inventory::collect!(TestCase);
 
 use std::time::Instant;
 #[cfg(feature = "mesalock_sgx")]
+#[allow(unused_imports)]
 use std::untrusted::time::InstantEx;
 
 #[macro_export]

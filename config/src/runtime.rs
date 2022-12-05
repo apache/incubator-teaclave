@@ -19,8 +19,6 @@ use crate::ConfigSource;
 #[cfg(not(feature = "mesalock_sgx"))]
 use std::fs;
 #[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
-#[cfg(feature = "mesalock_sgx")]
 use std::untrusted::fs;
 
 use anyhow::{bail, Context, Result};

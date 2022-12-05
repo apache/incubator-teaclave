@@ -17,7 +17,6 @@
 
 use crate::error::StorageServiceError;
 use anyhow::anyhow;
-use std::prelude::v1::*;
 use std::sync::mpsc::{channel, Sender};
 use teaclave_proto::teaclave_storage_service::{TeaclaveStorageRequest, TeaclaveStorageResponse};
 use teaclave_rpc::Request;

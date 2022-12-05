@@ -17,7 +17,6 @@
 
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
-use std::prelude::v1::*;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum HandleFileCommand {

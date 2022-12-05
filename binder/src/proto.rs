@@ -17,7 +17,6 @@
 
 use serde::{Deserialize, Serialize};
 use std::convert::From;
-use std::prelude::v1::*;
 
 pub enum ECallCommand {
     StartService,
@@ -42,10 +41,10 @@ impl From<u32> for ECallCommand {
     }
 }
 
-impl Into<u32> for ECallCommand {
+impl From<ECallCommand> for u32 {
     #[inline]
-    fn into(self) -> u32 {
-        match self {
+    fn from(cmd: ECallCommand) -> u32 {
+        match cmd {
             ECallCommand::StartService => 0x0000_1000,
             ECallCommand::InitEnclave => 0x0000_1001,
             ECallCommand::FinalizeEnclave => 0x0000_1002,

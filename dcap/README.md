@@ -18,7 +18,7 @@ Teaclave. To use DCAP instead of IAS, you have to first build Teaclave with DCAP
 enabled (by appending `-DDCAP=ON` option to `cmake`) and deploy in
 infrastructure with DCAP supported.
 
-The Intel's [DCAP Installation Guide](https://download.01.org/intel-sgx/sgx-dcap/1.3.1/linux/docs/Intel_SGX_DCAP_Linux_SW_Installation_Guide.pdf)
+The Intel's [DCAP Installation Guide](https://download.01.org/intel-sgx/sgx-dcap/1.14/linux/docs/Intel_SGX_SW_Installation_Guide_for_Linux.pdf)
 contains instructions to install essential dependencies for developers. Also,
 you need to prepare environment in your infrastructure before deploying a
 DCAP-enabled application.

@@ -19,9 +19,6 @@
 //! The implementation is based on Attestation Service API version 4.
 //! https://api.trustedservices.intel.com/documents/sgx-attestation-api-spec.pdf
 
-#[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
-
 use crate::AttestationError;
 use crate::EndorsedAttestationReport;
 
@@ -29,6 +26,7 @@ use std::convert::TryFrom;
 use std::fmt;
 use std::time::*;
 #[cfg(feature = "mesalock_sgx")]
+#[allow(unused_imports)]
 use std::untrusted::time::SystemTimeEx;
 
 use anyhow::{anyhow, bail, ensure, Error, Result};
@@ -122,7 +120,7 @@ impl fmt::Display for SgxEnclaveReport {
         writeln!(
             f,
             "The value of REPORT (hex): {}",
-            hex::encode(&self.report_data.to_vec())
+            hex::encode(self.report_data)
         )
     }
 }
@@ -321,6 +319,9 @@ pub enum SgxQuoteStatus {
     /// DCAP specific quote status. The signature over the application report is
     /// invalid.
     InvalidSignature,
+    #[cfg(dcap)]
+    /// The Quote verification failed due to an error in one of the input. For dcap only.
+    Unspecified,
     /// Other unknown bad status.
     UnknownBadStatus,
 }
@@ -343,6 +344,8 @@ impl From<&str> for SgxQuoteStatus {
             "CONFIGURATION_AND_SW_HARDENING_NEEDED" => {
                 SgxQuoteStatus::ConfigurationAndSwHardeningNeeded
             }
+            #[cfg(dcap)]
+            "UNSPECIFIED" => SgxQuoteStatus::Unspecified,
             _ => SgxQuoteStatus::UnknownBadStatus,
         }
     }
@@ -392,7 +395,7 @@ impl fmt::Display for SgxQuote {
         writeln!(
             f,
             "Custom user-defined data (hex): {}",
-            hex::encode(&self.user_data)
+            hex::encode(self.user_data)
         )?;
         write!(f, "{}", self.isv_enclave_report)
     }
@@ -594,7 +597,7 @@ impl AttestationReport {
             let quote_encoded = attn_report["isvEnclaveQuoteBody"]
                 .as_str()
                 .ok_or_else(|| Error::new(AttestationError::ReportError))?;
-            let quote_raw = base64::decode(&quote_encoded.as_bytes())?;
+            let quote_raw = base64::decode(quote_encoded.as_bytes())?;
             SgxQuote::parse_from(quote_raw.as_slice())?
         };
 
@@ -696,7 +699,7 @@ pub mod tests {
     pub fn test_sgx_quote_parse_from() {
         let attn_report = attesation_report();
         let sgx_quote_body_encoded = attn_report["isvEnclaveQuoteBody"].as_str().unwrap();
-        let quote_raw = base64::decode(&sgx_quote_body_encoded.as_bytes()).unwrap();
+        let quote_raw = base64::decode(sgx_quote_body_encoded.as_bytes()).unwrap();
         let sgx_quote = SgxQuote::parse_from(quote_raw.as_slice()).unwrap();
 
         assert_eq!(

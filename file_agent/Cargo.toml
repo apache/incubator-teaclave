@@ -21,7 +21,7 @@ version = "0.4.0"
 authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
 description = "Teaclave file agent for worker"
 license = "Apache-2.0"
-edition = "2018"
+edition = "2021"
 
 [lib]
 name = "teaclave_file_agent"

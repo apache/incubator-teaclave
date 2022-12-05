@@ -1,8 +1,6 @@
 //! table_cache implements a cache providing access to the immutable SSTables on disk. It's a
 //! read-through cache, meaning that non-present tables are read from disk and cached before being
 //! returned.
-#[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
 
 use crate::cache::{self, Cache};
 use crate::error::{err, Result, StatusCode};

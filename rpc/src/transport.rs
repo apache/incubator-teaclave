@@ -21,7 +21,6 @@ use crate::TeaclaveService;
 use anyhow::Result;
 use log::warn;
 use serde::{Deserialize, Serialize};
-use std::prelude::v1::*;
 
 pub(crate) trait ClientTransport {
     fn send<U, V>(

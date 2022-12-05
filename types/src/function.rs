@@ -17,7 +17,6 @@
 
 use crate::{ExecutorType, Storable, UserID};
 use serde::{Deserialize, Serialize};
-use std::prelude::v1::*;
 use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Serialize)]

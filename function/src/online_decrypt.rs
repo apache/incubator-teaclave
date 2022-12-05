@@ -15,8 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
 extern crate base64;
 use anyhow::{anyhow, bail, Result};
 use ring::aead::*;
@@ -50,8 +48,7 @@ fn decrypt(
     data: &mut Vec<u8>,
     alg: &'static ring::aead::Algorithm,
 ) -> anyhow::Result<()> {
-    let key =
-        LessSafeKey::new(UnboundKey::new(&alg, &key).map_err(|_| anyhow!("decryption error"))?);
+    let key = LessSafeKey::new(UnboundKey::new(alg, key).map_err(|_| anyhow!("decryption error"))?);
     let nonce = Nonce::try_assume_unique_for_key(&nonce_data[0..12])
         .map_err(|_| anyhow!("decryption error"))?;
     key.open_in_place(nonce, Aad::empty(), data)
@@ -66,11 +63,11 @@ fn decrypt_string_base64(
     encrypted: &str,
     alg: &'static ring::aead::Algorithm,
 ) -> anyhow::Result<String> {
-    let decoded_key = base64::decode(&key)?;
-    let nonce = base64::decode(&nonce_str)?;
-    let mut data_vec = base64::decode(&encrypted)?;
+    let decoded_key = base64::decode(key)?;
+    let nonce = base64::decode(nonce_str)?;
+    let mut data_vec = base64::decode(encrypted)?;
 
-    decrypt(&decoded_key, &nonce, &mut data_vec, &alg).map_err(|_| anyhow!("decryption error"))?;
+    decrypt(&decoded_key, &nonce, &mut data_vec, alg).map_err(|_| anyhow!("decryption error"))?;
     let string = str::from_utf8(&data_vec).map_err(|_| anyhow!("base64 decoded error"))?;
 
     Ok(string.to_string())

@@ -22,7 +22,7 @@ authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
 description = "Teaclave Management Service"
 license = "Apache-2.0"
 build = "build.rs"
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 env_logger  = { version = "0.7.1" }

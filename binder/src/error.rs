@@ -16,7 +16,7 @@
 // under the License.
 
 #![allow(clippy::nonstandard_macro_braces)]
-#![allow(clippy::unknown_clippy_lints)]
+#![allow(clippy::enum_variant_names)]
 
 use teaclave_types::{ECallStatus, SgxStatus};
 use thiserror::Error;

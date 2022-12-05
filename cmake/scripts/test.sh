@@ -84,8 +84,7 @@ run_integration_tests() {
 
   echo_title "protected_fs_rs tests (untrusted)"
   pushd ${MT_SGXAPP_TOML_DIR}
-  cargo test --manifest-path ${TEACLAVE_PROJECT_ROOT}/common/protected_fs_rs/Cargo.toml \
-            --target-dir ${TEACLAVE_TARGET_DIR}/untrusted
+  cargo test -p protected_fs_rs --target-dir ${TEACLAVE_TARGET_DIR}/untrusted
   popd
 
   echo_title "file_agent tests (untrusted)"
@@ -95,8 +94,7 @@ run_integration_tests() {
   popd
 
   pushd ${MT_SGXAPP_TOML_DIR}
-  cargo test --manifest-path ${TEACLAVE_PROJECT_ROOT}/file_agent/Cargo.toml \
-            --target-dir ${TEACLAVE_TARGET_DIR}/untrusted
+  cargo test -p teaclave_file_agent --target-dir ${TEACLAVE_TARGET_DIR}/untrusted
   popd
 
   cleanup

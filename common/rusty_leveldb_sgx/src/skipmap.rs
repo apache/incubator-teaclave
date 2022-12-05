@@ -1,6 +1,3 @@
-#[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
-
 use crate::cmp::{Cmp, MemtableKeyCmp};
 use crate::types::LdbIterator;
 use rand::rngs::StdRng;

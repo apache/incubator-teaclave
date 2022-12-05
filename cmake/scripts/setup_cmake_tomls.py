@@ -75,11 +75,7 @@ def create_symlinks(root_dir, build_dir):
 def setup_cargo_for_sgx(root_dir, build_dir):
     """setup cargo related files for sgx"""
     third_party_dir = os.path.join(root_dir, 'third_party')
-    cmd = r'''mkdir -p {build_dir}/cmake_tomls/sgx_trusted_lib/.cargo \
-    && cp -f {third_party_dir}/crates-sgx/Cargo.lock {build_dir}/cmake_tomls/sgx_trusted_lib/Cargo.lock \
-    && cp -f {third_party_dir}/crates-sgx/config {build_dir}/cmake_tomls/sgx_trusted_lib/.cargo/config \
-    && sed -i 's/directory = "vendor"/directory = "third_party\/crates-sgx\/vendor"/' \
-    {build_dir}/cmake_tomls/sgx_trusted_lib/.cargo/config'''
+    cmd = r'''mkdir -p {build_dir}/cmake_tomls/sgx_trusted_lib/.cargo'''
     cmd = cmd.format(build_dir=build_dir, third_party_dir=third_party_dir)
     exec_cmd(cmd)
 
@@ -88,11 +84,7 @@ def setup_cargo_for_unix(root_dir, build_dir):
     """setup cargo related files for sgx"""
     third_party_dir = os.path.join(root_dir, 'third_party')
     for target in ["unix_app", "sgx_untrusted_lib", "sgx_untrusted_app"]:
-        cmd = r'''mkdir -p {build_dir}/cmake_tomls/{target}/.cargo \
-        && cp -f {third_party_dir}/crates-io/Cargo.lock {build_dir}/cmake_tomls/{target}/Cargo.lock \
-        && cp -f {third_party_dir}/crates-io/config {build_dir}/cmake_tomls/{target}/.cargo/config \
-        && sed -i 's/directory = "vendor"/directory = "third_party\/crates-io\/vendor"/' \
-        {build_dir}/cmake_tomls/{target}/.cargo/config'''
+        cmd = r'''mkdir -p {build_dir}/cmake_tomls/{target}/.cargo'''
         cmd = cmd.format(build_dir=build_dir,
                          third_party_dir=third_party_dir,
                          target=target)

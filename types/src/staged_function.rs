@@ -19,7 +19,6 @@ use crate::{Executor, ExecutorType, StagedFiles, TeaclaveRuntime};
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::prelude::v1::*;
 
 use anyhow::{Context, Result};
 

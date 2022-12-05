@@ -17,7 +17,6 @@
 
 use crate::utils::*;
 use std::convert::TryFrom;
-use std::prelude::v1::*;
 use teaclave_proto::teaclave_common::*;
 use teaclave_proto::teaclave_common::{ExecutorCommand, ExecutorStatus};
 use teaclave_proto::teaclave_frontend_service::*;

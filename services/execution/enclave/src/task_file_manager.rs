@@ -20,7 +20,6 @@ use anyhow::Result;
 use std::collections::HashMap;
 use std::path::Path;
 use std::path::PathBuf;
-use std::prelude::v1::*;
 use std::untrusted::path::PathEx;
 use teaclave_crypto::TeaclaveFile128Key;
 use teaclave_types::*;
@@ -119,7 +118,7 @@ impl InterInput {
         let staged_file_info = match self.file.crypto_info {
             FileCrypto::TeaclaveFile128(crypto) => {
                 std::untrusted::fs::soft_link(src, dst)?;
-                StagedFileInfo::new(&src, crypto, self.file.cmac)
+                StagedFileInfo::new(src, crypto, self.file.cmac)
             }
             FileCrypto::AesGcm128(crypto) => {
                 let mut bytes = read_all_bytes(src)?;

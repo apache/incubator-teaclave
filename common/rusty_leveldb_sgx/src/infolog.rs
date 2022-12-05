@@ -1,6 +1,3 @@
-#[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
-
 use std::io::{self, Write};
 
 pub struct Logger(pub Box<dyn Write>);

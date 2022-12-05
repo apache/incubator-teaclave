@@ -15,16 +15,14 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#![cfg_attr(feature = "mesalock_sgx", no_std)]
 #[cfg(feature = "mesalock_sgx")]
-#[macro_use]
-extern crate sgx_tstd as std;
+extern crate sgx_trts;
 
 use log::debug;
 use log::error;
 use std::backtrace;
 use std::path::PathBuf;
-use std::sync::{Arc, SgxRwLock as RwLock};
+use std::sync::{Arc, RwLock};
 #[cfg(feature = "mesalock_sgx")]
 use std::untrusted::path::PathEx;
 use teaclave_attestation::verifier::AttestationReportVerificationFn;
@@ -37,13 +35,10 @@ use teaclave_types::EnclaveInfo;
 mod macros;
 
 #[cfg(feature = "cov")]
-use sgx_trts::global_dtors_object;
-#[cfg(feature = "cov")]
-global_dtors_object! {
-    SGX_COV_FINALIZE, sgx_cov_exit = {
-        debug!("cov_writeout");
-        sgx_cov::cov_writeout();
-    }
+#[sgx_macros::global_dtor]
+fn cov_exit() {
+    println!("sgx_cov finished!");
+    sgx_cov::cov_writeout();
 }
 
 extern "C" {
@@ -54,7 +49,7 @@ extern "C" {
 pub struct ServiceEnclave;
 
 impl ServiceEnclave {
-    pub fn init(name: &str) -> teaclave_types::TeeServiceResult<()> {
+    pub fn init(_name: &str) -> teaclave_types::TeeServiceResult<()> {
         env_logger::init_from_env(
             env_logger::Env::new()
                 .filter_or("TEACLAVE_LOG", "RUST_LOG")
@@ -63,9 +58,7 @@ impl ServiceEnclave {
 
         debug!("Enclave initializing");
 
-        if backtrace::enable_backtrace(format!("{}.signed.so", name), backtrace::PrintFormat::Full)
-            .is_err()
-        {
+        if backtrace::enable_backtrace(backtrace::PrintFormat::Full).is_err() {
             error!("Cannot enable backtrace");
             return Err(teaclave_types::TeeServiceError::SgxError);
         }
@@ -100,7 +93,7 @@ fn base_dir(config: &RuntimeConfig, sub_name: &str) -> anyhow::Result<PathBuf> {
     // We only create this base directory in test_mode
     // This directory should be mounted in release mode
     #[cfg(test_mode)]
-    std::untrusted::fs::create_dir_all(&fusion_base)?;
+    std::untrusted::fs::create_dir_all(fusion_base)?;
     if !fusion_base.exists() {
         error!(
             "Fusion base directory is not mounted: {}",

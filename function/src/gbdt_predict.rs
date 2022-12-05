@@ -15,9 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
-
 use std::format;
 use std::io::{self, BufRead, BufReader, Write};
 
@@ -132,8 +129,8 @@ pub mod tests {
         let summary = GbdtPredict::new().run(arguments, runtime).unwrap();
         assert_eq!(summary, "Predict result has 30 lines of data.");
 
-        let result = fs::read_to_string(&plain_output).unwrap();
-        let expected = fs::read_to_string(&expected_output).unwrap();
+        let result = fs::read_to_string(plain_output).unwrap();
+        let expected = fs::read_to_string(expected_output).unwrap();
         assert_eq!(&result[..], &expected[..]);
     }
 }

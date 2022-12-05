@@ -1,6 +1,3 @@
-#[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
-
 use crate::block::Block;
 use crate::blockhandle::BlockHandle;
 use crate::env::RandomAccess;

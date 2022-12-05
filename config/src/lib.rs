@@ -15,11 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#![cfg_attr(feature = "mesalock_sgx", no_std)]
-#[cfg(feature = "mesalock_sgx")]
-#[macro_use]
-extern crate sgx_tstd as std;
-
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 

@@ -15,12 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#![cfg_attr(feature = "mesalock_sgx", no_std)]
-#[cfg(feature = "mesalock_sgx")]
-#[macro_use]
-extern crate sgx_tstd as std;
-
-use std::prelude::v1::*;
+extern crate sgx_trts;
+extern crate sgx_types;
 
 use serde_json::Value;
 use teaclave_attestation::report::SgxQuote;
@@ -55,7 +51,7 @@ fn attestation(raw_json_input: &RawJsonInput) -> anyhow::Result<()> {
         let quote_encoded = attn_report["isvEnclaveQuoteBody"]
             .as_str()
             .ok_or_else(|| anyhow::anyhow!("report error"))?;
-        let quote_raw = base64::decode(&quote_encoded.as_bytes())?;
+        let quote_raw = base64::decode(quote_encoded.as_bytes())?;
         SgxQuote::parse_from(quote_raw.as_slice())?
     };
     println!("Remote Attestation Report:");
@@ -71,7 +67,7 @@ fn handle_remote_attestation(input: &RawJsonInput) -> TeeServiceResult<RawJsonOu
     match attestation(input) {
         Ok(_) => Ok(RawJsonOutput::default()),
         Err(e) => {
-            log::error!("Failed to start the service: {}", e);
+            log::error!("Failed to attest: {}", e);
             Err(TeeServiceError::ServiceError)
         }
     }

@@ -15,13 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#![cfg_attr(feature = "mesalock_sgx", no_std)]
-#[cfg(feature = "mesalock_sgx")]
-#[macro_use]
-extern crate sgx_tstd as std;
+extern crate sgx_types;
 
-#[cfg(feature = "mesalock_sgx")]
-use std::prelude::v1::*;
 use std::untrusted::path::PathEx;
 
 use anyhow::{anyhow, ensure, Result};
@@ -46,7 +41,7 @@ mod task_file_manager;
 fn start_service(config: &RuntimeConfig) -> Result<()> {
     info!("Starting Execution...");
 
-    let attestation_config = AttestationConfig::from_teaclave_config(&config)?;
+    let attestation_config = AttestationConfig::from_teaclave_config(config)?;
     let attested_tls_config = RemoteAttestation::new(attestation_config)
         .generate_and_endorse()?
         .attested_tls_config()
@@ -60,7 +55,7 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
     )?;
     let scheduler_service_address = &config.internal_endpoints.scheduler.advertised_address;
     let scheduler_service_endpoint = create_trusted_scheduler_endpoint(
-        &scheduler_service_address,
+        scheduler_service_address,
         &enclave_info,
         AS_ROOT_CA_CERT,
         verifier::universal_quote_verifier,

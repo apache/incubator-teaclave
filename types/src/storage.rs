@@ -17,7 +17,6 @@
 
 use crate::ExternalID;
 use serde::{Deserialize, Serialize};
-use std::prelude::v1::*;
 use uuid::Uuid;
 
 pub const CANCEL_QUEUE_KEY: &str = "cancel_queue";

@@ -23,7 +23,6 @@ use anyhow::anyhow;
 use anyhow::{Error, Result};
 use core::convert::TryInto;
 use std::collections::HashMap;
-use std::prelude::v1::*;
 use teaclave_rpc::into_request;
 use teaclave_types::{
     Executor, ExecutorType, ExternalID, FileAuthTag, FileCrypto, FunctionArguments,
