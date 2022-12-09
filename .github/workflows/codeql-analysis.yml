@@ -41,7 +41,7 @@ jobs:
         languages: cpp
 
     - name: Build C projects
-      run: cd examples/c && make
+      run: cd examples/c && make builtin_echo.o builtin_ordered_set_intersect.o
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2

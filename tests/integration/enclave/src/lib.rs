@@ -28,7 +28,6 @@ use teaclave_service_enclave_utils::ServiceEnclave;
 use teaclave_test_utils::check_all_passed;
 use teaclave_types::TeeServiceResult;
 
-mod protected_fs_rs;
 mod rusty_leveldb_sgx;
 mod teaclave_rpc;
 mod teaclave_worker;
@@ -37,7 +36,6 @@ mod teaclave_worker;
 fn handle_run_test(_: &RunTestInput) -> TeeServiceResult<RunTestOutput> {
     let ret = check_all_passed!(
         rusty_leveldb_sgx::run_tests(),
-        protected_fs_rs::run_tests(),
         teaclave_rpc::run_tests(),
         teaclave_worker::run_tests()
     );

@@ -39,7 +39,6 @@ mesalock_sgx = [
   "teaclave_types/mesalock_sgx",
   "teaclave_crypto/mesalock_sgx",
   "rusty-leveldb/mesalock_sgx",
-  "protected_fs_rs/mesalock_sgx",
   "teaclave_worker/mesalock_sgx",
   "teaclave_test_utils/mesalock_sgx",
 ]
@@ -55,7 +54,6 @@ rand        = { version = "0.8.5" }
 rustls      = { version = "0.17.0", features = ["dangerous_configuration"] }
 
 rusty-leveldb = { path = "../../../common/rusty_leveldb_sgx", default-features = false, optional = true }
-protected_fs_rs    = { path = "../../../common/protected_fs_rs", default-features = false, optional = true }
 
 teaclave_attestation           = { path = "../../../attestation" }
 teaclave_config                = { path = "../../../config" }

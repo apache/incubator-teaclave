@@ -52,16 +52,16 @@ OUTPUT_FILE_URL_PREFIX = "http://localhost:6789/fixtures/functions/wamr_rust_psi
 USER_DATA_0 = UserData("user0", "password",
                        INPUT_FILE_URL_PREFIX + "psi0.txt.enc",
                        OUTPUT_FILE_URL_PREFIX + "output_psi0.enc", [
-                           0x69, 0x3d, 0xba, 0x77, 0x03, 0x85, 0xba, 0x99,
-                           0xa1, 0xb0, 0xb7, 0x09, 0x9d, 0x7f, 0x2f, 0x94
+                           0xfd, 0x9b, 0x31, 0x9a, 0xe0, 0xfc, 0x59, 0x5a,
+                           0x98, 0xee, 0x41, 0x35, 0x66, 0x7a, 0xc0, 0xac
                        ], "input_data1", "output_result1",
                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
 USER_DATA_1 = UserData("user1", "password",
                        INPUT_FILE_URL_PREFIX + "psi1.txt.enc",
                        OUTPUT_FILE_URL_PREFIX + "output_psi1.enc", [
-                           0x2b, 0x19, 0x06, 0x02, 0xb4, 0x1f, 0x9f, 0x7c,
-                           0x58, 0xcb, 0x84, 0x84, 0x37, 0x9c, 0xb9, 0x11
+                           0x93, 0xcc, 0x67, 0x7d, 0x7b, 0xac, 0x59, 0x10,
+                           0xcd, 0x71, 0x99, 0xf7, 0xd6, 0xb9, 0xac, 0x15
                        ], "input_data2", "output_result2",
                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 

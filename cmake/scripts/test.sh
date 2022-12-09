@@ -82,11 +82,6 @@ run_integration_tests() {
     ./teaclave_integration_tests
   popd
 
-  echo_title "protected_fs_rs tests (untrusted)"
-  pushd ${MT_SGXAPP_TOML_DIR}
-  cargo test -p protected_fs_rs --target-dir ${TEACLAVE_TARGET_DIR}/untrusted
-  popd
-
   echo_title "file_agent tests (untrusted)"
 
   pushd ${TEACLAVE_TEST_INSTALL_DIR}

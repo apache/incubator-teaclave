@@ -27,11 +27,10 @@ enclave {
     from "sgx_stdio.edl" import *;
     from "sgx_sys.edl" import *;
     from "sgx_thread.edl" import *;
+    from "sgx_tprotected_fs.edl" import *;
     from "sgx_tstd.edl" import *;
     from "sgx_tstdc.edl" import *;
     from "sgx_process.edl" import *;
-
-    from "../common/protected_fs_rs/protected_fs_c/sgx_tprotected_fs.edl" import *;
 
     trusted {
         public uint32_t ecall_ipc_entry_point(uint32_t cmd,

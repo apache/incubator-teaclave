@@ -24,16 +24,16 @@ license = "Apache-2.0"
 edition = "2021"
 
 [features]
-default = [
-    "protected_fs_rs/default",
+default = []
+app = [
+    "sgx_tprotected_fs/ufs",
 ]
 mesalock_sgx = [
-    "protected_fs_rs/mesalock_sgx",
+    "sgx_tprotected_fs/tfs",
 ]
 enclave_unit_test = ["teaclave_test_utils/mesalock_sgx"]
 
 [dependencies]
-protected_fs_rs  = { path = "../common/protected_fs_rs", default-features = false}
 
 anyhow       = { version = "1.0.26" }
 rand         = { version = "0.8.5" }
@@ -42,4 +42,5 @@ serde_json   = { version = "1.0.39" }
 ring         = { version = "0.16.5" }
 hex          = { version = "0.4.0" }
 
+sgx_tprotected_fs   = { version = "2.0.0", default-features = false, optional = true }
 teaclave_test_utils = { path = "../tests/utils", optional = true }

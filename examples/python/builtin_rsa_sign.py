@@ -39,17 +39,17 @@ def register_input_file(client):
         ./teaclave_cli encrypt
         --algorithm teaclave-file-128
         --input-file ./tests/fixtures/functions/rsa_sign/key.der
-        --key 00000000000000000000000000000003
+        --key 00000000000000000000000000000000
         --output-file ./tests/fixtures/functions/rsa_sign/rsakey.enc
         --print-cmac
     """
     url = "http://localhost:6789/fixtures/functions/rsa_sign/rsakey.enc"
     cmac = [
-        0x4d, 0xe3, 0xbb, 0x77, 0x32, 0x7c, 0x82, 0x92, 0x36, 0x40, 0x83, 0x5c,
-        0x6e, 0x5a, 0xda, 0x66
+        0x62, 0x0c, 0x16, 0xab, 0x58, 0x8c, 0xa6, 0x38, 0xf3, 0xb0, 0xa2, 0x69,
+        0x2a, 0xb0, 0x78, 0xcf
     ]
     schema = "teaclave-file-128"
-    key = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3]
+    key = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     iv = []
     key_data_id = client.register_input_file(url, schema, key, iv, cmac)
 

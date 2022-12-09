@@ -314,16 +314,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "protected_fs_rs"
-version = "0.4.0"
-dependencies = [
- "cfg-if 0.1.10",
- "libc",
- "rand_core 0.4.2",
- "rdrand",
-]
-
-[[package]]
 name = "quote"
 version = "1.0.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -340,7 +330,7 @@ checksum = "34af8d1a0e25924bc5b7c43c079c942339d8f0a8b57c39049bef581b46327404"
 dependencies = [
  "libc",
  "rand_chacha",
- "rand_core 0.6.4",
+ "rand_core",
 ]
 
 [[package]]
@@ -350,14 +340,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e6c10a63a0fa32252be49d21e7709d4d4baf8d231c2dbce1eaa8141b9b127d88"
 dependencies = [
  "ppv-lite86",
- "rand_core 0.6.4",
+ "rand_core",
 ]
-
-[[package]]
-name = "rand_core"
-version = "0.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c33a3c44ca05fa6f1807d8e6743f3824e8509beca625669633be0acbdf509dc"
 
 [[package]]
 name = "rand_core"
@@ -370,11 +354,11 @@ dependencies = [
 
 [[package]]
 name = "rdrand"
-version = "0.6.0"
+version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5014f842b5515f60c15d3bca398477951f785883f73e7f9bc8a9d9c9bb6821c7"
+checksum = "e233b642160555c1aa1ff7a78443c6139342f411b6fa6602af2ebbfee9e166bb"
 dependencies = [
- "rand_core 0.4.2",
+ "rand_core",
 ]
 
 [[package]]
@@ -470,8 +454,63 @@ dependencies = [
 ]
 
 [[package]]
+name = "sgx_build_helper"
+version = "2.0.0"
+
+[[package]]
+name = "sgx_crypto"
+version = "2.0.0"
+dependencies = [
+ "sgx_crypto_sys",
+ "sgx_rand",
+ "sgx_types",
+]
+
+[[package]]
+name = "sgx_crypto_sys"
+version = "2.0.0"
+dependencies = [
+ "sgx_build_helper",
+ "sgx_download_prebuilt",
+ "sgx_types",
+]
+
+[[package]]
+name = "sgx_download_prebuilt"
+version = "2.0.0"
+dependencies = [
+ "sgx_build_helper",
+]
+
+[[package]]
+name = "sgx_rand"
+version = "2.0.0"
+dependencies = [
+ "rand_core",
+ "rdrand",
+]
+
+[[package]]
+name = "sgx_tprotected_fs"
+version = "2.0.0"
+dependencies = [
+ "sgx_crypto",
+ "sgx_rand",
+ "sgx_types",
+ "sgx_uprotected_fs",
+]
+
+[[package]]
 name = "sgx_types"
 version = "2.0.0"
+
+[[package]]
+name = "sgx_uprotected_fs"
+version = "2.0.0"
+dependencies = [
+ "libc",
+ "sgx_types",
+]
 
 [[package]]
 name = "sha1"
@@ -566,11 +605,11 @@ version = "0.4.0"
 dependencies = [
  "anyhow",
  "hex",
- "protected_fs_rs",
  "rand",
  "ring",
  "serde",
  "serde_json",
+ "sgx_tprotected_fs",
 ]
 
 [[package]]
@@ -627,11 +666,11 @@ dependencies = [
  "anyhow",
  "hex",
  "log",
- "protected_fs_rs",
  "rand",
  "ring",
  "serde",
  "serde_json",
+ "sgx_tprotected_fs",
  "sgx_types",
  "teaclave_crypto",
  "thiserror",

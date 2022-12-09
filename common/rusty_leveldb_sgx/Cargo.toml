@@ -13,7 +13,7 @@ edition = "2021"
 
 [features]
 default = ["mesalock_sgx"]
-mesalock_sgx = ["protected_fs_rs/mesalock_sgx", "sgx_libc"]
+mesalock_sgx = ["sgx_tprotected_fs", "sgx_libc"]
 enclave_unit_test = ["teaclave_test_utils/mesalock_sgx"]
 
 [dependencies]
@@ -22,7 +22,7 @@ rand 		= { version = "0.8" }
 snap 		= { version = "0.2" }
 integer-encoding = { version = "1.0" }
 
-protected_fs_rs = { path = "../protected_fs_rs", optional = true }
+sgx_tprotected_fs  = { version = "2.0.0", optional = true }
 teaclave_test_utils = { path = "../../tests/utils", optional = true }
 
 sgx_libc	= { version = "2.0.0", optional = true }

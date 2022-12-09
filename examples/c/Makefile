@@ -15,29 +15,32 @@
 # specific language governing permissions and limitations
 # under the License.
 
-
-all: builtin_echo builtin_ordered_set_intersect
+C_SOURCES :=$(wildcard *.c)
+C_OBJECTS :=$(C_SOURCES:.c=.o)
+C_EXECUTABLES :=$(C_SOURCES:.c=)
+C_RUNNERS :=$(C_SOURCES:.c=_runner)
 
 CFLAGS := -I../../sdk/c -Ltarget/debug/ -lteaclave_client_sdk
+
+all: $(C_EXECUTABLES)
 
 ifeq ($(DCAP),ON)
 	CFLAGS += -DDCAP
 endif
 
 target/debug/libteaclave_client_sdk.so:
-	RUSTFLAGS="$(RUSTFLAGS)" RUSTUP_TOOLCHAIN=nightly-2022-10-22 cargo build --manifest-path ../../sdk/rust/Cargo.toml --target-dir target
+	RUSTFLAGS="$(RUSTFLAGS)" cargo build --manifest-path ../../sdk/rust/Cargo.toml --target-dir target
 
-builtin_echo: builtin_echo.c target/debug/libteaclave_client_sdk.so
-	gcc -o $@ builtin_echo.c $(CFLAGS)
+%.o: %.c
+	gcc -c $(CFLAGS) $<
 
-builtin_ordered_set_intersect: builtin_ordered_set_intersect.c target/debug/libteaclave_client_sdk.so
-	gcc -o $@ builtin_ordered_set_intersect.c $(CFLAGS)
+$(C_EXECUTABLES): target/debug/libteaclave_client_sdk.so
+	gcc -o $@ $@.c $(CFLAGS)
 
-run: builtin_echo builtin_ordered_set_intersect
-	LD_LIBRARY_PATH=target/debug  ./builtin_echo
-	LD_LIBRARY_PATH=target/debug  ./builtin_ordered_set_intersect
+$(C_RUNNERS): %_runner: %
+	LD_LIBRARY_PATH=target/debug ./$*
+
+run: $(C_RUNNERS)
 
 clean:
-	@rm -rf target
-	@rm builtin_echo
-	@rm builtin_ordered_set_intersect
+	@rm -rf target $(C_OBJECTS) $(C_EXECUTABLES)

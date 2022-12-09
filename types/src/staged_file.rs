@@ -28,7 +28,7 @@ use std::untrusted::fs::File;
 use crate::FileAuthTag;
 use crate::FileCrypto;
 use anyhow::Context;
-use protected_fs::ProtectedFile;
+use sgx_tprotected_fs::SgxFile;
 
 #[derive(Clone, Debug, Default)]
 pub struct StagedFileInfo {
@@ -51,16 +51,16 @@ impl StagedFileInfo {
     }
 
     pub fn create_readable_io(&self) -> anyhow::Result<Box<dyn io::Read>> {
-        let f = ProtectedFile::open_ex(&self.path, &self.crypto_info.key)?;
+        let f = SgxFile::open_with_key(&self.path, self.crypto_info.key)?;
         let tag = f
-            .current_meta_gmac()
+            .get_mac()
             .context("Failed to get gmac from protected file")?;
         anyhow::ensure!(self.cmac == tag, "Corrupted input file: {:?}", self.path);
         Ok(Box::new(f))
     }
 
     pub fn create_writable_io(&self) -> anyhow::Result<Box<dyn io::Write>> {
-        let f = ProtectedFile::create_ex(&self.path, &self.crypto_info.key)?;
+        let f = SgxFile::create_with_key(&self.path, self.crypto_info.key)?;
         Ok(Box::new(f))
     }
 
@@ -74,7 +74,7 @@ impl StagedFileInfo {
                 self.convert_to_teaclave_file(dst, cipher.to_owned())
             }
             FileCrypto::AesGcm128(cipher) => {
-                let mut src_file = ProtectedFile::open_ex(&self.path, &self.crypto_info.key)
+                let mut src_file = SgxFile::open_with_key(&self.path, self.crypto_info.key)
                     .context("Convert aes-gcm-128: failed to open src file")?;
                 let mut buffer = Vec::new();
                 src_file.read_to_end(&mut buffer)?;
@@ -84,7 +84,7 @@ impl StagedFileInfo {
                 FileAuthTag::from_bytes(&cmac)
             }
             FileCrypto::AesGcm256(cipher) => {
-                let mut src_file = ProtectedFile::open_ex(&self.path, &self.crypto_info.key)
+                let mut src_file = SgxFile::open_with_key(&self.path, self.crypto_info.key)
                     .context("Convert aes-gcm-256: failed to open src file")?;
                 let mut buffer = Vec::new();
                 src_file.read_to_end(&mut buffer)?;
@@ -102,9 +102,9 @@ impl StagedFileInfo {
         dst: impl AsRef<Path>,
         crypto: TeaclaveFile128Key,
     ) -> anyhow::Result<FileAuthTag> {
-        let src_file = ProtectedFile::open_ex(&self.path, &self.crypto_info.key)
+        let src_file = SgxFile::open_with_key(&self.path, self.crypto_info.key)
             .context("Convert teaclave_file: failed to open src file")?;
-        let mut dest_file = ProtectedFile::create_ex(dst.as_ref(), &crypto.key)
+        let mut dest_file = SgxFile::create_with_key(dst.as_ref(), crypto.key)
             .context("Convert teaclave_file: failed to create dst file")?;
 
         let mut reader = BufReader::with_capacity(4096, src_file);
@@ -127,7 +127,7 @@ impl StagedFileInfo {
             .flush()
             .context("Convert teaclave_file: dst_file flush failed")?;
         let mac = dest_file
-            .current_meta_gmac()
+            .get_mac()
             .context("Convert teaclave_file: cannot get dst_file gmac")?;
         FileAuthTag::from_bytes(&mac)
     }
@@ -142,7 +142,7 @@ impl StagedFileInfo {
     #[cfg(test_mode)]
     pub fn get_plaintext(&self) -> anyhow::Result<Vec<u8>> {
         let mut content = Vec::new();
-        let mut f = ProtectedFile::open_ex(&self.path, &self.crypto_info.key)?;
+        let mut f = SgxFile::open_with_key(&self.path, self.crypto_info.key)?;
         f.read_to_end(&mut content)?;
         Ok(content)
     }
@@ -152,10 +152,10 @@ impl StagedFileInfo {
         bytes: &[u8],
     ) -> anyhow::Result<StagedFileInfo> {
         let crypto = TeaclaveFile128Key::random();
-        let mut f = ProtectedFile::create_ex(&path, &crypto.key)?;
+        let mut f = SgxFile::create_with_key(&path, crypto.key)?;
         f.write_all(bytes)?;
         f.flush()?;
-        let tag = f.current_meta_gmac()?;
+        let tag = f.get_mac()?;
         Ok(Self::new(path.as_ref(), crypto, tag))
     }
 }

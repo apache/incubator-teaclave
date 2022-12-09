@@ -38,29 +38,30 @@ exclude = [
 # Patched sgx crates to vendored, uncomment below crate when needed.
 
 # Rust SGX SDK
-sgx_alloc  = { path = "../../../third_party/rust-sgx-sdk/sgx_alloc" }
-sgx_cov    = { path = "../../../third_party/rust-sgx-sdk/sgx_tests/cov" }
-sgx_crypto = { path = "../../../third_party/rust-sgx-sdk/sgx_crypto" }
-sgx_libc   = { path = "../../../third_party/rust-sgx-sdk/sgx_libc" }
-sgx_macros = { path = "../../../third_party/rust-sgx-sdk/sgx_macros" }
-sgx_rand   = { path = "../../../third_party/rust-sgx-sdk/sgx_rand" }
-sgx_tse    = { path = "../../../third_party/rust-sgx-sdk/sgx_tse" }
-sgx_tstd   = { path = "../../../third_party/rust-sgx-sdk/sgx_tstd" }
-sgx_types  = { path = "../../../third_party/rust-sgx-sdk/sgx_types" }
-sgx_trts   = { path = "../../../third_party/rust-sgx-sdk/sgx_trts" }
-sgx_urts   = { path = "../../../third_party/rust-sgx-sdk/sgx_urts" }
+sgx_alloc         = { path = "../../../third_party/rust-sgx-sdk/sgx_alloc" }
+sgx_cov           = { path = "../../../third_party/rust-sgx-sdk/sgx_tests/cov" }
+sgx_crypto        = { path = "../../../third_party/rust-sgx-sdk/sgx_crypto" }
+sgx_libc          = { path = "../../../third_party/rust-sgx-sdk/sgx_libc" }
+sgx_macros        = { path = "../../../third_party/rust-sgx-sdk/sgx_macros" }
+sgx_rand          = { path = "../../../third_party/rust-sgx-sdk/sgx_rand" }
+sgx_tprotected_fs = { path = "../../../third_party/rust-sgx-sdk/sgx_protected_fs/tfs" }
+sgx_tse           = { path = "../../../third_party/rust-sgx-sdk/sgx_tse" }
+sgx_tstd          = { path = "../../../third_party/rust-sgx-sdk/sgx_tstd" }
+sgx_types         = { path = "../../../third_party/rust-sgx-sdk/sgx_types" }
+sgx_trts          = { path = "../../../third_party/rust-sgx-sdk/sgx_trts" }
+sgx_urts          = { path = "../../../third_party/rust-sgx-sdk/sgx_urts" }
 
-crc         = { git = "https://github.com/mrhooray/crc-rs", rev = "86696be" }
-simple_asn1 = { git = "https://github.com/acw/simple_asn1", rev = "7db7a48" }
+crc               = { git = "https://github.com/mrhooray/crc-rs", rev = "86696be" }
+simple_asn1       = { git = "https://github.com/acw/simple_asn1", rev = "7db7a48" }
 
 # SGX crates
-gbdt          = { git = "https://github.com/mesatee/gbdt-rs", branch = "teaclave-sgx" }
-getrandom     = { git = "https://github.com/mesatee/getrandom", branch = "teaclave-sgx" }
-image         = { git = "https://github.com/mesatee/image", branch = "v0.23.14-sgx"}
-num_cpus      = { git = "https://github.com/mesatee/num_cpus", branch = "teaclave-sgx" }
-rand          = { git = "https://github.com/mesatee/rand", branch = "teaclave-sgx" }
-ring          = { git = "https://github.com/mesatee/ring", branch = "teaclave-sgx" }
-rustface      = { git = "https://github.com/mesatee/rustface" }
-rustls        = { git = "https://github.com/mesatee/rustls", branch = "v0.17.0-sgx" }
-rusty-machine = { git = "https://github.com/mesatee/rusty-machine"}
-yasna         = { git = "https://github.com/sccommunity/yasna.rs", branch = "teaclave-sgx" }
+gbdt              = { git = "https://github.com/mesatee/gbdt-rs", branch = "teaclave-sgx" }
+getrandom         = { git = "https://github.com/mesatee/getrandom", branch = "teaclave-sgx" }
+image             = { git = "https://github.com/mesatee/image", branch = "v0.23.14-sgx"}
+num_cpus          = { git = "https://github.com/mesatee/num_cpus", branch = "teaclave-sgx" }
+rand              = { git = "https://github.com/mesatee/rand", branch = "teaclave-sgx" }
+ring              = { git = "https://github.com/mesatee/ring", branch = "teaclave-sgx" }
+rustface          = { git = "https://github.com/mesatee/rustface" }
+rustls            = { git = "https://github.com/mesatee/rustls", branch = "v0.17.0-sgx" }
+rusty-machine     = { git = "https://github.com/mesatee/rusty-machine"}
+yasna             = { git = "https://github.com/sccommunity/yasna.rs", branch = "teaclave-sgx" }

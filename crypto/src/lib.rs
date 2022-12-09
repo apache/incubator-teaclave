@@ -16,10 +16,10 @@
 // under the License.
 
 use anyhow::{anyhow, ensure, Context, Result};
-use protected_fs::ProtectedFile;
 use rand::prelude::RngCore;
 use ring::aead;
 use serde::{Deserialize, Serialize};
+use sgx_tprotected_fs::SgxFile;
 use std::io::{Read, Write};
 use std::path::Path;
 
@@ -196,7 +196,7 @@ impl TeaclaveFile128Key {
     }
 
     pub fn decrypt<P: AsRef<Path>>(&self, path: P, output: &mut impl Write) -> Result<CMac> {
-        let mut file = ProtectedFile::open_ex(path.as_ref(), &self.key)?;
+        let mut file = SgxFile::open_with_key(path.as_ref(), self.key)?;
         let mut buffer = std::vec![0; FILE_CHUNK_SIZE];
         loop {
             let n = file.read(&mut buffer)?;
@@ -207,12 +207,12 @@ impl TeaclaveFile128Key {
             }
         }
         output.flush()?;
-        let cmac = file.current_meta_gmac()?;
+        let cmac = file.get_mac()?;
         Ok(cmac)
     }
 
     pub fn encrypt<P: AsRef<Path>>(&self, path: P, mut content: impl Read) -> Result<CMac> {
-        let mut file = ProtectedFile::create_ex(path.as_ref(), &self.key)?;
+        let mut file = SgxFile::create_with_key(path.as_ref(), self.key)?;
         let mut buffer = std::vec![0; FILE_CHUNK_SIZE];
         loop {
             let n = content.read(&mut buffer[..])?;
@@ -223,7 +223,7 @@ impl TeaclaveFile128Key {
             }
         }
         file.flush()?;
-        let cmac = file.current_meta_gmac()?;
+        let cmac = file.get_mac()?;
         Ok(cmac)
     }
 }
