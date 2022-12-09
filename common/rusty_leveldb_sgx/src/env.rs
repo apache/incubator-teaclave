@@ -4,18 +4,18 @@
 use crate::error::Result;
 
 use std::io::prelude::*;
+use std::os::unix::fs::FileExt;
 use std::path::{Path, PathBuf};
 
-use crate::error::Status;
-use protected_fs::ProtectedFile;
+use sgx_tprotected_fs::SgxFile;
 
 pub trait RandomAccess {
     fn read_at(&self, off: usize, dst: &mut [u8]) -> Result<usize>;
 }
 
-impl RandomAccess for ProtectedFile {
+impl RandomAccess for SgxFile {
     fn read_at(&self, off: usize, dst: &mut [u8]) -> Result<usize> {
-        self.read_at(off, dst).map_err(|e| Status::from(e))
+        Ok((self as &dyn FileExt).read_at(dst, off as u64)?)
     }
 }
 

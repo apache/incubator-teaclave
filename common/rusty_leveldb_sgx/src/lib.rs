@@ -23,8 +23,8 @@
 #![allow(dead_code)]
 #![allow(clippy::all)]
 
-extern crate protected_fs;
 extern crate sgx_libc as libc;
+extern crate sgx_tprotected_fs;
 extern crate sgx_trts;
 extern crate sgx_types;
 

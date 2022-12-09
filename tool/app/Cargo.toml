@@ -34,6 +34,6 @@ raw-cpuid = "8.1.0"
 structopt = "0.3"
 
 teaclave_binder            = { path = "../../binder", features = ["app"] }
-teaclave_types             = { path = "../../types" }
+teaclave_types             = { path = "../../types", features = ["app"] }
 
 sgx_types = { version = "2.0.0" }

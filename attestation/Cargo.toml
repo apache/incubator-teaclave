@@ -26,7 +26,7 @@ edition = "2021"
 [features]
 default = []
 mesalock_sgx = [
-    "sgx_crypto/tcrypto",
+    "sgx_crypto",
     "sgx_rand/trand",
     "sgx_tse",
     "teaclave_types/mesalock_sgx",

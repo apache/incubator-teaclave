@@ -3,20 +3,15 @@ use crate::env_common::micros;
 use crate::error::{err, Result, Status, StatusCode};
 
 use std::collections::HashMap;
-
-use protected_fs;
+use std::io::{self, Read, Write};
 use std::io::{Seek, SeekFrom};
+use std::iter::FromIterator;
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
 use std::untrusted::fs;
 use std::untrusted::path::PathEx;
 
 pub type DBPersistKey = [u8; 16];
-
-use std::io::{self, Read, Write};
-use std::iter::FromIterator;
-use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
-
-use libc;
 
 const F_RDLCK: libc::c_short = 0;
 const F_WRLCK: libc::c_short = 1;
@@ -26,7 +21,7 @@ type FileDescriptor = i32;
 
 #[derive(Clone)]
 pub struct PosixDiskEnv {
-    locks: Arc<Mutex<HashMap<String, protected_fs::ProtectedFile>>>,
+    locks: Arc<Mutex<HashMap<String, sgx_tprotected_fs::SgxFile>>>,
     key: DBPersistKey,
 }
 
@@ -51,16 +46,16 @@ fn map_err_with_name(method: &'static str, f: &Path, e: io::Error) -> Status {
 impl Env for PosixDiskEnv {
     fn open_sequential_file(&self, p: &Path) -> Result<Box<dyn Read>> {
         Ok(Box::new(
-            protected_fs::OpenOptions::default()
+            sgx_tprotected_fs::OpenOptions::default()
                 .read(true)
-                .open_ex(p, &self.key)
+                .open_with_key(p, self.key)
                 .map_err(|e| map_err_with_name("open_sgx (seq)", p, e))?,
         ))
     }
     fn open_random_access_file(&self, p: &Path) -> Result<Box<dyn RandomAccess>> {
-        Ok(protected_fs::OpenOptions::default()
+        Ok(sgx_tprotected_fs::OpenOptions::default()
             .read(true)
-            .open_ex(p, &self.key)
+            .open_with_key(p, self.key)
             .map(|f| {
                 let b: Box<dyn RandomAccess> = Box::new(f);
                 b
@@ -69,18 +64,18 @@ impl Env for PosixDiskEnv {
     }
     fn open_writable_file(&self, p: &Path) -> Result<Box<dyn Write>> {
         Ok(Box::new(
-            protected_fs::OpenOptions::default()
+            sgx_tprotected_fs::OpenOptions::default()
                 .write(true)
                 .append(false)
-                .open_ex(p, &self.key)
+                .open_with_key(p, self.key)
                 .map_err(|e| map_err_with_name("open_sgx (write)", p, e))?,
         ))
     }
     fn open_appendable_file(&self, p: &Path) -> Result<Box<dyn Write>> {
         Ok(Box::new(
-            protected_fs::OpenOptions::default()
+            sgx_tprotected_fs::OpenOptions::default()
                 .append(true)
-                .open_ex(p, &self.key)
+                .open_with_key(p, self.key)
                 .map_err(|e| map_err_with_name("open_sgx (append_sgx)", p, e))?,
         ))
     }
@@ -103,9 +98,9 @@ impl Env for PosixDiskEnv {
     }
 
     fn size_of(&self, p: &Path) -> Result<usize> {
-        let mut f = protected_fs::OpenOptions::default()
+        let mut f = sgx_tprotected_fs::OpenOptions::default()
             .read(true)
-            .open_ex(p, &self.key)
+            .open_with_key(p, self.key)
             .map_err(|e| map_err_with_name("size_of (open)", p, e))?;
         let size = f.seek(SeekFrom::End(0))?;
         Ok(size as usize)
@@ -121,23 +116,31 @@ impl Env for PosixDiskEnv {
         Ok(fs::remove_dir_all(p).map_err(|e| map_err_with_name("rmdir", p, e))?)
     }
     fn rename(&self, old: &Path, new: &Path) -> Result<()> {
-        let old_name = old.file_name().ok_or(map_err_with_name(
-            "rename1",
-            old,
-            io::Error::from_raw_os_error(21),
-        ))?;
-        let new_name = new.file_name().ok_or(map_err_with_name(
-            "rename2",
-            old,
-            io::Error::from_raw_os_error(21),
-        ))?;
+        let old_name = old
+            .file_name()
+            .map(|f| f.to_str())
+            .flatten()
+            .ok_or(map_err_with_name(
+                "rename1",
+                old,
+                io::Error::from_raw_os_error(21),
+            ))?;
+        let new_name = new
+            .file_name()
+            .map(|f| f.to_str())
+            .flatten()
+            .ok_or(map_err_with_name(
+                "rename2",
+                old,
+                io::Error::from_raw_os_error(21),
+            ))?;
 
         {
-            let f = protected_fs::OpenOptions::default()
+            let mut f = sgx_tprotected_fs::OpenOptions::default()
                 .append(true)
-                .open_ex(old, &self.key)
-                .map_err(|e| map_err_with_name("rename_meta (open)", old, e))?;
-            f.rename_meta(&old_name, &new_name)?;
+                .open_with_key(old, self.key)
+                .map_err(|e| map_err_with_name("rename (open)", old, e))?;
+            f.rename(old_name, new_name)?;
         }
 
         Ok(fs::rename(old, new).map_err(|e| map_err_with_name("rename", old, e))?)
@@ -149,10 +152,10 @@ impl Env for PosixDiskEnv {
         if locks.contains_key(&p.to_str().unwrap().to_string()) {
             Err(Status::new(StatusCode::AlreadyExists, "Lock is held"))
         } else {
-            let f = protected_fs::OpenOptions::default()
+            let f = sgx_tprotected_fs::OpenOptions::default()
                 .write(true)
                 .append(false)
-                .open_ex(p, &self.key)
+                .open_with_key(p, self.key)
                 .map_err(|e| map_err_with_name("lock_sgx: ", p, e))?;
 
             locks.insert(p.to_str().unwrap().to_string(), f);

@@ -19,7 +19,6 @@
 
 members = [
   "file_agent",                  # ignore
-  "common/protected_fs_rs",      # ignore
   "services/access_control/app",
   "services/authentication/app",
   "services/storage/app",
@@ -38,7 +37,8 @@ exclude = [
 
 [patch.crates-io]
 # We cannot remove these crates, because proto crates depend on them
-sgx_crypto = { path = "../../../third_party/rust-sgx-sdk/sgx_crypto" }
-sgx_types  = { path = "../../../third_party/rust-sgx-sdk/sgx_types" }
-sgx_tse    = { path = "../../../third_party/rust-sgx-sdk/sgx_tse" }
-sgx_urts   = { path = "../../../third_party/rust-sgx-sdk/sgx_urts" }
+sgx_crypto        = { path = "../../../third_party/rust-sgx-sdk/sgx_crypto" }
+sgx_tprotected_fs = { path = "../../../third_party/rust-sgx-sdk/sgx_protected_fs/tfs" }
+sgx_tse           = { path = "../../../third_party/rust-sgx-sdk/sgx_tse" }
+sgx_types         = { path = "../../../third_party/rust-sgx-sdk/sgx_types" }
+sgx_urts          = { path = "../../../third_party/rust-sgx-sdk/sgx_urts" }

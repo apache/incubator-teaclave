@@ -316,7 +316,7 @@ pub mod tests {
         let input_url = Url::parse(&format!("{}/train.enc", fixture_dir)).unwrap();
         let output_url = Url::parse(&format!("{}/model-{}.enc.out", fixture_dir, task_id)).unwrap();
         let crypto = TeaclaveFile128Key::new(&[0; 16]).unwrap();
-        let input_cmac = FileAuthTag::from_hex("881adca6b0524472da0a9d0bb02b9af9").unwrap();
+        let input_cmac = FileAuthTag::from_hex("860030495909b84864b991865e9ad94f").unwrap();
         let training_input_data = FunctionInputFile::new(input_url, input_cmac, crypto);
         let model_output_data = FunctionOutputFile::new(output_url, crypto);
 

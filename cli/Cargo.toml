@@ -28,7 +28,7 @@ anyhow = { version = "1.0.26" }
 structopt = "0.3"
 teaclave_crypto = { path = "../crypto" }
 hex = { version = "0.4.0" }
-teaclave_types = { path = "../types" }
+teaclave_types = { path = "../types", features = ["app"] }
 teaclave_attestation = { path = "../attestation" }
 env_logger = { version = "0.7.1" }
 webpki-roots     = { version = "0.21.0" }
