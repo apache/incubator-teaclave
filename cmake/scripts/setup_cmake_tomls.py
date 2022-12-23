@@ -59,7 +59,9 @@ def create_symlinks(root_dir, build_dir):
                                                            cate=cate)
         cmd = 'mkdir -p {cate_dir} && [ ! -f {cate_dir}/Cargo.toml ] && \
             ln -s {root_dir}/cmake/tomls/Cargo.{cate}.toml \
-            {cate_dir}/Cargo.toml'.format(root_dir=root_dir,
+            {cate_dir}/Cargo.toml && \
+            ln -s {root_dir}/cmake/tomls/Cargo.{cate}.lock \
+            {cate_dir}/Cargo.lock'.format(root_dir=root_dir,
                                           cate=cate,
                                           cate_dir=cate_dir)
         exec_cmd(cmd)
@@ -75,7 +77,7 @@ def create_symlinks(root_dir, build_dir):
 def setup_cargo_for_sgx(root_dir, build_dir):
     """setup cargo related files for sgx"""
     third_party_dir = os.path.join(root_dir, 'third_party')
-    cmd = r'''mkdir -p {build_dir}/cmake_tomls/sgx_trusted_lib/.cargo'''
+    cmd = r'''mkdir -p {build_dir}/cmake_tomls/sgx_trusted_lib'''
     cmd = cmd.format(build_dir=build_dir, third_party_dir=third_party_dir)
     exec_cmd(cmd)
 
@@ -84,7 +86,7 @@ def setup_cargo_for_unix(root_dir, build_dir):
     """setup cargo related files for sgx"""
     third_party_dir = os.path.join(root_dir, 'third_party')
     for target in ["unix_app", "sgx_untrusted_lib", "sgx_untrusted_app"]:
-        cmd = r'''mkdir -p {build_dir}/cmake_tomls/{target}/.cargo'''
+        cmd = r'''mkdir -p {build_dir}/cmake_tomls/{target}'''
         cmd = cmd.format(build_dir=build_dir,
                          third_party_dir=third_party_dir,
                          target=target)
