@@ -53,9 +53,6 @@ fn main() {
         Err(_) => Path::new("../../").into(),
     };
 
-    // Use the offline flag when building within Teaclave's build system.
-    let _offline = env::var("MT_SGXAPP_TOML_DIR").is_ok();
-
     let proto_files = [
         "services/proto/src/proto/teaclave_access_control_service.proto",
         "services/proto/src/proto/teaclave_authentication_service.proto",

@@ -1,7 +1,3 @@
-[submodule "third_party/crates-sgx"]
-    path = third_party/crates-sgx
-    url = https://github.com/mesalock-linux/crates-sgx.git
-    ignore = dirty
 [submodule "third_party/rust-sgx-sdk"]
     path = third_party/rust-sgx-sdk
     url = https://github.com/apache/incubator-teaclave-sgx-sdk.git
@@ -9,10 +5,6 @@
     path = third_party/mesapy
     url = https://github.com/mesalock-linux/mesapy.git
     branch = sgx
-[submodule "third_party/crates-io"]
-    path = third_party/crates-io
-    url = https://github.com/mesalock-linux/crates-io.git
-    ignore = dirty
 [submodule "third_party/wasm-micro-runtime"]
     path = third_party/wasm-micro-runtime
     url = https://github.com/bytecodealliance/wasm-micro-runtime

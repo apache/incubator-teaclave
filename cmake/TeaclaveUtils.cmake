@@ -69,9 +69,7 @@ function(init_submodules)
     endif()
   endif()
 
-  if(NOT EXISTS "${PROJECT_SOURCE_DIR}/third_party/crates-io"
-     OR NOT EXISTS "${PROJECT_SOURCE_DIR}/third_party/crates-sgx"
-     OR NOT EXISTS "${PROJECT_SOURCE_DIR}/third_party/mesapy"
+  if(NOT EXISTS "${PROJECT_SOURCE_DIR}/third_party/mesapy"
      OR NOT EXISTS "${PROJECT_SOURCE_DIR}/third_party/rust-sgx-sdk"
      OR NOT EXISTS "${PROJECT_SOURCE_DIR}/third_party/wasm-micro-runtime")
     message(
