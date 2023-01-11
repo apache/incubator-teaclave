@@ -222,6 +222,7 @@ class FunctionInput:
     """Function input for registering.
 
     Args:
+
         name: Name of input data.
         description: Description of the input data.
         optional: [Default: False] Data owners do not need to register the data.
@@ -237,6 +238,7 @@ class FunctionOutput:
     """Function output for registering.
 
     Args:
+
         name: Name of output data.
         description: Description of the output data.
         optional: [Default: False] Data owners do not need to register the data.
@@ -252,6 +254,7 @@ class OwnerList:
     """Defines data ownership.
 
     Args:
+
         data_name: Name of output data.
         uids: A list of user id which own this data.
     """
@@ -265,6 +268,7 @@ class DataMap:
     """Assign data id to input or output data.
 
     Args:
+
         data_name: Name of output data.
         data_id: Id for the data name.
     """
@@ -278,6 +282,7 @@ class CryptoInfo:
     """Cryptographic information for the input/output data.
 
     Args:
+
         schema: Encryption algorithms for the input/output data.
         key: Key for encryption and decryption, bytes in list.
         iv: IV, bytes in list.
@@ -359,6 +364,7 @@ class AuthenticationService(TeaclaveService):
     clients to send request through RPC.
 
     Args:
+
         address: The address of the remote services in tuple.
         as_root_ca_cert_path: Root CA certification of the attestation services
             to verify the attestation report.
@@ -379,6 +385,7 @@ class AuthenticationService(TeaclaveService):
         """Register a new user.
 
         Args:
+
             user_id: User ID.
             user_password: Password.
             role: Role of user.
@@ -403,6 +410,7 @@ class AuthenticationService(TeaclaveService):
         """Update an existing user.
 
         Args:
+
             user_id: User ID.
             user_password: Password.
             role: Role of user.
@@ -426,10 +434,12 @@ class AuthenticationService(TeaclaveService):
         """Login and get a session token.
 
         Args:
+
             user_id: User ID.
             user_password: Password.
 
         Returns:
+
             str: User login token.
         """
         self.check_channel()
@@ -448,6 +458,7 @@ class AuthenticationService(TeaclaveService):
         """Change password.
 
         Args:
+
             user_password: New password.
         """
         self.check_channel()
@@ -467,9 +478,11 @@ class AuthenticationService(TeaclaveService):
         """Reset password of a managed user.
 
         Args:
+
             user_id: User ID.
 
         Returns:
+
             str: New password.
         """
         self.check_channel()
@@ -489,6 +502,7 @@ class AuthenticationService(TeaclaveService):
         """Delete a user.
 
         Args:
+
             user_id: User ID.
         """
         self.check_channel()
@@ -508,9 +522,11 @@ class AuthenticationService(TeaclaveService):
         """List managed users
 
         Args:
+
             user_id: User ID.
 
         Returns:
+
             str: User list
         """
         self.check_channel()
@@ -699,6 +715,7 @@ class FrontendService(TeaclaveService):
     clients to send request through RPC.
 
     Args:
+    
         address: The address of the remote services in tuple.
         as_root_ca_cert_path: Root CA certification of the attestation services
             to verify the attestation report.
