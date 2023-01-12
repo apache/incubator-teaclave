@@ -27,7 +27,7 @@ platform, making computation on privacy-sensitive data safe and simple.
   deployment both locally and within cloud infrastructures. Teaclave also
   provides convenient endpoint APIs, client SDKs and command line tools.
 - **Flexible**:
-  Components in Teaclave are designed in modular, and features like remote
+  Components in Teaclave are designed in a modular manner, and features like remote
   attestation can be easily embedded in other projects. In addition, Teaclave
   SGX SDK and Teaclave TrustZone SDK can also be used separately to write TEE
   apps for other purposes.
