@@ -11,7 +11,7 @@ platform, making computation on privacy-sensitive data safe and simple.
 ## Highlights
 
 - **Secure and Attestable**:
-  Teaclave adopts multiple security technologies to enable secure computing, in
+  Teaclave adopts multiple security technologies to enable secure computing. In
   particular, Teaclave uses Intel SGX to serve the most security-sensitive tasks
   with *hardware-based isolation*, *memory encryption* and *attestation*.
   Also, Teaclave is written in Rust to prevent *memory-safety* issues.
