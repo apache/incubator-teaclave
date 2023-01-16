@@ -30,7 +30,7 @@ build_config = []
 
 [dependencies]
 anyhow = { version = "1.0.26" }
-log    = { version = "0.4.6", features = ["release_max_level_info"] }
+log    = { version = "0.4.17", features = ["release_max_level_info"] }
 serde  = { version = "1.0.92", features = ["derive"] }
 toml   = { version = "0.5.1" }
 url    = { version = "2.1.1" }

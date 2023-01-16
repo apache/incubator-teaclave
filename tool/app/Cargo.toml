@@ -25,7 +25,7 @@ build = "build.rs"
 edition = "2021"
 
 [dependencies]
-log        = { version = "0.4.6", features = ["release_max_level_info"] }
+log        = { version = "0.4.17", features = ["release_max_level_info"] }
 env_logger = { version = "0.7.1" }
 anyhow     = { version = "1.0.26" }
 serde            = { version = "1.0.92", features = ["derive"] }

@@ -31,7 +31,7 @@ crate-type = ["staticlib", "rlib"]
 default = []
 
 [dependencies]
-log           = { version = "0.4.6", features = ["release_max_level_info"] }
+log           = { version = "0.4.17", features = ["release_max_level_info"] }
 anyhow        = { version = "1.0.26" }
 base64        = { version = "0.13.0" }
 serde_json    = { version = "1.0.39" }

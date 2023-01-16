@@ -45,7 +45,7 @@ enclave_unit_test = ["teaclave_binder/enclave_unit_test", "teaclave_test_utils/m
 [dependencies]
 anyhow    = { version = "1.0.26" }
 cfg-if    = { version = "0.1.9" }
-log       = { version = "0.4.6", features = ["release_max_level_info"] }
+log       = { version = "0.4.17", features = ["release_max_level_info"] }
 serde     = { version = "1.0.92" }
 serde_json = { version = "1.0.39" }
 
