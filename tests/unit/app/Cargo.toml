@@ -28,7 +28,7 @@ edition = "2021"
 default = ["teaclave_binder/app_unit_test"]
 
 [dependencies]
-log        = { version = "0.4.6", features = ["release_max_level_info"] }
+log        = { version = "0.4.17", features = ["release_max_level_info"] }
 env_logger = { version = "0.7.1" }
 anyhow     = { version = "1.0.26" }
 
