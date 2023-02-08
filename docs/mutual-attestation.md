@@ -33,7 +33,7 @@ other, it is impossible to decide which enclave is to be built first.
 
 Teaclave resolves this problem by relying on third-party auditors. We assume
 that there will be several parties trusted by all participants of Teaclave's
-computation tasks (could platforms, data providers, and customers, etc). The
+computation tasks (cloud platforms, data providers, and customers, etc). The
 source code and binaries of Teaclave are audited by these trusted parties. Once
 the auditors decided that Teaclave is secure, they sign and publish the
 identities of audited enclaves. The *public keys* of the auditors are
