@@ -28,9 +28,7 @@ ln -sf /root/.cargo ~/.cargo
 git config --global --add safe.directory /__w/incubator-teaclave/incubator-teaclave
 
 # Build
-. /opt/sgxsdk/environment &&
-. ~/.cargo/env &&
-mkdir -p build &&
-cd build &&
-cmake -DCMAKE_BUILD_TYPE=Debug -DSGX_SIM_MODE=ON -DTEST_MODE=ON .. &&
-VERBOSE=1 make -j
+. /opt/sgxsdk/environment && . ~/.cargo/env && \
+mkdir -p build && pushd build && \
+cmake -DCMAKE_BUILD_TYPE=Debug -DSGX_SIM_MODE=ON -DTEST_MODE=ON .. && \
+VERBOSE=1 make -j && rm -rf target
