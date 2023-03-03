@@ -213,13 +213,19 @@ impl std::iter::FromIterator<(String, FileAuthTag)> for OutputsTags {
 pub struct TaskOutputs {
     pub return_value: Vec<u8>,
     pub tags_map: OutputsTags,
+    pub log: Vec<String>,
 }
 
 impl TaskOutputs {
-    pub fn new(value: impl Into<Vec<u8>>, tags_map: HashMap<String, FileAuthTag>) -> Self {
+    pub fn new(
+        value: impl Into<Vec<u8>>,
+        tags_map: HashMap<String, FileAuthTag>,
+        log: Vec<String>,
+    ) -> Self {
         TaskOutputs {
             return_value: value.into(),
             tags_map: OutputsTags::new(tags_map),
+            log,
         }
     }
 }

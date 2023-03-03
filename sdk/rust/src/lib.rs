@@ -495,7 +495,7 @@ impl FrontendClient {
         Ok(serialized_response)
     }
 
-    pub fn get_task_result(&mut self, task_id: &str) -> Result<Vec<u8>> {
+    pub fn get_task_result(&mut self, task_id: &str) -> Result<(Vec<u8>, Vec<String>)> {
         loop {
             let request = GetTaskRequest::new(task_id.try_into()?);
             let response = self.get_task_with_request(request)?;
@@ -504,7 +504,7 @@ impl FrontendClient {
                     std::thread::sleep(std::time::Duration::from_secs(1));
                 }
                 TaskResult::Ok(task_outputs) => {
-                    return Ok(task_outputs.return_value);
+                    return Ok((task_outputs.return_value, task_outputs.log));
                 }
                 TaskResult::Err(task_error) => {
                     return Err(anyhow::anyhow!(task_error.reason));
@@ -610,8 +610,9 @@ mod tests {
             .unwrap();
 
         let _ = client.invoke_task(&task_id).unwrap();
-        let result = client.get_task_result(&task_id).unwrap();
-        assert_eq!(result, b"Hello, Teaclave!")
+        let (result, log) = client.get_task_result(&task_id).unwrap();
+        assert_eq!(result, b"Hello, Teaclave!");
+        assert!(log.is_empty());
     }
 
     #[test]

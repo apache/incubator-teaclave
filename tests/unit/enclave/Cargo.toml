@@ -39,6 +39,8 @@ mesalock_sgx = [
   "teaclave_types/enclave_unit_test",
   "teaclave_crypto/mesalock_sgx",
   "teaclave_crypto/enclave_unit_test",
+  "teaclave_logger/mesalock_sgx",
+  "teaclave_logger/enclave_unit_test",
   "teaclave_config/mesalock_sgx",
   "teaclave_access_control_service_enclave/mesalock_sgx",
   "teaclave_access_control_service_enclave/enclave_unit_test",
@@ -98,6 +100,7 @@ teaclave_rpc                   = { path = "../../../rpc" }
 teaclave_service_enclave_utils = { path = "../../../services/utils/service_enclave_utils" }
 teaclave_types                 = { path = "../../../types" }
 teaclave_crypto                = { path = "../../../crypto" }
+teaclave_logger                = { path = "../../../logger" }
 
 [target.'cfg(not(target_vendor = "teaclave"))'.dependencies]
 sgx_types = { version = "2.0.0" }

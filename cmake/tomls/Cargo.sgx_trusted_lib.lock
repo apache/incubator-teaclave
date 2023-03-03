@@ -138,10 +138,7 @@ version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a12e6657c4c97ebab115a42dcee77225f7f482cdd841cf7088c657a42e9e00e7"
 dependencies = [
- "humantime",
  "log",
- "regex",
- "termcolor",
 ]
 
 [[package]]
@@ -229,12 +226,6 @@ name = "httparse"
 version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d897f394bad6a705d5f4104762e116a75639e470d80901eed05a860a95cb1904"
-
-[[package]]
-name = "humantime"
-version = "2.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a3a5bfb195931eeb336b2a7b4d761daec841b97f947d34394601737a7bba5e4"
 
 [[package]]
 name = "idna"
@@ -357,6 +348,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "abb12e687cfb44aa40f41fc3978ef76448f9b6038cad6aef4259d3c095a2382e"
 dependencies = [
  "cfg-if 1.0.0",
+ "value-bag",
 ]
 
 [[package]]
@@ -1002,6 +994,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
 
 [[package]]
+name = "sval"
+version = "1.0.0-alpha.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "45f6ee7c7b87caf59549e9fe45d6a69c75c8019e79e212a835c5da0e92f0ba08"
+
+[[package]]
 name = "syn"
 version = "0.15.44"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1323,6 +1321,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "teaclave_logger"
+version = "0.4.0"
+dependencies = [
+ "anyhow",
+ "log",
+ "sgx_cov",
+ "sgx_types",
+ "teaclave_test_utils",
+]
+
+[[package]]
 name = "teaclave_management_service_enclave"
 version = "0.4.0"
 dependencies = [
@@ -1442,6 +1451,8 @@ dependencies = [
  "sgx_macros",
  "teaclave_attestation",
  "teaclave_config",
+ "teaclave_logger",
+ "teaclave_proto",
  "teaclave_rpc",
  "teaclave_service_enclave_utils_proc_macro",
  "teaclave_types",
@@ -1552,6 +1563,7 @@ dependencies = [
  "teaclave_executor_context",
  "teaclave_frontend_service_enclave",
  "teaclave_function",
+ "teaclave_logger",
  "teaclave_management_service_enclave",
  "teaclave_rpc",
  "teaclave_runtime",
@@ -1578,15 +1590,6 @@ dependencies = [
  "teaclave_test_utils",
  "teaclave_types",
  "thiserror",
-]
-
-[[package]]
-name = "termcolor"
-version = "1.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bab24d30b911b2376f3a13cc2cd443142f0c81dda04c118693e35b3835757755"
-dependencies = [
- "winapi-util",
 ]
 
 [[package]]
@@ -1699,6 +1702,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "value-bag"
+version = "1.0.0-alpha.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2209b78d1249f7e6f3293657c9779fe31ced465df091bbd433a1cf88e916ec55"
+dependencies = [
+ "ctor",
+ "sval",
+ "version_check",
+]
+
+[[package]]
+name = "version_check"
+version = "0.9.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
+
+[[package]]
 name = "wasi"
 version = "0.10.2+wasi-snapshot-preview1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1802,15 +1822,6 @@ name = "winapi-i686-pc-windows-gnu"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ac3b87c63620426dd9b991e5ce0329eff545bccbbb34f3be09ff6fb6ab51b7b6"
-
-[[package]]
-name = "winapi-util"
-version = "0.1.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "70ec6ce85bb158151cae5e5c87f95a8e97d2c0c4b001223f33a334e3ce5de178"
-dependencies = [
- "winapi",
-]
 
 [[package]]
 name = "winapi-x86_64-pc-windows-gnu"

@@ -118,7 +118,7 @@ impl Client {
             "Native Private Set Intersection.",
             "builtin",
             None,
-            Some(&["order"]),
+            Some(&["order", "save_log"]),
             Some(vec![
                 teaclave_client_sdk::FunctionInput::new("input_data1", "Client 0 data.", false),
                 teaclave_client_sdk::FunctionInput::new("input_data2", "Client 1 data.", false),
@@ -129,7 +129,7 @@ impl Client {
             ]),
         )?;
         self.client.get_function(&function_id)?;
-        let function_arguments = hashmap!("order" => "ascending"); // Order can be ascending or desending
+        let function_arguments = hashmap!("order" => "ascending", "save_log" => "true"); // Order can be ascending or desending
         let inputs_ownership = hashmap!(&self.user_data.input_label => vec![self.user_data.user_id.to_string()], &self.user_data.peer_input_label => vec![self.user_data.peer_id.to_string()]);
         let outputs_ownership = hashmap!(&self.user_data.output_label => vec![self.user_data.user_id.to_string()], &self.user_data.peer_output_label => vec![self.user_data.peer_id.to_string()]);
 
@@ -193,7 +193,7 @@ impl Client {
         Ok(())
     }
 
-    fn get_task_result(&mut self, task_id: &str) -> Result<Vec<u8>> {
+    fn get_task_result(&mut self, task_id: &str) -> Result<(Vec<u8>, Vec<String>)> {
         println!("[+] {} getting result", self.user_data.user_id);
         let response = self.client.get_task_result(&task_id)?;
         Ok(response)
@@ -260,11 +260,19 @@ fn main() -> Result<()> {
 
     let result_user0 = user0.get_task_result(&task_id)?;
 
-    println!("[+] User 0 result: {:?}", String::from_utf8(result_user0));
+    println!(
+        "[+] User 0 result: {:?} log: {:?} ",
+        String::from_utf8(result_user0.0),
+        result_user0.1
+    );
 
     let result_user1 = user1.get_task_result(&task_id)?;
 
-    println!("[+] User 1 result: {:?}", String::from_utf8(result_user1));
+    println!(
+        "[+] User 1 result: {:?} log {:?}",
+        String::from_utf8(result_user1.0),
+        result_user1.1
+    );
 
     println!("[+] done");
     Ok(())

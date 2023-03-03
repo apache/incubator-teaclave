@@ -35,6 +35,7 @@ message FileCryptoInfo {
 message TaskOutputs {
   bytes return_value = 1;
   map<string, bytes> tags_map = 2;
+  repeated string log = 3;
 }
 
 message TaskFailure {

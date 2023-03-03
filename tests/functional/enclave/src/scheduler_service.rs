@@ -103,7 +103,7 @@ fn test_update_task_status_result() {
     let response = client.update_task_status(request);
     assert!(response.is_ok());
 
-    let task_outputs = TaskOutputs::new("return value", hashmap!());
+    let task_outputs = TaskOutputs::new("return value", hashmap!(), vec![]);
     let request = UpdateTaskResultRequest::new(task_id, Ok(task_outputs));
     let response = client.update_task_result(request);
 

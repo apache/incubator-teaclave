@@ -39,7 +39,8 @@ fn test_execute_function() {
         .function_name("builtin-echo")
         .executor(Executor::Builtin)
         .function_arguments(hashmap!(
-            "message" => "Hello, Teaclave Tests!"
+            "message" => "Hello, Teaclave Tests!",
+            "save_log" => "true",
         ))
         .build();
 
@@ -57,8 +58,12 @@ fn test_execute_function() {
     let get_request = GetRequest::new(ts.key().as_slice());
     let get_response = storage_client.get(get_request).unwrap();
     let updated_task = TaskState::from_slice(get_response.value.as_slice()).unwrap();
+    let result = updated_task.result.unwrap();
+    assert_eq!(result.return_value, b"Hello, Teaclave Tests!");
+    let info_log = result.log.iter().find(|l| l.contains("INFO")).unwrap();
+
     assert_eq!(
-        updated_task.result.unwrap().return_value,
-        b"Hello, Teaclave Tests!"
+        info_log,
+        "[INFO teaclave_function::echo] Hello, Teaclave Tests!"
     );
 }
