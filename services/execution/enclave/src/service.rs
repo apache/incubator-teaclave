@@ -218,6 +218,19 @@ impl TeaclaveExecutionService {
 }
 
 fn invoke_task(task: &StagedTask, fusion_base: &PathBuf) -> Result<TaskOutputs> {
+    let save_log = task
+        .function_arguments
+        .get("save_log")
+        .ok()
+        .and_then(|v| v.as_str().and_then(|s| s.parse().ok()))
+        .unwrap_or(false);
+    let log_arc = Arc::new(Mutex::new(Vec::<String>::new()));
+
+    if save_log {
+        let log_arc = Arc::into_raw(log_arc.clone());
+        log::info!(buffer = log_arc.expose_addr(); "");
+    }
+
     let file_mgr = TaskFileManager::new(
         WORKER_BASE_DIR,
         fusion_base,
@@ -232,7 +245,15 @@ fn invoke_task(task: &StagedTask, fusion_base: &PathBuf) -> Result<TaskOutputs> 
     let summary = worker.invoke_function(invocation)?;
 
     let outputs_tag = finalize_task(&file_mgr)?;
-    let task_outputs = TaskOutputs::new(summary.as_bytes(), outputs_tag);
+    if save_log {
+        log::info!(buffer = 0; "");
+    }
+
+    let log = Arc::try_unwrap(log_arc)
+        .map_err(|_| anyhow::anyhow!("log buffer is referenced more than once"))?
+        .into_inner()?;
+    let task_outputs = TaskOutputs::new(summary.as_bytes(), outputs_tag, log);
+
     Ok(task_outputs)
 }
 

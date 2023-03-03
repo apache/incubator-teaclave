@@ -15,9 +15,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
+#![feature(concat_idents)]
+
 #[cfg(feature = "mesalock_sgx")]
 extern crate sgx_trts;
 
+use anyhow::Result;
 use log::debug;
 use log::error;
 use std::backtrace;
@@ -30,7 +33,7 @@ use teaclave_attestation::AttestedTlsConfig;
 use teaclave_config::RuntimeConfig;
 use teaclave_rpc::config::SgxTrustedTlsClientConfig;
 use teaclave_rpc::endpoint::Endpoint;
-use teaclave_types::EnclaveInfo;
+use teaclave_types::{EnclaveInfo, TeeServiceError, TeeServiceResult};
 
 mod macros;
 
@@ -49,24 +52,26 @@ extern "C" {
 pub struct ServiceEnclave;
 
 impl ServiceEnclave {
-    pub fn init(_name: &str) -> teaclave_types::TeeServiceResult<()> {
-        env_logger::init_from_env(
-            env_logger::Env::new()
-                .filter_or("TEACLAVE_LOG", "RUST_LOG")
-                .write_style_or("TEACLAVE_LOG_STYLE", "RUST_LOG_STYLE"),
-        );
+    pub fn init(_name: &str) -> TeeServiceResult<()> {
+        let env = env_logger::Env::new()
+            .filter_or("TEACLAVE_LOG", "RUST_LOG")
+            .write_style_or("TEACLAVE_LOG_STYLE", "RUST_LOG_STYLE");
+        let env_logger = env_logger::Builder::from_env(env).build();
+        teaclave_logger::Builder::new()
+            .secondary_logger(env_logger)
+            .init();
 
         debug!("Enclave initializing");
 
         if backtrace::enable_backtrace(backtrace::PrintFormat::Full).is_err() {
             error!("Cannot enable backtrace");
-            return Err(teaclave_types::TeeServiceError::SgxError);
+            return Err(TeeServiceError::SgxError);
         }
 
         Ok(())
     }
 
-    pub fn finalize() -> teaclave_types::TeeServiceResult<()> {
+    pub fn finalize() -> TeeServiceResult<()> {
         debug!("Enclave finalizing");
         unsafe {
             debug!("g_peak_heap_used: {}", g_peak_heap_used);
@@ -80,15 +85,15 @@ impl ServiceEnclave {
     }
 }
 
-pub fn base_dir_for_db(config: &RuntimeConfig) -> anyhow::Result<PathBuf> {
+pub fn base_dir_for_db(config: &RuntimeConfig) -> Result<PathBuf> {
     base_dir(config, "database")
 }
 
-pub fn base_dir_for_offload_functions(config: &RuntimeConfig) -> anyhow::Result<PathBuf> {
+pub fn base_dir_for_offload_functions(config: &RuntimeConfig) -> Result<PathBuf> {
     base_dir(config, "functions")
 }
 
-fn base_dir(config: &RuntimeConfig, sub_name: &str) -> anyhow::Result<PathBuf> {
+fn base_dir(config: &RuntimeConfig, sub_name: &str) -> Result<PathBuf> {
     let fusion_base = config.mount.fusion_base_dir.as_path();
     // We only create this base directory in test_mode
     // This directory should be mounted in release mode
@@ -125,7 +130,7 @@ macro_rules! impl_create_trusted_endpoint_fn {
             as_root_ca_cert: &[u8],
             verifier: AttestationReportVerificationFn,
             attested_tls_config: Arc<RwLock<AttestedTlsConfig>>,
-        ) -> anyhow::Result<Endpoint> {
+        ) -> Result<Endpoint> {
             let service_enclave_attrs = enclave_info
                 .get_enclave_attr($enclave_attr)
                 .expect("enclave_info");

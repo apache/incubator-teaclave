@@ -48,6 +48,12 @@ impl Echo {
         _runtime: FunctionRuntime,
     ) -> anyhow::Result<String> {
         let message = EchoArguments::try_from(arguments)?.message;
+
+        #[cfg(test_mode)]
+        log::info!("{}", message);
+        #[cfg(test_mode)]
+        log::debug!("{}", message);
+
         Ok(message)
     }
 }

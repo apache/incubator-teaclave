@@ -26,9 +26,6 @@ edition = "2021"
 [features]
 default = []
 mesalock_sgx = [
-    "env_logger/termcolor",
-    "env_logger/humantime",
-    "env_logger/regex",
     "teaclave_types/mesalock_sgx",
     "teaclave_attestation/mesalock_sgx",
     "teaclave_rpc/mesalock_sgx",
@@ -40,11 +37,13 @@ anyhow     = { version = "1.0.26" }
 env_logger = { version = "0.9.3", default_features = false }
 log        = { version = "0.4.17", features = ["release_max_level_info"] }
 
+teaclave_attestation                      = { path = "../../../attestation" }
+teaclave_config                           = { path = "../../../config" }
+teaclave_logger                           = { path = "../../../logger" }
+teaclave_proto                            = { path = "../../proto" }
+teaclave_rpc                              = { path = "../../../rpc" }
 teaclave_service_enclave_utils_proc_macro = { path = "./proc_macro" }
-teaclave_types       = { path = "../../../types" }
-teaclave_attestation = { path = "../../../attestation" }
-teaclave_rpc         = { path = "../../../rpc" }
-teaclave_config      = { path = "../../../config" }
+teaclave_types                            = { path = "../../../types" }
 
-sgx_cov  = { version = "2.0.0", optional = true }
+sgx_cov     = { version = "2.0.0", optional = true }
 sgx_macros  = { version = "2.0.0", optional = true }

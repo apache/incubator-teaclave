@@ -15,6 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+#![feature(strict_provenance)]
+
 extern crate sgx_types;
 
 use std::untrusted::path::PathEx;

@@ -134,6 +134,7 @@ impl std::convert::TryFrom<proto::TaskOutputs> for TaskOutputs {
         let ret = TaskOutputs {
             return_value: proto.return_value,
             tags_map: proto.tags_map.try_into()?,
+            log: proto.log,
         };
         Ok(ret)
     }
@@ -143,6 +144,7 @@ impl std::convert::From<TaskOutputs> for proto::TaskOutputs {
         proto::TaskOutputs {
             return_value: outputs.return_value,
             tags_map: outputs.tags_map.into(),
+            log: outputs.log,
         }
     }
 }

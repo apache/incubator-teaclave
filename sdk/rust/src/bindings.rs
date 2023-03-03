@@ -371,7 +371,7 @@ pub unsafe extern "C" fn teaclave_get_task_result(
 
     let task_id = CStr::from_ptr(task_id).to_string_lossy().into_owned();
     match client.get_task_result(&task_id) {
-        Ok(result) => {
+        Ok((result, _)) => {
             if *task_result_len < result.len() {
                 return 1;
             } else {

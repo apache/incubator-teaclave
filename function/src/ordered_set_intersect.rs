@@ -87,6 +87,9 @@ impl OrderedSetIntersect {
         for item in result2 {
             write!(&mut output2, "{}", item as u32)?;
         }
+
+        log::trace!("{}", common_sets);
+
         Ok(format!("{} common items", common_sets))
     }
 }

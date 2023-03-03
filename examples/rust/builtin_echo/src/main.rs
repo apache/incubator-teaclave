@@ -90,7 +90,7 @@ fn echo(message: &str) -> Result<Vec<u8>> {
 
     println!("[+] getting result");
     let response = client.get_task_result(&task_id)?;
-    Ok(response)
+    Ok(response.0)
 }
 
 fn main() -> Result<()> {
