@@ -25,9 +25,9 @@ use core::convert::TryInto;
 use std::collections::HashMap;
 use teaclave_rpc::into_request;
 use teaclave_types::{
-    Executor, ExecutorType, ExternalID, FileAuthTag, FileCrypto, FunctionArguments,
-    FunctionBuilder, FunctionInput, FunctionOutput, OwnerList, TaskFileOwners, TaskResult,
-    TaskStatus, UserID, UserList,
+    Executor, ExecutorType, ExternalID, FileAuthTag, FileCrypto, FunctionArgument,
+    FunctionArguments, FunctionBuilder, FunctionInput, FunctionOutput, OwnerList, TaskFileOwners,
+    TaskResult, TaskStatus, UserID, UserList,
 };
 use url::Url;
 
@@ -284,7 +284,7 @@ pub struct RegisterFunctionRequest {
     pub executor_type: ExecutorType,
     pub payload: Vec<u8>,
     pub public: bool,
-    pub arguments: Vec<String>,
+    pub arguments: Vec<FunctionArgument>,
     pub inputs: Vec<FunctionInput>,
     pub outputs: Vec<FunctionOutput>,
     pub user_allowlist: Vec<String>,
@@ -331,11 +331,8 @@ impl RegisterFunctionRequestBuilder {
         self
     }
 
-    pub fn arguments<T: IntoIterator>(mut self, args: T) -> Self
-    where
-        <T as IntoIterator>::Item: ToString,
-    {
-        self.request.arguments = args.into_iter().map(|x| x.to_string()).collect();
+    pub fn arguments(mut self, args: Vec<FunctionArgument>) -> Self {
+        self.request.arguments = args;
         self
     }
 
@@ -397,7 +394,7 @@ pub struct UpdateFunctionRequest {
     pub executor_type: ExecutorType,
     pub payload: Vec<u8>,
     pub public: bool,
-    pub arguments: Vec<String>,
+    pub arguments: Vec<FunctionArgument>,
     pub inputs: Vec<FunctionInput>,
     pub outputs: Vec<FunctionOutput>,
     pub user_allowlist: Vec<String>,
@@ -449,11 +446,8 @@ impl UpdateFunctionRequestBuilder {
         self
     }
 
-    pub fn arguments<T: IntoIterator>(mut self, args: T) -> Self
-    where
-        <T as IntoIterator>::Item: ToString,
-    {
-        self.request.arguments = args.into_iter().map(|x| x.to_string()).collect();
+    pub fn arguments(mut self, args: Vec<FunctionArgument>) -> Self {
+        self.request.arguments = args;
         self
     }
 
@@ -528,7 +522,7 @@ pub struct GetFunctionResponse {
     pub payload: Vec<u8>,
     pub public: bool,
     pub executor_type: ExecutorType,
-    pub arguments: Vec<String>,
+    pub arguments: Vec<FunctionArgument>,
     pub inputs: Vec<FunctionInput>,
     pub outputs: Vec<FunctionOutput>,
     pub user_allowlist: Vec<String>,
@@ -1123,6 +1117,11 @@ impl std::convert::TryFrom<proto::RegisterFunctionRequest> for RegisterFunctionR
             .map(FunctionOutput::try_from)
             .collect();
         let executor_type = proto.executor_type.try_into()?;
+        let arguments: Result<Vec<FunctionArgument>> = proto
+            .arguments
+            .into_iter()
+            .map(FunctionArgument::try_from)
+            .collect();
 
         let ret = Self {
             name: proto.name,
@@ -1130,7 +1129,7 @@ impl std::convert::TryFrom<proto::RegisterFunctionRequest> for RegisterFunctionR
             executor_type,
             payload: proto.payload,
             public: proto.public,
-            arguments: proto.arguments,
+            arguments: arguments?,
             inputs: inputs?,
             outputs: outputs?,
             user_allowlist: proto.user_allowlist,
@@ -1151,6 +1150,11 @@ impl From<RegisterFunctionRequest> for proto::RegisterFunctionRequest {
             .into_iter()
             .map(proto::FunctionOutput::from)
             .collect();
+        let arguments: Vec<proto::FunctionArgument> = request
+            .arguments
+            .into_iter()
+            .map(proto::FunctionArgument::from)
+            .collect();
 
         Self {
             name: request.name,
@@ -1158,7 +1162,7 @@ impl From<RegisterFunctionRequest> for proto::RegisterFunctionRequest {
             executor_type: request.executor_type.into(),
             payload: request.payload,
             public: request.public,
-            arguments: request.arguments,
+            arguments,
             inputs,
             outputs,
             user_allowlist: request.user_allowlist,
@@ -1201,6 +1205,11 @@ impl std::convert::TryFrom<proto::UpdateFunctionRequest> for UpdateFunctionReque
             .map(FunctionOutput::try_from)
             .collect();
         let executor_type = proto.executor_type.try_into()?;
+        let arguments: Result<Vec<FunctionArgument>> = proto
+            .arguments
+            .into_iter()
+            .map(FunctionArgument::try_from)
+            .collect();
 
         let ret = Self {
             function_id,
@@ -1209,7 +1218,7 @@ impl std::convert::TryFrom<proto::UpdateFunctionRequest> for UpdateFunctionReque
             executor_type,
             payload: proto.payload,
             public: proto.public,
-            arguments: proto.arguments,
+            arguments: arguments?,
             inputs: inputs?,
             outputs: outputs?,
             user_allowlist: proto.user_allowlist,
@@ -1230,6 +1239,11 @@ impl From<UpdateFunctionRequest> for proto::UpdateFunctionRequest {
             .into_iter()
             .map(proto::FunctionOutput::from)
             .collect();
+        let arguments: Vec<proto::FunctionArgument> = request
+            .arguments
+            .into_iter()
+            .map(proto::FunctionArgument::from)
+            .collect();
 
         Self {
             function_id: request.function_id.to_string(),
@@ -1238,7 +1252,7 @@ impl From<UpdateFunctionRequest> for proto::UpdateFunctionRequest {
             executor_type: request.executor_type.into(),
             payload: request.payload,
             public: request.public,
-            arguments: request.arguments,
+            arguments,
             inputs,
             outputs,
             user_allowlist: request.user_allowlist,
@@ -1406,6 +1420,11 @@ impl std::convert::TryFrom<proto::GetFunctionResponse> for GetFunctionResponse {
             .map(FunctionOutput::try_from)
             .collect();
         let executor_type = proto.executor_type.try_into()?;
+        let arguments: Result<Vec<FunctionArgument>> = proto
+            .arguments
+            .into_iter()
+            .map(FunctionArgument::try_from)
+            .collect();
 
         let ret = Self {
             name: proto.name,
@@ -1414,7 +1433,7 @@ impl std::convert::TryFrom<proto::GetFunctionResponse> for GetFunctionResponse {
             executor_type,
             payload: proto.payload,
             public: proto.public,
-            arguments: proto.arguments,
+            arguments: arguments?,
             inputs: inputs?,
             outputs: outputs?,
             user_allowlist: proto.user_allowlist,
@@ -1436,6 +1455,11 @@ impl From<GetFunctionResponse> for proto::GetFunctionResponse {
             .into_iter()
             .map(proto::FunctionOutput::from)
             .collect();
+        let arguments: Vec<proto::FunctionArgument> = response
+            .arguments
+            .into_iter()
+            .map(proto::FunctionArgument::from)
+            .collect();
 
         Self {
             name: response.name,
@@ -1444,10 +1468,34 @@ impl From<GetFunctionResponse> for proto::GetFunctionResponse {
             executor_type: response.executor_type.into(),
             payload: response.payload,
             public: response.public,
-            arguments: response.arguments,
+            arguments,
             inputs,
             outputs,
             user_allowlist: response.user_allowlist,
+        }
+    }
+}
+
+impl std::convert::TryFrom<proto::FunctionArgument> for FunctionArgument {
+    type Error = Error;
+
+    fn try_from(proto: proto::FunctionArgument) -> Result<Self> {
+        let ret = Self {
+            key: proto.key,
+            default_value: proto.default_value,
+            allow_overwrite: proto.allow_overwrite,
+        };
+
+        Ok(ret)
+    }
+}
+
+impl From<FunctionArgument> for proto::FunctionArgument {
+    fn from(arg: FunctionArgument) -> Self {
+        Self {
+            key: arg.key,
+            default_value: arg.default_value,
+            allow_overwrite: arg.allow_overwrite,
         }
     }
 }

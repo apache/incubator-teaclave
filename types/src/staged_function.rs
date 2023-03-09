@@ -100,6 +100,10 @@ impl FunctionArguments {
     pub fn into_string(self) -> String {
         ArgumentValue::Object(self.inner).to_string()
     }
+
+    pub fn insert(&mut self, k: String, v: ArgumentValue) -> Option<ArgumentValue> {
+        self.inner.insert(k, v)
+    }
 }
 
 #[derive(Debug, Default)]

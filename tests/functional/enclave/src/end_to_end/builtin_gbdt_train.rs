@@ -49,15 +49,15 @@ fn register_gbdt_function(client: &mut TeaclaveFrontendClient) -> ExternalID {
     let fn_input = FunctionInput::new("training_data", "Input traning data file.", false);
     let fn_output = FunctionOutput::new("trained_model", "Output trained model.", false);
     let fn_args = vec![
-        "feature_size",
-        "max_depth",
-        "iterations",
-        "shrinkage",
-        "feature_sample_ratio",
-        "data_sample_ratio",
-        "min_leaf_size",
-        "loss",
-        "training_optimization_level",
+        FunctionArgument::new("feature_size", "", true),
+        FunctionArgument::new("max_depth", "", true),
+        FunctionArgument::new("iterations", "", true),
+        FunctionArgument::new("shrinkage", "", true),
+        FunctionArgument::new("feature_sample_ratio", "", true),
+        FunctionArgument::new("data_sample_ratio", "", true),
+        FunctionArgument::new("min_leaf_size", "", true),
+        FunctionArgument::new("loss", "", true),
+        FunctionArgument::new("training_optimization_level", "", true),
     ];
 
     // Register Function

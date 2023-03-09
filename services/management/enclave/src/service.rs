@@ -891,6 +891,8 @@ impl TeaclaveManagementService {
         let function_output = FunctionOutput::new("output", "output_desc", false);
         let function_input2 = FunctionInput::new("input2", "input_desc", false);
         let function_output2 = FunctionOutput::new("output2", "output_desc", false);
+        let function_arg1 = FunctionArgument::new("arg1", "", true);
+        let function_arg2 = FunctionArgument::new("arg2", "", true);
 
         let function = FunctionBuilder::new()
             .id(Uuid::parse_str("00000000-0000-0000-0000-000000000001").unwrap())
@@ -898,7 +900,7 @@ impl TeaclaveManagementService {
             .description("mock-desc")
             .payload(b"mock-payload".to_vec())
             .public(true)
-            .arguments(vec!["arg1".to_string(), "arg2".to_string()])
+            .arguments(vec![function_arg1, function_arg2])
             .inputs(vec![function_input, function_input2])
             .outputs(vec![function_output, function_output2])
             .owner("teaclave".to_string())
@@ -907,13 +909,14 @@ impl TeaclaveManagementService {
         self.write_to_db(&function)?;
 
         let function_output = FunctionOutput::new("output", "output_desc", false);
+        let function_arg1 = FunctionArgument::new("arg1", "", true);
         let function = FunctionBuilder::new()
             .id(Uuid::parse_str("00000000-0000-0000-0000-000000000002").unwrap())
             .name("mock-func-2")
             .description("mock-desc")
             .payload(b"mock-payload".to_vec())
             .public(true)
-            .arguments(vec!["arg1".to_string()])
+            .arguments(vec![function_arg1.clone()])
             .outputs(vec![function_output])
             .owner("teaclave".to_string())
             .build();
@@ -926,7 +929,7 @@ impl TeaclaveManagementService {
             .description("Private mock function")
             .payload(b"mock-payload".to_vec())
             .public(false)
-            .arguments(vec!["arg1".to_string()])
+            .arguments(vec![function_arg1])
             .owner("mock_user".to_string())
             .user_allowlist(vec!["mock_user".to_string(), "mock_user1".to_string()])
             .build();
@@ -995,12 +998,13 @@ pub mod tests {
     pub fn handle_function() {
         let function_input = FunctionInput::new("input", "input_desc", false);
         let function_output = FunctionOutput::new("output", "output_desc", false);
+        let function_arg = FunctionArgument::new("arg", "", true);
         let function = FunctionBuilder::new()
             .id(Uuid::new_v4())
             .name("mock_function")
             .description("mock function")
             .payload(b"python script".to_vec())
-            .arguments(vec!["arg".to_string()])
+            .arguments(vec![function_arg])
             .inputs(vec![function_input])
             .outputs(vec![function_output])
             .public(true)
@@ -1013,12 +1017,13 @@ pub mod tests {
     }
 
     pub fn handle_task() {
+        let function_arg = FunctionArgument::new("arg", "", true);
         let function = FunctionBuilder::new()
             .id(Uuid::new_v4())
             .name("mock_function")
             .description("mock function")
             .payload(b"python script".to_vec())
-            .arguments(vec!["arg".to_string()])
+            .arguments(vec![function_arg])
             .public(true)
             .owner("mock_user")
             .build();

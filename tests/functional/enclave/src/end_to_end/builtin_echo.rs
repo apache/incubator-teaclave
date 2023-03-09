@@ -26,12 +26,13 @@ pub fn test_echo_task_success() {
     let cred = login(&mut api_client, USERNAME, TEST_PASSWORD).unwrap();
     let mut client =
         create_frontend_client(shared_enclave_info(), FRONTEND_SERVICE_ADDR, cred).unwrap();
+    let arg = FunctionArgument::new("message", "", true);
 
     // Register Function
     let request = RegisterFunctionRequestBuilder::new()
         .name("builtin-echo")
         .description("Native Echo Function")
-        .arguments(vec!["message"])
+        .arguments(vec![arg])
         .build();
 
     let response = client.register_function(request).unwrap();

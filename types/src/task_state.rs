@@ -129,9 +129,24 @@ impl Task<Create> {
         }
 
         //check function compatibility
-        let fn_args_spec: HashSet<&String> = function.arguments.iter().collect();
+        let fn_args_spec: HashSet<&String> = function
+            .arguments
+            .iter()
+            .filter(|arg| arg.allow_overwrite)
+            .map(|arg| &arg.key)
+            .collect();
         let req_args: HashSet<&String> = req_func_args.inner().keys().collect();
         ensure!(fn_args_spec == req_args, "function_arguments mismatch");
+
+        let mut func_args = req_func_args;
+        for arg in &function.arguments {
+            if !arg.allow_overwrite || !func_args.inner().contains_key(&arg.key) {
+                func_args.insert(
+                    arg.key.clone(),
+                    serde_json::Value::String(arg.default_value.clone()),
+                );
+            }
+        }
 
         // check input fkeys
         let inputs_spec: HashSet<&String> = function.inputs.iter().map(|f| &f.name).collect();
@@ -166,7 +181,7 @@ impl Task<Create> {
             executor: req_executor,
             function_id: function.external_id(),
             function_owner: function.owner.clone(),
-            function_arguments: req_func_args,
+            function_arguments: func_args,
             inputs_ownership: req_input_owners,
             outputs_ownership: req_output_owners,
             participants,

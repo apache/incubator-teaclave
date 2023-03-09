@@ -33,6 +33,7 @@ def entrypoint(argv):
     assert argv[1] is not None
     return argv[1]
 ";
+    let arg = FunctionArgument::new("message", "", true);
     // Register Function
     let request = RegisterFunctionRequestBuilder::new()
         .name("mesapy_echo_demo")
@@ -40,7 +41,7 @@ def entrypoint(argv):
         .payload(script.into())
         .executor_type(ExecutorType::Python)
         .public(true)
-        .arguments(vec!["message"])
+        .arguments(vec![arg])
         .build();
 
     let response = client.register_function(request).unwrap();

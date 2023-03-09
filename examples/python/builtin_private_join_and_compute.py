@@ -19,7 +19,7 @@
 
 import sys
 
-from teaclave import FunctionInput, FunctionOutput, OwnerList, DataMap
+from teaclave import FunctionInput, FunctionOutput, FunctionArgument, OwnerList, DataMap
 from utils import USER_ID, USER_PASSWORD, connect_authentication_service, connect_frontend_service, PlatformAdmin
 
 # In the example, user 3 creates the task and user 0, 1, 2 upload their private data.
@@ -98,7 +98,7 @@ class ConfigClient:
             name="builtin-private-join-and-compute",
             description="Native Private Join And Compute",
             executor_type="builtin",
-            arguments=["num_user"],
+            arguments=[FunctionArgument("num_user")],
             inputs=[
                 FunctionInput("input_data0", "Bank A data file."),
                 FunctionInput("input_data1", "Bank B data file."),

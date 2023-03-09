@@ -19,7 +19,7 @@
 
 import sys
 
-from teaclave import FunctionInput, FunctionOutput, OwnerList, DataMap
+from teaclave import FunctionInput, FunctionOutput, FunctionArgument, OwnerList, DataMap
 from utils import USER_ID, USER_PASSWORD, connect_authentication_service, connect_frontend_service, PlatformAdmin
 
 
@@ -61,7 +61,7 @@ def register_func(client):
         name="builtin-rsa-sign",
         description="Native Rsa Signing Function",
         executor_type="builtin",
-        arguments=["data"],
+        arguments=[FunctionArgument("data")],
         inputs=[FunctionInput("rsa_key", "Input key file.")])
 
     return function_id

@@ -19,7 +19,7 @@
 
 import sys
 
-from teaclave import FunctionInput, FunctionOutput, OwnerList, DataMap
+from teaclave import FunctionInput, FunctionOutput, FunctionArgument, OwnerList, DataMap
 from utils import USER_ID, USER_PASSWORD, connect_authentication_service, connect_frontend_service, PlatformAdmin
 
 
@@ -49,7 +49,7 @@ class MesaPyEchoExample:
             description="An echo function implemented in Python",
             executor_type="python",
             payload=list(payload),
-            arguments=["message"])
+            arguments=[FunctionArgument("message")])
 
         print("[+] creating task")
         task_id = client.create_task(function_id=function_id,

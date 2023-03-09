@@ -19,7 +19,7 @@
 
 import sys
 
-from teaclave import FunctionInput, FunctionOutput, OwnerList, DataMap
+from teaclave import FunctionInput, FunctionOutput, FunctionArgument, OwnerList, DataMap
 from utils import USER_ID, USER_PASSWORD, connect_authentication_service, connect_frontend_service, PlatformAdmin
 
 
@@ -45,11 +45,13 @@ class WASMAddExample:
         with open(payload_file, "rb") as f:
             payload = f.read()
 
-        function_id = client.register_function(name="entrypoint",
-                                               description="test of wasm",
-                                               executor_type="wamr",
-                                               payload=list(payload),
-                                               arguments=["adder1", "adder2"])
+        function_id = client.register_function(
+            name="entrypoint",
+            description="test of wasm",
+            executor_type="wamr",
+            payload=list(payload),
+            arguments=[FunctionArgument("adder1"),
+                       FunctionArgument("adder2")])
 
         print("[+] creating task")
         task_id = client.create_task(function_id=function_id,

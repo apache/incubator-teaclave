@@ -132,7 +132,7 @@ fn test_register_function() {
         .executor_type(ExecutorType::Python)
         .payload(b"def entrypoint:\n\treturn".to_vec())
         .public(true)
-        .arguments(vec!["arg"])
+        .arguments(vec![FunctionArgument::new("arg", "", true)])
         .inputs(vec![function_input])
         .outputs(vec![function_output])
         .build();
@@ -152,7 +152,7 @@ fn test_register_private_function() {
         .executor_type(ExecutorType::Python)
         .payload(b"def entrypoint:\n\treturn".to_vec())
         .public(false)
-        .arguments(vec!["arg"])
+        .arguments(vec![FunctionArgument::new("arg", "", true)])
         .inputs(vec![function_input])
         .outputs(vec![function_output])
         .user_allowlist(vec!["mock_user".to_string()])
@@ -173,7 +173,7 @@ fn test_delete_function() {
         .executor_type(ExecutorType::Python)
         .payload(b"def entrypoint:\n\treturn".to_vec())
         .public(true)
-        .arguments(vec!["arg"])
+        .arguments(vec![FunctionArgument::new("arg", "", true)])
         .inputs(vec![function_input])
         .outputs(vec![function_output])
         .build();
@@ -196,7 +196,7 @@ fn test_disable_function() {
         .executor_type(ExecutorType::Python)
         .payload(b"def entrypoint:\n\treturn".to_vec())
         .public(true)
-        .arguments(vec!["arg"])
+        .arguments(vec![FunctionArgument::new("arg", "", true)])
         .inputs(vec![function_input])
         .outputs(vec![function_output])
         .build();
@@ -219,7 +219,7 @@ fn test_update_function() {
         .executor_type(ExecutorType::Python)
         .payload(b"def entrypoint:\n\treturn".to_vec())
         .public(true)
-        .arguments(vec!["arg"])
+        .arguments(vec![FunctionArgument::new("arg", "", true)])
         .inputs(vec![function_input])
         .outputs(vec![function_output])
         .build();
@@ -236,7 +236,7 @@ fn test_update_function() {
         .executor_type(ExecutorType::Python)
         .payload(b"def entrypoint:\n\treturn".to_vec())
         .public(false)
-        .arguments(vec!["arg"])
+        .arguments(vec![FunctionArgument::new("arg", "", true)])
         .inputs(vec![function_input])
         .outputs(vec![function_output])
         .user_allowlist(vec!["mock_user".to_string()])
@@ -270,7 +270,7 @@ fn test_get_function() {
         .executor_type(ExecutorType::Python)
         .payload(b"def entrypoint:\n\treturn".to_vec())
         .public(false)
-        .arguments(vec!["arg"])
+        .arguments(vec![FunctionArgument::new("arg", "", true)])
         .inputs(vec![function_input])
         .outputs(vec![function_output])
         .build();

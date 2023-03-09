@@ -19,7 +19,7 @@
 
 import sys
 
-from teaclave import FunctionInput, FunctionOutput, OwnerList, DataMap
+from teaclave import FunctionInput, FunctionOutput, FunctionArgument, OwnerList, DataMap
 from utils import USER_ID, USER_PASSWORD, connect_authentication_service, connect_frontend_service, PlatformAdmin
 
 # In the example, user 0 creates the task and user 0, 1, upload their private data.
@@ -91,7 +91,7 @@ class Client:
             name="builtin-ordered-set-intersect",
             description="Native Private Set Intersection",
             executor_type="builtin",
-            arguments=["order"],
+            arguments=[FunctionArgument("order")],
             inputs=[
                 FunctionInput("input_data1", "Client 0 data."),
                 FunctionInput("input_data2", "Client 1 data.")

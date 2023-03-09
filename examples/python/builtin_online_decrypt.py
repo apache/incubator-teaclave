@@ -21,6 +21,7 @@ import sys
 import base64
 
 from utils import USER_ID, USER_PASSWORD, connect_authentication_service, connect_frontend_service
+from teaclave import FunctionArgument
 
 
 class BuiltinOnlineDecryptExample:
@@ -43,7 +44,12 @@ class BuiltinOnlineDecryptExample:
             name="builtin_online_decrypt",
             description="Native Online Decrypt",
             executor_type="builtin",
-            arguments=["key", "nonce", "encrypted_data", "algorithm"])
+            arguments=[
+                FunctionArgument("key"),
+                FunctionArgument("nonce"),
+                FunctionArgument("encrypted_data"),
+                FunctionArgument("algorithm")
+            ])
 
         print("[+] creating task")
         task_id = client.create_task(
