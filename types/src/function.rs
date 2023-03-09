@@ -82,7 +82,7 @@ pub struct Function {
     pub public: bool,
     pub executor_type: ExecutorType,
     pub payload: Vec<u8>,
-    pub arguments: Vec<String>,
+    pub arguments: Vec<FunctionArgument>,
     pub inputs: Vec<FunctionInput>,
     pub outputs: Vec<FunctionOutput>,
     pub owner: UserID,
@@ -131,7 +131,7 @@ impl FunctionBuilder {
         self
     }
 
-    pub fn arguments(mut self, arguments: Vec<String>) -> Self {
+    pub fn arguments(mut self, arguments: Vec<FunctionArgument>) -> Self {
         self.function.arguments = arguments;
         self
     }
@@ -168,5 +168,26 @@ impl Storable for Function {
 
     fn uuid(&self) -> Uuid {
         self.id
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct FunctionArgument {
+    pub key: String,
+    pub default_value: String,
+    pub allow_overwrite: bool,
+}
+
+impl FunctionArgument {
+    pub fn new(
+        key: impl Into<String>,
+        default_value: impl Into<String>,
+        allow_overwrite: bool,
+    ) -> Self {
+        Self {
+            key: key.into(),
+            default_value: default_value.into(),
+            allow_overwrite,
+        }
     }
 }

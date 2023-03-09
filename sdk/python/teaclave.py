@@ -44,8 +44,8 @@ from OpenSSL.crypto import X509Store, X509StoreContext
 from OpenSSL import crypto
 
 __all__ = [
-    'FrontendService', 'AuthenticationService', 'FunctionInput',
-    'FunctionOutput', 'OwnerList', 'DataMap'
+    'FrontendService', 'AuthenticationService', 'FunctionArgument',
+    'FunctionInput', 'FunctionOutput', 'OwnerList', 'DataMap'
 ]
 
 Metadata = Dict[str, str]
@@ -248,6 +248,26 @@ class FunctionOutput:
         self.name = name
         self.description = description
         self.optional = optional
+
+
+class FunctionArgument:
+    """Function argument for registring.
+
+    Args:
+        key: Name of the argument.
+        default_value: A default value of the argument. The default value is "".
+        allow_overwrite: If allow_overwrite flag is set to be true. The service
+                         will allow the task creator to overwrite the arguement
+                         value when creating tasks.
+    """
+
+    def __init__(self,
+                 key: str,
+                 default_value: str = "",
+                 allow_overwrite=True):
+        self.key = key
+        self.default_value = default_value
+        self.allow_overwrite = allow_overwrite
 
 
 class OwnerList:
@@ -546,8 +566,9 @@ class RegisterFunctionRequest(Request):
 
     def __init__(self, metadata: Metadata, name: str, description: str,
                  executor_type: str, public: bool, payload: List[int],
-                 arguments: List[str], inputs: List[FunctionInput],
-                 outputs: List[FunctionOutput], user_allowlist: List[str]):
+                 arguments: List[FunctionArgument],
+                 inputs: List[FunctionInput], outputs: List[FunctionOutput],
+                 user_allowlist: List[str]):
         self.request = "register_function"
         self.metadata = metadata
         self.name = name
@@ -565,7 +586,7 @@ class UpdateFunctionRequest(Request):
 
     def __init__(self, metadata: Metadata, function_id: str, name: str,
                  description: str, executor_type: str, public: bool,
-                 payload: List[int], arguments: List[str],
+                 payload: List[int], arguments: List[FunctionArgument],
                  inputs: List[FunctionInput], outputs: List[FunctionOutput],
                  user_allowlist: List[str]):
         self.request = "update_function"
@@ -738,7 +759,7 @@ class FrontendService(TeaclaveService):
         executor_type: str,
         public: bool = True,
         payload: List[int] = [],
-        arguments: List[str] = [],
+        arguments: List[FunctionArgument] = [],
         inputs: List[FunctionInput] = [],
         outputs: List[FunctionOutput] = [],
         user_allowlist: List[str] = [],
@@ -767,7 +788,7 @@ class FrontendService(TeaclaveService):
         executor_type: str,
         public: bool = True,
         payload: List[int] = [],
-        arguments: List[str] = [],
+        arguments: List[FunctionArgument] = [],
         inputs: List[FunctionInput] = [],
         outputs: List[FunctionOutput] = [],
         user_allowlist: List[str] = [],

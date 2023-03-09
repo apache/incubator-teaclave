@@ -34,7 +34,7 @@ const char *register_function_request_serialized = QUOTE({
     "executor_type" : "builtin",
     "public" : true,
     "payload" : [],
-    "arguments" : ["message"],
+    "arguments" : [{"key": "message", "default_value": "", "allow_overwrite": true}],
     "inputs" : [],
     "outputs" : [],
     "user_allowlist": []

@@ -23,7 +23,7 @@ An example about Logistic Regression in MesaPy.
 import sys
 import binascii
 from typing import List
-from teaclave import FunctionInput, FunctionOutput, OwnerList, DataMap
+from teaclave import FunctionInput, FunctionOutput, FunctionArgument, OwnerList, DataMap
 from utils import USER_ID, USER_PASSWORD, connect_authentication_service, connect_frontend_service, PlatformAdmin
 
 from enum import Enum
@@ -117,7 +117,7 @@ class ConfigClient:
             name=functionname,
             description="worker: %s" % functionname,
             executor_type=ex.name,
-            arguments=list(args.keys()),
+            arguments=[FunctionArgument(arg) for arg in args],
             payload=list(p_str),
             inputs=[
                 FunctionInput(label, "user input data file： %s" % label)

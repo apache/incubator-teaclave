@@ -25,6 +25,7 @@ from PIL import Image, ImageDraw
 import requests
 
 from utils import USER_ID, USER_PASSWORD, connect_authentication_service, connect_frontend_service
+from teaclave import FunctionArgument
 
 
 class BuiltinFaceDetectionExample:
@@ -49,9 +50,12 @@ class BuiltinFaceDetectionExample:
             executor_type="builtin",
             inputs=[],
             arguments=[
-                "image", "min_face_size", "score_thresh",
-                "pyramid_scale_factor", "slide_window_step_x",
-                "slide_window_step_y"
+                FunctionArgument("image"),
+                FunctionArgument("min_face_size"),
+                FunctionArgument("score_thresh"),
+                FunctionArgument("pyramid_scale_factor"),
+                FunctionArgument("slide_window_step_x"),
+                FunctionArgument("slide_window_step_y")
             ])
 
         print("[+] creating task")

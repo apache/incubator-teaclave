@@ -19,7 +19,7 @@
 
 import sys
 
-from teaclave import FunctionInput, FunctionOutput, OwnerList, DataMap
+from teaclave import FunctionInput, FunctionOutput, FunctionArgument, OwnerList, DataMap
 from utils import USER_ID, USER_PASSWORD, connect_authentication_service, connect_frontend_service, PlatformAdmin
 
 
@@ -102,7 +102,10 @@ class Client:
             payload=list(payload),
             executor_type="wamr",
             arguments=[
-                "input1_fid", "input2_fid", "output1_fid", "output2_fid"
+                FunctionArgument("input1_fid"),
+                FunctionArgument("input2_fid"),
+                FunctionArgument("output1_fid"),
+                FunctionArgument("output2_fid")
             ],
             inputs=[
                 FunctionInput(USER_DATA_0.input_fid, "Client 0 data."),

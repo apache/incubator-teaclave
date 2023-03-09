@@ -19,7 +19,7 @@
 
 import sys
 
-from teaclave import FunctionInput, FunctionOutput, OwnerList, DataMap
+from teaclave import FunctionInput, FunctionOutput, FunctionArgument, OwnerList, DataMap
 from utils import USER_ID, USER_PASSWORD, connect_authentication_service, connect_frontend_service
 
 
@@ -44,9 +44,15 @@ class BuiltinGbdtExample:
             description="Native Gbdt Training Function",
             executor_type="builtin",
             arguments=[
-                "feature_size", "max_depth", "iterations", "shrinkage",
-                "feature_sample_ratio", "data_sample_ratio", "min_leaf_size",
-                "loss", "training_optimization_level"
+                FunctionArgument("feature_size"),
+                FunctionArgument("max_depth"),
+                FunctionArgument("iterations"),
+                FunctionArgument("shrinkage"),
+                FunctionArgument("feature_sample_ratio"),
+                FunctionArgument("data_sample_ratio"),
+                FunctionArgument("min_leaf_size"),
+                FunctionArgument("loss"),
+                FunctionArgument("training_optimization_level")
             ],
             inputs=[
                 FunctionInput("training_data", "Input traning data file.")

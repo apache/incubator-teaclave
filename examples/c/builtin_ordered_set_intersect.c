@@ -60,7 +60,7 @@ const char *register_function_request_serialized = QUOTE(
     "executor_type": "builtin",
     "public": true,
     "payload": [],
-    "arguments": ["order"],
+    "arguments": [{"key": "order", "default_value": "", "allow_overwrite": true}],
     "inputs": [
         {"name": "input_data1", "description": "Client 0 data.", "optional": false},
         {"name": "input_data2", "description": "Client 1 data.", "optional": false}

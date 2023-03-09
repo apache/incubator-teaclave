@@ -118,7 +118,10 @@ impl Client {
             "Native Private Set Intersection.",
             "builtin",
             None,
-            Some(&["order", "save_log"]),
+            Some(vec![
+                teaclave_client_sdk::FunctionArgument::new("order", "", true),
+                teaclave_client_sdk::FunctionArgument::new("save_log", "false", true),
+            ]),
             Some(vec![
                 teaclave_client_sdk::FunctionInput::new("input_data1", "Client 0 data.", false),
                 teaclave_client_sdk::FunctionInput::new("input_data2", "Client 1 data.", false),

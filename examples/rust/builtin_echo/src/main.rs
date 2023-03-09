@@ -64,7 +64,9 @@ fn echo(message: &str) -> Result<Vec<u8>> {
         "An native echo function.",
         "builtin",
         None,
-        Some(&["message"]),
+        Some(vec![teaclave_client_sdk::FunctionArgument::new(
+            "message", "", true,
+        )]),
         None,
         None,
     )?;

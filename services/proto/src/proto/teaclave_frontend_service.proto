@@ -107,6 +107,12 @@ message FunctionOutput {
   bool optional = 3;
 }
 
+message FunctionArgument {
+  string key = 1;
+  string default_value = 2;
+  bool allow_overwrite = 3;
+}
+
 message OwnerList {
   string data_name = 1;
   repeated string uids = 2;
@@ -118,7 +124,7 @@ message RegisterFunctionRequest {
   string executor_type = 3;
   bool public = 4;
   bytes payload = 5;
-  repeated string arguments = 6;
+  repeated FunctionArgument arguments = 6;
   repeated FunctionInput inputs = 10;
   repeated FunctionOutput outputs = 11;
   repeated string user_allowlist = 12;
@@ -135,7 +141,7 @@ message UpdateFunctionRequest {
   string executor_type = 4;
   bool public = 5;
   bytes payload = 6;
-  repeated string arguments = 7;
+  repeated FunctionArgument arguments = 7;
   repeated FunctionInput inputs = 10;
   repeated FunctionOutput outputs = 11;
   repeated string user_allowlist = 12;
@@ -156,7 +162,7 @@ message GetFunctionResponse {
   string owner = 4;
   bytes payload = 5;
   bool public = 6;
-  repeated string arguments = 7;
+  repeated FunctionArgument arguments = 7;
   repeated FunctionInput inputs = 10;
   repeated FunctionOutput outputs = 11;
   repeated string user_allowlist = 12;

@@ -231,10 +231,11 @@ def entrypoint(argv):
 "#;
 
     let input_spec = FunctionInput::new("InputData", "Lines of Data", false);
+    let arg = FunctionArgument::new("query", "", true);
     let request = RegisterFunctionRequestBuilder::new()
         .name("wlc")
         .description("Mesapy Word Line Count Function")
-        .arguments(vec!["query"])
+        .arguments(vec![arg])
         .payload(script.into())
         .executor_type(ExecutorType::Python)
         .public(true)

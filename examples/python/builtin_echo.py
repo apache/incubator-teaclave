@@ -20,6 +20,7 @@
 import sys
 
 from utils import USER_ID, USER_PASSWORD, connect_authentication_service, connect_frontend_service
+from teaclave import FunctionArgument
 
 
 class BuiltinEchoExample:
@@ -42,7 +43,7 @@ class BuiltinEchoExample:
                 name="builtin-echo",
                 description="Native Echo Function",
                 executor_type="builtin",
-                arguments=["message"])
+                arguments=[FunctionArgument("message")])
 
             print("[+] creating task")
             task_id = client.create_task(

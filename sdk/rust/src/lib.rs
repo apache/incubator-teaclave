@@ -41,7 +41,7 @@ pub use teaclave_proto::teaclave_frontend_service::{
     RegisterOutputFileRequest, RegisterOutputFileResponse,
 };
 pub use teaclave_types::{
-    EnclaveInfo, Executor, FileCrypto, FunctionInput, FunctionOutput, TaskResult,
+    EnclaveInfo, Executor, FileCrypto, FunctionArgument, FunctionInput, FunctionOutput, TaskResult,
 };
 
 pub mod bindings;
@@ -211,7 +211,7 @@ impl FrontendClient {
         description: &str,
         executor_type: &str,
         payload: Option<&[u8]>,
-        arguments: Option<&[&str]>,
+        arguments: Option<Vec<FunctionArgument>>,
         inputs: Option<Vec<FunctionInput>>,
         outputs: Option<Vec<FunctionOutput>>,
     ) -> Result<String> {
@@ -592,7 +592,7 @@ mod tests {
                 "An native echo function.",
                 "builtin",
                 None,
-                Some(&["message"]),
+                Some(vec![FunctionArgument::new("message", "", true)]),
                 None,
                 None,
             )

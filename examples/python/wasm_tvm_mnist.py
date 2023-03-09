@@ -19,7 +19,7 @@
 
 import sys
 
-from teaclave import FunctionInput, FunctionOutput, OwnerList, DataMap
+from teaclave import FunctionInput, FunctionOutput, FunctionArgument, OwnerList, DataMap
 from utils import USER_ID, USER_PASSWORD, connect_authentication_service, connect_frontend_service, PlatformAdmin
 
 # If you're using `docker-compose` to start the Teaclave server containers,
@@ -61,7 +61,7 @@ def main():
         description="WAMR TVM MNIST Prediction",
         payload=list(payload),
         executor_type="wamr",
-        arguments=["input_img"],
+        arguments=[FunctionArgument("input_img")],
         inputs=[
             FunctionInput("input_img",
                           "Input image for handwriting number perdiction")

@@ -19,7 +19,7 @@
 
 import sys
 
-from teaclave import FunctionInput, FunctionOutput, OwnerList, DataMap
+from teaclave import FunctionInput, FunctionOutput, FunctionArgument, OwnerList, DataMap
 from utils import USER_ID, USER_PASSWORD, connect_authentication_service, connect_frontend_service, PlatformAdmin
 
 
@@ -50,12 +50,13 @@ class ConfigClient:
 
         print(f"[+] {self.user_id} registering function")
 
-        function_id = client.register_function(name=func_name,
-                                               description=func_name,
-                                               executor_type="builtin",
-                                               arguments=["num_user"],
-                                               inputs=[],
-                                               outputs=[])
+        function_id = client.register_function(
+            name=func_name,
+            description=func_name,
+            executor_type="builtin",
+            arguments=[FunctionArgument("num_user")],
+            inputs=[],
+            outputs=[])
 
         return function_id
 
