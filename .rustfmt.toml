@@ -13,5 +13,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-edition = "2018"
+edition = "2021"
 use_field_init_shorthand = true
