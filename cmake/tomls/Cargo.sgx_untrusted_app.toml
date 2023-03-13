@@ -29,7 +29,7 @@ members = [
   "tests/unit/app",
   "tests/functional/app",
   "tests/integration/app",
-  "tool/app",
+  "tools/sgx_tool/app",
 ]
 
 exclude = [

@@ -81,7 +81,7 @@ platform, making computation on privacy-sensitive data safe and simple.
 - [Teaclave Worker](worker)
 - [Test Harness and Test Cases](tests)
 - [Third-Party Dependency Vendoring](third_party)
-- [Tool](tool)
+- [Tools](tools)
 - [Types](types)
 
 ### API References

@@ -51,7 +51,7 @@ permalink: /docs/
 - [Teaclave Worker](../worker/README.md)
 - [Test Harness and Test Cases](../tests/README.md)
 - [Third-Party Dependency Vendoring](../third_party/README.md)
-- [Tool](../tool/README.md)
+- [Tools](../tools/README.md)
 - [Types](../types/README.md)
 
 ## API References

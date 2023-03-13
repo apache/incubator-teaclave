@@ -28,7 +28,7 @@ members = [
   "tests/unit/enclave",
   "tests/functional/enclave",
   "tests/integration/enclave",
-  "tool/enclave",
+  "tools/sgx_tool/enclave",
 ]
 
 exclude = [
