@@ -80,8 +80,8 @@ def pkg_path_2_category(pkg_path):
         return 'examples'
     elif pkg_path.startswith('tests/'):
         return 'tests'
-    elif pkg_path.startswith('tool/'):
-        return 'tool'
+    elif pkg_path.startswith('tools/'):
+        return 'tools'
     elif pkg_path == 'cli':
         return 'cli'
     elif pkg_path == 'dcap':

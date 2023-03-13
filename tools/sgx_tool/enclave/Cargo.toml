@@ -46,10 +46,10 @@ base64           = { version = "0.13.0" }
 thiserror   = { version = "1.0.9" }
 
 
-teaclave_attestation           = { path = "../../attestation" }
-teaclave_binder                = { path = "../../binder" }
-teaclave_service_enclave_utils = { path = "../../services/utils/service_enclave_utils" }
-teaclave_types                 = { path = "../../types" }
+teaclave_attestation           = { path = "../../../attestation" }
+teaclave_binder                = { path = "../../../binder" }
+teaclave_service_enclave_utils = { path = "../../../services/utils/service_enclave_utils" }
+teaclave_types                 = { path = "../../../types" }
 
 [target.'cfg(not(target_vendor = "teaclave"))'.dependencies]
 sgx_types = { version = "2.0.0" }
