@@ -87,6 +87,7 @@ pub struct Function {
     pub outputs: Vec<FunctionOutput>,
     pub owner: UserID,
     pub user_allowlist: Vec<String>,
+    pub usage_quota: Option<i32>,
 }
 
 #[derive(Default)]
@@ -156,6 +157,16 @@ impl FunctionBuilder {
         self
     }
 
+    pub fn usage_quota(mut self, usage_quota: Option<i32>) -> Self {
+        let usage_quota = match usage_quota {
+            Some(quota) if quota < 0 => None,
+            _ => usage_quota,
+        };
+
+        self.function.usage_quota = usage_quota;
+        self
+    }
+
     pub fn build(self) -> Function {
         self.function
     }
@@ -189,5 +200,23 @@ impl FunctionArgument {
             default_value: default_value.into(),
             allow_overwrite,
         }
+    }
+}
+
+const FUNCION_USAGE_PREFIX: &str = "usage";
+
+#[derive(Default, Debug, Deserialize, Serialize)]
+pub struct FunctionUsage {
+    pub function_id: Uuid,
+    pub use_numbers: i32,
+}
+
+impl Storable for FunctionUsage {
+    fn key_prefix() -> &'static str {
+        FUNCION_USAGE_PREFIX
+    }
+
+    fn uuid(&self) -> Uuid {
+        self.function_id
     }
 }

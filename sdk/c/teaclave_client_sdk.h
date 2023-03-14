@@ -328,6 +328,32 @@ int teaclave_get_function_serialized(struct FrontendClient *client,
  *
  * Inconsistent length of allocated buffer may caused overflow.
  */
+int teaclave_get_function_usage_stats_serialized(struct FrontendClient *client,
+                                                 const char *serialized_request,
+                                                 char *serialized_response,
+                                                 size_t *serialized_response_len);
+
+/**
+ * Send JSON serialized request to the service with the `client` and
+ * get the serialized response.
+ *
+ * # Arguments
+ *
+ * * `client`: service client.
+ * * `serialized_request`; JSON serialized request
+ * * `serialized_response`: buffer to store the JSON serialized response.
+ * * `serialized_response_len`: length of the allocated
+ *   `serialized_response`, will be set as the length of
+ *   `serialized_response` when return successfully.
+ *
+ * # Return
+ *
+ * The function returns 0 for success. On error, the function returns 1.
+ *
+ * # Safety
+ *
+ * Inconsistent length of allocated buffer may caused overflow.
+ */
 int teaclave_register_input_file_serialized(struct FrontendClient *client,
                                             const char *serialized_request,
                                             char *serialized_response,

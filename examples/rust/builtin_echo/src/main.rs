@@ -69,6 +69,7 @@ fn echo(message: &str) -> Result<Vec<u8>> {
         )]),
         None,
         None,
+        None,
     )?;
 
     println!(

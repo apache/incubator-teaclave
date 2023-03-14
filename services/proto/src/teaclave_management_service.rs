@@ -50,6 +50,10 @@ pub type UpdateFunctionRequest = crate::teaclave_frontend_service::UpdateFunctio
 pub type UpdateFunctionRequestBuilder =
     crate::teaclave_frontend_service::UpdateFunctionRequestBuilder;
 pub type UpdateFunctionResponse = crate::teaclave_frontend_service::UpdateFunctionResponse;
+pub type GetFunctionUsageStatsRequest =
+    crate::teaclave_frontend_service::GetFunctionUsageStatsRequest;
+pub type GetFunctionUsageStatsResponse =
+    crate::teaclave_frontend_service::GetFunctionUsageStatsResponse;
 pub type DeleteFunctionRequest = crate::teaclave_frontend_service::DeleteFunctionRequest;
 pub type DeleteFunctionResponse = crate::teaclave_frontend_service::DeleteFunctionResponse;
 pub type DisableFunctionRequest = crate::teaclave_frontend_service::DisableFunctionRequest;

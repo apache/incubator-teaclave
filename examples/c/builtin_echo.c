@@ -37,7 +37,8 @@ const char *register_function_request_serialized = QUOTE({
     "arguments" : [{"key": "message", "default_value": "", "allow_overwrite": true}],
     "inputs" : [],
     "outputs" : [],
-    "user_allowlist": []
+    "user_allowlist": [],
+    "usage_quota": -1
 });
 
 const char *create_task_request_serialized = QUOTE({

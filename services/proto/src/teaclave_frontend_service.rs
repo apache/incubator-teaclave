@@ -288,6 +288,7 @@ pub struct RegisterFunctionRequest {
     pub inputs: Vec<FunctionInput>,
     pub outputs: Vec<FunctionOutput>,
     pub user_allowlist: Vec<String>,
+    pub usage_quota: Option<i32>,
 }
 
 #[derive(Default)]
@@ -351,6 +352,11 @@ impl RegisterFunctionRequestBuilder {
         self
     }
 
+    pub fn usage_quota(mut self, usage_quota: Option<i32>) -> Self {
+        self.request.usage_quota = usage_quota;
+        self
+    }
+
     pub fn build(self) -> RegisterFunctionRequest {
         self.request
     }
@@ -369,6 +375,7 @@ impl From<RegisterFunctionRequest> for FunctionBuilder {
             .inputs(request.inputs)
             .outputs(request.outputs)
             .user_allowlist(request.user_allowlist)
+            .usage_quota(request.usage_quota)
     }
 }
 
@@ -398,6 +405,7 @@ pub struct UpdateFunctionRequest {
     pub inputs: Vec<FunctionInput>,
     pub outputs: Vec<FunctionOutput>,
     pub user_allowlist: Vec<String>,
+    pub usage_quota: Option<i32>,
 }
 
 #[derive(Default)]
@@ -466,6 +474,11 @@ impl UpdateFunctionRequestBuilder {
         self
     }
 
+    pub fn usage_quota(mut self, usage_quota: Option<i32>) -> Self {
+        self.request.usage_quota = usage_quota;
+        self
+    }
+
     pub fn build(self) -> UpdateFunctionRequest {
         self.request
     }
@@ -485,6 +498,7 @@ impl From<UpdateFunctionRequest> for FunctionBuilder {
             .inputs(request.inputs)
             .outputs(request.outputs)
             .user_allowlist(request.user_allowlist)
+            .usage_quota(request.usage_quota)
     }
 }
 
@@ -526,6 +540,26 @@ pub struct GetFunctionResponse {
     pub inputs: Vec<FunctionInput>,
     pub outputs: Vec<FunctionOutput>,
     pub user_allowlist: Vec<String>,
+}
+
+#[into_request(TeaclaveManagementRequest::GetFunctionUsageStats)]
+#[into_request(TeaclaveFrontendRequest::GetFunctionUsageStats)]
+#[derive(Debug)]
+pub struct GetFunctionUsageStatsRequest {
+    pub function_id: ExternalID,
+}
+
+impl GetFunctionUsageStatsRequest {
+    pub fn new(function_id: ExternalID) -> Self {
+        Self { function_id }
+    }
+}
+
+#[into_request(TeaclaveManagementResponse::GetFunctionUsageStats)]
+#[derive(Debug)]
+pub struct GetFunctionUsageStatsResponse {
+    pub function_quota: i32,
+    pub current_usage: i32,
 }
 
 #[into_request(TeaclaveManagementRequest::DeleteFunction)]
@@ -1123,6 +1157,8 @@ impl std::convert::TryFrom<proto::RegisterFunctionRequest> for RegisterFunctionR
             .map(FunctionArgument::try_from)
             .collect();
 
+        let usage_quota = (proto.usage_quota >= 0).then_some(proto.usage_quota);
+
         let ret = Self {
             name: proto.name,
             description: proto.description,
@@ -1133,6 +1169,7 @@ impl std::convert::TryFrom<proto::RegisterFunctionRequest> for RegisterFunctionR
             inputs: inputs?,
             outputs: outputs?,
             user_allowlist: proto.user_allowlist,
+            usage_quota,
         };
         Ok(ret)
     }
@@ -1166,6 +1203,7 @@ impl From<RegisterFunctionRequest> for proto::RegisterFunctionRequest {
             inputs,
             outputs,
             user_allowlist: request.user_allowlist,
+            usage_quota: request.usage_quota.unwrap_or(-1),
         }
     }
 }
@@ -1175,9 +1213,7 @@ impl std::convert::TryFrom<proto::RegisterFunctionResponse> for RegisterFunction
 
     fn try_from(proto: proto::RegisterFunctionResponse) -> Result<Self> {
         let function_id = proto.function_id.try_into()?;
-        let ret = Self { function_id };
-
-        Ok(ret)
+        Ok(Self { function_id })
     }
 }
 
@@ -1211,6 +1247,8 @@ impl std::convert::TryFrom<proto::UpdateFunctionRequest> for UpdateFunctionReque
             .map(FunctionArgument::try_from)
             .collect();
 
+        let usage_quota = (proto.usage_quota >= 0).then_some(proto.usage_quota);
+
         let ret = Self {
             function_id,
             name: proto.name,
@@ -1222,6 +1260,7 @@ impl std::convert::TryFrom<proto::UpdateFunctionRequest> for UpdateFunctionReque
             inputs: inputs?,
             outputs: outputs?,
             user_allowlist: proto.user_allowlist,
+            usage_quota,
         };
         Ok(ret)
     }
@@ -1256,6 +1295,7 @@ impl From<UpdateFunctionRequest> for proto::UpdateFunctionRequest {
             inputs,
             outputs,
             user_allowlist: request.user_allowlist,
+            usage_quota: request.usage_quota.unwrap_or(-1),
         }
     }
 }
@@ -1295,6 +1335,43 @@ impl From<GetFunctionRequest> for proto::GetFunctionRequest {
         Self {
             function_id: request.function_id.to_string(),
         }
+    }
+}
+
+impl From<GetFunctionUsageStatsRequest> for proto::GetFunctionUsageStatsRequest {
+    fn from(request: GetFunctionUsageStatsRequest) -> Self {
+        Self {
+            function_id: request.function_id.to_string(),
+        }
+    }
+}
+
+impl std::convert::TryFrom<proto::GetFunctionUsageStatsRequest> for GetFunctionUsageStatsRequest {
+    type Error = Error;
+
+    fn try_from(proto: proto::GetFunctionUsageStatsRequest) -> Result<Self> {
+        let function_id: ExternalID = proto.function_id.try_into()?;
+        Ok(Self { function_id })
+    }
+}
+
+impl From<GetFunctionUsageStatsResponse> for proto::GetFunctionUsageStatsResponse {
+    fn from(request: GetFunctionUsageStatsResponse) -> Self {
+        Self {
+            function_quota: request.function_quota,
+            current_usage: request.current_usage,
+        }
+    }
+}
+
+impl std::convert::TryFrom<proto::GetFunctionUsageStatsResponse> for GetFunctionUsageStatsResponse {
+    type Error = Error;
+
+    fn try_from(proto: proto::GetFunctionUsageStatsResponse) -> Result<Self> {
+        Ok(Self {
+            function_quota: proto.function_quota,
+            current_usage: proto.current_usage,
+        })
     }
 }
 

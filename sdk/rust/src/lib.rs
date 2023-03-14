@@ -35,13 +35,15 @@ pub use teaclave_proto::teaclave_frontend_service::GetFunctionResponse as Functi
 pub use teaclave_proto::teaclave_frontend_service::{
     ApproveTaskRequest, ApproveTaskResponse, AssignDataRequest, AssignDataResponse,
     CancelTaskRequest, CancelTaskResponse, CreateTaskRequest, CreateTaskResponse,
-    GetFunctionRequest, GetFunctionResponse, GetTaskRequest, GetTaskResponse, InvokeTaskRequest,
+    GetFunctionRequest, GetFunctionResponse, GetFunctionUsageStatsRequest,
+    GetFunctionUsageStatsResponse, GetTaskRequest, GetTaskResponse, InvokeTaskRequest,
     InvokeTaskResponse, RegisterFunctionRequest, RegisterFunctionRequestBuilder,
     RegisterFunctionResponse, RegisterInputFileRequest, RegisterInputFileResponse,
     RegisterOutputFileRequest, RegisterOutputFileResponse,
 };
 pub use teaclave_types::{
-    EnclaveInfo, Executor, FileCrypto, FunctionArgument, FunctionInput, FunctionOutput, TaskResult,
+    EnclaveInfo, Executor, FileCrypto, FunctionArgument, FunctionInput, FunctionOutput,
+    FunctionUsage, TaskResult,
 };
 
 pub mod bindings;
@@ -214,6 +216,7 @@ impl FrontendClient {
         arguments: Option<Vec<FunctionArgument>>,
         inputs: Option<Vec<FunctionInput>>,
         outputs: Option<Vec<FunctionOutput>>,
+        usage_quota: Option<i32>,
     ) -> Result<String> {
         let executor_type = executor_type.try_into()?;
         let mut builder = RegisterFunctionRequestBuilder::new()
@@ -232,6 +235,10 @@ impl FrontendClient {
         }
         if let Some(outputs) = outputs {
             builder = builder.outputs(outputs);
+        }
+        if let Some(usage_quota) = usage_quota {
+            let usage_quota = (usage_quota >= 0).then_some(usage_quota);
+            builder = builder.usage_quota(usage_quota)
         }
 
         let request = builder.build();
@@ -262,6 +269,37 @@ impl FrontendClient {
         let function_id = function_id.try_into()?;
         let request = GetFunctionRequest::new(function_id);
         let response = self.get_function_with_request(request)?;
+
+        Ok(response)
+    }
+
+    pub fn get_function_usage_stats_serialized(
+        &mut self,
+        serialized_request: &str,
+    ) -> Result<String> {
+        let request: frontend_proto::GetFunctionUsageStatsRequest =
+            serde_json::from_str(serialized_request)?;
+        let response: frontend_proto::GetFunctionUsageStatsResponse = self
+            .get_function_usage_stats_with_request(request.try_into()?)?
+            .into();
+        let serialized_response = serde_json::to_string(&response)?;
+
+        Ok(serialized_response)
+    }
+
+    pub fn get_function_usage_stats(&mut self, function_id: &str) -> Result<i32> {
+        let function_id = function_id.try_into()?;
+        let request = GetFunctionUsageStatsRequest::new(function_id);
+        let response = self.get_function_usage_stats_with_request(request)?;
+
+        Ok(response.current_usage)
+    }
+
+    pub fn get_function_usage_stats_with_request(
+        &mut self,
+        request: GetFunctionUsageStatsRequest,
+    ) -> Result<GetFunctionUsageStatsResponse> {
+        let response = self.api_client.get_function_usage_stats(request)?;
 
         Ok(response)
     }
@@ -595,10 +633,44 @@ mod tests {
                 Some(vec![FunctionArgument::new("message", "", true)]),
                 None,
                 None,
+                Some(2),
             )
             .unwrap();
         let _ = client.get_function(&function_id).unwrap();
         let function_arguments = hashmap!("message" => "Hello, Teaclave!");
+        let task_id = client
+            .create_task(
+                &function_id,
+                Some(function_arguments.clone()),
+                "builtin",
+                None,
+                None,
+            )
+            .unwrap();
+
+        let _ = client.invoke_task(&task_id).unwrap();
+        let (result, log) = client.get_task_result(&task_id).unwrap();
+        let usage_number = client.get_function_usage_stats(&function_id).unwrap();
+        assert_eq!(result, b"Hello, Teaclave!");
+        assert!(log.is_empty());
+        assert_eq!(1, usage_number);
+
+        let task_id = client
+            .create_task(
+                &function_id,
+                Some(function_arguments.clone()),
+                "builtin",
+                None,
+                None,
+            )
+            .unwrap();
+        let _ = client.invoke_task(&task_id).unwrap();
+        let (result, log) = client.get_task_result(&task_id).unwrap();
+        let usage_number = client.get_function_usage_stats(&function_id).unwrap();
+        assert_eq!(result, b"Hello, Teaclave!");
+        assert!(log.is_empty());
+        assert_eq!(2, usage_number);
+
         let task_id = client
             .create_task(
                 &function_id,
@@ -608,11 +680,7 @@ mod tests {
                 None,
             )
             .unwrap();
-
-        let _ = client.invoke_task(&task_id).unwrap();
-        let (result, log) = client.get_task_result(&task_id).unwrap();
-        assert_eq!(result, b"Hello, Teaclave!");
-        assert!(log.is_empty());
+        assert!(client.invoke_task(&task_id).is_err());
     }
 
     #[test]

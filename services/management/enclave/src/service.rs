@@ -23,15 +23,15 @@ use teaclave_proto::teaclave_frontend_service::{
     ApproveTaskRequest, ApproveTaskResponse, AssignDataRequest, AssignDataResponse,
     CancelTaskRequest, CancelTaskResponse, CreateTaskRequest, CreateTaskResponse,
     DeleteFunctionRequest, DeleteFunctionResponse, DisableFunctionRequest, DisableFunctionResponse,
-    GetFunctionRequest, GetFunctionResponse, GetInputFileRequest, GetInputFileResponse,
-    GetOutputFileRequest, GetOutputFileResponse, GetTaskRequest, GetTaskResponse,
-    InvokeTaskRequest, InvokeTaskResponse, ListFunctionsRequest, ListFunctionsResponse,
-    RegisterFunctionRequest, RegisterFunctionResponse, RegisterFusionOutputRequest,
-    RegisterFusionOutputResponse, RegisterInputFileRequest, RegisterInputFileResponse,
-    RegisterInputFromOutputRequest, RegisterInputFromOutputResponse, RegisterOutputFileRequest,
-    RegisterOutputFileResponse, UpdateFunctionRequest, UpdateFunctionResponse,
-    UpdateInputFileRequest, UpdateInputFileResponse, UpdateOutputFileRequest,
-    UpdateOutputFileResponse,
+    GetFunctionRequest, GetFunctionResponse, GetFunctionUsageStatsRequest,
+    GetFunctionUsageStatsResponse, GetInputFileRequest, GetInputFileResponse, GetOutputFileRequest,
+    GetOutputFileResponse, GetTaskRequest, GetTaskResponse, InvokeTaskRequest, InvokeTaskResponse,
+    ListFunctionsRequest, ListFunctionsResponse, RegisterFunctionRequest, RegisterFunctionResponse,
+    RegisterFusionOutputRequest, RegisterFusionOutputResponse, RegisterInputFileRequest,
+    RegisterInputFileResponse, RegisterInputFromOutputRequest, RegisterInputFromOutputResponse,
+    RegisterOutputFileRequest, RegisterOutputFileResponse, UpdateFunctionRequest,
+    UpdateFunctionResponse, UpdateInputFileRequest, UpdateInputFileResponse,
+    UpdateOutputFileRequest, UpdateOutputFileResponse,
 };
 use teaclave_proto::teaclave_management_service::TeaclaveManagement;
 use teaclave_proto::teaclave_storage_service::{
@@ -297,6 +297,12 @@ impl TeaclaveManagement for TeaclaveManagementService {
             }
         }
 
+        let usage = FunctionUsage {
+            function_id: function.id,
+            ..Default::default()
+        };
+        self.write_to_db(&usage)?;
+
         let response = RegisterFunctionResponse::new(function.external_id());
         Ok(response)
     }
@@ -362,6 +368,42 @@ impl TeaclaveManagement for TeaclaveManagementService {
         } else {
             Err(ManagementServiceError::PermissionDenied.into())
         }
+    }
+
+    // access control:
+    // function.public || request.role == PlatformAdmin || requested user_id in the user_allowlist
+    fn get_function_usage_stats(
+        &self,
+        request: Request<GetFunctionUsageStatsRequest>,
+    ) -> TeaclaveServiceResponseResult<GetFunctionUsageStatsResponse> {
+        let user_id = get_request_user_id(&request)?;
+        let role = get_request_role(&request)?;
+        let request = request.message;
+        let function: Function = self
+            .read_from_db(&request.function_id)
+            .map_err(|_| ManagementServiceError::InvalidFunctionId)?;
+
+        ensure!(
+            function.public
+                || role == UserRole::PlatformAdmin
+                || function.user_allowlist.contains(&user_id.to_string()),
+            ManagementServiceError::PermissionDenied
+        );
+
+        let usage = FunctionUsage {
+            function_id: function.id,
+            ..Default::default()
+        };
+        let external_id = usage.external_id();
+        let function_usage = self
+            .read_from_db::<FunctionUsage>(&external_id)
+            .map_err(|_| ManagementServiceError::InvalidFunctionId)?;
+        let function_quota = function.usage_quota.unwrap_or(-1);
+        let response = GetFunctionUsageStatsResponse {
+            function_quota,
+            current_usage: function_usage.use_numbers,
+        };
+        Ok(response)
     }
 
     // access control: function.owner == user_id
@@ -692,6 +734,22 @@ impl TeaclaveManagement for TeaclaveManagementService {
 
         log::debug!("InvokeTask: get function: {:?}", function);
 
+        let usage = FunctionUsage {
+            function_id: function.id,
+            ..Default::default()
+        };
+        let external_id = usage.external_id();
+        let mut function_usage = self
+            .read_from_db::<FunctionUsage>(&external_id)
+            .map_err(|_| ManagementServiceError::InvalidFunctionId)?;
+        let function_current_use_numbers = function_usage.use_numbers;
+
+        if let Some(quota) = function.usage_quota {
+            if quota <= function_current_use_numbers {
+                return Err(ManagementServiceError::FunctionQuotaError.into());
+            }
+        }
+
         let mut task: Task<Stage> = ts.try_into().map_err(|e| {
             log::warn!("Stage state error: {:?}", e);
             ManagementServiceError::TaskInvokeError
@@ -707,6 +765,8 @@ impl TeaclaveManagement for TeaclaveManagementService {
         let ts: TaskState = task.into();
         self.write_to_db(&ts)?;
 
+        function_usage.use_numbers = function_current_use_numbers + 1;
+        self.write_to_db(&function_usage)?;
         Ok(InvokeTaskResponse)
     }
 
@@ -894,8 +954,9 @@ impl TeaclaveManagementService {
         let function_arg1 = FunctionArgument::new("arg1", "", true);
         let function_arg2 = FunctionArgument::new("arg2", "", true);
 
+        let function_id = Uuid::parse_str("00000000-0000-0000-0000-000000000001").unwrap();
         let function = FunctionBuilder::new()
-            .id(Uuid::parse_str("00000000-0000-0000-0000-000000000001").unwrap())
+            .id(function_id)
             .name("mock-func-1")
             .description("mock-desc")
             .payload(b"mock-payload".to_vec())
@@ -906,12 +967,20 @@ impl TeaclaveManagementService {
             .owner("teaclave".to_string())
             .build();
 
+        let function_usage = FunctionUsage {
+            function_id,
+            use_numbers: 0,
+        };
+
         self.write_to_db(&function)?;
+        self.write_to_db(&function_usage)?;
 
         let function_output = FunctionOutput::new("output", "output_desc", false);
         let function_arg1 = FunctionArgument::new("arg1", "", true);
+        let function_id = Uuid::parse_str("00000000-0000-0000-0000-000000000002").unwrap();
+
         let function = FunctionBuilder::new()
-            .id(Uuid::parse_str("00000000-0000-0000-0000-000000000002").unwrap())
+            .id(function_id)
             .name("mock-func-2")
             .description("mock-desc")
             .payload(b"mock-payload".to_vec())
@@ -921,10 +990,17 @@ impl TeaclaveManagementService {
             .owner("teaclave".to_string())
             .build();
 
-        self.write_to_db(&function)?;
+        let function_usage = FunctionUsage {
+            function_id,
+            use_numbers: 0,
+        };
 
+        self.write_to_db(&function)?;
+        self.write_to_db(&function_usage)?;
+
+        let function_id = Uuid::parse_str("00000000-0000-0000-0000-000000000003").unwrap();
         let function = FunctionBuilder::new()
-            .id(Uuid::parse_str("00000000-0000-0000-0000-000000000003").unwrap())
+            .id(function_id)
             .name("mock-func-3")
             .description("Private mock function")
             .payload(b"mock-payload".to_vec())
@@ -934,7 +1010,14 @@ impl TeaclaveManagementService {
             .user_allowlist(vec!["mock_user".to_string(), "mock_user1".to_string()])
             .build();
 
+        let function_usage = FunctionUsage {
+            function_id,
+            use_numbers: 0,
+        };
+
         self.write_to_db(&function)?;
+        self.write_to_db(&function_usage)?;
+
         Ok(())
     }
 }
@@ -1014,6 +1097,17 @@ pub mod tests {
         let value = function.to_vec().unwrap();
         let deserialized_function = Function::from_slice(&value).unwrap();
         debug!("function: {:?}", deserialized_function);
+    }
+
+    pub fn check_function_quota() {
+        let function = FunctionBuilder::new().build();
+        assert_eq!(function.usage_quota, None);
+
+        let function = FunctionBuilder::new().usage_quota(Some(-5)).build();
+        assert_eq!(function.usage_quota, None);
+
+        let function = FunctionBuilder::new().usage_quota(Some(5)).build();
+        assert_eq!(function.usage_quota, Some(5));
     }
 
     pub fn handle_task() {

@@ -140,6 +140,7 @@ pub mod tests {
             service::tests::handle_input_file,
             service::tests::handle_output_file,
             service::tests::handle_function,
+            service::tests::check_function_quota,
             service::tests::handle_task,
             service::tests::handle_staged_task,
         )
