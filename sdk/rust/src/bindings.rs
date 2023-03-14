@@ -462,6 +462,11 @@ generate_function_serialized!(
 );
 generate_function_serialized!(
     FrontendClient,
+    teaclave_get_function_usage_stats_serialized,
+    get_function_usage_stats_serialized
+);
+generate_function_serialized!(
+    FrontendClient,
     teaclave_register_input_file_serialized,
     register_input_file_serialized
 );

@@ -128,6 +128,7 @@ message RegisterFunctionRequest {
   repeated FunctionInput inputs = 10;
   repeated FunctionOutput outputs = 11;
   repeated string user_allowlist = 12;
+  int32 usage_quota = 13;
 }
 
 message RegisterFunctionResponse {
@@ -145,6 +146,7 @@ message UpdateFunctionRequest {
   repeated FunctionInput inputs = 10;
   repeated FunctionOutput outputs = 11;
   repeated string user_allowlist = 12;
+  int32 usage_quota = 13;
 }
 
 message UpdateFunctionResponse {
@@ -166,6 +168,15 @@ message GetFunctionResponse {
   repeated FunctionInput inputs = 10;
   repeated FunctionOutput outputs = 11;
   repeated string user_allowlist = 12;
+}
+
+message GetFunctionUsageStatsRequest {
+  string function_id = 1;
+}
+
+message GetFunctionUsageStatsResponse {
+  int32 function_quota = 1;
+  int32 current_usage = 2;
 }
 
 message DeleteFunctionRequest {
@@ -264,6 +275,7 @@ service TeaclaveFrontend {
   rpc GetInputFile (GetInputFileRequest) returns (GetInputFileResponse);
   rpc RegisterFunction (RegisterFunctionRequest) returns (RegisterFunctionResponse);
   rpc GetFunction (GetFunctionRequest) returns (GetFunctionResponse);
+  rpc GetFunctionUsageStats (GetFunctionUsageStatsRequest) returns (GetFunctionUsageStatsResponse);
   rpc UpdateFunction (UpdateFunctionRequest) returns (UpdateFunctionResponse);
   rpc ListFunctions (ListFunctionsRequest) returns (ListFunctionsResponse);
   rpc DeleteFunction (DeleteFunctionRequest) returns (DeleteFunctionResponse);

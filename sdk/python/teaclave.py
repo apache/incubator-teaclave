@@ -568,7 +568,7 @@ class RegisterFunctionRequest(Request):
                  executor_type: str, public: bool, payload: List[int],
                  arguments: List[FunctionArgument],
                  inputs: List[FunctionInput], outputs: List[FunctionOutput],
-                 user_allowlist: List[str]):
+                 user_allowlist: List[str], usage_quota: int):
         self.request = "register_function"
         self.metadata = metadata
         self.name = name
@@ -580,6 +580,7 @@ class RegisterFunctionRequest(Request):
         self.inputs = inputs
         self.outputs = outputs
         self.user_allowlist = user_allowlist
+        self.usage_quota = usage_quota
 
 
 class UpdateFunctionRequest(Request):
@@ -588,7 +589,7 @@ class UpdateFunctionRequest(Request):
                  description: str, executor_type: str, public: bool,
                  payload: List[int], arguments: List[FunctionArgument],
                  inputs: List[FunctionInput], outputs: List[FunctionOutput],
-                 user_allowlist: List[str]):
+                 user_allowlist: List[str], usage_quota: int):
         self.request = "update_function"
         self.metadata = metadata
         self.function_id = function_id
@@ -601,6 +602,7 @@ class UpdateFunctionRequest(Request):
         self.inputs = inputs
         self.outputs = outputs
         self.user_allowlist = user_allowlist
+        self.usage_quota = usage_quota
 
 
 class ListFunctionsRequest(Request):
@@ -631,6 +633,14 @@ class GetFunctionRequest(Request):
 
     def __init__(self, metadata: Metadata, function_id: str):
         self.request = "get_function"
+        self.metadata = metadata
+        self.function_id = function_id
+
+
+class GetFunctionUsageStatsRequest(Request):
+
+    def __init__(self, metadata: Metadata, function_id: str):
+        self.request = "get_function_usage_stats"
         self.metadata = metadata
         self.function_id = function_id
 
@@ -763,13 +773,14 @@ class FrontendService(TeaclaveService):
         inputs: List[FunctionInput] = [],
         outputs: List[FunctionOutput] = [],
         user_allowlist: List[str] = [],
+        usage_quota: int = -1,
     ):
         self.check_metadata()
         self.check_channel()
         request = RegisterFunctionRequest(self.metadata, name, description,
                                           executor_type, public, payload,
                                           arguments, inputs, outputs,
-                                          user_allowlist)
+                                          user_allowlist, usage_quota)
         _write_message(self.channel, request)
         response = _read_message(self.channel)
         if response["result"] == "ok":
@@ -792,13 +803,14 @@ class FrontendService(TeaclaveService):
         inputs: List[FunctionInput] = [],
         outputs: List[FunctionOutput] = [],
         user_allowlist: List[str] = [],
+        usage_quota: int = -1,
     ):
         self.check_metadata()
         self.check_channel()
         request = UpdateFunctionRequest(self.metadata, function_id, name,
                                         description, executor_type, public,
                                         payload, arguments, inputs, outputs,
-                                        user_allowlist)
+                                        user_allowlist, usage_quota)
         _write_message(self.channel, request)
         response = _read_message(self.channel)
         if response["result"] == "ok":
@@ -833,6 +845,21 @@ class FrontendService(TeaclaveService):
             if "request_error" in response:
                 reason = response["request_error"]
             raise TeaclaveException(f"Failed to get function ({reason})")
+
+    def get_function_usage_stats(self, user_id: str, function_id: str):
+        self.check_metadata()
+        self.check_channel()
+        request = GetFunctionUsageStatsRequest(self.metadata, function_id)
+        _write_message(self.channel, request)
+        response = _read_message(self.channel)
+        if response["result"] == "ok":
+            return response["content"]
+        else:
+            reason = "unknown"
+            if "request_error" in response:
+                reason = response["request_error"]
+            raise TeaclaveException(
+                f"Failed to get function usage statistics ({reason})")
 
     def delete_function(self, function_id: str):
         self.check_metadata()

@@ -130,6 +130,7 @@ impl Client {
                 teaclave_client_sdk::FunctionOutput::new("output_result1", "Output data.", false),
                 teaclave_client_sdk::FunctionOutput::new("output_result2", "Output data.", false),
             ]),
+            None,
         )?;
         self.client.get_function(&function_id)?;
         let function_arguments = hashmap!("order" => "ascending", "save_log" => "true"); // Order can be ascending or desending

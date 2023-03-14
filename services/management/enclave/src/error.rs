@@ -46,6 +46,8 @@ pub(crate) enum ManagementServiceError {
     TaskInvokeError,
     #[error("failed to cancel task, reason: {0}")]
     TaskCancelError(String),
+    #[error("function quota has been used up")]
+    FunctionQuotaError,
 }
 
 impl From<ManagementServiceError> for TeaclaveServiceResponseError {

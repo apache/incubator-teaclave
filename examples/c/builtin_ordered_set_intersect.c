@@ -69,7 +69,8 @@ const char *register_function_request_serialized = QUOTE(
         {"name": "output_result1", "description": "Output data.", "optional": false},
         {"name": "output_result2", "description": "Output data.", "optional": false}
     ],
-    "user_allowlist": ["user0", "user1"]
+    "user_allowlist": ["user0", "user1"],
+    "usage_quota": -1
 });
 
 const char *create_task_request_serialized = QUOTE(

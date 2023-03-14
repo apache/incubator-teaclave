@@ -135,6 +135,7 @@ fn test_register_function() {
         .arguments(vec![FunctionArgument::new("arg", "", true)])
         .inputs(vec![function_input])
         .outputs(vec![function_output])
+        .usage_quota(Some(0))
         .build();
 
     let mut client = authorized_client("mock_user");

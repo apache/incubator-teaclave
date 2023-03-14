@@ -36,6 +36,7 @@ service TeaclaveManagement {
   rpc RegisterFunction (teaclave_frontend_service_proto.RegisterFunctionRequest) returns (teaclave_frontend_service_proto.RegisterFunctionResponse);
   rpc UpdateFunction (teaclave_frontend_service_proto.UpdateFunctionRequest) returns (teaclave_frontend_service_proto.UpdateFunctionResponse);
   rpc GetFunction (teaclave_frontend_service_proto.GetFunctionRequest) returns (teaclave_frontend_service_proto.GetFunctionResponse);
+  rpc GetFunctionUsageStats (teaclave_frontend_service_proto.GetFunctionUsageStatsRequest) returns (teaclave_frontend_service_proto.GetFunctionUsageStatsResponse);
   rpc DeleteFunction (teaclave_frontend_service_proto.DeleteFunctionRequest) returns (teaclave_frontend_service_proto.DeleteFunctionResponse);
   rpc DisableFunction (teaclave_frontend_service_proto.DisableFunctionRequest) returns (teaclave_frontend_service_proto.DisableFunctionResponse);
   rpc ListFunctions (teaclave_frontend_service_proto.ListFunctionsRequest) returns (teaclave_frontend_service_proto.ListFunctionsResponse);
