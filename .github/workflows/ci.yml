@@ -56,7 +56,7 @@ jobs:
           . /opt/sgxsdk/environment &&
           . /root/.cargo/env &&
           mkdir -p build && cd build &&
-          cmake -DRUSTFLAGS="-D warnings" -DTEST_MODE=ON .. &&
+          cmake -DCMAKE_BUILD_TYPE=Release -DRUSTFLAGS="-D warnings" -DTEST_MODE=ON .. &&
           CLP=1 make -j
   license:
     runs-on: ubuntu-20.04
