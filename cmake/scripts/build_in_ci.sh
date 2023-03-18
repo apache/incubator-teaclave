@@ -30,5 +30,5 @@ git config --global --add safe.directory /__w/incubator-teaclave/incubator-teacl
 # Build
 . /opt/sgxsdk/environment && . ~/.cargo/env && \
 mkdir -p build && pushd build && \
-cmake -DCMAKE_BUILD_TYPE=Debug -DSGX_SIM_MODE=ON -DTEST_MODE=ON .. && \
+cmake -DCMAKE_BUILD_TYPE=Release -DSGX_SIM_MODE=ON -DTEST_MODE=ON .. && \
 VERBOSE=1 make -j && rm -rf target

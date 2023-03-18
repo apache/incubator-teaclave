@@ -89,6 +89,7 @@ impl TeaclaveExecutionService {
                         Ok(task) => {
                             self.status = ExecutorStatus::Executing;
                             self.update_task_status(&task.task_id, TaskStatus::Running)?;
+                            log::info!("Executor {} accepted a new task, executing...", self.id);
                             let tx_task = tx.clone();
                             let fusion_base = self.fusion_base.clone();
                             current_task = Arc::new(Some(task));
@@ -99,7 +100,6 @@ impl TeaclaveExecutionService {
                                 tx_task.send(result).unwrap();
                             });
                             task_handle = Some(handle);
-                            log::info!("Executor {} accepted a new task, executing...", self.id);
                         }
                         Err(e) => {
                             log::error!("Executor {} failed to pull task: {}", self.id, e);
