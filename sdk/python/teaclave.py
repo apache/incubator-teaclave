@@ -199,6 +199,21 @@ class TeaclaveService:
         quote = report['isvEnclaveQuoteBody']
         quote = base64.b64decode(quote)
 
+        # get report_data from the quote
+        report_data = quote[368:368 + 64]
+        # get EC pub key from the certificate
+        pub_key = cert.public_key().public_bytes(
+            cryptography.hazmat.primitives.serialization.Encoding.X962,
+            cryptography.hazmat.primitives.serialization.PublicFormat.
+            UncompressedPoint)
+
+        # verify whether the certificate is bound to the quote
+        assert (pub_key[0] == 4)
+        if pub_key[1:] != report_data:
+            raise TeaclaveException(
+                "Failed to verify the certificate agaist the report data in the quote"
+            )
+
         # get mr_enclave and mr_signer from the quote
         mr_enclave = quote[112:112 + 32].hex()
         mr_signer = quote[176:176 + 32].hex()
