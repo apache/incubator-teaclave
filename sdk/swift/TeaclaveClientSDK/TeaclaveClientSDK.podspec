@@ -17,13 +17,13 @@
 
 Pod::Spec.new do |s|
   s.name = "TeaclaveClientSDK"
-  s.version = "0.4.0"
+  s.version = "0.5.0"
   s.summary = "Teaclave Client SDK."
   s.homepage = "https://teaclave.apache.org"
   s.license = "Apache-2.0"
   s.author = { "Teaclave Contributors" => "dev@teaclave.apache.org" }
   s.ios.deployment_target = '13.0'
-  s.source = { :git => "https://github.com/apache/incubator-teaclave.git", :tag => "v0.4.0" }
+  s.source = { :git => "https://github.com/apache/incubator-teaclave.git", :tag => "v0.5.0" }
   s.source_files  = "TeaclaveClietnSDK", "TeaclaveClientSDK/**/*.{h,swift}", "External"
   s.module_map = 'TeaclaveClientSDK/TeaclaveClientSDK.modulemap'
   s.vendored_libraries= 'External/libteaclave_client_sdk.a'
