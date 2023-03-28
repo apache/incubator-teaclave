@@ -29,9 +29,9 @@ path = "main.rs"
 
 [dependencies]
 structopt   = { version = "0.3" }
-prost-build = { version = "0.6.0" }
-prost       = { version = "0.6.0" }
-prost-types = { version = "0.6.0" }
+prost-build = { version = "0.11" }
+prost       = { version = "0.11" }
+prost-types = { version = "0.11" }
 askama      = { version = "0.8" }
 
 [workspace]

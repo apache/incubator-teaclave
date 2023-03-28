@@ -25,15 +25,15 @@ build = "build.rs"
 edition = "2021"
 
 [dependencies]
-log        = { version = "0.4.17", features = ["release_max_level_info"] }
-env_logger = { version = "0.7.1" }
-anyhow     = { version = "1.0.26" }
-serde            = { version = "1.0.92", features = ["derive"] }
-serde_json       = { version = "1.0.39" }
-raw-cpuid = "8.1.0"
-structopt = "0.3"
+log             = { version = "0.4.17", features = ["release_max_level_info"] }
+env_logger      = { version = "0.7.1" }
+anyhow          = { version = "1.0.26" }
+serde           = { version = "1.0.92", features = ["derive"] }
+serde_json      = { version = "1.0.39" }
+raw-cpuid       = "10.7.0"
+structopt       = "0.3"
 
-teaclave_binder            = { path = "../../../binder", features = ["app"] }
-teaclave_types             = { path = "../../../types", features = ["app"] }
+teaclave_binder = { path = "../../../binder", features = ["app"] }
+teaclave_types  = { path = "../../../types", features = ["app"] }
 
-sgx_types = { version = "2.0.0" }
+sgx_types       = { version = "2.0.0" }

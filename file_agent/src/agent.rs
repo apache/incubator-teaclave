@@ -193,8 +193,7 @@ async fn handle_upload(info: HandleFileInfo, fusion_base: impl AsRef<Path>) -> a
 
 fn handle_file_request(bytes: &[u8]) -> anyhow::Result<()> {
     let req: FileAgentRequest = serde_json::from_slice(bytes)?;
-    let results = tokio::runtime::Builder::new()
-        .threaded_scheduler()
+    let results = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()?
         .block_on(async {
