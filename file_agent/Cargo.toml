@@ -43,9 +43,9 @@ teaclave_types = { path = "../types", features = ["app"] }
 teaclave_test_utils = { path = "../tests/utils", optional = true }
 
 url             = { version = "2.1.1", features = ["serde"]}
-tokio           = { version = "0.2", features = ["rt-core", "rt-threaded", "fs"] }
-tokio-util      = { version = "0.3", features = ["codec"] }
+tokio           = { version = "1", features = ["fs", "io-util", "rt-multi-thread"] }
+tokio-util      = { version = "0.7", features = ["codec"] }
 futures         = { version = "0.3" }
 futures-util    = { version = "0.3.0", default-features = false }
-reqwest         = { version = "0.10", features = ["json", "stream"] }
+reqwest         = { version = "0.11", features = ["json", "stream"] }
 http            = { version = "0.2" }
