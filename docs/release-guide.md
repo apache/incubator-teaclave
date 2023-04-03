@@ -205,7 +205,7 @@ Here are some examples:
 **Result in the general@incubator list**:
 
 - subject: [RESULT][VOTE] Release Apache Teaclave (incubating) v0.3.0-rc.1
-- to: dev@teaclave.apache.org
+- to: general@teaclave.apache.org
 - link: <https://lists.apache.org/thread/gbv3f7l9bf6t1876byqm1v4stsw7g00z>
 
 ## Post the Release
@@ -263,7 +263,7 @@ Older releases are archived in the archive site automatically
 (<https://archive.apache.org/dist/incubator/teaclave/>).
 
 Note that the links to the release artifact should start with
-`https://www.apache.org/dyn/closer.lua/incubator/teaclave` to better utilize the
+`https://dlcdn.apache.org/incubator/teaclave` to better utilize the
 Apache CND. You can refer to the previous release link.
 
 
@@ -279,4 +279,4 @@ channels (Twitter, Discord, etc.).
 
 **Blog example**:
 - title: Announcing Apache Teaclave (incubating) 0.3.0
-- link: <https://teaclave.apache.org/blog/2021-10-01-announcing-teaclave-0-3-0/>
+- link: <https://teaclave.apache.org/blog/2021-09-30-announcing-teaclave-0-3-0/>
