@@ -347,3 +347,23 @@ add_cargo_build_dylib_staticlib_target(teaclave_client_sdk
 # ${TEACLAVE_EXAMPLE_INSTALL_DIR}/quickstart_c )
 
 add_enclave_sig_target_n_hooks()
+
+set(LIBOS_EXTRA_CARGO_FLAGS --features "libos")
+set(LIBOS_DEPENDS prep)
+if(EXECUTOR_WAMR)
+    list(APPEND LIBOS_DEPENDS wamr)
+endif()
+add_cargo_build_target(
+    teaclave_execution_service
+    TARGET_NAME
+    "teaclave_execution_service_libos"
+    TOML_DIR
+    ${MT_SGXAPP_TOML_DIR}
+    TARGET_DIR
+    ${UNTRUSTED_TARGET_DIR}
+    INSTALL_DIR
+    ${TEACLAVE_BIN_INSTALL_DIR}/teaclave_execution_service_libos
+    EXTRA_CARGO_FLAGS
+    ${LIBOS_EXTRA_CARGO_FLAGS}
+    DEPENDS
+    ${LIBOS_DEPENDS})

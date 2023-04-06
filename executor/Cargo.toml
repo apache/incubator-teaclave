@@ -36,6 +36,13 @@ mesalock_sgx = [
   "teaclave_function/mesalock_sgx",
   "teaclave_executor_context/mesalock_sgx",
 ]
+app = [
+  "teaclave_types/app",
+  "teaclave_crypto/app",
+  "teaclave_runtime/app",
+  "teaclave_function/app",
+  "teaclave_executor_context/app",
+]
 cov = ["sgx_cov"]
 enclave_unit_test = [
   "teaclave_test_utils/mesalock_sgx",

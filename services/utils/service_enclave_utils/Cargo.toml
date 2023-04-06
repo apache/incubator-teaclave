@@ -30,6 +30,11 @@ mesalock_sgx = [
     "teaclave_attestation/mesalock_sgx",
     "teaclave_rpc/mesalock_sgx",
 ]
+libos = [ 
+    "teaclave_attestation/libos",
+    "teaclave_rpc/app",
+    "teaclave_types/app",
+]
 cov = ["sgx_cov", "sgx_macros"]
 
 [dependencies]

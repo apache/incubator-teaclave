@@ -25,14 +25,25 @@ edition = "2021"
 
 [features]
 default = []
+app = [
+    "teaclave_types/app",
+    "sgx_crypto/ucrypto",
+    "teaclave_config/build_config"
+]
 mesalock_sgx = [
-    "sgx_crypto",
+    "sgx_crypto/tcrypto",
     "sgx_rand/trand",
     "sgx_tse",
     "teaclave_types/mesalock_sgx",
     "teaclave_config/mesalock_sgx",
     "teaclave_config/build_config",
 ]
+libos = [
+    "app",
+    "libc",
+    "sgx_rand/urand",
+]
+
 enclave_unit_test = ["teaclave_test_utils/mesalock_sgx"]
 
 [dependencies]
@@ -43,6 +54,7 @@ cfg-if           = { version = "0.1.9" }
 chrono           = { version = "0.4.6", default-features = false }
 hex              = { version = "0.4.0" }
 httparse         = { version = "1.3.2", default-features = false }
+libc             = { version = "0.2.66", optional = true }
 log              = { version = "0.4.17", features = ["release_max_level_info"] }
 num-bigint       = { version = "0.2.2" }
 percent-encoding = { version = "2.1.0" }
@@ -60,9 +72,9 @@ teaclave_types  = { path = "../types" }
 teaclave_config = { path = "../config" }
 teaclave_test_utils = { path = "../tests/utils", optional = true }
 
-sgx_rand    = { version = "2.0.0", optional = true }
-sgx_crypto  = { version = "2.0.0", optional = true }
-sgx_tse     = { version = "2.0.0", optional = true }
+sgx_crypto  = { version = "2.0.0", optional = true, default-features = false}
+sgx_tse     = { version = "2.0.0", features = ["capi"], optional = true }
+sgx_rand    = { version = "2.0.0", default-features = false, optional = true }
 
 [target.'cfg(not(target_vendor = "teaclave"))'.dependencies]
 sgx_types   = { version = "2.0.0" }

@@ -15,7 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#[cfg(feature = "mesalock_sgx")]
 use std::cell::RefCell;
 use std::slice;
 use std::thread_local;

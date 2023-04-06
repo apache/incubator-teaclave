@@ -24,11 +24,23 @@ license = "Apache-2.0"
 build = "build.rs"
 edition = "2021"
 
+[features]
+default =[]
+libos = [
+  "teaclave_execution_service_enclave/libos",
+  "teaclave_config/build_config",
+  "teaclave_logger"
+  ]
+
 [dependencies]
 env_logger  = { version = "0.7.1" }
 anyhow      = { version = "1.0.26" }
 libc        = { version = "0.2.66" }
+log         = { version = "0.4.17", features = ["release_max_level_info"] }
 signal-hook = { version = "0.1.13" }
 
-teaclave_file_agent        = { path = "../../../file_agent" }
-teaclave_service_app_utils = { path = "../../utils/service_app_utils" }
+teaclave_config                    = { path = "../../../config" }
+teaclave_logger                    = { path = "../../../logger", optional = true }
+teaclave_file_agent                = { path = "../../../file_agent" }
+teaclave_service_app_utils         = { path = "../../utils/service_app_utils" }
+teaclave_execution_service_enclave = { path = "../enclave", optional = true }

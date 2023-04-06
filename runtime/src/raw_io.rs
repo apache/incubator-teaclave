@@ -15,9 +15,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
+#[cfg(not(feature = "mesalock_sgx"))]
+use std::fs::File;
 use std::io;
+#[cfg(feature = "mesalock_sgx")]
 use std::untrusted::fs::File;
-
 use teaclave_types::StagedFiles;
 use teaclave_types::TeaclaveRuntime;
 

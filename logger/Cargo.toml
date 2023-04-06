@@ -28,7 +28,7 @@ name = "teaclave_logger"
 crate-type = ["staticlib", "rlib"]
 
 [features]
-default = ["mesalock_sgx"]
+default = []
 mesalock_sgx = []
 cov = ["sgx_cov"]
 enclave_unit_test = ["teaclave_test_utils/mesalock_sgx"]

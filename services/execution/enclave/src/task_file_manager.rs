@@ -15,12 +15,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use crate::ocall::handle_file_request;
+use crate::file_handler::handle_file_request;
 use anyhow::Result;
 use std::collections::HashMap;
+#[cfg(not(feature = "mesalock_sgx"))]
+use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
-use std::untrusted::path::PathEx;
+#[cfg(feature = "mesalock_sgx")]
+use std::untrusted::{fs, path::PathEx};
 use teaclave_crypto::TeaclaveFile128Key;
 use teaclave_types::*;
 use url::Url;
@@ -117,7 +120,7 @@ impl InterInput {
         let dst = &self.staged_path;
         let staged_file_info = match self.file.crypto_info {
             FileCrypto::TeaclaveFile128(crypto) => {
-                std::untrusted::fs::soft_link(src, dst)?;
+                std::os::unix::fs::symlink(src, dst)?;
                 StagedFileInfo::new(src, crypto, self.file.cmac)
             }
             FileCrypto::AesGcm128(crypto) => {
@@ -288,7 +291,7 @@ fn make_staged_path(base: impl AsRef<Path>, funiq_key: &str, url: &Url) -> Resul
     let staged_dir = format!("{}-{}", funiq_key, "staged");
     let file_dir = base.as_ref().to_owned().join(&staged_dir);
     if !file_dir.exists() {
-        std::untrusted::fs::create_dir_all(&file_dir)?;
+        fs::create_dir_all(&file_dir)?;
     }
     let local_dest = file_dir.join(original_name);
     Ok(local_dest)
@@ -303,7 +306,7 @@ fn make_intermediate_path(base: impl AsRef<Path>, funiq_key: &str, url: &Url) ->
 
     let file_dir = base.as_ref().to_owned().join(funiq_key);
     if !file_dir.exists() {
-        std::untrusted::fs::create_dir_all(&file_dir)?;
+        fs::create_dir_all(&file_dir)?;
     }
     let local_dest = file_dir.join(original_name);
     Ok(local_dest)

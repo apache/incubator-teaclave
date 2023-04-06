@@ -20,14 +20,14 @@ extern crate sgx_types;
 
 #[cfg(executor_builtin)]
 mod builtin;
-#[cfg(executor_mesapy)]
+#[cfg(all(executor_mesapy, not(feature = "app")))]
 mod mesapy;
 #[cfg(executor_wamr)]
 mod wamr;
 
 #[cfg(executor_builtin)]
 pub use builtin::BuiltinFunctionExecutor;
-#[cfg(executor_mesapy)]
+#[cfg(all(executor_mesapy, not(feature = "app")))]
 pub use mesapy::MesaPy;
 #[cfg(executor_wamr)]
 pub use wamr::WAMicroRuntime;
@@ -39,7 +39,7 @@ pub mod tests {
     #[allow(clippy::vec_init_then_push)]
     pub fn run_tests() -> bool {
         let mut v: Vec<bool> = Vec::new();
-        #[cfg(executor_mesapy)]
+        #[cfg(all(executor_mesapy, not(feature = "app")))]
         v.push(mesapy::tests::run_tests());
         #[cfg(executor_builtin)]
         v.push(builtin::tests::run_tests());

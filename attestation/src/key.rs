@@ -96,6 +96,7 @@ impl NistP256KeyPair {
         use std::time::SystemTime;
         use std::time::UNIX_EPOCH;
         #[allow(unused_imports)]
+        #[cfg(feature = "mesalock_sgx")]
         use std::untrusted::time::SystemTimeEx;
         use yasna::construct_der;
         use yasna::models::{ObjectIdentifier, UTCTime};

@@ -25,6 +25,11 @@ edition = "2021"
 
 [features]
 default = []
+app = [
+    "libc",
+    "teaclave_types/app",
+    "teaclave_attestation/app"
+]
 mesalock_sgx = [
     "sgx_libc",
     "teaclave_types/mesalock_sgx",
@@ -35,6 +40,7 @@ mesalock_sgx = [
 anyhow     = { version = "1.0.26" }
 cfg-if     = { version = "0.1.9" }
 http       = { version = "0.2" }
+libc       = { version = "0.2.66", optional = true }
 log        = { version = "0.4.17", features = ["release_max_level_info"] }
 rustls     = { version = "0.17.0", features = ["dangerous_configuration"] }
 serde      = { version = "1.0.92", features = ["derive"] }

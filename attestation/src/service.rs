@@ -32,7 +32,6 @@ use anyhow::{anyhow, bail, Result};
 use log::{debug, trace, warn};
 use serde_json::json;
 use sgx_crypto::ecc::EcPublicKey;
-use sgx_types::types::QlAttKeyId;
 
 /// Root certification of the DCAP attestation service provider.
 #[cfg(dcap)]
@@ -70,6 +69,7 @@ pub(crate) enum AttestationServiceError {
     Unknown,
 }
 
+#[cfg(all(feature = "mesalock_sgx", not(feature = "libos")))]
 impl EndorsedAttestationReport {
     pub fn new(
         att_service_cfg: &AttestationServiceConfig,
@@ -79,7 +79,7 @@ impl EndorsedAttestationReport {
 
         // For IAS-based attestation, we need to fill our SPID (obtained from Intel)
         // into the attestation key id. For DCAP-based attestation, SPID should be 0
-        const SPID_OFFSET: usize = std::mem::size_of::<QlAttKeyId>();
+        const SPID_OFFSET: usize = std::mem::size_of::<sgx_types::types::QlAttKeyId>();
         ak_id.att_key_id[SPID_OFFSET..(SPID_OFFSET + att_service_cfg.spid.id.len())]
             .clone_from_slice(&att_service_cfg.spid.id);
 
@@ -93,6 +93,27 @@ impl EndorsedAttestationReport {
         )?;
 
         Ok(as_report)
+    }
+}
+
+#[cfg(all(feature = "libos", not(feature = "mesalock_sgx")))]
+impl EndorsedAttestationReport {
+    pub fn new(att_service_cfg: &AttestationServiceConfig, pub_k: EcPublicKey) -> Result<Self> {
+        let report_data = platform::create_sgx_report_data(pub_k);
+        let quote = match &att_service_cfg.algo {
+            crate::AttestationAlgorithm::SgxEpid => {
+                platform::get_sgx_epid_quote(&att_service_cfg.spid, report_data)?
+            }
+            crate::AttestationAlgorithm::SgxEcdsa => {
+                platform::get_sgx_dcap_quote(&att_service_cfg.spid, report_data)?
+            }
+        };
+        crate::service::get_report(
+            &att_service_cfg.algo,
+            &att_service_cfg.as_url,
+            &att_service_cfg.api_key,
+            &quote,
+        )
     }
 }
 
@@ -123,7 +144,7 @@ fn new_tls_stream(url: &url::Url) -> Result<rustls::StreamOwned<rustls::ClientSe
 
 /// Get attestation report form the attestation service (e.g., Intel Attestation
 /// Service and customized DCAP attestation service).
-fn get_report(
+pub(crate) fn get_report(
     algo: &AttestationAlgorithm,
     url: &url::Url,
     api_key: &str,

@@ -29,6 +29,9 @@ crate-type = ["staticlib", "rlib"]
 
 [features]
 default = []
+app = [
+  "teaclave_types/app",
+]
 mesalock_sgx = [
   "teaclave_types/mesalock_sgx",
 ]

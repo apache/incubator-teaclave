@@ -15,7 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#[cfg(feature = "mesalock_sgx")]
 use std::collections::HashMap;
 use std::format;
 
@@ -50,7 +49,7 @@ impl Default for Worker {
         });
 
         // Register supported executors
-        #[cfg(executor_mesapy)]
+        #[cfg(all(executor_mesapy, not(feature = "app")))]
         worker.register_executor((ExecutorType::Python, Executor::MesaPy), || {
             Box::<MesaPy>::default()
         });
