@@ -160,7 +160,7 @@ pub mod report;
 pub mod verifier;
 
 cfg_if::cfg_if! {
-    if #[cfg(feature = "mesalock_sgx")]  {
+    if #[cfg(any(feature = "mesalock_sgx", feature = "libos"))]  {
         mod service;
         pub mod key;
         mod platform;

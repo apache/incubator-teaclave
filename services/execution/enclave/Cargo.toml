@@ -41,6 +41,18 @@ mesalock_sgx = [
   "teaclave_config/build_config",
   "teaclave_worker/mesalock_sgx",
 ]
+libos = [  
+  "teaclave_attestation/libos",
+  "teaclave_binder/app",
+  "teaclave_config/build_config",
+  "teaclave_crypto/app",
+  "teaclave_file_agent",
+  "teaclave_proto/app",
+  "teaclave_rpc/app",
+  "teaclave_service_enclave_utils/libos",
+  "teaclave_types/app",
+  "teaclave_worker/app",
+]
 cov = ["teaclave_service_enclave_utils/cov"]
 enclave_unit_test = ["teaclave_binder/enclave_unit_test", "teaclave_test_utils/mesalock_sgx"]
 
@@ -63,7 +75,8 @@ teaclave_service_enclave_utils = { path = "../../utils/service_enclave_utils" }
 teaclave_types                 = { path = "../../../types" }
 teaclave_crypto                = { path = "../../../crypto" }
 teaclave_worker                = { path = "../../../worker" }
-teaclave_test_utils            = { path = "../../../tests/utils" , optional = true }
+teaclave_test_utils            = { path = "../../../tests/utils", optional = true }
+teaclave_file_agent            = { path = "../../../file_agent", optional = true }
 
 sgx_cov       = { version = "2.0.0", optional = true }
 

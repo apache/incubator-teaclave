@@ -15,8 +15,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#[macro_use]
-extern crate log;
+pub(crate) mod occlum;
+// TODO gramine or other LibOS
 
-mod agent;
-pub use agent::{handle_file_request, ocall_handle_file_request};
+#[derive(thiserror::Error, Debug)]
+pub enum PlatformError {
+    #[error("Failed to call {0}: {1}")]
+    Ioctl(String, i32),
+    #[error("Failed to get quote: {0}")]
+    GetQuote(String),
+    #[error("Failed to use SGX rng to generate random number: {0}")]
+    RngError(std::io::Error),
+}

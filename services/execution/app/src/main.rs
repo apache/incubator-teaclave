@@ -15,14 +15,28 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use anyhow::Result;
-use teaclave_service_app_utils::launch_teaclave_service;
+#[cfg(feature = "libos")]
+fn main() {
+    let env = env_logger::Env::new()
+        .filter_or("TEACLAVE_LOG", "RUST_LOG")
+        .write_style_or("TEACLAVE_LOG_STYLE", "RUST_LOG_STYLE");
+    let env_logger = env_logger::Builder::from_env(env).build();
+    teaclave_logger::Builder::new()
+        .secondary_logger(env_logger)
+        .init();
+    // The Absolute path of runtime.config.toml in occlum instance
+    let config_path = "runtime.config.toml";
+    let config = teaclave_config::RuntimeConfig::from_toml(config_path)
+        .expect("Failed to load config file.");
+    if let Err(e) = teaclave_execution_service_enclave::start_service(&config) {
+        log::error!("app will exit, error {:?}", e);
+    }
+}
 
-// Use to import ocall
-pub use teaclave_file_agent::ocall_handle_file_request;
-
-const PACKAGE_NAME: &str = env!("CARGO_PKG_NAME");
-
-fn main() -> Result<()> {
-    launch_teaclave_service(PACKAGE_NAME)
+#[cfg(not(feature = "libos"))]
+fn main() -> anyhow::Result<()> {
+    // Use to import ocall
+    pub use teaclave_file_agent::ocall_handle_file_request;
+    const PACKAGE_NAME: &str = env!("CARGO_PKG_NAME");
+    teaclave_service_app_utils::launch_teaclave_service(PACKAGE_NAME)
 }

@@ -25,6 +25,11 @@ edition = "2021"
 
 [features]
 default = []
+app = [
+    "teaclave_types/app",
+    "teaclave_rpc/app",
+    "teaclave_crypto/app",
+]
 mesalock_sgx = [
     "teaclave_types/mesalock_sgx",
     "teaclave_rpc/mesalock_sgx",

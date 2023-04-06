@@ -350,7 +350,7 @@ macro_rules! asn1_set_ty {
     };
 }
 
-#[cfg(feature = "mesalock_sgx")]
+#[cfg(any(feature = "mesalock_sgx", feature = "libos"))]
 macro_rules! asn1_seq {
     () => { () };
     ($e: expr) => {

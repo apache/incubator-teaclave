@@ -17,7 +17,9 @@
 
 //! This module provides SGX platform related functions like getting local
 //! report and transform into a remotely verifiable quote.
+#![cfg(feature = "mesalock_sgx")]
 
+use super::Result;
 use log::debug;
 use sgx_crypto::ecc::EcPublicKey;
 use sgx_crypto::sha::Sha256;
@@ -26,10 +28,8 @@ use sgx_tse::{EnclaveReport, EnclaveTarget};
 use sgx_types::error::SgxStatus;
 use sgx_types::error::SgxStatus::Success;
 use sgx_types::types::*;
-
-type Result<T> = std::result::Result<T, PlatformError>;
-
 #[derive(thiserror::Error, Debug)]
+
 pub enum PlatformError {
     #[error("Failed to call {0}: {1}")]
     OCallError(String, SgxStatus),

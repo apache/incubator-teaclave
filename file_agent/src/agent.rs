@@ -97,6 +97,7 @@ async fn handle_download(
             download_remote_input_to_file(remote, dst).await?;
         }
         "file" => {
+            // Note: For LibOS, the file path must be inside the LibOS's file system
             let src = remote
                 .to_file_path()
                 .map_err(|e| anyhow::anyhow!("Cannot convert file:// to path: {:?}", e))?;
@@ -191,7 +192,7 @@ async fn handle_upload(info: HandleFileInfo, fusion_base: impl AsRef<Path>) -> a
     Ok(())
 }
 
-fn handle_file_request(bytes: &[u8]) -> anyhow::Result<()> {
+pub fn handle_file_request(bytes: &[u8]) -> anyhow::Result<()> {
     let req: FileAgentRequest = serde_json::from_slice(bytes)?;
     let results = tokio::runtime::Builder::new_multi_thread()
         .enable_all()

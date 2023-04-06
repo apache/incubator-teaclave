@@ -109,8 +109,7 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
 #[cfg(not(test_mode))]
 pub(crate) fn create_teaclave_db() -> DB {
     let opt = rusty_leveldb::in_memory();
-    let database = DB::open("teaclave_db", opt).expect("cannot open teaclave_db");
-    database
+    DB::open("teaclave_db", opt).expect("cannot open teaclave_db")
 }
 
 #[cfg(test_mode)]

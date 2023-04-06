@@ -38,7 +38,14 @@ exclude = [
 [patch.crates-io]
 # We cannot remove these crates, because proto crates depend on them
 sgx_crypto        = { path = "../../../third_party/rust-sgx-sdk/sgx_crypto" }
+sgx_cov           = { path = "../../../third_party/rust-sgx-sdk/sgx_tests/cov" }
+sgx_libc          = { path = "../../../third_party/rust-sgx-sdk/sgx_libc" }
+sgx_macros        = { path = "../../../third_party/rust-sgx-sdk/sgx_macros" }
+sgx_rand          = { path = "../../../third_party/rust-sgx-sdk/sgx_rand" }
 sgx_tprotected_fs = { path = "../../../third_party/rust-sgx-sdk/sgx_protected_fs/tfs" }
 sgx_tse           = { path = "../../../third_party/rust-sgx-sdk/sgx_tse" }
 sgx_types         = { path = "../../../third_party/rust-sgx-sdk/sgx_types" }
 sgx_urts          = { path = "../../../third_party/rust-sgx-sdk/sgx_urts" }
+
+rustface          = { git = "https://github.com/apache/incubator-teaclave-crates" }
+rusty-machine     = { git = "https://github.com/apache/incubator-teaclave-crates" }

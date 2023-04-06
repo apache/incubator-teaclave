@@ -18,16 +18,7 @@
 use std::env;
 use std::path::PathBuf;
 
-fn choose_sgx_dylib(is_sim: bool) {
-    if is_sim {
-        println!("cargo:rustc-link-lib=dylib=sgx_urts_sim");
-        println!("cargo:rustc-link-lib=dylib=sgx_uae_service_sim");
-    } else {
-        println!("cargo:rustc-link-lib=dylib=sgx_urts");
-        println!("cargo:rustc-link-lib=dylib=sgx_uae_service");
-    }
-}
-
+#[cfg(not(feature = "libos"))]
 fn main() {
     let sdk_dir = env::var("SGX_SDK").unwrap_or("/opt/intel/sgxsdk".into());
     println!("cargo:rustc-link-search=native={}/lib64", sdk_dir);
@@ -49,6 +40,19 @@ fn main() {
             panic!("Stop build process, wrong SGX_MODE env provided.");
         }
     };
+    if is_sim {
+        println!("cargo:rustc-link-lib=dylib=sgx_urts_sim");
+        println!("cargo:rustc-link-lib=dylib=sgx_uae_service_sim");
+    } else {
+        println!("cargo:rustc-link-lib=dylib=sgx_urts");
+        println!("cargo:rustc-link-lib=dylib=sgx_uae_service");
+    }
+}
 
-    choose_sgx_dylib(is_sim);
+#[cfg(feature = "libos")]
+fn main() {
+    let out_path = env::var_os("TEACLAVE_OUT_DIR").unwrap_or("out".into());
+    let out_dir = &PathBuf::from(out_path);
+    println!("cargo:rustc-link-search=native={}", out_dir.display());
+    println!("cargo:rustc-link-lib=static:+whole-archive=vmlib");
 }

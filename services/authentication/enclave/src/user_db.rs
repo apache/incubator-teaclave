@@ -125,8 +125,7 @@ pub(crate) fn create_persistent_auth_db(base_dir: impl AsRef<Path>) -> DB {
     let opt = rusty_leveldb::Options::new_disk_db_with(key);
     let db_path = base_dir.as_ref().join("authentication_db");
     log::info!("open auth db: {:?}", db_path);
-    let database = DB::open(db_path, opt).unwrap();
-    database
+    DB::open(db_path, opt).unwrap()
 }
 
 #[cfg(test_mode)]

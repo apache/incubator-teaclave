@@ -19,9 +19,13 @@ use crate::config::SgxTrustedTlsServerConfig;
 use crate::transport::{ServerTransport, SgxTrustedTlsTransport};
 use crate::TeaclaveService;
 use anyhow::Result;
+#[cfg(not(feature = "mesalock_sgx"))]
+use libc::setsockopt;
 use log::{debug, error, warn};
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "mesalock_sgx")]
 use sgx_libc as libc;
+#[cfg(feature = "mesalock_sgx")]
 use sgx_libc::ocall::setsockopt;
 use std::{io, mem, os::unix::io::AsRawFd};
 

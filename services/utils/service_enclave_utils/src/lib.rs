@@ -23,17 +23,18 @@ extern crate sgx_trts;
 use anyhow::Result;
 use log::debug;
 use log::error;
-use std::backtrace;
+#[cfg(not(feature = "mesalock_sgx"))]
+use std::fs;
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 #[cfg(feature = "mesalock_sgx")]
-use std::untrusted::path::PathEx;
+use std::untrusted::{fs, path::PathEx};
 use teaclave_attestation::verifier::AttestationReportVerificationFn;
 use teaclave_attestation::AttestedTlsConfig;
 use teaclave_config::RuntimeConfig;
 use teaclave_rpc::config::SgxTrustedTlsClientConfig;
 use teaclave_rpc::endpoint::Endpoint;
-use teaclave_types::{EnclaveInfo, TeeServiceError, TeeServiceResult};
+use teaclave_types::{EnclaveInfo, TeeServiceResult};
 
 mod macros;
 
@@ -62,10 +63,10 @@ impl ServiceEnclave {
             .init();
 
         debug!("Enclave initializing");
-
-        if backtrace::enable_backtrace(backtrace::PrintFormat::Full).is_err() {
+        #[cfg(feature = "mesalock_sgx")]
+        if std::backtrace::enable_backtrace(std::backtrace::PrintFormat::Full).is_err() {
             error!("Cannot enable backtrace");
-            return Err(TeeServiceError::SgxError);
+            return Err(teaclave_types::TeeServiceError::SgxError);
         }
 
         Ok(())
@@ -98,7 +99,7 @@ fn base_dir(config: &RuntimeConfig, sub_name: &str) -> Result<PathBuf> {
     // We only create this base directory in test_mode
     // This directory should be mounted in release mode
     #[cfg(test_mode)]
-    std::untrusted::fs::create_dir_all(fusion_base)?;
+    fs::create_dir_all(fusion_base)?;
     if !fusion_base.exists() {
         error!(
             "Fusion base directory is not mounted: {}",
@@ -108,7 +109,7 @@ fn base_dir(config: &RuntimeConfig, sub_name: &str) -> Result<PathBuf> {
     }
 
     let sub_base = fusion_base.join(sub_name);
-    std::untrusted::fs::create_dir_all(&sub_base)?;
+    fs::create_dir_all(&sub_base)?;
 
     if !sub_base.exists() {
         error!(

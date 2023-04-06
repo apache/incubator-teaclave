@@ -18,29 +18,25 @@
 #![feature(strict_provenance)]
 
 extern crate sgx_types;
-
+#[cfg(feature = "mesalock_sgx")]
 use std::untrusted::path::PathEx;
 
 use anyhow::{anyhow, ensure, Result};
-
 use log::info;
 use teaclave_attestation::{verifier, AttestationConfig, RemoteAttestation};
-use teaclave_binder::proto::{
-    ECallCommand, FinalizeEnclaveInput, FinalizeEnclaveOutput, InitEnclaveInput, InitEnclaveOutput,
-    StartServiceInput, StartServiceOutput,
-};
-use teaclave_binder::{handle_ecall, register_ecall_handler};
 use teaclave_config::build::{AS_ROOT_CA_CERT, AUDITOR_PUBLIC_KEYS};
 use teaclave_config::RuntimeConfig;
 use teaclave_service_enclave_utils::create_trusted_scheduler_endpoint;
-use teaclave_service_enclave_utils::ServiceEnclave;
-use teaclave_types::{EnclaveInfo, TeeServiceError, TeeServiceResult};
 
-mod ocall;
+use teaclave_types::EnclaveInfo;
+
+#[cfg(feature = "mesalock_sgx")]
+mod ecall;
+mod file_handler;
 mod service;
 mod task_file_manager;
 
-fn start_service(config: &RuntimeConfig) -> Result<()> {
+pub fn start_service(config: &RuntimeConfig) -> Result<()> {
     info!("Starting Execution...");
 
     let attestation_config = AttestationConfig::from_teaclave_config(config)?;
@@ -68,8 +64,10 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
 
     // We only create this base directory in test_mode
     // This directory should be mounted in release mode
-    #[cfg(test_mode)]
+    #[cfg(all(test_mode, feature = "mesalock_sgx"))]
     std::untrusted::fs::create_dir_all(&fusion_base)?;
+    #[cfg(all(test_mode, not(feature = "mesalock_sgx")))]
+    std::fs::create_dir_all(&fusion_base)?;
 
     ensure!(
         fusion_base.exists(),
@@ -84,37 +82,6 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
     service.start()
 }
 
-#[handle_ecall]
-fn handle_start_service(input: &StartServiceInput) -> TeeServiceResult<StartServiceOutput> {
-    match start_service(&input.config) {
-        Ok(_) => Ok(StartServiceOutput),
-        // terminate the enclave for executor
-        Err(e) => {
-            log::error!("Service shutdown, reason: {}", e);
-            Err(TeeServiceError::EnclaveForceTermination)
-        }
-    }
-}
-
-#[handle_ecall]
-fn handle_init_enclave(_: &InitEnclaveInput) -> TeeServiceResult<InitEnclaveOutput> {
-    ServiceEnclave::init(env!("CARGO_PKG_NAME"))?;
-    Ok(InitEnclaveOutput)
-}
-
-#[handle_ecall]
-fn handle_finalize_enclave(_: &FinalizeEnclaveInput) -> TeeServiceResult<FinalizeEnclaveOutput> {
-    ServiceEnclave::finalize()?;
-    Ok(FinalizeEnclaveOutput)
-}
-
-register_ecall_handler!(
-    type ECallCommand,
-    (ECallCommand::StartService, StartServiceInput, StartServiceOutput),
-    (ECallCommand::InitEnclave, InitEnclaveInput, InitEnclaveOutput),
-    (ECallCommand::FinalizeEnclave, FinalizeEnclaveInput, FinalizeEnclaveOutput),
-);
-
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
@@ -122,7 +89,7 @@ pub mod tests {
 
     pub fn run_tests() -> bool {
         run_tests!(
-            ocall::tests::test_handle_file_request,
+            file_handler::tests::test_handle_file_request,
             service::tests::test_invoke_echo,
             service::tests::test_invoke_gbdt_train,
             task_file_manager::tests::test_input,

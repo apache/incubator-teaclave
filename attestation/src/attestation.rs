@@ -26,6 +26,7 @@ use std::sync::{Arc, RwLock};
 use std::thread;
 use std::time::{Duration, SystemTime};
 #[allow(unused_imports)]
+#[cfg(feature = "mesalock_sgx")]
 use std::untrusted::time::SystemTimeEx;
 
 use anyhow::{anyhow, Result};

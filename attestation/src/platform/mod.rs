@@ -15,8 +15,24 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#[macro_use]
-extern crate log;
+#[cfg(feature = "libos")]
+pub(crate) mod libos;
+pub(crate) mod sgx;
+#[cfg(all(feature = "libos", feature = "mesalock_sgx"))]
+compile_error!("feature \"mesalock_sgx\" and feature \"libos\" cannot be enabled at the same time");
 
-mod agent;
-pub use agent::{handle_file_request, ocall_handle_file_request};
+#[cfg(feature = "libos")]
+pub(crate) use libos::{
+    occlum::{create_sgx_report_data, get_sgx_dcap_quote, get_sgx_epid_quote},
+    PlatformError,
+};
+#[cfg(feature = "mesalock_sgx")]
+pub(crate) use sgx::{create_sgx_isv_enclave_report, get_sgx_quote, init_sgx_quote, PlatformError};
+
+type Result<T> = std::result::Result<T, PlatformError>;
+
+#[cfg(all(feature = "enclave_unit_test", feature = "mesalock_sgx"))]
+pub mod tests {
+    use super::*;
+    pub use sgx::tests::*;
+}
