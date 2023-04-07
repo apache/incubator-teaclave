@@ -85,6 +85,12 @@ else()
   )
 endif()
 
+if(SGX_SIM_MODE)
+  add_custom_target(
+    run-libos-examples COMMAND ${TEACLAVE_COMMON_ENVS}
+                          ${MT_SCRIPT_DIR}/test.sh libos)
+endif()
+
 add_custom_target(run-examples COMMAND ${TEACLAVE_COMMON_ENVS}
   ${MT_SCRIPT_DIR}/test.sh example)
 

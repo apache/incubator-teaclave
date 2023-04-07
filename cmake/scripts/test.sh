@@ -194,6 +194,64 @@ run_sdk_tests() {
   cleanup
 }
 
+mesapy_examples() {
+  pushd ${TEACLAVE_PROJECT_ROOT}/examples/python
+  export PYTHONPATH=${TEACLAVE_PROJECT_ROOT}/sdk/python
+  python3 mesapy_echo.py
+  python3 mesapy_logistic_reg.py
+  python3 mesapy_optional_files.py
+  popd
+}
+
+builtin_examples() {
+  pushd ${TEACLAVE_PROJECT_ROOT}/examples/python
+  export PYTHONPATH=${TEACLAVE_PROJECT_ROOT}/sdk/python
+  python3 builtin_echo.py
+  python3 builtin_gbdt_train.py
+  python3 builtin_online_decrypt.py
+  python3 builtin_private_join_and_compute.py
+  python3 builtin_ordered_set_intersect.py
+  python3 builtin_rsa_sign.py
+  python3 builtin_face_detection.py
+  python3 builtin_password_check.py
+  python3 test_disable_function.py
+  popd
+
+  pushd ${TEACLAVE_PROJECT_ROOT}/examples/c
+  make run
+  popd
+
+  pushd ${TEACLAVE_PROJECT_ROOT}/examples/rust
+  pushd ./builtin_echo
+  RUSTFLAGS=${RUSTFLAGS} cargo run
+  popd
+  pushd ./builtin_ordered_set_intersect
+  RUSTFLAGS=${RUSTFLAGS} cargo run
+  popd
+  popd
+}
+
+wasm_examples() {
+  # Generate WASM file for WAMR Rust example
+  pushd ${TEACLAVE_PROJECT_ROOT}/examples/python/wasm_rust_psi_payload
+  make
+  popd
+
+  rust_toolchain=${RUSTUP_TOOLCHAIN}
+  unset RUSTUP_TOOLCHAIN
+  pushd ${TEACLAVE_PROJECT_ROOT}/examples/python/wasm_tvm_mnist_payload
+  make
+  popd
+  export RUSTUP_TOOLCHAIN=${rust_toolchain}
+
+  pushd ${TEACLAVE_PROJECT_ROOT}/examples/python
+  export PYTHONPATH=${TEACLAVE_PROJECT_ROOT}/sdk/python
+  python3 wasm_c_simple_add.py
+  python3 wasm_rust_psi.py
+  python3 wasm_tvm_mnist.py
+  popd
+}
+
 run_examples() {
   trap cleanup INT TERM ERR
 
@@ -224,50 +282,57 @@ run_examples() {
   sleep 3    # wait for execution services
   popd
 
-  # Generate WASM file for WAMR Rust example
-  pushd ${TEACLAVE_PROJECT_ROOT}/examples/python/wasm_rust_psi_payload
-  make
+  # run builtin examples
+  builtin_examples
+
+  # run mesapy examples
+  mesapy_examples
+
+  # run wasm examples
+  wasm_examples
+
+  # kill all background services
+  cleanup
+}
+
+run_libos_examples() {
+  trap cleanup INT TERM ERR
+
+  echo_title "libos examples"
+  if [ "${SGX_MODE}" = "HW" ]; then
+      echo "Executing LibOS's examples in SGX HW mode is not currently supported."
+      exit
+  fi
+  mkdir -p /tmp/fusion_data
+
+  pushd ${TEACLAVE_SERVICE_INSTALL_DIR}
+  ./teaclave_authentication_service &
+  ./teaclave_storage_service &
+  wait_port 7776 17776 17778 # wait for authentication and storage service
+  ./teaclave_management_service &
+  ./teaclave_scheduler_service &
+  wait_port 17777 17780 # wait for management service and scheduler_service
+  ./teaclave_access_control_service &
+  ./teaclave_frontend_service &
+  wait_port 17779 7777 # wait for other services
+
+  start_storage_server
+
+  pushd ${TEACLAVE_BIN_INSTALL_DIR}
+  cp -rf ${TEACLAVE_SERVICE_INSTALL_DIR}/auditors .
+  cp -f ${TEACLAVE_SERVICE_INSTALL_DIR}/runtime.config.toml .
+  cp -f ${TEACLAVE_SERVICE_INSTALL_DIR}/enclave_info.toml .
+  # Run tests of libos service separately
+  ./teaclave_execution_service_libos &
+  sleep 3    # wait for execution services
   popd
 
-  rust_toolchain=${RUSTUP_TOOLCHAIN}
-  unset RUSTUP_TOOLCHAIN
-  pushd ${TEACLAVE_PROJECT_ROOT}/examples/python/wasm_tvm_mnist_payload
-  make
-  popd
-  export RUSTUP_TOOLCHAIN=${rust_toolchain}
+  # run builtin examples
+  builtin_examples
 
-  pushd ${TEACLAVE_PROJECT_ROOT}/examples/python
-  export PYTHONPATH=${TEACLAVE_PROJECT_ROOT}/sdk/python
-  python3 builtin_echo.py
-  python3 mesapy_echo.py
-  python3 mesapy_logistic_reg.py
-  python3 mesapy_optional_files.py
-  python3 builtin_gbdt_train.py
-  python3 builtin_online_decrypt.py
-  python3 builtin_private_join_and_compute.py
-  python3 builtin_ordered_set_intersect.py
-  python3 builtin_rsa_sign.py
-  python3 builtin_face_detection.py
-  python3 builtin_password_check.py
-  python3 wasm_c_simple_add.py
-  python3 wasm_rust_psi.py
-  python3 wasm_tvm_mnist.py
-  python3 test_disable_function.py
-  popd
-
-  pushd ${TEACLAVE_PROJECT_ROOT}/examples/c
-  make run
-  popd
-
-  pushd ${TEACLAVE_PROJECT_ROOT}/examples/rust
-  pushd ./builtin_echo
-  RUSTFLAGS=${RUSTFLAGS} cargo run
-  popd
-  pushd ./builtin_ordered_set_intersect
-  RUSTFLAGS=${RUSTFLAGS} cargo run
-  popd
-  popd
-
+  # run wasm examples
+  wasm_examples
+  
   # kill all background services
   cleanup
 }
@@ -356,6 +421,9 @@ case "$1" in
     "cancel")
         run_cancel_test
         ;;
+    "libos")
+        run_libos_examples
+        ;;
     *)
         run_unit_tests
         run_integration_tests
@@ -363,5 +431,6 @@ case "$1" in
         run_sdk_tests
         run_examples
         run_cancel_test
+        run_libos_examples
         ;;
 esac
