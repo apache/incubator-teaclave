@@ -46,7 +46,6 @@ option(TEST_MODE "Turn on/off test mode" OFF)
 option(SGX_SIM_MODE "Turn on/off sgx simulation mode" OFF)
 option(DCAP "Turn on/off DCAP attestation" OFF)
 option(GIT_SUBMODULE "Check submodules during build" ON)
-option(USE_PREBUILT_MESAPY "Use prebuilt MesaPy SGX executor" ON)
 option(EXECUTOR_BUILTIN "Compile with the Builtin executor" ON)
 option(EXECUTOR_MESAPY "Compile with the MesaPy executor" ON)
 option(EXECUTOR_WAMR "Compile with the WebAssembly Micro Runtime executor" ON)
@@ -189,7 +188,6 @@ set(WAMR_OUTPUTS
   ${TEACLAVE_OUT_DIR}/libvmlib.a
 )
 
-if(USE_PREBUILT_MESAPY)
 add_custom_command(
   OUTPUT ${MESAPY_OUTPUTS}
   COMMAND
@@ -197,21 +195,6 @@ add_custom_command(
     tar xzf mesapy-${MESAPY_VERSION}.tar.gz
   DEPENDS prep
   WORKING_DIRECTORY ${TEACLAVE_OUT_DIR})
-else()
-  add_custom_command(
-    OUTPUT ${MESAPY_OUTPUTS}
-    COMMAND
-      make sgx &&
-      make -C sgx/examples/exec &&
-      cp pypy/goal/libpypy-c.a
-        sgx/libffi/build_dir/lib/libffi.a
-        sgx/sgx_tlibc_ext/libsgx_tlibc_ext.a
-        sgx/sgx_ulibc/libsgx_ulibc.a
-        sgx/examples/exec/Enclave/src/ffi.o
-        ${TEACLAVE_OUT_DIR}
-    DEPENDS prep
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/third_party/mesapy)
-endif()
 
 ExternalProject_Add(wamr_teaclave
   SOURCE_DIR ${WAMR_TEACLAVE_ROOT_DIR}
@@ -237,16 +220,7 @@ add_custom_target(wamr
   )
 
 # mesapy components
-add_custom_command(
-  OUTPUT ${TEACLAVE_OUT_DIR}/acs_py_enclave.c
-  COMMAND
-    env ARGS PYTHONPATH=${PROJECT_SOURCE_DIR}/third_party/mesapy/sgx
-    PYPY_FFI_OUTDIR=${TEACLAVE_OUT_DIR} pypy
-    ${PROJECT_SOURCE_DIR}/services/access_control/python/ffi.py
-  DEPENDS prep ${PROJECT_SOURCE_DIR}/services/access_control/python/ffi.py
-          ${PROJECT_SOURCE_DIR}/services/access_control/python/acs_engine.py
-  COMMENT "Generating mesapy ffi stubs")
-add_library(pycomponent STATIC ${TEACLAVE_OUT_DIR}/acs_py_enclave.c)
+add_library(pycomponent STATIC ${PROJECT_SOURCE_DIR}/services/access_control/python/acs_py_enclave.c)
 set_target_properties(pycomponent PROPERTIES ARCHIVE_OUTPUT_DIRECTORY
                                              ${TEACLAVE_OUT_DIR})
 target_compile_definitions(pycomponent PUBLIC SGX)
