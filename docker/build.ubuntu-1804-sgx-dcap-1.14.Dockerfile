@@ -109,7 +109,7 @@ RUN apt-get update && apt-get install -q -y \
     libjpeg-dev \
     zlib1g-dev
 
-RUN pip3 install pyopenssl==21.0.0 toml cryptography yapf requests Pillow tomli
+RUN pip3 install pyopenssl==21.0.0 toml cryptography yapf requests Pillow tomli grpcio grpcio-tools grpclib
 
 # install TVM dependencies
 RUN apt-get install -q -y \
@@ -144,6 +144,11 @@ RUN wget https://apt.llvm.org/llvm.sh                           && \
     ./llvm.sh 11                                                && \
     update-alternatives --install /usr/bin/llvm-cov llvm-cov-11 /usr/bin/llvm-cov-11 11 && \
     rm ./llvm.sh
+
+# To generate webassmebly
+RUN wget https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-20/wasi-sdk-20.0-linux.tar.gz && \
+    tar -xf wasi-sdk-20.0-linux.tar.gz && \
+    rm wasi-sdk-20.0-linux.tar.gz
 
 # clean up apt caches
 

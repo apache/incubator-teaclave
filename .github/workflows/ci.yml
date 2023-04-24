@@ -24,7 +24,7 @@ defaults:
 jobs:
   format:
     runs-on: ubuntu-20.04
-    container: teaclave/teaclave-build-ubuntu-2004-sgx-2.17.1:0.1.0
+    container: teaclave/teaclave-build-ubuntu-2004-sgx-2.17.1:0.2.0
     steps:
       - uses: actions/checkout@v3
       - name: Setting up $HOME
@@ -42,7 +42,7 @@ jobs:
           make check
   lint:
     runs-on: ubuntu-20.04
-    container: teaclave/teaclave-build-ubuntu-2004-sgx-2.17.1:0.1.0
+    container: teaclave/teaclave-build-ubuntu-2004-sgx-2.17.1:0.2.0
     steps:
       - uses: actions/checkout@v3
       - name: Setting up $HOME
