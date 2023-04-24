@@ -23,7 +23,7 @@ on:
       image_repo:
         description: 'image repository'
         required: true
-        default: ${{ github.repository_owner }}
+        default: teaclave
 
 jobs:
   ubuntu-2004-sgx:
