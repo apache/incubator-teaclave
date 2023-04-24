@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-TARGET = millionaire_problem.wasm
+TARGET = simple_add.wasm
 
 # Set CC to your clang with WASM target support or which shipped with wasi-sdk
 # This example uses wasi-sdk's clang
@@ -38,7 +38,7 @@ CFLAGS += $(CC_LINKER_FLAGS) $(INCLUDES)
 
 all: $(TARGET)
 
-$(TARGET): millionaire_problem.c
+$(TARGET): simple_add.c
 	$(CC) $(CFLAGS) -o $@ $<
 
 clean:

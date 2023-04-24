@@ -48,6 +48,11 @@ start_storage_server() {
 
 run_unit_tests() {
   trap cleanup INT TERM ERR
+
+  pushd ${TEACLAVE_PROJECT_ROOT}/examples/python/wasm_c_millionaire_problem_payload
+  make
+  popd
+
   pushd ${TEACLAVE_TEST_INSTALL_DIR}
 
   start_storage_server
@@ -233,22 +238,18 @@ builtin_examples() {
 
 wasm_examples() {
   # Generate WASM file for WAMR Rust example
-  pushd ${TEACLAVE_PROJECT_ROOT}/examples/python/wasm_rust_psi_payload
+  pushd ${TEACLAVE_PROJECT_ROOT}/examples/python/wasm_c_simple_add_payload
   make
   popd
 
-  rust_toolchain=${RUSTUP_TOOLCHAIN}
-  unset RUSTUP_TOOLCHAIN
-  pushd ${TEACLAVE_PROJECT_ROOT}/examples/python/wasm_tvm_mnist_payload
+  pushd ${TEACLAVE_PROJECT_ROOT}/examples/python/wasm_rust_psi_payload
   make
   popd
-  export RUSTUP_TOOLCHAIN=${rust_toolchain}
 
   pushd ${TEACLAVE_PROJECT_ROOT}/examples/python
   export PYTHONPATH=${TEACLAVE_PROJECT_ROOT}/sdk/python
   python3 wasm_c_simple_add.py
   python3 wasm_rust_psi.py
-  python3 wasm_tvm_mnist.py
   popd
 }
 

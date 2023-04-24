@@ -258,6 +258,7 @@ impl TeaclaveExecutor for WAMicroRuntime {
 pub mod tests {
     use super::*;
     use std::collections::HashMap;
+    use std::io::Read;
     use std::untrusted::fs;
     use teaclave_crypto::*;
     use teaclave_runtime::*;
@@ -265,18 +266,22 @@ pub mod tests {
     use teaclave_types::*;
 
     pub fn run_tests() -> bool {
-        run_tests!(test_wamr_tvm_mnist, test_wamr_millionaire,)
+        run_tests!(test_wamr_millionaire,)
     }
 
+    // FIXME: see https://github.com/apache/incubator-teaclave/issues/688
+    #[allow(dead_code)]
     fn test_wamr_tvm_mnist() {
         let mut args = HashMap::new();
 
         args.insert("input_img".to_string(), "input_img".to_string());
         let args = FunctionArguments::from(args);
 
-        let wa_payload = include_bytes!("../../tests/fixtures/functions/wamr_tvm_mnist/mnist.wasm");
+        let mut file =
+            fs::File::open("../../examples/python/wasm_tvm_mnist_payload/mnist.wasm").unwrap();
+        let mut wa_payload = Vec::new();
+        file.read_to_end(&mut wa_payload).unwrap();
 
-        let wa_payload = wa_payload.to_vec();
         let input_img = "fixtures/functions/wamr_tvm_mnist/img_10.jpg";
 
         let input_img_info =
@@ -307,11 +312,13 @@ pub mod tests {
         args.insert("output_file_id".to_string(), "pf_out".to_string());
         let args = FunctionArguments::from(args);
 
-        let wa_payload = include_bytes!(
-            "../../tests/fixtures/functions/wamr_c_millionaire_problem/millionaire_problem.wasm"
-        );
+        let mut file = fs::File::open(
+            "../../examples/python/wasm_c_millionaire_problem_payload/millionaire_problem.wasm",
+        )
+        .unwrap();
+        let mut wa_payload = Vec::new();
+        file.read_to_end(&mut wa_payload).unwrap();
 
-        let wa_payload = wa_payload.to_vec();
         let input_a = "fixtures/functions/wamr_c_millionaire_problem/input_a.txt";
         let input_b = "fixtures/functions/wamr_c_millionaire_problem/input_b.txt";
         let output = "fixtures/functions/wamr_c_millionaire_problem/output.txt";

@@ -61,7 +61,7 @@ function(init_submodules)
       if(NOT EXISTS "${PROJECT_SOURCE_DIR}/third_party/wasm-micro-runtime/product-mini/platforms/teaclave-sgx/CMakeLists.txt")
         execute_process(
           COMMAND 
-            patch -N -p1
+            git apply --ignore-space-change --ignore-whitespace
           INPUT_FILE "../wamr.patch"
           WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/third_party/wasm-micro-runtime
           )
