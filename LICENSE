@@ -211,19 +211,11 @@ licenses/ for text of these licenses.
 Apache License, Version 2.0
 ---------------------------
 
-third-party/crates-io
-third-party/crates-sgx
 third_party/wasm-micro-runtime
-
-
-BSD 3-Clause License
---------------------
-
-common/protected_fs_rs/protected_fs_c
-
+third_party/rust-sgx-sdk
 
 MIT License
 -----------
 
-third_party/mesapy
 common/rusty_leveldb_sgx
+https://github.com/mesatee/mesapy/releases/download/v1.0.0-sgx/mesapy-v1.0.0-sgx.tar.gz
