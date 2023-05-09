@@ -99,6 +99,7 @@ sub-projects under Teaclave:
 
 - [Teaclave SGX SDK](https://github.com/apache/incubator-teaclave-sgx-sdk)
 - [Teaclave TrustZone SDK](https://github.com/apache/incubator-teaclave-trustzone-sdk)
+- [Teaclave Java TEE SDK](https://github.com/apache/incubator-teaclave-java-tee-sdk)
 
 ## Contributing
 

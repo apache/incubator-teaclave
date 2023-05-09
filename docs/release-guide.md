@@ -279,4 +279,4 @@ channels (Twitter, Discord, etc.).
 
 **Blog example**:
 - title: Announcing Apache Teaclave (incubating) 0.3.0
-- link: <https://teaclave.apache.org/blog/2021-09-30-announcing-teaclave-0-3-0/>
+- link: <https://teaclave.apache.org/blog/2021-10-01-announcing-teaclave-0-3-0/>
