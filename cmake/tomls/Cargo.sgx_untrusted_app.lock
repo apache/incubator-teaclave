@@ -1754,7 +1754,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_access_control_service"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "env_logger 0.7.1",
@@ -1765,7 +1765,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_attestation"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "base64 0.13.1",
@@ -1798,7 +1798,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_authentication_service"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "env_logger 0.7.1",
@@ -1809,7 +1809,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_binder"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "cfg-if 0.1.10",
@@ -1827,7 +1827,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_binder_attribute"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "quote 0.6.13",
  "syn 0.15.44",
@@ -1835,7 +1835,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_config"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "log",
@@ -1846,7 +1846,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_crypto"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "hex",
@@ -1860,7 +1860,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_execution_service"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "env_logger 0.7.1",
@@ -1876,7 +1876,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_execution_service_enclave"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "gbdt",
@@ -1903,7 +1903,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_executor"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "gbdt",
@@ -1925,7 +1925,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_executor_context"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "gbdt",
@@ -1945,7 +1945,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_file_agent"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "base64 0.13.1",
@@ -1967,7 +1967,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_frontend_service"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "env_logger 0.7.1",
@@ -1978,7 +1978,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_function"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "base64 0.13.1",
@@ -2004,7 +2004,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_functional_tests"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "env_logger 0.7.1",
@@ -2017,7 +2017,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_integration_tests"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "env_logger 0.7.1",
@@ -2031,7 +2031,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_logger"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "log",
@@ -2042,7 +2042,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_management_service"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "env_logger 0.7.1",
@@ -2053,7 +2053,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_proto"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "base64 0.13.1",
@@ -2073,7 +2073,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_rpc"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "cfg-if 0.1.10",
@@ -2094,7 +2094,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_rpc_proc_macro"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "proc-macro2 1.0.56",
  "quote 1.0.26",
@@ -2103,7 +2103,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_runtime"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "log",
@@ -2115,7 +2115,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_scheduler_service"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "env_logger 0.7.1",
@@ -2126,7 +2126,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_service_app_utils"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "ctrlc",
@@ -2141,7 +2141,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_service_enclave_utils"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "env_logger 0.9.3",
@@ -2159,7 +2159,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_service_enclave_utils_proc_macro"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "proc-macro2 1.0.56",
  "quote 1.0.26",
@@ -2168,7 +2168,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_sgx_tool"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "env_logger 0.7.1",
@@ -2184,7 +2184,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_storage_service"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "env_logger 0.7.1",
@@ -2195,7 +2195,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_test_utils"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "inventory",
  "teaclave_test_utils_proc_macro",
@@ -2212,7 +2212,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_types"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "hex",
@@ -2233,7 +2233,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_unit_tests"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "env_logger 0.7.1",
@@ -2247,7 +2247,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_worker"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "log",

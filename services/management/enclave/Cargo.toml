@@ -17,7 +17,7 @@
 
 [package]
 name = "teaclave_management_service_enclave"
-version = "0.5.0"
+version = "0.5.1"
 authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
 description = "Teaclave Management Service enclave"
 license = "Apache-2.0"

@@ -1847,7 +1847,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_attestation"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "base64 0.13.1",
@@ -1880,7 +1880,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_cli"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "env_logger",
@@ -1898,7 +1898,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_client_sdk"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "libc",
@@ -1914,7 +1914,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_config"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "log",
@@ -1925,7 +1925,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_crypto"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "hex",
@@ -1939,7 +1939,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_dcap_ref_as"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "base64 0.13.1",
  "chrono",
@@ -1961,7 +1961,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_proto"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "base64 0.13.1",
@@ -1981,7 +1981,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_rpc"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "cfg-if 0.1.10",
@@ -2002,7 +2002,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_rpc_proc_macro"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2011,7 +2011,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_test_utils"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "inventory",
  "teaclave_test_utils_proc_macro",
@@ -2028,7 +2028,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_types"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "hex",
