@@ -43,7 +43,7 @@ checksum = "349f9b6a179ed607305526ca489b34ad0a41aed5f7980fa90eb03160b69598fb"
 
 [[package]]
 name = "builtin_ordered_set_intersect"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "pem",
@@ -549,7 +549,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_attestation"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "base64 0.13.1",
@@ -577,7 +577,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_client_sdk"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "libc",
@@ -593,7 +593,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_config"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "log",
@@ -604,7 +604,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_crypto"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "hex",
@@ -617,7 +617,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_proto"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "base64 0.13.1",
@@ -636,7 +636,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_rpc"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "cfg-if 0.1.10",
@@ -655,7 +655,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_rpc_proc_macro"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -664,7 +664,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_types"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "hex",

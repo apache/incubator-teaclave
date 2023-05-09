@@ -4,7 +4,7 @@ version = 3
 
 [[package]]
 name = "teaclave_context"
-version = "0.5.0"
+version = "0.5.1"
 
 [[package]]
 name = "wasm_rust_psi_payload"
