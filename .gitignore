@@ -19,6 +19,7 @@
 **/*.a
 **/*.so
 **/*.swp
+**/*.wasm
 **/.DS_Store
 cov.info
 cov_report

@@ -14,7 +14,7 @@
 # limitations under the License.
 
 x-isgx-1804-image: &isgx-1804-image
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.17.1:0.1.0
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.17.1:0.2.0
 
 kind: pipeline
 name: sgx-debug-ubuntu-1804
@@ -81,7 +81,7 @@ node:
 ---
 
 x-dcap-1804-image: &dcap-1804-image
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-dcap-1.14:0.1.0
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-dcap-1.14:0.2.0
 
 kind: pipeline
 name: sgx-dcap-debug-ubuntu-1804
@@ -169,7 +169,7 @@ node:
 ---
 
 x-isgx-2004-image: &isgx-2004-image
-  image: teaclave/teaclave-build-ubuntu-2004-sgx-2.17.1:0.1.0
+  image: teaclave/teaclave-build-ubuntu-2004-sgx-2.17.1:0.2.0
 
 kind: pipeline
 name: sgx-debug-ubuntu-2004
@@ -236,7 +236,7 @@ node:
 ---
 
 x-dcap-2004-image: &dcap-2004-image
-  image: teaclave/teaclave-build-ubuntu-2004-sgx-dcap-1.14:0.1.0
+  image: teaclave/teaclave-build-ubuntu-2004-sgx-dcap-1.14:0.2.0
 
 kind: pipeline
 name: sgx-dcap-debug-ubuntu-2004
@@ -263,7 +263,7 @@ steps:
   - sed -i 's/ias_root_ca_cert/dcap_root_ca_cert/' config/build.config.toml
   - cd build && make VERBOSE=1 -j2
 - name: tvm example
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.17.1:0.1.0
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.17.1:0.2.0
   commands:
   - . ~/.cargo/env
   - cd examples/python/wasm_tvm_mnist_payload
@@ -324,7 +324,7 @@ node:
 ---
 
 x-dcap-2004-image: &dcap-2004-image
-  image: teaclave/teaclave-build-ubuntu-2004-sgx-dcap-1.14:0.1.0
+  image: teaclave/teaclave-build-ubuntu-2004-sgx-dcap-1.14:0.2.0
 
 kind: pipeline
 name: sgx-dcap-coverage-ubuntu-2004
@@ -351,7 +351,7 @@ steps:
   - sed -i 's/ias_root_ca_cert/dcap_root_ca_cert/' config/build.config.toml
   - cd build && make VERBOSE=1 -j2
 - name: tvm example
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.17.1:0.1.0
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.17.1:0.2.0
   commands:
   - . ~/.cargo/env
   - cd examples/python/wasm_tvm_mnist_payload
@@ -411,7 +411,7 @@ node:
 ---
 
 x-dcap-2004-image: &dcap-2004-image
-  image: teaclave/teaclave-build-ubuntu-2004-sgx-dcap-1.14:0.1.0
+  image: teaclave/teaclave-build-ubuntu-2004-sgx-dcap-1.14:0.2.0
 
 kind: pipeline
 name: sgx-dcap-release-ubuntu-2004
@@ -499,7 +499,7 @@ node:
 ---
 
 x-isgx-1804-image: &isgx-1804-image
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.17.1:0.1.0
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.17.1:0.2.0
 
 kind: pipeline
 name: sgx-release-ubuntu-1804
@@ -564,7 +564,7 @@ node:
 ---
 
 x-isgx-1804-image: &isgx-1804-image
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.17.1:0.1.0
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.17.1:0.2.0
 
 kind: pipeline
 name: sim-debug-ubuntu-1804
@@ -615,7 +615,7 @@ node:
 ---
 
 x-isgx-1804-image: &isgx-1804-image
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.17.1:0.1.0
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.17.1:0.2.0
 
 kind: pipeline
 name: sim-release-ubuntu-1804
@@ -659,7 +659,7 @@ node:
 ---
 
 x-isgx-1804-image: &isgx-1804-image
-  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.17.1:0.1.0
+  image: teaclave/teaclave-build-ubuntu-1804-sgx-2.17.1:0.2.0
 
 kind: pipeline
 name: lint
