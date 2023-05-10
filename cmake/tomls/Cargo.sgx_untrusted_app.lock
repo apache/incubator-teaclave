@@ -54,12 +54,6 @@ checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 
 [[package]]
 name = "base64"
-version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b41b7ea54a0c9d92199de89e20e58d49f02f8e699814ef3fdf266f6f748d15c7"
-
-[[package]]
-name = "base64"
 version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9e1b586273c5702936fe7b7d6896644d8be71e6314cfe09d3167c95f712589e8"
@@ -1310,7 +1304,7 @@ dependencies = [
 [[package]]
 name = "rustface"
 version = "0.1.7"
-source = "git+https://github.com/apache/incubator-teaclave-crates#4c9325839e94bb8e280898f94c98a79cdc025312"
+source = "git+https://github.com/apache/incubator-teaclave-crates#ede1f68d891798fe6cf995e33281f01d59be9320"
 dependencies = [
  "byteorder",
  "image",
@@ -1321,11 +1315,11 @@ dependencies = [
 
 [[package]]
 name = "rustls"
-version = "0.17.0"
+version = "0.19.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c0d4a31f5d68413404705d6982529b0e11a9aacd4839d1d6222ee3b8cb4015e1"
+checksum = "35edb675feee39aec9c99fa5ff985081995a06d594114ae14cbe797ad7b7a6d7"
 dependencies = [
- "base64 0.11.0",
+ "base64 0.13.1",
  "log",
  "ring",
  "sct",
@@ -1335,7 +1329,7 @@ dependencies = [
 [[package]]
 name = "rusty-machine"
 version = "0.5.4"
-source = "git+https://github.com/apache/incubator-teaclave-crates#4c9325839e94bb8e280898f94c98a79cdc025312"
+source = "git+https://github.com/apache/incubator-teaclave-crates#ede1f68d891798fe6cf995e33281f01d59be9320"
 dependencies = [
  "num 0.1.42",
  "rand 0.8.5",
