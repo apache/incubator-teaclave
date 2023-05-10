@@ -21,23 +21,20 @@ use anyhow::anyhow;
 use rusty_leveldb::LdbIterator;
 use rusty_leveldb::DB;
 use std::cell::RefCell;
-use std::sync::mpsc::Receiver;
 use teaclave_proto::teaclave_storage_service::*;
-use teaclave_rpc::Request;
-use teaclave_service_enclave_utils::{bail, teaclave_service};
-use teaclave_types::TeaclaveServiceResponseResult;
+use teaclave_service_enclave_utils::bail;
+use tokio::sync::mpsc::UnboundedReceiver;
 
-#[teaclave_service(teaclave_storage_service, TeaclaveStorage, StorageServiceError)]
 pub(crate) struct TeaclaveStorageService {
     // Current LevelDB implementation is not concurrent, so we need to wrap the
     // DB with RefCell. This service is running in a single thread, it's safe to
     // use RefCell.
     database: RefCell<DB>,
-    receiver: Receiver<ProxyRequest>,
+    receiver: UnboundedReceiver<ProxyRequest>,
 }
 
 impl TeaclaveStorageService {
-    pub(crate) fn new(database: RefCell<DB>, receiver: Receiver<ProxyRequest>) -> Self {
+    pub(crate) fn new(database: RefCell<DB>, receiver: UnboundedReceiver<ProxyRequest>) -> Self {
         Self { database, receiver }
     }
 }
@@ -156,14 +153,7 @@ impl<'a> DBQueue<'a> {
 
 impl TeaclaveStorageService {
     pub(crate) fn start(&mut self) {
-        loop {
-            let request = match self.receiver.recv() {
-                Ok(req) => req,
-                Err(e) => {
-                    error!("mspc receive error: {}", e);
-                    break;
-                }
-            };
+        while let Some(request) = self.receiver.blocking_recv() {
             let database_request = request.request;
             let sender = request.sender;
             let response = self.dispatch(database_request);
@@ -174,18 +164,49 @@ impl TeaclaveStorageService {
             }
         }
     }
+
+    fn dispatch(
+        &self,
+        request: teaclave_rpc::Request<TeaclaveStorageRequest>,
+    ) -> std::result::Result<TeaclaveStorageResponse, StorageServiceError> {
+        match request.into_inner() {
+            TeaclaveStorageRequest::Get(r) => {
+                let response = self.get(r)?;
+                Ok(response).map(TeaclaveStorageResponse::Get)
+            }
+            TeaclaveStorageRequest::Put(r) => {
+                let response = self.put(r)?;
+                Ok(response).map(TeaclaveStorageResponse::Put)
+            }
+            TeaclaveStorageRequest::Delete(r) => {
+                let response = self.delete(r)?;
+                Ok(response).map(TeaclaveStorageResponse::Delete)
+            }
+            TeaclaveStorageRequest::Enqueue(r) => {
+                let response = self.enqueue(r)?;
+                Ok(response).map(TeaclaveStorageResponse::Enqueue)
+            }
+            TeaclaveStorageRequest::Dequeue(r) => {
+                let response = self.dequeue(r)?;
+                Ok(response).map(TeaclaveStorageResponse::Dequeue)
+            }
+            TeaclaveStorageRequest::GetKeysByPrefix(r) => {
+                let response = self.get_keys_by_prefix(r)?;
+                Ok(response).map(TeaclaveStorageResponse::GetKeysByPrefix)
+            }
+        }
+    }
 }
-impl TeaclaveStorage for TeaclaveStorageService {
-    fn get(&self, request: Request<GetRequest>) -> TeaclaveServiceResponseResult<GetResponse> {
-        let request = request.message;
+
+impl TeaclaveStorageService {
+    fn get(&self, request: GetRequest) -> std::result::Result<GetResponse, StorageServiceError> {
         match self.database.borrow_mut().get(&request.key) {
             Some(value) => Ok(GetResponse { value }),
             None => bail!(StorageServiceError::None),
         }
     }
 
-    fn put(&self, request: Request<PutRequest>) -> TeaclaveServiceResponseResult<PutResponse> {
-        let request = request.message;
+    fn put(&self, request: PutRequest) -> std::result::Result<PutResponse, StorageServiceError> {
         self.database
             .borrow_mut()
             .put(&request.key, &request.value)
@@ -195,14 +216,13 @@ impl TeaclaveStorage for TeaclaveStorageService {
             .borrow_mut()
             .flush()
             .map_err(StorageServiceError::Database)?;
-        Ok(PutResponse)
+        Ok(PutResponse {})
     }
 
     fn delete(
         &self,
-        request: Request<DeleteRequest>,
-    ) -> TeaclaveServiceResponseResult<DeleteResponse> {
-        let request = request.message;
+        request: DeleteRequest,
+    ) -> std::result::Result<DeleteResponse, StorageServiceError> {
         self.database
             .borrow_mut()
             .delete(&request.key)
@@ -212,14 +232,13 @@ impl TeaclaveStorage for TeaclaveStorageService {
             .borrow_mut()
             .flush()
             .map_err(StorageServiceError::Database)?;
-        Ok(DeleteResponse)
+        Ok(DeleteResponse {})
     }
 
     fn enqueue(
         &self,
-        request: Request<EnqueueRequest>,
-    ) -> TeaclaveServiceResponseResult<EnqueueResponse> {
-        let request = request.message;
+        request: EnqueueRequest,
+    ) -> std::result::Result<EnqueueResponse, StorageServiceError> {
         let mut db = self.database.borrow_mut();
         let mut queue = DBQueue::open(&mut db, &request.key);
         match queue.enqueue(&request.value) {
@@ -230,9 +249,8 @@ impl TeaclaveStorage for TeaclaveStorageService {
 
     fn dequeue(
         &self,
-        request: Request<DequeueRequest>,
-    ) -> TeaclaveServiceResponseResult<DequeueResponse> {
-        let request = request.message;
+        request: DequeueRequest,
+    ) -> std::result::Result<DequeueResponse, StorageServiceError> {
         let mut db = self.database.borrow_mut();
         let mut queue = DBQueue::open(&mut db, &request.key);
         match queue.dequeue() {
@@ -243,9 +261,9 @@ impl TeaclaveStorage for TeaclaveStorageService {
 
     fn get_keys_by_prefix(
         &self,
-        request: Request<GetKeysByPrefixRequest>,
-    ) -> TeaclaveServiceResponseResult<GetKeysByPrefixResponse> {
-        let prefix = request.message.prefix;
+        request: GetKeysByPrefixRequest,
+    ) -> std::result::Result<GetKeysByPrefixResponse, StorageServiceError> {
+        let prefix = request.prefix;
         let mut db = self.database.borrow_mut();
         let mut it = db.new_iter().map_err(StorageServiceError::Database)?;
 
@@ -280,11 +298,10 @@ impl TeaclaveStorage for TeaclaveStorageService {
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
     use super::*;
-    use std::sync::mpsc::channel;
-    use teaclave_rpc::IntoRequest;
+    use tokio::sync::mpsc::unbounded_channel;
 
     fn get_mock_service() -> TeaclaveStorageService {
-        let (_sender, receiver) = channel();
+        let (_sender, receiver) = unbounded_channel();
         let key = [
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x0f, 0x0e, 0x0d, 0x0c, 0x0b, 0x0a,
             0x09, 0x08,
@@ -303,61 +320,61 @@ pub mod tests {
 
     pub fn test_get_key() {
         let service = get_mock_service();
-        let request = GetRequest::new("test_get_key").into_request();
+        let request = GetRequest::new("test_get_key");
         assert!(service.get(request).is_ok());
     }
 
     pub fn test_put_key() {
         let service = get_mock_service();
-        let request = PutRequest::new("test_put_key", "test_put_value").into_request();
+        let request = PutRequest::new("test_put_key", "test_put_value");
         assert!(service.put(request).is_ok());
-        let request = GetRequest::new("test_put_key").into_request();
+        let request = GetRequest::new("test_put_key");
         assert!(service.get(request).is_ok());
     }
 
     pub fn test_delete_key() {
         let service = get_mock_service();
-        let request = DeleteRequest::new("test_delete_key").into_request();
+        let request = DeleteRequest::new("test_delete_key");
         assert!(service.delete(request).is_ok());
-        let request = GetRequest::new("test_delete_key").into_request();
+        let request = GetRequest::new("test_delete_key");
         assert!(service.get(request).is_err());
     }
 
     pub fn test_enqueue() {
         let service = get_mock_service();
-        let request = EnqueueRequest::new("test_enqueue_key", "1").into_request();
+        let request = EnqueueRequest::new("test_enqueue_key", "1");
         assert!(service.enqueue(request).is_ok());
-        let request = EnqueueRequest::new("test_enqueue_key", "2").into_request();
+        let request = EnqueueRequest::new("test_enqueue_key", "2");
         assert!(service.enqueue(request).is_ok());
     }
 
     pub fn test_dequeue() {
         let service = get_mock_service();
-        let request = DequeueRequest::new("test_dequeue_key").into_request();
+        let request = DequeueRequest::new("test_dequeue_key");
         assert!(service.dequeue(request).is_err());
-        let request = EnqueueRequest::new("test_dequeue_key", "1").into_request();
+        let request = EnqueueRequest::new("test_dequeue_key", "1");
         assert!(service.enqueue(request).is_ok());
-        let request = EnqueueRequest::new("test_dequeue_key", "2").into_request();
+        let request = EnqueueRequest::new("test_dequeue_key", "2");
         assert!(service.enqueue(request).is_ok());
-        let request = DequeueRequest::new("test_dequeue_key").into_request();
+        let request = DequeueRequest::new("test_dequeue_key");
         assert_eq!(service.dequeue(request).unwrap().value, b"1");
-        let request = DequeueRequest::new("test_dequeue_key").into_request();
+        let request = DequeueRequest::new("test_dequeue_key");
         assert_eq!(service.dequeue(request).unwrap().value, b"2");
     }
 
     pub fn test_get_keys_by_prefix() {
         let service = get_mock_service();
-        let request = PutRequest::new("function-1", "test_put_value").into_request();
+        let request = PutRequest::new("function-1", "test_put_value");
         assert!(service.put(request).is_ok());
-        let request = PutRequest::new("function-22", "test_put_value").into_request();
+        let request = PutRequest::new("function-22", "test_put_value");
         assert!(service.put(request).is_ok());
-        let request = PutRequest::new("function-333", "test_put_value").into_request();
+        let request = PutRequest::new("function-333", "test_put_value");
         assert!(service.put(request).is_ok());
-        let request = PutRequest::new("task-444", "test_put_value").into_request();
+        let request = PutRequest::new("task-444", "test_put_value");
         assert!(service.put(request).is_ok());
-        let request = PutRequest::new("function-5", "test_put_value").into_request();
+        let request = PutRequest::new("function-5", "test_put_value");
         assert!(service.put(request).is_ok());
-        let request = GetKeysByPrefixRequest::new("function").into_request();
+        let request = GetKeysByPrefixRequest::new("function");
         let response = service.get_keys_by_prefix(request);
         assert!(response.is_ok());
         assert_eq!(

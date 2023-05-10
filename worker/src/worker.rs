@@ -18,10 +18,8 @@
 use std::collections::HashMap;
 use std::format;
 
-use teaclave_types::{Executor, ExecutorType, StagedFiles, StagedFunction};
-
-use teaclave_executor::*;
 use teaclave_runtime::DefaultRuntime;
+use teaclave_types::{Executor, ExecutorType, StagedFiles, StagedFunction};
 use teaclave_types::{TeaclaveExecutor, TeaclaveRuntime};
 
 type BoxedTeaclaveExecutor = Box<dyn TeaclaveExecutor + Send + Sync>;
@@ -51,16 +49,16 @@ impl Default for Worker {
         // Register supported executors
         #[cfg(all(executor_mesapy, not(feature = "app")))]
         worker.register_executor((ExecutorType::Python, Executor::MesaPy), || {
-            Box::<MesaPy>::default()
+            Box::<teaclave_executor::MesaPy>::default()
         });
         #[cfg(executor_builtin)]
         worker.register_executor((ExecutorType::Builtin, Executor::Builtin), || {
-            Box::<BuiltinFunctionExecutor>::default()
+            Box::<teaclave_executor::BuiltinFunctionExecutor>::default()
         });
         #[cfg(executor_wamr)]
         worker.register_executor(
             (ExecutorType::WAMicroRuntime, Executor::WAMicroRuntime),
-            || Box::<WAMicroRuntime>::default(),
+            || Box::<teaclave_executor::WAMicroRuntime>::default(),
         );
 
         worker

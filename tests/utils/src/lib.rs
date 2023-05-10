@@ -15,20 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
+pub use futures::FutureExt;
+
+use futures::future::BoxFuture;
 use std::string::String;
 use std::vec::Vec;
-
-pub use teaclave_test_utils_proc_macro::test_case;
-
+pub use teaclave_test_utils_proc_macro::{async_test_case, test_case};
 pub struct TestCase(pub String, pub fn() -> ());
+pub struct AsyncTestCase(pub String, pub fn() -> BoxFuture<'static, ()>);
 
 inventory::collect!(TestCase);
+inventory::collect!(AsyncTestCase);
 
 use std::time::Instant;
 #[cfg(feature = "mesalock_sgx")]
 #[allow(unused_imports)]
 use std::untrusted::time::InstantEx;
-
 #[macro_export]
 macro_rules! run_inventory_tests {
     ($predicate:expr) => {{
@@ -42,6 +44,11 @@ macro_rules! run_inventory_tests {
             }
         }
 
+        for t in inventory::iter::<teaclave_test_utils::AsyncTestCase>.into_iter() {
+            if $predicate(&t.0) {
+                teaclave_test_utils::async_test(&mut ntestcases, &mut failurecases, t.1, &t.0);
+            }
+        }
         teaclave_test_utils::test_end(ntestcases, failurecases)
     }};
     () => {
@@ -96,6 +103,22 @@ macro_rules! run_tests {
     }
 }
 
+#[macro_export]
+macro_rules! run_async_tests {
+    (
+        $($f : expr),* $(,)?
+    ) => {
+        {
+            teaclave_test_utils::test_start();
+            let mut ntestcases : u64 = 0u64;
+            let mut failurecases : Vec<String> = Vec::new();
+            use $crate::FutureExt;
+            $(teaclave_test_utils::async_test(&mut ntestcases, &mut failurecases, || async {$f().await}.boxed(),stringify!($f));)*
+            teaclave_test_utils::test_end(ntestcases, failurecases)
+        }
+    }
+}
+
 pub fn test_start() {
     println!("\nstart running tests");
 }
@@ -130,17 +153,12 @@ pub fn test_end(ntestcases: u64, failurecases: Vec<String>) -> bool {
 }
 
 #[allow(clippy::print_literal)]
-pub fn test<F, R>(ncases: &mut u64, failurecases: &mut Vec<String>, f: F, name: &str)
+fn do_test<F>(f: F, ncases: &mut u64, failurecases: &mut Vec<String>, name: &str)
 where
-    F: FnOnce() -> R + std::panic::UnwindSafe,
+    F: FnOnce() -> f64 + std::panic::UnwindSafe,
 {
     *ncases += 1;
-    let t = || -> f64 {
-        let before = Instant::now();
-        f();
-        before.elapsed().as_secs_f64()
-    };
-    match std::panic::catch_unwind(t) {
+    match std::panic::catch_unwind(f) {
         Ok(elapsed) => {
             println!("{} {} ... {}!", "testing", name, "\x1B[1;32mok\x1B[0m");
             if elapsed < 0.5 {
@@ -154,4 +172,32 @@ where
             failurecases.push(String::from(name));
         }
     }
+}
+
+pub fn test<F, R>(ncases: &mut u64, failurecases: &mut Vec<String>, f: F, name: &str)
+where
+    F: FnOnce() -> R + std::panic::UnwindSafe,
+{
+    let t = || -> f64 {
+        let before = Instant::now();
+        f();
+        before.elapsed().as_secs_f64()
+    };
+    do_test(t, ncases, failurecases, name)
+}
+
+pub fn async_test<F>(ncases: &mut u64, failurecases: &mut Vec<String>, f: F, name: &str)
+where
+    F: FnOnce() -> BoxFuture<'static, ()> + std::panic::UnwindSafe,
+{
+    let t = || -> f64 {
+        let before = Instant::now();
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        rt.block_on(f());
+        before.elapsed().as_secs_f64()
+    };
+    do_test(t, ncases, failurecases, name)
 }

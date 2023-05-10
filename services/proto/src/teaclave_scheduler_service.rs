@@ -15,81 +15,47 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#![allow(unused_imports)]
-#![allow(unused_variables)]
-
-use std::collections::HashMap;
-
-use crate::teaclave_common::{
-    i32_from_task_status, i32_to_task_status, ExecutorCommand, ExecutorStatus,
-};
+use crate::teaclave_common::{i32_from_task_status, ExecutorCommand, ExecutorStatus};
 use crate::teaclave_scheduler_service_proto as proto;
-use anyhow::{Error, Result};
-use core::convert::TryInto;
-pub use proto::TeaclaveScheduler;
-pub use proto::TeaclaveSchedulerClient;
-pub use proto::TeaclaveSchedulerRequest;
-pub use proto::TeaclaveSchedulerResponse;
-use teaclave_rpc::into_request;
+use anyhow::Result;
+pub use proto::teaclave_scheduler_client::TeaclaveSchedulerClient;
+pub use proto::teaclave_scheduler_server::TeaclaveScheduler;
+pub use proto::teaclave_scheduler_server::TeaclaveSchedulerServer;
+pub use proto::{
+    HeartbeatRequest, PublishTaskRequest, PullTaskRequest, UpdateTaskResultRequest,
+    UpdateTaskStatusRequest,
+};
+pub use proto::{
+    HeartbeatResponse, PublishTaskResponse, PullTaskResponse, SubscribeRequest, SubscribeResponse,
+    UpdateTaskResultResponse, UpdateTaskStatusResponse,
+};
+use teaclave_types::Storable;
 use teaclave_types::{StagedTask, TaskFailure, TaskOutputs, TaskResult, TaskStatus};
 use uuid::Uuid;
-
-#[into_request(TeaclaveSchedulerRequest::Subscribe)]
-pub struct SubscribeRequest {}
-
-#[into_request(TeaclaveSchedulerResponse::Subscribe)]
-pub struct SubscribeResponse {
-    pub success: bool,
-}
-
-#[into_request(TeaclaveSchedulerRequest::PullTask)]
-pub struct PullTaskRequest {
-    pub executor_id: Uuid,
-}
-
-#[into_request(TeaclaveSchedulerResponse::PullTask)]
-#[derive(Debug)]
-pub struct PullTaskResponse {
-    pub staged_task: StagedTask,
-}
-
-#[into_request(TeaclaveSchedulerRequest::Heartbeat)]
-pub struct HeartbeatRequest {
-    pub executor_id: Uuid,
-    pub status: ExecutorStatus,
-}
 
 impl HeartbeatRequest {
     pub fn new(executor_id: Uuid, status: ExecutorStatus) -> Self {
         Self {
-            executor_id,
-            status,
+            executor_id: executor_id.to_string(),
+            status: status.into(),
         }
     }
 }
 
-#[into_request(TeaclaveSchedulerResponse::Heartbeat)]
-#[derive(Debug)]
-pub struct HeartbeatResponse {
-    pub command: ExecutorCommand,
-}
-
 impl HeartbeatResponse {
     pub fn new(command: ExecutorCommand) -> Self {
-        Self { command }
+        Self {
+            command: command.into(),
+        }
     }
 }
 
 impl PullTaskResponse {
     pub fn new(staged_task: StagedTask) -> Self {
-        Self { staged_task }
+        Self {
+            staged_task: staged_task.to_vec().unwrap(),
+        }
     }
-}
-
-#[into_request(TeaclaveSchedulerRequest::UpdateTaskResult)]
-pub struct UpdateTaskResultRequest {
-    pub task_id: Uuid,
-    pub task_result: TaskResult,
 }
 
 impl UpdateTaskResultRequest {
@@ -101,243 +67,18 @@ impl UpdateTaskResultRequest {
             }),
         };
         Self {
-            task_id,
-            task_result: result,
+            task_id: task_id.to_string(),
+            result: Some(result.into()),
         }
     }
-}
-
-#[into_request(TeaclaveSchedulerResponse::UpdateTaskResult)]
-pub struct UpdateTaskResultResponse {}
-
-#[into_request(TeaclaveSchedulerRequest::UpdateTaskStatus)]
-pub struct UpdateTaskStatusRequest {
-    pub task_id: Uuid,
-    pub task_status: TaskStatus,
 }
 
 impl UpdateTaskStatusRequest {
     pub fn new(task_id: Uuid, task_status: TaskStatus) -> Self {
+        let task_status = i32_from_task_status(task_status);
         Self {
-            task_id,
+            task_id: task_id.to_string(),
             task_status,
         }
-    }
-}
-#[into_request(TeaclaveSchedulerResponse::UpdateTaskStatus)]
-pub struct UpdateTaskStatusResponse {}
-
-#[into_request(TeaclaveSchedulerRequest::PublishTask)]
-pub struct PublishTaskRequest {
-    pub staged_task: StagedTask,
-}
-
-#[into_request(TeaclaveSchedulerResponse::PublishTask)]
-pub struct PublishTaskResponse {}
-
-impl std::convert::TryFrom<proto::SubscribeRequest> for SubscribeRequest {
-    type Error = Error;
-    fn try_from(proto: proto::SubscribeRequest) -> Result<Self> {
-        let ret = Self {};
-        Ok(ret)
-    }
-}
-
-impl std::convert::From<SubscribeRequest> for proto::SubscribeRequest {
-    fn from(req: SubscribeRequest) -> Self {
-        proto::SubscribeRequest {}
-    }
-}
-
-impl std::convert::TryFrom<proto::SubscribeResponse> for SubscribeResponse {
-    type Error = Error;
-    fn try_from(proto: proto::SubscribeResponse) -> Result<Self> {
-        let ret = Self {
-            success: proto.success,
-        };
-        Ok(ret)
-    }
-}
-
-impl std::convert::From<SubscribeResponse> for proto::SubscribeResponse {
-    fn from(req: SubscribeResponse) -> Self {
-        proto::SubscribeResponse {
-            success: req.success,
-        }
-    }
-}
-
-impl std::convert::TryFrom<proto::PullTaskRequest> for PullTaskRequest {
-    type Error = Error;
-    fn try_from(proto: proto::PullTaskRequest) -> Result<Self> {
-        let executor_id = Uuid::parse_str(&proto.executor_id)?;
-        let ret = Self { executor_id };
-        Ok(ret)
-    }
-}
-
-impl std::convert::From<PullTaskRequest> for proto::PullTaskRequest {
-    fn from(req: PullTaskRequest) -> Self {
-        let executor_id = req.executor_id.to_string();
-        proto::PullTaskRequest { executor_id }
-    }
-}
-
-impl std::convert::TryFrom<proto::PullTaskResponse> for PullTaskResponse {
-    type Error = Error;
-    fn try_from(proto: proto::PullTaskResponse) -> Result<Self> {
-        let staged_task = StagedTask::from_slice(&proto.staged_task)?;
-        let ret = Self { staged_task };
-        Ok(ret)
-    }
-}
-
-impl std::convert::From<PullTaskResponse> for proto::PullTaskResponse {
-    fn from(req: PullTaskResponse) -> Self {
-        proto::PullTaskResponse {
-            staged_task: req.staged_task.to_vec().unwrap(),
-        }
-    }
-}
-
-impl std::convert::TryFrom<proto::HeartbeatRequest> for HeartbeatRequest {
-    type Error = Error;
-    fn try_from(proto: proto::HeartbeatRequest) -> Result<Self> {
-        let executor_id = Uuid::parse_str(&proto.executor_id)?;
-        let status = proto.status.try_into()?;
-        let ret = Self {
-            executor_id,
-            status,
-        };
-        Ok(ret)
-    }
-}
-
-impl std::convert::From<HeartbeatRequest> for proto::HeartbeatRequest {
-    fn from(req: HeartbeatRequest) -> Self {
-        let executor_id = req.executor_id.to_string();
-        proto::HeartbeatRequest {
-            executor_id,
-            status: req.status.into(),
-        }
-    }
-}
-
-impl std::convert::TryFrom<proto::HeartbeatResponse> for HeartbeatResponse {
-    type Error = Error;
-    fn try_from(proto: proto::HeartbeatResponse) -> Result<Self> {
-        let command = proto.command.try_into()?;
-        let ret = Self { command };
-        Ok(ret)
-    }
-}
-
-impl std::convert::From<HeartbeatResponse> for proto::HeartbeatResponse {
-    fn from(req: HeartbeatResponse) -> Self {
-        proto::HeartbeatResponse {
-            command: req.command.into(),
-        }
-    }
-}
-
-impl std::convert::TryFrom<proto::UpdateTaskResultRequest> for UpdateTaskResultRequest {
-    type Error = Error;
-    fn try_from(proto: proto::UpdateTaskResultRequest) -> Result<Self> {
-        let ret = Self {
-            task_id: Uuid::parse_str(&proto.task_id)?,
-            task_result: proto.result.try_into()?,
-        };
-        Ok(ret)
-    }
-}
-
-impl std::convert::From<UpdateTaskResultRequest> for proto::UpdateTaskResultRequest {
-    fn from(req: UpdateTaskResultRequest) -> Self {
-        proto::UpdateTaskResultRequest {
-            task_id: req.task_id.to_string(),
-            result: Some(req.task_result.into()),
-        }
-    }
-}
-
-impl std::convert::TryFrom<proto::UpdateTaskResultResponse> for UpdateTaskResultResponse {
-    type Error = Error;
-    fn try_from(proto: proto::UpdateTaskResultResponse) -> Result<Self> {
-        let ret = Self {};
-        Ok(ret)
-    }
-}
-
-impl std::convert::From<UpdateTaskResultResponse> for proto::UpdateTaskResultResponse {
-    fn from(req: UpdateTaskResultResponse) -> Self {
-        proto::UpdateTaskResultResponse {}
-    }
-}
-
-impl std::convert::TryFrom<proto::UpdateTaskStatusRequest> for UpdateTaskStatusRequest {
-    type Error = Error;
-    fn try_from(proto: proto::UpdateTaskStatusRequest) -> Result<Self> {
-        let task_status = i32_to_task_status(proto.task_status)?;
-        let ret = Self {
-            task_id: Uuid::parse_str(&proto.task_id)?,
-            task_status,
-        };
-        Ok(ret)
-    }
-}
-
-impl std::convert::From<UpdateTaskStatusRequest> for proto::UpdateTaskStatusRequest {
-    fn from(req: UpdateTaskStatusRequest) -> Self {
-        let task_status = i32_from_task_status(req.task_status);
-        proto::UpdateTaskStatusRequest {
-            task_id: req.task_id.to_string(),
-            task_status,
-        }
-    }
-}
-
-impl std::convert::TryFrom<proto::UpdateTaskStatusResponse> for UpdateTaskStatusResponse {
-    type Error = Error;
-    fn try_from(proto: proto::UpdateTaskStatusResponse) -> Result<Self> {
-        let ret = Self {};
-        Ok(ret)
-    }
-}
-
-impl std::convert::From<UpdateTaskStatusResponse> for proto::UpdateTaskStatusResponse {
-    fn from(req: UpdateTaskStatusResponse) -> Self {
-        proto::UpdateTaskStatusResponse {}
-    }
-}
-
-use teaclave_types::Storable;
-impl std::convert::TryFrom<proto::PublishTaskRequest> for PublishTaskRequest {
-    type Error = Error;
-    fn try_from(proto: proto::PublishTaskRequest) -> Result<Self> {
-        let staged_task = StagedTask::from_slice(&proto.staged_task)?;
-        let ret = Self { staged_task };
-        Ok(ret)
-    }
-}
-
-impl std::convert::From<PublishTaskRequest> for proto::PublishTaskRequest {
-    fn from(req: PublishTaskRequest) -> Self {
-        proto::PublishTaskRequest {
-            staged_task: req.staged_task.to_vec().unwrap(),
-        }
-    }
-}
-
-impl std::convert::TryFrom<proto::PublishTaskResponse> for PublishTaskResponse {
-    type Error = Error;
-    fn try_from(proto: proto::PublishTaskResponse) -> Result<Self> {
-        let ret = Self {};
-        Ok(ret)
-    }
-}
-
-impl std::convert::From<PublishTaskResponse> for proto::PublishTaskResponse {
-    fn from(req: PublishTaskResponse) -> Self {
-        proto::PublishTaskResponse {}
     }
 }

@@ -27,16 +27,17 @@ edition = "2021"
 crate-type = ["lib", "cdylib", "staticlib"]
 
 [dependencies]
-teaclave_types = { path = "../../types", features = ["app"] }
-teaclave_attestation = { path = "../../attestation" }
-teaclave_rpc = { path = "../../rpc" }
-teaclave_proto = { path = "../../services/proto" }
-anyhow       = { version = "1.0.26" }
-url          = { version = "2.1.1" }
-serde_json    = { version = "1.0.39" }
-serde         = { version = "1.0.92" }
-pem = "0.7.0"
-libc = "0.2.68"
+teaclave_types        = { path = "../../types", features = ["app"] }
+teaclave_attestation  = { path = "../../attestation" }
+teaclave_rpc          = { path = "../../rpc" }
+teaclave_proto        = { path = "../../services/proto" }
+anyhow                = { version = "1.0.26" }
+url                   = { version = "2.1.1" }
+serde_json            = { version = "1.0.39" }
+serde                 = { version = "1.0.92" }
+pem                   = { version = "0.7.0" }
+libc                  = { version = "0.2.68" }
+tokio                 = { version = "1.0", features = ["rt-multi-thread", "time", "macros"] }
 
 [patch.crates-io]
 sgx_tprotected_fs = { path = "../../third_party/rust-sgx-sdk/sgx_protected_fs/tfs" }

@@ -18,7 +18,11 @@
 use crate::error::ManagementServiceError;
 use anyhow::anyhow;
 use std::convert::TryInto;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
+use teaclave_proto::teaclave_common::i32_from_task_status;
+use teaclave_proto::teaclave_frontend_service::{
+    from_proto_file_ids, from_proto_ownership, to_proto_file_ids, to_proto_ownership,
+};
 use teaclave_proto::teaclave_frontend_service::{
     ApproveTaskRequest, ApproveTaskResponse, AssignDataRequest, AssignDataResponse,
     CancelTaskRequest, CancelTaskResponse, CreateTaskRequest, CreateTaskResponse,
@@ -38,56 +42,57 @@ use teaclave_proto::teaclave_storage_service::{
     DeleteRequest, EnqueueRequest, GetKeysByPrefixRequest, GetRequest, PutRequest,
     TeaclaveStorageClient,
 };
-use teaclave_rpc::endpoint::Endpoint;
-use teaclave_rpc::Request;
-use teaclave_service_enclave_utils::{ensure, teaclave_service};
+use teaclave_rpc::transport::{channel::Endpoint, Channel};
+use teaclave_rpc::{Request, Response};
+use teaclave_service_enclave_utils::ensure;
 use teaclave_types::*;
+use tokio::sync::Mutex;
 use url::Url;
 use uuid::Uuid;
 
-#[teaclave_service(
-    teaclave_management_service,
-    TeaclaveManagement,
-    ManagementServiceError
-)]
 #[derive(Clone)]
 pub(crate) struct TeaclaveManagementService {
-    storage_client: Arc<Mutex<TeaclaveStorageClient>>,
+    storage_client: Arc<Mutex<TeaclaveStorageClient<Channel>>>,
 }
 
+#[teaclave_rpc::async_trait]
 impl TeaclaveManagement for TeaclaveManagementService {
     // access control: none
-    fn register_input_file(
+    async fn register_input_file(
         &self,
         request: Request<RegisterInputFileRequest>,
     ) -> TeaclaveServiceResponseResult<RegisterInputFileResponse> {
         let user_id = get_request_user_id(&request)?;
-        let request = request.message;
-        let input_file = TeaclaveInputFile::new(
-            request.url,
-            request.cmac,
-            request.crypto_info,
-            vec![user_id],
-        );
+        let request = request.into_inner();
+        let url = Url::parse(&request.url).map_err(tonic_error)?;
+        let cmac = FileAuthTag::from_bytes(&request.cmac).map_err(tonic_error)?;
+        let crypto_info = request
+            .crypto_info
+            .ok_or_else(|| tonic_error("missing crypto_info"))?
+            .try_into()
+            .map_err(tonic_error)?;
 
-        self.write_to_db(&input_file)?;
+        let input_file = TeaclaveInputFile::new(url, cmac, crypto_info, vec![user_id]);
+
+        self.write_to_db(&input_file).await?;
 
         let response = RegisterInputFileResponse::new(input_file.external_id());
-        Ok(response)
+        Ok(Response::new(response))
     }
 
     // access control:
     // 1) exisiting_file.owner_list.len() == 1
     // 2) user_id in existing_file.owner_list
-    fn update_input_file(
+    async fn update_input_file(
         &self,
         request: Request<UpdateInputFileRequest>,
     ) -> TeaclaveServiceResponseResult<UpdateInputFileResponse> {
         let user_id = get_request_user_id(&request)?;
-        let request = request.message;
+        let request = request.into_inner();
 
         let old_input_file: TeaclaveInputFile = self
-            .read_from_db(&request.data_id)
+            .read_from_db(&request.data_id.try_into().map_err(tonic_error)?)
+            .await
             .map_err(|_| ManagementServiceError::InvalidDataId)?;
 
         ensure!(
@@ -96,45 +101,54 @@ impl TeaclaveManagement for TeaclaveManagementService {
         );
 
         let input_file = TeaclaveInputFile::new(
-            request.url,
+            Url::parse(&request.url).map_err(tonic_error)?,
             old_input_file.cmac,
             old_input_file.crypto_info,
             old_input_file.owner,
         );
 
-        self.write_to_db(&input_file)?;
+        self.write_to_db(&input_file).await?;
 
         let response = UpdateInputFileResponse::new(input_file.external_id());
-        Ok(response)
+        Ok(Response::new(response))
     }
 
     // access control: none
-    fn register_output_file(
+    async fn register_output_file(
         &self,
         request: Request<RegisterOutputFileRequest>,
     ) -> TeaclaveServiceResponseResult<RegisterOutputFileResponse> {
         let user_id = get_request_user_id(&request)?;
-        let request = request.message;
-        let output_file = TeaclaveOutputFile::new(request.url, request.crypto_info, vec![user_id]);
+        let request = request.into_inner();
+        let output_file = TeaclaveOutputFile::new(
+            Url::parse(&request.url).map_err(tonic_error)?,
+            request
+                .crypto_info
+                .ok_or_else(|| tonic_error("missing crypto_info"))?
+                .try_into()
+                .map_err(tonic_error)?,
+            vec![user_id],
+        );
 
-        self.write_to_db(&output_file)?;
+        self.write_to_db(&output_file).await?;
 
         let response = RegisterOutputFileResponse::new(output_file.external_id());
-        Ok(response)
+        Ok(Response::new(response))
     }
 
     // access control:
     // 1) exisiting_file.owner_list.len() == 1
     // 2) user_id in existing_file.owner_list
-    fn update_output_file(
+    async fn update_output_file(
         &self,
         request: Request<UpdateOutputFileRequest>,
     ) -> TeaclaveServiceResponseResult<UpdateOutputFileResponse> {
         let user_id = get_request_user_id(&request)?;
-        let request = request.message;
+        let request = request.into_inner();
 
         let old_output_file: TeaclaveOutputFile = self
-            .read_from_db(&request.data_id)
+            .read_from_db(&request.data_id.try_into().map_err(tonic_error)?)
+            .await
             .map_err(|_| ManagementServiceError::InvalidDataId)?;
 
         ensure!(
@@ -143,49 +157,54 @@ impl TeaclaveManagement for TeaclaveManagementService {
         );
 
         let output_file = TeaclaveOutputFile::new(
-            request.url,
+            Url::parse(&request.url).map_err(tonic_error)?,
             old_output_file.crypto_info,
             old_output_file.owner,
         );
 
-        self.write_to_db(&output_file)?;
+        self.write_to_db(&output_file).await?;
 
         let response = UpdateOutputFileResponse::new(output_file.external_id());
-        Ok(response)
+        Ok(Response::new(response))
     }
 
     // access control: user_id in owner_list
-    fn register_fusion_output(
+    async fn register_fusion_output(
         &self,
         request: Request<RegisterFusionOutputRequest>,
     ) -> TeaclaveServiceResponseResult<RegisterFusionOutputResponse> {
-        let user_id = get_request_user_id(&request)?;
+        let user_id = get_request_user_id(&request)?.to_string();
 
-        let owner_list = request.message.owner_list;
+        let owner_list = request.into_inner().owner_list;
         ensure!(
             owner_list.len() > 1 && owner_list.contains(&user_id),
             ManagementServiceError::PermissionDenied
         );
 
-        let output_file = create_fusion_data(owner_list)?;
+        let output_file = create_fusion_data(owner_list).map_err(tonic_error)?;
 
-        self.write_to_db(&output_file)?;
+        self.write_to_db(&output_file).await?;
 
         let response = RegisterFusionOutputResponse::new(output_file.external_id());
-        Ok(response)
+        Ok(Response::new(response))
     }
 
     // access control:
     // 1) user_id in output.owner
     // 2) cmac != none
-    fn register_input_from_output(
+    async fn register_input_from_output(
         &self,
         request: Request<RegisterInputFromOutputRequest>,
     ) -> TeaclaveServiceResponseResult<RegisterInputFromOutputResponse> {
         let user_id = get_request_user_id(&request)?;
-
+        let data_id = request
+            .into_inner()
+            .data_id
+            .try_into()
+            .map_err(|_| ManagementServiceError::InvalidDataId)?;
         let output: TeaclaveOutputFile = self
-            .read_from_db(&request.message.data_id)
+            .read_from_db(&data_id)
+            .await
             .map_err(|_| ManagementServiceError::InvalidDataId)?;
 
         ensure!(
@@ -196,21 +215,26 @@ impl TeaclaveManagement for TeaclaveManagementService {
         let input = TeaclaveInputFile::from_output(output)
             .map_err(|_| ManagementServiceError::InvalidOutputFile)?;
 
-        self.write_to_db(&input)?;
+        self.write_to_db(&input).await?;
 
         let response = RegisterInputFromOutputResponse::new(input.external_id());
-        Ok(response)
+        Ok(Response::new(response))
     }
 
     // access control: output_file.owner contains user_id
-    fn get_output_file(
+    async fn get_output_file(
         &self,
         request: Request<GetOutputFileRequest>,
     ) -> TeaclaveServiceResponseResult<GetOutputFileResponse> {
         let user_id = get_request_user_id(&request)?;
-
+        let data_id = request
+            .into_inner()
+            .data_id
+            .try_into()
+            .map_err(|_| ManagementServiceError::InvalidDataId)?;
         let output_file: TeaclaveOutputFile = self
-            .read_from_db(&request.message.data_id)
+            .read_from_db(&data_id)
+            .await
             .map_err(|_| ManagementServiceError::InvalidDataId)?;
 
         ensure!(
@@ -219,18 +243,23 @@ impl TeaclaveManagement for TeaclaveManagementService {
         );
 
         let response = GetOutputFileResponse::new(output_file.owner, output_file.cmac);
-        Ok(response)
+        Ok(Response::new(response))
     }
 
     // access control: input_file.owner contains user_id
-    fn get_input_file(
+    async fn get_input_file(
         &self,
         request: Request<GetInputFileRequest>,
     ) -> TeaclaveServiceResponseResult<GetInputFileResponse> {
         let user_id = get_request_user_id(&request)?;
-
+        let data_id = request
+            .into_inner()
+            .data_id
+            .try_into()
+            .map_err(|_| ManagementServiceError::InvalidDataId)?;
         let input_file: TeaclaveInputFile = self
-            .read_from_db(&request.message.data_id)
+            .read_from_db(&data_id)
+            .await
             .map_err(|_| ManagementServiceError::InvalidDataId)?;
 
         ensure!(
@@ -239,22 +268,23 @@ impl TeaclaveManagement for TeaclaveManagementService {
         );
 
         let response = GetInputFileResponse::new(input_file.owner, input_file.cmac);
-        Ok(response)
+        Ok(Response::new(response))
     }
 
     // access_control: none
-    fn register_function(
+    async fn register_function(
         &self,
         request: Request<RegisterFunctionRequest>,
     ) -> TeaclaveServiceResponseResult<RegisterFunctionResponse> {
         let user_id = get_request_user_id(&request)?;
 
-        let function = FunctionBuilder::from(request.message)
+        let function = FunctionBuilder::try_from(request.into_inner())
+            .map_err(tonic_error)?
             .id(Uuid::new_v4())
             .owner(user_id.clone())
             .build();
 
-        self.write_to_db(&function)?;
+        self.write_to_db(&function).await?;
 
         let mut u = User {
             id: user_id,
@@ -262,17 +292,17 @@ impl TeaclaveManagement for TeaclaveManagementService {
         };
         let external_id = u.external_id();
 
-        let user = self.read_from_db::<User>(&external_id);
+        let user = self.read_from_db::<User>(&external_id).await;
         match user {
             Ok(mut us) => {
                 us.registered_functions
                     .push(function.external_id().to_string());
-                self.write_to_db(&us)?;
+                self.write_to_db(&us).await?;
             }
             Err(_) => {
                 u.registered_functions
                     .push(function.external_id().to_string());
-                self.write_to_db(&u)?;
+                self.write_to_db(&u).await?;
             }
         }
 
@@ -283,16 +313,16 @@ impl TeaclaveManagement for TeaclaveManagementService {
                 ..Default::default()
             };
             let external_id = u.external_id();
-            let user = self.read_from_db::<User>(&external_id);
+            let user = self.read_from_db::<User>(&external_id).await;
             match user {
                 Ok(mut us) => {
                     us.allowed_functions
                         .push(function.external_id().to_string());
-                    self.write_to_db(&us)?;
+                    self.write_to_db(&us).await?;
                 }
                 Err(_) => {
                     u.allowed_functions.push(function.external_id().to_string());
-                    self.write_to_db(&u)?;
+                    self.write_to_db(&u).await?;
                 }
             }
         }
@@ -301,70 +331,76 @@ impl TeaclaveManagement for TeaclaveManagementService {
             function_id: function.id,
             ..Default::default()
         };
-        self.write_to_db(&usage)?;
+        self.write_to_db(&usage).await?;
 
         let response = RegisterFunctionResponse::new(function.external_id());
-        Ok(response)
+        Ok(Response::new(response))
     }
 
-    fn update_function(
+    async fn update_function(
         &self,
         request: Request<UpdateFunctionRequest>,
     ) -> TeaclaveServiceResponseResult<UpdateFunctionResponse> {
         let user_id = get_request_user_id(&request)?;
 
-        let function = FunctionBuilder::from(request.message)
+        let function = FunctionBuilder::try_from(request.into_inner())
+            .map_err(tonic_error)?
             .owner(user_id)
             .build();
 
-        self.write_to_db(&function)?;
+        self.write_to_db(&function).await?;
 
         let response = UpdateFunctionResponse::new(function.external_id());
-        Ok(response)
+        Ok(Response::new(response))
     }
 
     // access control: function.public || function.owner == user_id || request.role == PlatformAdmin
-    fn get_function(
+    async fn get_function(
         &self,
         request: Request<GetFunctionRequest>,
     ) -> TeaclaveServiceResponseResult<GetFunctionResponse> {
         let user_id = get_request_user_id(&request)?;
-
-        let function: Function = self
-            .read_from_db(&request.message.function_id)
-            .map_err(|_| ManagementServiceError::InvalidFunctionId)?;
         let role = get_request_role(&request)?;
+        let function_id = request
+            .into_inner()
+            .function_id
+            .try_into()
+            .map_err(|_| ManagementServiceError::InvalidFunctionId)?;
+        let function: Function = self
+            .read_from_db(&function_id)
+            .await
+            .map_err(|_| ManagementServiceError::InvalidFunctionId)?;
 
         if function.public || role == UserRole::PlatformAdmin || function.owner == user_id {
             let response = GetFunctionResponse {
                 name: function.name,
                 description: function.description,
-                owner: function.owner,
-                executor_type: function.executor_type,
+                owner: function.owner.to_string(),
+                executor_type: function.executor_type.to_string(),
                 payload: function.payload,
                 public: function.public,
-                arguments: function.arguments,
-                inputs: function.inputs,
-                outputs: function.outputs,
+                arguments: function.arguments.into_iter().map(|x| x.into()).collect(),
+                inputs: function.inputs.into_iter().map(|x| x.into()).collect(),
+                outputs: function.outputs.into_iter().map(|x| x.into()).collect(),
                 user_allowlist: function.user_allowlist,
             };
 
-            Ok(response)
+            Ok(Response::new(response))
         } else if !function.public && function.user_allowlist.contains(&user_id.into()) {
             let response = GetFunctionResponse {
                 name: function.name,
                 description: function.description,
-                owner: function.owner,
-                executor_type: function.executor_type,
+                owner: function.owner.to_string(),
+                executor_type: function.executor_type.to_string(),
                 payload: vec![],
                 public: function.public,
-                arguments: function.arguments,
-                inputs: function.inputs,
-                outputs: function.outputs,
+                arguments: function.arguments.into_iter().map(|x| x.into()).collect(),
+                inputs: function.inputs.into_iter().map(|x| x.into()).collect(),
+                outputs: function.outputs.into_iter().map(|x| x.into()).collect(),
                 user_allowlist: vec![],
             };
 
-            Ok(response)
+            Ok(Response::new(response))
         } else {
             Err(ManagementServiceError::PermissionDenied.into())
         }
@@ -372,15 +408,20 @@ impl TeaclaveManagement for TeaclaveManagementService {
 
     // access control:
     // function.public || request.role == PlatformAdmin || requested user_id in the user_allowlist
-    fn get_function_usage_stats(
+    async fn get_function_usage_stats(
         &self,
         request: Request<GetFunctionUsageStatsRequest>,
     ) -> TeaclaveServiceResponseResult<GetFunctionUsageStatsResponse> {
         let user_id = get_request_user_id(&request)?;
         let role = get_request_role(&request)?;
-        let request = request.message;
+        let function_id = request
+            .into_inner()
+            .function_id
+            .try_into()
+            .map_err(|_| ManagementServiceError::InvalidFunctionId)?;
         let function: Function = self
-            .read_from_db(&request.function_id)
+            .read_from_db(&function_id)
+            .await
             .map_err(|_| ManagementServiceError::InvalidFunctionId)?;
 
         ensure!(
@@ -397,49 +438,61 @@ impl TeaclaveManagement for TeaclaveManagementService {
         let external_id = usage.external_id();
         let function_usage = self
             .read_from_db::<FunctionUsage>(&external_id)
+            .await
             .map_err(|_| ManagementServiceError::InvalidFunctionId)?;
         let function_quota = function.usage_quota.unwrap_or(-1);
         let response = GetFunctionUsageStatsResponse {
             function_quota,
             current_usage: function_usage.use_numbers,
         };
-        Ok(response)
+        Ok(Response::new(response))
     }
 
     // access control: function.owner == user_id
-    fn delete_function(
+    async fn delete_function(
         &self,
         request: Request<DeleteFunctionRequest>,
     ) -> TeaclaveServiceResponseResult<DeleteFunctionResponse> {
         let user_id = get_request_user_id(&request)?;
-
+        let function_id = request
+            .into_inner()
+            .function_id
+            .try_into()
+            .map_err(|_| ManagementServiceError::InvalidFunctionId)?;
         let function: Function = self
-            .read_from_db(&request.message.function_id)
+            .read_from_db(&function_id)
+            .await
             .map_err(|_| ManagementServiceError::InvalidFunctionId)?;
 
         ensure!(
             function.owner == user_id,
             ManagementServiceError::PermissionDenied
         );
-        self.delete_from_db(&request.message.function_id)
+        self.delete_from_db(&function_id)
+            .await
             .map_err(|_| ManagementServiceError::InvalidFunctionId)?;
         let response = DeleteFunctionResponse {};
-        Ok(response)
+        Ok(Response::new(response))
     }
 
     // access control: function.owner == user_id
     // disable function
     // 1. `List functions` does not show this function
     // 2. `Create new task` with the function id fails
-    fn disable_function(
+    async fn disable_function(
         &self,
         request: Request<DisableFunctionRequest>,
     ) -> TeaclaveServiceResponseResult<DisableFunctionResponse> {
         let user_id = get_request_user_id(&request)?;
         let role = get_request_role(&request)?;
-
+        let function_id = request
+            .into_inner()
+            .function_id
+            .try_into()
+            .map_err(|_| ManagementServiceError::InvalidFunctionId)?;
         let mut function: Function = self
-            .read_from_db(&request.message.function_id)
+            .read_from_db(&function_id)
+            .await
             .map_err(|_| ManagementServiceError::InvalidFunctionId)?;
 
         if role != UserRole::PlatformAdmin {
@@ -456,11 +509,11 @@ impl TeaclaveManagement for TeaclaveManagementService {
             ..Default::default()
         };
         let external_id = u.external_id();
-        let user = self.read_from_db::<User>(&external_id);
+        let user = self.read_from_db::<User>(&external_id).await;
         if let Ok(mut us) = user {
             us.allowed_functions.retain(|f| !f.eq(&func_id));
             us.registered_functions.retain(|f| !f.eq(&func_id));
-            self.write_to_db(&us)?;
+            self.write_to_db(&us).await?;
         } else {
             log::warn!("Invalid user id from functions");
         }
@@ -472,28 +525,28 @@ impl TeaclaveManagement for TeaclaveManagementService {
                 ..Default::default()
             };
             let external_id = u.external_id();
-            let user = self.read_from_db::<User>(&external_id);
+            let user = self.read_from_db::<User>(&external_id).await;
             if let Ok(mut us) = user {
                 us.allowed_functions.retain(|f| !f.eq(&func_id));
                 us.registered_functions.retain(|f| !f.eq(&func_id));
-                self.write_to_db(&us)?;
+                self.write_to_db(&us).await?;
             } else {
                 log::warn!("Invalid user id from functions");
             }
         }
 
         function.user_allowlist.clear();
-        self.write_to_db(&function)?;
+        self.write_to_db(&function).await?;
         let response = DisableFunctionResponse {};
-        Ok(response)
+        Ok(Response::new(response))
     }
 
     // access contro: user_id = request.user_id
-    fn list_functions(
+    async fn list_functions(
         &self,
         request: Request<ListFunctionsRequest>,
     ) -> TeaclaveServiceResponseResult<ListFunctionsResponse> {
-        let mut request_user_id = request.message.user_id.clone();
+        let mut request_user_id = request.get_ref().user_id.clone().into();
 
         let current_user_id = get_request_user_id(&request)?;
         let role = get_request_role(&request)?;
@@ -515,7 +568,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
         };
         let external_id = u.external_id();
 
-        let user = self.read_from_db::<User>(&external_id);
+        let user = self.read_from_db::<User>(&external_id).await;
         match user {
             Ok(us) => {
                 let mut response = ListFunctionsResponse {
@@ -523,16 +576,17 @@ impl TeaclaveManagement for TeaclaveManagementService {
                     allowed_functions: us.allowed_functions,
                 };
                 if role == UserRole::PlatformAdmin {
-                    let allowed_functions =
-                        self.get_keys_by_prefix_from_db(Function::key_prefix())?;
+                    let allowed_functions = self
+                        .get_keys_by_prefix_from_db(Function::key_prefix())
+                        .await?;
                     response.allowed_functions = allowed_functions;
                 }
 
-                Ok(response)
+                Ok(Response::new(response))
             }
             Err(_) => {
                 let response = ListFunctionsResponse::default();
-                Ok(response)
+                Ok(Response::new(response))
             }
         }
     }
@@ -543,17 +597,22 @@ impl TeaclaveManagement for TeaclaveManagementService {
     // 2) input files match function definition
     // 3) output files match function definition
     // 4) requested user_id in the user_allowlist
-    fn create_task(
+    async fn create_task(
         &self,
         request: Request<CreateTaskRequest>,
     ) -> TeaclaveServiceResponseResult<CreateTaskResponse> {
         let user_id = get_request_user_id(&request)?;
         let role = get_request_role(&request)?;
 
-        let request = request.message;
+        let request = request.into_inner();
+        let function_id = request
+            .function_id
+            .try_into()
+            .map_err(|_| ManagementServiceError::InvalidFunctionId)?;
 
         let function: Function = self
-            .read_from_db(&request.function_id)
+            .read_from_db(&function_id)
+            .await
             .map_err(|_| ManagementServiceError::InvalidFunctionId)?;
 
         match role {
@@ -570,31 +629,36 @@ impl TeaclaveManagement for TeaclaveManagementService {
         }
         let task = Task::<Create>::new(
             user_id,
-            request.executor,
-            request.function_arguments,
-            request.inputs_ownership,
-            request.outputs_ownership,
+            request.executor.try_into().map_err(tonic_error)?,
+            request.function_arguments.try_into().map_err(tonic_error)?,
+            from_proto_ownership(request.inputs_ownership),
+            from_proto_ownership(request.outputs_ownership),
             function,
         )
         .map_err(|_| ManagementServiceError::InvalidTask)?;
 
         log::debug!("CreateTask: {:?}", task);
         let ts: TaskState = task.into();
-        self.write_to_db(&ts)?;
+        self.write_to_db(&ts).await?;
 
         let response = CreateTaskResponse::new(ts.external_id());
-        Ok(response)
+        Ok(Response::new(response))
     }
 
     // access control: task.participants.contains(&user_id)
-    fn get_task(
+    async fn get_task(
         &self,
         request: Request<GetTaskRequest>,
     ) -> TeaclaveServiceResponseResult<GetTaskResponse> {
         let user_id = get_request_user_id(&request)?;
-
+        let task_id = request
+            .into_inner()
+            .task_id
+            .try_into()
+            .map_err(|_| ManagementServiceError::InvalidTaskId)?;
         let ts: TaskState = self
-            .read_from_db(&request.message.task_id)
+            .read_from_db(&task_id)
+            .await
             .map_err(|_| ManagementServiceError::InvalidTaskId)?;
 
         ensure!(
@@ -605,21 +669,21 @@ impl TeaclaveManagement for TeaclaveManagementService {
         log::debug!("GetTask: {:?}", ts);
 
         let response = GetTaskResponse {
-            task_id: ts.external_id(),
-            creator: ts.creator,
-            function_id: ts.function_id,
-            function_owner: ts.function_owner,
-            function_arguments: ts.function_arguments,
-            inputs_ownership: ts.inputs_ownership,
-            outputs_ownership: ts.outputs_ownership,
-            participants: ts.participants,
-            approved_users: ts.approved_users,
-            assigned_inputs: ts.assigned_inputs.external_ids(),
-            assigned_outputs: ts.assigned_outputs.external_ids(),
-            result: ts.result,
-            status: ts.status,
+            task_id: ts.external_id().to_string(),
+            creator: ts.creator.to_string(),
+            function_id: ts.function_id.to_string(),
+            function_owner: ts.function_owner.to_string(),
+            function_arguments: ts.function_arguments.clone().into_string(),
+            inputs_ownership: to_proto_ownership(ts.inputs_ownership.clone()),
+            outputs_ownership: to_proto_ownership(ts.outputs_ownership.clone()),
+            participants: ts.participants.clone().into(),
+            approved_users: ts.approved_users.clone().into(),
+            assigned_inputs: to_proto_file_ids(ts.assigned_inputs.external_ids()),
+            assigned_outputs: to_proto_file_ids(ts.assigned_outputs.external_ids()),
+            result: Some(ts.result.into()),
+            status: i32_from_task_status(ts.status),
         };
-        Ok(response)
+        Ok(Response::new(response))
     }
 
     // access control:
@@ -632,16 +696,20 @@ impl TeaclaveManagement for TeaclaveManagementService {
     //    * inputs_ownership or outputs_ownership contains the data name
     //    * input file: OwnerList match input_file.owner
     //    * output file: OwnerList match output_file.owner
-    fn assign_data(
+    async fn assign_data(
         &self,
         request: Request<AssignDataRequest>,
     ) -> TeaclaveServiceResponseResult<AssignDataResponse> {
         let user_id = get_request_user_id(&request)?;
-
-        let request = request.message;
+        let request = request.into_inner();
+        let task_id = request
+            .task_id
+            .try_into()
+            .map_err(|_| ManagementServiceError::InvalidTaskId)?;
 
         let ts: TaskState = self
-            .read_from_db(&request.task_id)
+            .read_from_db(&task_id)
+            .await
             .map_err(|_| ManagementServiceError::InvalidTaskId)?;
 
         ensure!(
@@ -653,18 +721,20 @@ impl TeaclaveManagement for TeaclaveManagementService {
             log::warn!("Assign state error: {:?}", e);
             ManagementServiceError::TaskAssignDataError
         })?;
-
-        for (data_name, data_id) in request.inputs.iter() {
+        let inputs = from_proto_file_ids(request.inputs).map_err(tonic_error)?;
+        for (data_name, data_id) in inputs.iter() {
             let file: TeaclaveInputFile = self
                 .read_from_db(data_id)
+                .await
                 .map_err(|_| ManagementServiceError::InvalidDataId)?;
             task.assign_input(&user_id, data_name, file)
                 .map_err(|_| ManagementServiceError::PermissionDenied)?;
         }
-
-        for (data_name, data_id) in request.outputs.iter() {
+        let outputs = from_proto_file_ids(request.outputs).map_err(tonic_error)?;
+        for (data_name, data_id) in outputs.iter() {
             let file: TeaclaveOutputFile = self
                 .read_from_db(data_id)
+                .await
                 .map_err(|_| ManagementServiceError::InvalidDataId)?;
             task.assign_output(&user_id, data_name, file)
                 .map_err(|_| ManagementServiceError::PermissionDenied)?;
@@ -673,23 +743,29 @@ impl TeaclaveManagement for TeaclaveManagementService {
         log::debug!("AssignData: {:?}", task);
 
         let ts: TaskState = task.into();
-        self.write_to_db(&ts)?;
+        self.write_to_db(&ts).await?;
 
-        Ok(AssignDataResponse)
+        Ok(Response::new(AssignDataResponse {}))
     }
 
     // access_control:
     // 1) task status == Ready
     // 2) user_id in task.participants
-    fn approve_task(
+    async fn approve_task(
         &self,
         request: Request<ApproveTaskRequest>,
     ) -> TeaclaveServiceResponseResult<ApproveTaskResponse> {
         let user_id = get_request_user_id(&request)?;
 
-        let request = request.message;
+        let task_id = request
+            .into_inner()
+            .task_id
+            .try_into()
+            .map_err(|_| ManagementServiceError::InvalidTaskId)?;
+
         let ts: TaskState = self
-            .read_from_db(&request.task_id)
+            .read_from_db(&task_id)
+            .await
             .map_err(|_| ManagementServiceError::InvalidTaskId)?;
 
         let mut task: Task<Approve> = ts.try_into().map_err(|e| {
@@ -703,23 +779,28 @@ impl TeaclaveManagement for TeaclaveManagementService {
         log::debug!("ApproveTask: approve:{:?}", task);
 
         let ts: TaskState = task.into();
-        self.write_to_db(&ts)?;
+        self.write_to_db(&ts).await?;
 
-        Ok(ApproveTaskResponse)
+        Ok(Response::new(ApproveTaskResponse {}))
     }
 
     // access_control:
     // 1) task status == Approved
     // 2) user_id == task.creator
-    fn invoke_task(
+    async fn invoke_task(
         &self,
         request: Request<InvokeTaskRequest>,
     ) -> TeaclaveServiceResponseResult<InvokeTaskResponse> {
         let user_id = get_request_user_id(&request)?;
-        let request = request.message;
+        let task_id = request
+            .into_inner()
+            .task_id
+            .try_into()
+            .map_err(|_| ManagementServiceError::InvalidTaskId)?;
 
         let ts: TaskState = self
-            .read_from_db(&request.task_id)
+            .read_from_db(&task_id)
+            .await
             .map_err(|_| ManagementServiceError::InvalidTaskId)?;
 
         // Early validation
@@ -730,6 +811,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
 
         let function: Function = self
             .read_from_db(&ts.function_id)
+            .await
             .map_err(|_| ManagementServiceError::InvalidFunctionId)?;
 
         log::debug!("InvokeTask: get function: {:?}", function);
@@ -741,6 +823,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
         let external_id = usage.external_id();
         let mut function_usage = self
             .read_from_db::<FunctionUsage>(&external_id)
+            .await
             .map_err(|_| ManagementServiceError::InvalidFunctionId)?;
         let function_current_use_numbers = function_usage.use_numbers;
 
@@ -760,29 +843,34 @@ impl TeaclaveManagement for TeaclaveManagementService {
             .stage_for_running(&user_id, function)
             .map_err(|_| ManagementServiceError::PermissionDenied)?;
         log::debug!("InvokeTask: staged task: {:?}", staged_task);
-        self.enqueue_to_db(StagedTask::get_queue_key().as_bytes(), &staged_task)?;
+        self.enqueue_to_db(StagedTask::get_queue_key().as_bytes(), &staged_task)
+            .await?;
 
         let ts: TaskState = task.into();
-        self.write_to_db(&ts)?;
+        self.write_to_db(&ts).await?;
 
         function_usage.use_numbers = function_current_use_numbers + 1;
-        self.write_to_db(&function_usage)?;
-        Ok(InvokeTaskResponse)
+        self.write_to_db(&function_usage).await?;
+        Ok(Response::new(InvokeTaskResponse {}))
     }
 
     // access_control:
     // 1) user_id == task.creator
     // 2) user_role == admin
-    fn cancel_task(
+    async fn cancel_task(
         &self,
         request: Request<CancelTaskRequest>,
     ) -> TeaclaveServiceResponseResult<CancelTaskResponse> {
         let user_id = get_request_user_id(&request)?;
         let role = get_request_role(&request)?;
-        let request = request.message;
-
+        let task_id = request
+            .into_inner()
+            .task_id
+            .try_into()
+            .map_err(|_| ManagementServiceError::InvalidTaskId)?;
         let ts: TaskState = self
-            .read_from_db(&request.task_id)
+            .read_from_db(&task_id)
+            .await
             .map_err(|_| ManagementServiceError::InvalidTaskId)?;
 
         match role {
@@ -798,7 +886,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
         match ts.status {
             // need scheduler to cancel the task
             TaskStatus::Staged | TaskStatus::Running => {
-                self.enqueue_to_db(CANCEL_QUEUE_KEY.as_bytes(), &ts)?;
+                self.enqueue_to_db(CANCEL_QUEUE_KEY.as_bytes(), &ts).await?;
             }
             _ => {
                 // early cancelation
@@ -819,40 +907,32 @@ impl TeaclaveManagement for TeaclaveManagementService {
                     ManagementServiceError::TaskCancelError("cannot update result".to_string())
                 })?;
                 let ts: TaskState = task.into();
-                self.write_to_db(&ts)?;
+                self.write_to_db(&ts).await?;
 
                 log::warn!("Canceled Task: writtenback");
             }
         }
 
-        Ok(CancelTaskResponse)
+        Ok(Response::new(CancelTaskResponse {}))
     }
 }
 
 impl TeaclaveManagementService {
-    pub(crate) fn new(storage_service_endpoint: Endpoint) -> anyhow::Result<Self> {
-        let mut i = 0;
-        let channel = loop {
-            match storage_service_endpoint.connect() {
-                Ok(channel) => break channel,
-                Err(_) => {
-                    anyhow::ensure!(i < 10, "failed to connect to storage service");
-                    log::warn!("Failed to connect to storage service, retry {}", i);
-                    i += 1;
-                }
-            }
-            std::thread::sleep(std::time::Duration::from_secs(3));
-        };
-        let storage_client = Arc::new(Mutex::new(TeaclaveStorageClient::new(channel)?));
+    pub(crate) async fn new(storage_service_endpoint: Endpoint) -> anyhow::Result<Self> {
+        let channel = storage_service_endpoint
+            .connect()
+            .await
+            .map_err(|e| anyhow!("Failed to connect to storage service, {:?}", e))?;
+        let storage_client = Arc::new(Mutex::new(TeaclaveStorageClient::new(channel)));
         let service = Self { storage_client };
 
         #[cfg(test_mode)]
-        service.add_mock_data()?;
+        service.add_mock_data().await?;
 
         Ok(service)
     }
 
-    fn write_to_db(&self, item: &impl Storable) -> Result<(), ManagementServiceError> {
+    async fn write_to_db(&self, item: &impl Storable) -> Result<(), ManagementServiceError> {
         let k = item.key();
         let v = item.to_vec()?;
         let put_request = PutRequest::new(k.as_slice(), v.as_slice());
@@ -860,13 +940,17 @@ impl TeaclaveManagementService {
             .storage_client
             .clone()
             .lock()
-            .map_err(|_| anyhow!("cannot lock storage client"))?
+            .await
             .put(put_request)
+            .await
             .map_err(|e| ManagementServiceError::Service(e.into()))?;
         Ok(())
     }
 
-    fn read_from_db<T: Storable>(&self, key: &ExternalID) -> Result<T, ManagementServiceError> {
+    async fn read_from_db<T: Storable>(
+        &self,
+        key: &ExternalID,
+    ) -> Result<T, ManagementServiceError> {
         ensure!(
             T::match_prefix(&key.prefix),
             anyhow!("key prefix doesn't match")
@@ -877,13 +961,15 @@ impl TeaclaveManagementService {
             .storage_client
             .clone()
             .lock()
-            .map_err(|_| anyhow!("cannot lock storage client"))?
+            .await
             .get(request)
-            .map_err(|e| ManagementServiceError::Service(e.into()))?;
+            .await
+            .map_err(|e| ManagementServiceError::Service(e.into()))?
+            .into_inner();
         T::from_slice(response.value.as_slice()).map_err(ManagementServiceError::Service)
     }
 
-    fn get_keys_by_prefix_from_db(
+    async fn get_keys_by_prefix_from_db(
         &self,
         prefix: impl Into<Vec<u8>>,
     ) -> Result<Vec<String>, ManagementServiceError> {
@@ -892,10 +978,12 @@ impl TeaclaveManagementService {
             .storage_client
             .clone()
             .lock()
-            .map_err(|_| anyhow!("cannot lock storage client"))?
+            .await
             .get_keys_by_prefix(request)
+            .await
             .map_err(|e| ManagementServiceError::Service(e.into()))?;
         Ok(response
+            .into_inner()
             .keys
             .into_iter()
             .map(String::from_utf8)
@@ -903,18 +991,19 @@ impl TeaclaveManagementService {
             .map_err(|_| anyhow!("cannot convert keys"))?)
     }
 
-    fn delete_from_db(&self, key: &ExternalID) -> Result<(), ManagementServiceError> {
+    async fn delete_from_db(&self, key: &ExternalID) -> Result<(), ManagementServiceError> {
         let request = DeleteRequest::new(key.to_bytes());
         self.storage_client
             .clone()
             .lock()
-            .map_err(|_| anyhow!("cannot lock storage client"))?
+            .await
             .delete(request)
+            .await
             .map_err(|e| ManagementServiceError::Service(e.into()))?;
         Ok(())
     }
 
-    fn enqueue_to_db(
+    async fn enqueue_to_db(
         &self,
         key: &[u8],
         item: &impl Storable,
@@ -925,27 +1014,28 @@ impl TeaclaveManagementService {
             .storage_client
             .clone()
             .lock()
-            .map_err(|_| anyhow!("cannot lock storage client"))?
+            .await
             .enqueue(enqueue_request)
+            .await
             .map_err(|e| ManagementServiceError::Service(e.into()))?;
         Ok(())
     }
 
     #[cfg(test_mode)]
-    fn add_mock_data(&self) -> anyhow::Result<()> {
+    async fn add_mock_data(&self) -> anyhow::Result<()> {
         let mut output_file = create_fusion_data(vec!["mock_user1", "frontend_user"])?;
         output_file.uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000001")?;
         output_file.cmac = Some(FileAuthTag::mock());
-        self.write_to_db(&output_file)?;
+        self.write_to_db(&output_file).await?;
 
         let mut output_file = create_fusion_data(vec!["mock_user2", "mock_user3"])?;
         output_file.uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000002")?;
         output_file.cmac = Some(FileAuthTag::mock());
-        self.write_to_db(&output_file)?;
+        self.write_to_db(&output_file).await?;
 
         let mut input_file = TeaclaveInputFile::from_output(output_file)?;
         input_file.uuid = Uuid::parse_str("00000000-0000-0000-0000-000000000002")?;
-        self.write_to_db(&input_file)?;
+        self.write_to_db(&input_file).await?;
 
         let function_input = FunctionInput::new("input", "input_desc", false);
         let function_output = FunctionOutput::new("output", "output_desc", false);
@@ -972,8 +1062,8 @@ impl TeaclaveManagementService {
             use_numbers: 0,
         };
 
-        self.write_to_db(&function)?;
-        self.write_to_db(&function_usage)?;
+        self.write_to_db(&function).await?;
+        self.write_to_db(&function_usage).await?;
 
         let function_output = FunctionOutput::new("output", "output_desc", false);
         let function_arg1 = FunctionArgument::new("arg1", "", true);
@@ -995,8 +1085,8 @@ impl TeaclaveManagementService {
             use_numbers: 0,
         };
 
-        self.write_to_db(&function)?;
-        self.write_to_db(&function_usage)?;
+        self.write_to_db(&function).await?;
+        self.write_to_db(&function_usage).await?;
 
         let function_id = Uuid::parse_str("00000000-0000-0000-0000-000000000003").unwrap();
         let function = FunctionBuilder::new()
@@ -1015,8 +1105,8 @@ impl TeaclaveManagementService {
             use_numbers: 0,
         };
 
-        self.write_to_db(&function)?;
-        self.write_to_db(&function_usage)?;
+        self.write_to_db(&function).await?;
+        self.write_to_db(&function_usage).await?;
 
         Ok(())
     }
@@ -1026,6 +1116,7 @@ fn get_request_user_id<T>(request: &Request<T>) -> Result<UserID, ManagementServ
     let user_id = request
         .metadata()
         .get("id")
+        .and_then(|x| x.to_str().ok())
         .ok_or(ManagementServiceError::MissingUserId)?;
     Ok(user_id.to_string().into())
 }
@@ -1034,6 +1125,7 @@ fn get_request_role<T>(request: &Request<T>) -> Result<UserRole, ManagementServi
     let role = request
         .metadata()
         .get("role")
+        .and_then(|x| x.to_str().ok())
         .ok_or(ManagementServiceError::MissingUserRole)?;
     Ok(UserRole::from_str(role))
 }

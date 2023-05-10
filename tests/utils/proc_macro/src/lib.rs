@@ -16,11 +16,10 @@
 // under the License.
 
 extern crate proc_macro;
+use proc_macro::TokenStream;
 use quote::quote;
 use syn::parse_macro_input;
 use syn::ItemFn;
-
-use proc_macro::TokenStream;
 
 #[proc_macro_attribute]
 pub fn test_case(_attr: TokenStream, input: TokenStream) -> TokenStream {
@@ -38,4 +37,38 @@ pub fn test_case(_attr: TokenStream, input: TokenStream) -> TokenStream {
     );
 
     q.into()
+}
+
+#[proc_macro_attribute]
+pub fn async_test_case(_args: TokenStream, item: TokenStream) -> TokenStream {
+    let input = syn::parse_macro_input!(item as syn::ItemFn);
+    let name = &input.sig.ident;
+
+    if input.sig.asyncness.is_none() {
+        let msg = "the async keyword is missing from the function declaration";
+        return syn::Error::new_spanned(input.sig.fn_token, msg)
+            .to_compile_error()
+            .into();
+    } else if !input.sig.inputs.is_empty() {
+        let msg = "the test function cannot accept arguments";
+        return syn::Error::new_spanned(&input.sig.inputs, msg)
+            .to_compile_error()
+            .into();
+    } else if input.sig.output != syn::ReturnType::Default {
+        let msg = "the test function cannot return outputs";
+        return syn::Error::new_spanned(input.sig.output, msg)
+            .to_compile_error()
+            .into();
+    }
+
+    let result = quote!(
+        #input
+
+        inventory::submit!(
+            teaclave_test_utils::AsyncTestCase(
+                concat!(module_path!(), "::", stringify!(#name)).to_string(),
+                || async move {#name().await }.boxed()
+        )
+    ););
+    result.into()
 }

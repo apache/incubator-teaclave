@@ -15,7 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use teaclave_types::TeaclaveServiceResponseError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -40,11 +39,9 @@ impl From<AuthenticationError> for AuthenticationServiceError {
     }
 }
 
-impl From<AuthenticationError> for TeaclaveServiceResponseError {
+impl From<AuthenticationError> for teaclave_rpc::Status {
     fn from(error: AuthenticationError) -> Self {
-        TeaclaveServiceResponseError::RequestError(
-            AuthenticationServiceError::from(error).to_string(),
-        )
+        teaclave_rpc::Status::unauthenticated(AuthenticationServiceError::from(error).to_string())
     }
 }
 
@@ -68,9 +65,9 @@ pub(crate) enum AuthenticationServiceError {
     MissingToken,
 }
 
-impl From<AuthenticationServiceError> for TeaclaveServiceResponseError {
+impl From<AuthenticationServiceError> for teaclave_rpc::Status {
     fn from(error: AuthenticationServiceError) -> Self {
         log::debug!("AuthenticationServiceError: {:?}", error);
-        TeaclaveServiceResponseError::RequestError(error.to_string())
+        teaclave_rpc::Status::unauthenticated(error.to_string())
     }
 }

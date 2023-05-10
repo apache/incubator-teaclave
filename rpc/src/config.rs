@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use crate::transport::{ClientTlsConfig, ServerTlsConfig};
 use anyhow::{anyhow, bail, Result};
 use log::debug;
 use std::sync::{Arc, RwLock};
@@ -28,6 +29,9 @@ use teaclave_attestation::report::AttestationReport;
 use teaclave_attestation::verifier::AttestationReportVerifier;
 use teaclave_attestation::AttestedTlsConfig;
 use teaclave_types::EnclaveAttr;
+
+// Yout should set the 'h2' negotiation flag for tonic grpc.
+pub const ALPN_H2: &str = "h2";
 
 #[derive(Clone)]
 pub struct SgxTrustedTlsServerConfig {
@@ -79,7 +83,7 @@ impl SgxTrustedTlsServerConfig {
     }
 
     // Disable this function for non-SGX targets.
-    #[cfg(feature = "mesalock_sgx")]
+    #[cfg(any(feature = "mesalock_sgx", feature = "libos"))]
     pub fn attestation_report_verifier(
         mut self,
         accepted_enclave_attrs: Vec<EnclaveAttr>,
@@ -130,6 +134,16 @@ impl SgxTrustedTlsServerConfig {
         self.validity = attested_tls_config.validity;
 
         Ok(())
+    }
+}
+
+impl From<SgxTrustedTlsServerConfig> for ServerTlsConfig {
+    fn from(config: SgxTrustedTlsServerConfig) -> Self {
+        let mut config_service = config.server_config;
+        config_service.set_protocols(&[ALPN_H2.as_bytes().to_vec()]);
+        let mut tls_config = ServerTlsConfig::new();
+        let tls_config = tls_config.rustls_server_config(config_service);
+        tls_config.to_owned()
     }
 }
 
@@ -222,5 +236,14 @@ impl SgxTrustedTlsClientConfig {
         let mut config = Self::new().client_cert(&tls_config.cert, &tls_config.private_key)?;
         config.attested_tls_config = Some(attested_tls_config);
         Ok(config)
+    }
+}
+
+impl From<SgxTrustedTlsClientConfig> for ClientTlsConfig {
+    fn from(config: SgxTrustedTlsClientConfig) -> Self {
+        let mut client_config = config.client_config;
+        // Yout must set the 'h2' negotiation flag.
+        client_config.set_protocols(&[ALPN_H2.as_bytes().to_vec()]);
+        ClientTlsConfig::new().rustls_client_config(client_config)
     }
 }

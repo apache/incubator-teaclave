@@ -15,9 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use teaclave_types::TeaclaveServiceResponseError;
+use teaclave_rpc::{Code, Status};
 use thiserror::Error;
-
 #[derive(Error, Debug)]
 pub(crate) enum ManagementServiceError {
     #[error("service internal error")]
@@ -50,9 +49,20 @@ pub(crate) enum ManagementServiceError {
     FunctionQuotaError,
 }
 
-impl From<ManagementServiceError> for TeaclaveServiceResponseError {
+impl From<ManagementServiceError> for Status {
     fn from(error: ManagementServiceError) -> Self {
         log::debug!("ManagementServiceError: {:?}", error);
-        TeaclaveServiceResponseError::RequestError(error.to_string())
+        let msg = error.to_string();
+        let code = match error {
+            ManagementServiceError::PermissionDenied => Code::PermissionDenied,
+            ManagementServiceError::Service(_) => Code::Internal,
+            ManagementServiceError::InvalidDataId
+            | ManagementServiceError::InvalidOutputFile
+            | ManagementServiceError::InvalidFunctionId
+            | ManagementServiceError::InvalidTaskId
+            | ManagementServiceError::InvalidTask => Code::InvalidArgument,
+            _ => Code::Unknown,
+        };
+        Status::new(code, msg)
     }
 }

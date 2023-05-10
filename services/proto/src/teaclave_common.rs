@@ -17,43 +17,16 @@
 
 use crate::teaclave_common_proto as proto;
 use anyhow::{bail, Error, Result};
+pub use proto::*;
 use std::convert::TryInto;
 use teaclave_crypto::TeaclaveFile128Key;
 use teaclave_types::{FileCrypto, TaskFailure, TaskOutputs, TaskResult, TaskStatus};
-
-#[derive(Debug)]
-pub struct UserCredential {
-    pub id: std::string::String,
-    pub token: std::string::String,
-}
 
 impl UserCredential {
     pub fn new(id: impl Into<String>, token: impl Into<String>) -> Self {
         Self {
             id: id.into(),
             token: token.into(),
-        }
-    }
-}
-
-impl std::convert::TryFrom<proto::UserCredential> for UserCredential {
-    type Error = Error;
-
-    fn try_from(proto: proto::UserCredential) -> Result<Self> {
-        let ret = Self {
-            id: proto.id,
-            token: proto.token,
-        };
-
-        Ok(ret)
-    }
-}
-
-impl From<UserCredential> for proto::UserCredential {
-    fn from(request: UserCredential) -> Self {
-        Self {
-            id: request.id,
-            token: request.token,
         }
     }
 }

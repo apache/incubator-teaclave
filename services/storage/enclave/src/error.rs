@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use teaclave_types::TeaclaveServiceResponseError;
+use teaclave_rpc::{Code, Status};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -28,9 +28,14 @@ pub(crate) enum StorageServiceError {
     Service(#[from] anyhow::Error),
 }
 
-impl From<StorageServiceError> for TeaclaveServiceResponseError {
+impl From<StorageServiceError> for teaclave_rpc::Status {
     fn from(error: StorageServiceError) -> Self {
         log::debug!("StorageServiceError: {:?}", error);
-        TeaclaveServiceResponseError::RequestError(error.to_string())
+        let msg = error.to_string();
+        let code = match error {
+            StorageServiceError::Service(_) => Code::Internal,
+            _ => Code::Unknown,
+        };
+        Status::new(code, msg)
     }
 }

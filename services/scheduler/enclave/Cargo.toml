@@ -48,6 +48,7 @@ anyhow        = { version = "1.0.26" }
 serde_json    = { version = "1.0.39" }
 serde         = { version = "1.0.92", features = ["derive"] }
 thiserror     = { version = "1.0.9" }
+tokio         = { version = "1.0", features = ["rt-multi-thread", "time", "macros"] }
 gbdt          = { version = "0.1.0", features = ["input", "enable_training"] }
 uuid          = { version = "0.8.1", features = ["v4"] }
 

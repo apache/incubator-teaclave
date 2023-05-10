@@ -45,6 +45,7 @@ serde_json   = { version = "1.0.39" }
 toml         = { version = "0.5.3" }
 ring         = { version = "0.16.5" }
 thiserror    = { version = "1.0.9" }
+tonic        = { version = "0.6.1", features = ["tls", "compression"]  }
 url          = { version = "2.1.1", features = ["serde"]}
 uuid         = { version = "0.8.1", features = ["v4", "v5", "serde"] }
 

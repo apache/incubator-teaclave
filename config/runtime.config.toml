@@ -24,12 +24,12 @@ authentication = { listen_address = "0.0.0.0:7776" }
 frontend       = { listen_address = "0.0.0.0:7777" }
 
 [internal_endpoints]
-authentication = { listen_address = "0.0.0.0:17776", advertised_address = "localhost:17776" }
-management     = { listen_address = "0.0.0.0:17777", advertised_address = "localhost:17777" }
-storage        = { listen_address = "0.0.0.0:17778", advertised_address = "localhost:17778" }
-access_control = { listen_address = "0.0.0.0:17779", advertised_address = "localhost:17779" }
-execution      = { listen_address = "0.0.0.0:17770", advertised_address = "localhost:17770" }
-scheduler      = { listen_address = "0.0.0.0:17780", advertised_address = "localhost:17780" }
+authentication = { listen_address = "0.0.0.0:17776", advertised_address = "https://localhost:17776" }
+management     = { listen_address = "0.0.0.0:17777", advertised_address = "https://localhost:17777" }
+storage        = { listen_address = "0.0.0.0:17778", advertised_address = "https://localhost:17778" }
+access_control = { listen_address = "0.0.0.0:17779", advertised_address = "https://localhost:17779" }
+execution      = { listen_address = "0.0.0.0:17770", advertised_address = "https://localhost:17770" }
+scheduler      = { listen_address = "0.0.0.0:17780", advertised_address = "https://localhost:17780" }
 
 [audit]
 enclave_info = { path = "enclave_info.toml" }

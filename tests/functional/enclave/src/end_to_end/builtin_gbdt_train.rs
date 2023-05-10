@@ -16,36 +16,44 @@
 // under the License.
 
 use super::*;
+use futures::FutureExt;
 use teaclave_crypto::TeaclaveFile128Key;
-use teaclave_test_utils::test_case;
-
-#[test_case]
-pub fn test_gbdt_training_task() {
-    let mut client = authorized_frontend_client();
-    let function_id = register_gbdt_function(&mut client);
-    let training_data_id = register_input_file(&mut client);
+use teaclave_rpc::CredentialService;
+use teaclave_test_utils::async_test_case;
+#[async_test_case]
+pub async fn test_gbdt_training_task() {
+    let mut client = authorized_frontend_client().await;
+    let function_id = register_gbdt_function(&mut client).await;
+    let training_data_id = register_input_file(&mut client).await;
 
     let crypto = TeaclaveFile128Key::random();
-    let output_model_id = register_output_file(&mut client, crypto);
+    let output_model_id = register_output_file(&mut client, crypto).await;
 
-    let task_id = create_gbdt_training_task(&mut client, &function_id);
-    assign_data_to_task(&mut client, &task_id, training_data_id, output_model_id);
-    approve_task(&mut client, &task_id).unwrap();
-    invoke_task(&mut client, &task_id).unwrap();
+    let task_id = create_gbdt_training_task(&mut client, &function_id).await;
+    assign_data_to_task(&mut client, &task_id, training_data_id, output_model_id).await;
+    approve_task(&mut client, &task_id).await.unwrap();
+    invoke_task(&mut client, &task_id).await.unwrap();
 
-    let ret_val = get_task_until(&mut client, &task_id, TaskStatus::Finished);
+    let ret_val = get_task_until(&mut client, &task_id, TaskStatus::Finished).await;
     assert_eq!(&ret_val, "Trained 120 lines of data.");
 }
 
 // Authenticate user before talking to frontend service
-fn authorized_frontend_client() -> TeaclaveFrontendClient {
-    let mut api_client =
-        create_authentication_api_client(shared_enclave_info(), AUTH_SERVICE_ADDR).unwrap();
-    let cred = login(&mut api_client, USERNAME, TEST_PASSWORD).unwrap();
-    create_frontend_client(shared_enclave_info(), FRONTEND_SERVICE_ADDR, cred).unwrap()
+async fn authorized_frontend_client() -> TeaclaveFrontendClient<CredentialService> {
+    let mut api_client = create_authentication_api_client(shared_enclave_info(), AUTH_SERVICE_ADDR)
+        .await
+        .unwrap();
+    let cred = login(&mut api_client, USERNAME, TEST_PASSWORD)
+        .await
+        .unwrap();
+    create_frontend_client(shared_enclave_info(), FRONTEND_SERVICE_ADDR, cred)
+        .await
+        .unwrap()
 }
 
-fn register_gbdt_function(client: &mut TeaclaveFrontendClient) -> ExternalID {
+async fn register_gbdt_function(
+    client: &mut TeaclaveFrontendClient<CredentialService>,
+) -> ExternalID {
     let fn_input = FunctionInput::new("training_data", "Input traning data file.", false);
     let fn_output = FunctionOutput::new("trained_model", "Output trained model.", false);
     let fn_args = vec![
@@ -68,13 +76,16 @@ fn register_gbdt_function(client: &mut TeaclaveFrontendClient) -> ExternalID {
         .inputs(vec![fn_input])
         .outputs(vec![fn_output])
         .build();
-
-    let response = client.register_function(request).unwrap();
+    let response = client
+        .register_function(request)
+        .await
+        .unwrap()
+        .into_inner();
     log::debug!("Register function: {:?}", response);
-    response.function_id
+    response.function_id.try_into().unwrap()
 }
 
-fn register_input_file(client: &mut TeaclaveFrontendClient) -> ExternalID {
+async fn register_input_file(client: &mut TeaclaveFrontendClient<CredentialService>) -> ExternalID {
     let url =
         Url::parse("http://localhost:6789/fixtures/functions/gbdt_training/train.enc").unwrap();
     let crypto = TeaclaveFile128Key::new(&[0; 16]).unwrap();
@@ -82,26 +93,34 @@ fn register_input_file(client: &mut TeaclaveFrontendClient) -> ExternalID {
     let cmac = FileAuthTag::from_hex("860030495909b84864b991865e9ad94f").unwrap();
 
     let request = RegisterInputFileRequest::new(url, cmac, crypto_info);
-    let response = client.register_input_file(request).unwrap();
+    let response = client
+        .register_input_file(request)
+        .await
+        .unwrap()
+        .into_inner();
     log::debug!("Register input: {:?}", response);
-    response.data_id
+    response.data_id.try_into().unwrap()
 }
 
-fn register_output_file(
-    client: &mut TeaclaveFrontendClient,
+async fn register_output_file(
+    client: &mut TeaclaveFrontendClient<CredentialService>,
     crypto: impl Into<FileCrypto>,
 ) -> ExternalID {
     let url =
         Url::parse("http://localhost:6789/fixtures/functions/gbdt_training/e2e_output_model.enc")
             .unwrap();
     let request = RegisterOutputFileRequest::new(url, crypto);
-    let response = client.register_output_file(request).unwrap();
+    let response = client
+        .register_output_file(request)
+        .await
+        .unwrap()
+        .into_inner();
     log::debug!("Register output: {:?}", response);
-    response.data_id
+    response.data_id.try_into().unwrap()
 }
 
-fn create_gbdt_training_task(
-    client: &mut TeaclaveFrontendClient,
+async fn create_gbdt_training_task(
+    client: &mut TeaclaveFrontendClient<CredentialService>,
     function_id: &ExternalID,
 ) -> ExternalID {
     let arguments = FunctionArguments::from_json(serde_json::json!({
@@ -123,14 +142,14 @@ fn create_gbdt_training_task(
         .inputs_ownership(hashmap!("training_data" => vec![USERNAME]))
         .outputs_ownership(hashmap!("trained_model" => vec![USERNAME]));
 
-    let response = client.create_task(request).unwrap();
+    let response = client.create_task(request).await.unwrap().into_inner();
     log::debug!("Create task: {:?}", response);
 
-    response.task_id
+    response.task_id.try_into().unwrap()
 }
 
-fn assign_data_to_task(
-    client: &mut TeaclaveFrontendClient,
+async fn assign_data_to_task(
+    client: &mut TeaclaveFrontendClient<CredentialService>,
     task_id: &ExternalID,
     training_data_id: ExternalID,
     out_model_id: ExternalID,
@@ -141,7 +160,7 @@ fn assign_data_to_task(
         hashmap!("training_data" => training_data_id),
         hashmap!("trained_model" => out_model_id),
     );
-    let response = client.assign_data(request).unwrap();
+    let response = client.assign_data(request).await.unwrap();
 
     log::debug!("Assign data: {:?}", response);
 }

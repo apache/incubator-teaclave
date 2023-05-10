@@ -16,10 +16,6 @@
 // under the License.
 
 use std::env;
-use std::path::Path;
-use std::path::PathBuf;
-use std::process::Command;
-use std::str;
 
 fn main() {
     let proto_files = [
@@ -34,54 +30,16 @@ fn main() {
 
     let out_dir = env::var("OUT_DIR").expect("$OUT_DIR not set. Please build with cargo");
     println!("cargo:rerun-if-changed=build.rs");
-    println!("cargo:rerun-if-changed=proto_gen/templates/proto.j2");
-    println!("cargo:rerun-if-changed=proto_gen/main.rs");
 
     for pf in proto_files.iter() {
         println!("cargo:rerun-if-changed={}", pf);
     }
 
-    let target_dir = match env::var("TEACLAVE_SYMLINKS") {
-        Ok(teaclave_symlinks) => {
-            Path::new(&teaclave_symlinks).join("teaclave_build/target/proto_gen")
-        }
-        Err(_) => env::current_dir().unwrap().join("target/proto_gen"),
-    };
-    let current_dir: PathBuf = match env::var("MT_SGXAPP_TOML_DIR") {
-        Ok(sgxapp_toml_dir) => Path::new(&sgxapp_toml_dir).into(),
-        // This fallback is only for compiling rust client sdk with cargo
-        Err(_) => Path::new("../../").into(),
-    };
-
-    let proto_files = [
-        "services/proto/src/proto/teaclave_access_control_service.proto",
-        "services/proto/src/proto/teaclave_authentication_service.proto",
-        "services/proto/src/proto/teaclave_common.proto",
-        "services/proto/src/proto/teaclave_storage_service.proto",
-        "services/proto/src/proto/teaclave_frontend_service.proto",
-        "services/proto/src/proto/teaclave_management_service.proto",
-        "services/proto/src/proto/teaclave_scheduler_service.proto",
-    ];
-    let mut c = Command::new("cargo");
-    // Use CARGO_ENCODED_RUSTFLAGS to override RUSTFLAGS which makes the run fail.
-    c.current_dir(&current_dir)
-        .env("CARGO_ENCODED_RUSTFLAGS", "");
-    c.args([
-        "run",
-        "--target-dir",
-        &target_dir.to_string_lossy(),
-        "--manifest-path",
-        "services/proto/proto_gen/Cargo.toml",
-    ]);
-
-    c.args(["--", "-i", "services/proto/src/proto", "-d", &out_dir, "-p"])
-        .args(proto_files);
-    let output = c.output().expect("Generate proto failed");
-    if !output.status.success() {
-        panic!(
-            "stdout: {:?}, stderr: {:?}",
-            str::from_utf8(&output.stderr).unwrap(),
-            str::from_utf8(&output.stderr).unwrap()
-        );
+    if let Err(e) = tonic_build::configure()
+        .out_dir(out_dir)
+        .type_attribute(".", "#[derive(serde::Serialize, serde::Deserialize)]")
+        .compile(&proto_files, &["src/proto"])
+    {
+        panic!("proto build error: {:?}", e);
     }
 }

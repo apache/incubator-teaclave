@@ -30,3 +30,5 @@ mesalock_sgx = []
 [dependencies]
 inventory   = { version = "0.1.6" }
 teaclave_test_utils_proc_macro = { path = "./proc_macro" }
+tokio       = { version = "1.0", features = ["rt-multi-thread", "time", "macros"] }
+futures     = { version = "0.3" }

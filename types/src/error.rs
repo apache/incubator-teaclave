@@ -68,21 +68,8 @@ pub enum TeeServiceError {
 
 pub type TeeServiceResult<T> = std::result::Result<T, TeeServiceError>;
 
-#[derive(Error, Debug, Serialize, Deserialize, PartialEq)]
-#[serde(rename_all = "snake_case")]
-pub enum TeaclaveServiceResponseError {
-    #[error("Request error: {0}")]
-    RequestError(String),
-    #[error("Connection error: {0}")]
-    ConnectionError(String),
-    #[error("Internal error: {0}")]
-    InternalError(String),
-}
+pub type TeaclaveServiceResponseResult<T> = std::result::Result<tonic::Response<T>, tonic::Status>;
 
-impl From<anyhow::Error> for TeaclaveServiceResponseError {
-    fn from(error: anyhow::Error) -> Self {
-        TeaclaveServiceResponseError::RequestError(error.to_string())
-    }
+pub fn tonic_error<T: std::fmt::Debug>(err: T) -> tonic::Status {
+    tonic::Status::internal(format!("{:?}", err))
 }
-
-pub type TeaclaveServiceResponseResult<T> = std::result::Result<T, TeaclaveServiceResponseError>;

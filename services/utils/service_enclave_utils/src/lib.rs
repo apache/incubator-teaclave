@@ -32,8 +32,6 @@ use std::untrusted::{fs, path::PathEx};
 use teaclave_attestation::verifier::AttestationReportVerificationFn;
 use teaclave_attestation::AttestedTlsConfig;
 use teaclave_config::RuntimeConfig;
-use teaclave_rpc::config::SgxTrustedTlsClientConfig;
-use teaclave_rpc::endpoint::Endpoint;
 use teaclave_types::{EnclaveInfo, TeeServiceResult};
 
 mod macros;
@@ -121,8 +119,6 @@ fn base_dir(config: &RuntimeConfig, sub_name: &str) -> Result<PathBuf> {
     Ok(sub_base)
 }
 
-pub use teaclave_service_enclave_utils_proc_macro::teaclave_service;
-
 macro_rules! impl_create_trusted_endpoint_fn {
     ($fn_name:ident, $enclave_attr:literal) => {
         pub fn $fn_name(
@@ -131,20 +127,28 @@ macro_rules! impl_create_trusted_endpoint_fn {
             as_root_ca_cert: &[u8],
             verifier: AttestationReportVerificationFn,
             attested_tls_config: Arc<RwLock<AttestedTlsConfig>>,
-        ) -> Result<Endpoint> {
+        ) -> Result<teaclave_rpc::transport::channel::Endpoint> {
             let service_enclave_attrs = enclave_info
                 .get_enclave_attr($enclave_attr)
-                .expect("enclave_info");
-            let service_client_config =
-                SgxTrustedTlsClientConfig::from_attested_tls_config(attested_tls_config)?
-                    .attestation_report_verifier(
-                        vec![service_enclave_attrs],
-                        as_root_ca_cert,
-                        verifier,
-                    );
-            let service_address = &advertised_address;
+                .expect("enclave attr");
+            let client_tls_config =
+                teaclave_rpc::config::SgxTrustedTlsClientConfig::from_attested_tls_config(
+                    attested_tls_config,
+                )?
+                .attestation_report_verifier(vec![service_enclave_attrs], as_root_ca_cert, verifier)
+                .into();
 
-            Ok(Endpoint::new(service_address).config(service_client_config))
+            let dst = advertised_address.parse::<teaclave_rpc::transport::Uri>()?;
+            if dst.scheme().is_none() {
+                anyhow::bail!(format!(
+                    "Missing schema in {} advertised address",
+                    stringify!($enclave_attr)
+                ));
+            };
+            let endpoint = teaclave_rpc::transport::Channel::builder(dst)
+                .tls_config(client_tls_config)?
+                .connect_timeout(std::time::Duration::from_secs(30));
+            Ok(endpoint)
         }
     };
 }

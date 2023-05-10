@@ -17,41 +17,79 @@
 
 use crate::error::StorageServiceError;
 use anyhow::anyhow;
-use std::sync::mpsc::{channel, Sender};
-use teaclave_proto::teaclave_storage_service::{TeaclaveStorageRequest, TeaclaveStorageResponse};
-use teaclave_rpc::Request;
-use teaclave_types::TeaclaveServiceResponseResult;
+use teaclave_proto::teaclave_storage_service::*;
+use teaclave_rpc::{Request, Response, Status};
+use tokio::sync::mpsc::{unbounded_channel, UnboundedSender};
 
 #[derive(Clone)]
 pub(crate) struct ProxyService {
-    sender: Sender<ProxyRequest>,
+    sender: UnboundedSender<ProxyRequest>,
 }
 
 impl ProxyService {
-    pub(crate) fn new(sender: Sender<ProxyRequest>) -> Self {
+    pub(crate) fn new(sender: UnboundedSender<ProxyRequest>) -> Self {
         Self { sender }
     }
 }
 
-impl teaclave_rpc::TeaclaveService<TeaclaveStorageRequest, TeaclaveStorageResponse>
-    for ProxyService
-{
-    fn handle_request(
-        &self,
-        request: Request<TeaclaveStorageRequest>,
-    ) -> TeaclaveServiceResponseResult<TeaclaveStorageResponse> {
-        let (sender, receiver) = channel();
-        self.sender
-            .send(ProxyRequest { sender, request })
+macro_rules! send_request {
+    ($service: ident,$request:expr,$fun:ident) => {{
+        let (sender, mut receiver) = unbounded_channel();
+        let request = $request.into_inner();
+        $service
+            .sender
+            .send(ProxyRequest {
+                sender,
+                request: Request::new(TeaclaveStorageRequest::$fun(request)),
+            })
             .map_err(|_| StorageServiceError::Service(anyhow!("send ProxyRequest error")))?;
-        receiver
-            .recv()
-            .map_err(|_| StorageServiceError::Service(anyhow!("recv ProxyRequest error")))?
+        match receiver.recv().await {
+            Some(Ok(TeaclaveStorageResponse::$fun(re))) => return Ok(Response::new(re)),
+            _ => return Err(teaclave_rpc::Status::internal("invalid response")),
+        }
+    }};
+}
+
+#[teaclave_rpc::async_trait]
+impl TeaclaveStorage for ProxyService {
+    async fn get(&self, request: Request<GetRequest>) -> Result<Response<GetResponse>, Status> {
+        send_request!(self, request, Get)
+    }
+
+    async fn put(&self, request: Request<PutRequest>) -> Result<Response<PutResponse>, Status> {
+        send_request!(self, request, Put)
+    }
+
+    async fn delete(
+        &self,
+        request: Request<DeleteRequest>,
+    ) -> Result<Response<DeleteResponse>, Status> {
+        send_request!(self, request, Delete)
+    }
+
+    async fn enqueue(
+        &self,
+        request: Request<EnqueueRequest>,
+    ) -> Result<Response<EnqueueResponse>, Status> {
+        send_request!(self, request, Enqueue)
+    }
+
+    async fn dequeue(
+        &self,
+        request: Request<DequeueRequest>,
+    ) -> Result<Response<DequeueResponse>, Status> {
+        send_request!(self, request, Dequeue)
+    }
+
+    async fn get_keys_by_prefix(
+        &self,
+        request: Request<GetKeysByPrefixRequest>,
+    ) -> Result<Response<GetKeysByPrefixResponse>, Status> {
+        send_request!(self, request, GetKeysByPrefix)
     }
 }
 
-#[derive(Clone)]
 pub(crate) struct ProxyRequest {
-    pub sender: Sender<TeaclaveServiceResponseResult<TeaclaveStorageResponse>>,
+    pub sender: UnboundedSender<std::result::Result<TeaclaveStorageResponse, StorageServiceError>>,
     pub request: Request<TeaclaveStorageRequest>,
 }

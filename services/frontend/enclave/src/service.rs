@@ -18,11 +18,8 @@
 use crate::error::AuthenticationError;
 use crate::error::FrontendServiceError;
 
-use anyhow::anyhow;
-use anyhow::ensure;
-use anyhow::Result;
-use std::sync::{Arc, Mutex};
-
+use anyhow::{anyhow, Result};
+use std::sync::Arc;
 use teaclave_proto::teaclave_authentication_service::{
     TeaclaveAuthenticationInternalClient, UserAuthenticateRequest,
 };
@@ -42,21 +39,21 @@ use teaclave_proto::teaclave_frontend_service::{
     UpdateOutputFileRequest, UpdateOutputFileResponse,
 };
 use teaclave_proto::teaclave_management_service::TeaclaveManagementClient;
-use teaclave_rpc::endpoint::Endpoint;
+use teaclave_rpc::transport::{channel::Endpoint, Channel};
 use teaclave_rpc::Request;
-use teaclave_service_enclave_utils::{bail, teaclave_service};
+use teaclave_service_enclave_utils::bail;
 use teaclave_types::{TeaclaveServiceResponseResult, UserAuthClaims, UserRole};
+use tokio::sync::Mutex;
 
-#[teaclave_service(teaclave_frontend_service, TeaclaveFrontend, FrontendServiceError)]
 #[derive(Clone)]
 pub(crate) struct TeaclaveFrontendService {
-    authentication_client: Arc<Mutex<TeaclaveAuthenticationInternalClient>>,
-    management_client: Arc<Mutex<TeaclaveManagementClient>>,
+    authentication_client: Arc<Mutex<TeaclaveAuthenticationInternalClient<Channel>>>,
+    management_client: Arc<Mutex<TeaclaveManagementClient<Channel>>>,
 }
 
 macro_rules! authentication_and_forward_to_management {
     ($service: ident, $request: ident, $func: ident, $endpoint: expr) => {{
-        let claims = match $service.authenticate(&$request) {
+        let claims = match $service.authenticate(&$request).await {
             Ok(claims) => {
                 if authorize(&claims, $endpoint) {
                     claims
@@ -80,19 +77,16 @@ macro_rules! authentication_and_forward_to_management {
         };
 
         let client = $service.management_client.clone();
-        let mut client = client.lock().map_err(|_| {
-            FrontendServiceError::Service(anyhow!("failed to lock management client"))
-        })?;
-        client.metadata_mut().clear();
-        client.metadata_mut().extend($request.metadata);
-        client
-            .metadata_mut()
-            .insert("role".to_string(), claims.role);
+        let mut client = client.lock().await;
+        let meta = $request.metadata().clone();
+        let message = $request.get_ref().to_owned();
 
-        let response = client.$func($request.message);
+        let mut request = Request::new(message);
+        let metadata = request.metadata_mut();
+        *metadata = meta;
+        metadata.insert("role", claims.role.parse().unwrap());
 
-        client.metadata_mut().clear();
-        let response = response?;
+        let response = client.$func(request).await?;
         Ok(response)
     }};
 }
@@ -157,41 +151,25 @@ fn authorize(claims: &UserAuthClaims, request: Endpoints) -> bool {
 }
 
 impl TeaclaveFrontendService {
-    pub(crate) fn new(
+    pub(crate) async fn new(
         authentication_service_endpoint: Endpoint,
         management_service_endpoint: Endpoint,
     ) -> Result<Self> {
-        let mut i = 0;
-        let authentication_channel = loop {
-            match authentication_service_endpoint.connect() {
-                Ok(channel) => break channel,
-                Err(_) => {
-                    ensure!(i < 10, "failed to connect to authentication service");
-                    log::warn!("Failed to connect to authentication service, retry {}", i);
-                    i += 1;
-                }
-            }
-            std::thread::sleep(std::time::Duration::from_secs(3));
-        };
+        let authentication_channel = authentication_service_endpoint
+            .connect()
+            .await
+            .map_err(|e| anyhow!("Failed to connect to authentication service, retry {:?}", e))?;
         let authentication_client = Arc::new(Mutex::new(
-            TeaclaveAuthenticationInternalClient::new(authentication_channel)?,
+            TeaclaveAuthenticationInternalClient::new(authentication_channel),
         ));
 
-        let mut i = 0;
-        let management_channel = loop {
-            match management_service_endpoint.connect() {
-                Ok(channel) => break channel,
-                Err(_) => {
-                    ensure!(i < 10, "failed to connect to management service");
-                    log::warn!("Failed to connect to management service, retry {}", i);
-                    i += 1;
-                }
-            }
-            std::thread::sleep(std::time::Duration::from_secs(3));
-        };
+        let management_channel = management_service_endpoint
+            .connect()
+            .await
+            .map_err(|e| anyhow!("Failed to connect to management service, {:?}", e))?;
         let management_client = Arc::new(Mutex::new(TeaclaveManagementClient::new(
             management_channel,
-        )?));
+        )));
 
         Ok(Self {
             authentication_client,
@@ -200,8 +178,9 @@ impl TeaclaveFrontendService {
     }
 }
 
+#[teaclave_rpc::async_trait]
 impl TeaclaveFrontend for TeaclaveFrontendService {
-    fn register_input_file(
+    async fn register_input_file(
         &self,
         request: Request<RegisterInputFileRequest>,
     ) -> TeaclaveServiceResponseResult<RegisterInputFileResponse> {
@@ -213,7 +192,7 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
         )
     }
 
-    fn update_input_file(
+    async fn update_input_file(
         &self,
         request: Request<UpdateInputFileRequest>,
     ) -> TeaclaveServiceResponseResult<UpdateInputFileResponse> {
@@ -225,7 +204,7 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
         )
     }
 
-    fn register_output_file(
+    async fn register_output_file(
         &self,
         request: Request<RegisterOutputFileRequest>,
     ) -> TeaclaveServiceResponseResult<RegisterOutputFileResponse> {
@@ -237,7 +216,7 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
         )
     }
 
-    fn update_output_file(
+    async fn update_output_file(
         &self,
         request: Request<UpdateOutputFileRequest>,
     ) -> TeaclaveServiceResponseResult<UpdateOutputFileResponse> {
@@ -249,7 +228,7 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
         )
     }
 
-    fn register_fusion_output(
+    async fn register_fusion_output(
         &self,
         request: Request<RegisterFusionOutputRequest>,
     ) -> TeaclaveServiceResponseResult<RegisterFusionOutputResponse> {
@@ -261,7 +240,7 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
         )
     }
 
-    fn register_input_from_output(
+    async fn register_input_from_output(
         &self,
         request: Request<RegisterInputFromOutputRequest>,
     ) -> TeaclaveServiceResponseResult<RegisterInputFromOutputResponse> {
@@ -273,7 +252,7 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
         )
     }
 
-    fn get_output_file(
+    async fn get_output_file(
         &self,
         request: Request<GetOutputFileRequest>,
     ) -> TeaclaveServiceResponseResult<GetOutputFileResponse> {
@@ -285,7 +264,7 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
         )
     }
 
-    fn get_input_file(
+    async fn get_input_file(
         &self,
         request: Request<GetInputFileRequest>,
     ) -> TeaclaveServiceResponseResult<GetInputFileResponse> {
@@ -297,7 +276,7 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
         )
     }
 
-    fn register_function(
+    async fn register_function(
         &self,
         request: Request<RegisterFunctionRequest>,
     ) -> TeaclaveServiceResponseResult<RegisterFunctionResponse> {
@@ -309,7 +288,7 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
         )
     }
 
-    fn update_function(
+    async fn update_function(
         &self,
         request: Request<UpdateFunctionRequest>,
     ) -> TeaclaveServiceResponseResult<UpdateFunctionResponse> {
@@ -321,7 +300,7 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
         )
     }
 
-    fn get_function(
+    async fn get_function(
         &self,
         request: Request<GetFunctionRequest>,
     ) -> TeaclaveServiceResponseResult<GetFunctionResponse> {
@@ -333,7 +312,7 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
         )
     }
 
-    fn get_function_usage_stats(
+    async fn get_function_usage_stats(
         &self,
         request: Request<GetFunctionUsageStatsRequest>,
     ) -> TeaclaveServiceResponseResult<GetFunctionUsageStatsResponse> {
@@ -345,7 +324,7 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
         )
     }
 
-    fn delete_function(
+    async fn delete_function(
         &self,
         request: Request<DeleteFunctionRequest>,
     ) -> TeaclaveServiceResponseResult<DeleteFunctionResponse> {
@@ -357,7 +336,7 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
         )
     }
 
-    fn disable_function(
+    async fn disable_function(
         &self,
         request: Request<DisableFunctionRequest>,
     ) -> TeaclaveServiceResponseResult<DisableFunctionResponse> {
@@ -369,7 +348,7 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
         )
     }
 
-    fn list_functions(
+    async fn list_functions(
         &self,
         request: Request<ListFunctionsRequest>,
     ) -> TeaclaveServiceResponseResult<ListFunctionsResponse> {
@@ -381,28 +360,28 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
         )
     }
 
-    fn create_task(
+    async fn create_task(
         &self,
         request: Request<CreateTaskRequest>,
     ) -> TeaclaveServiceResponseResult<CreateTaskResponse> {
         authentication_and_forward_to_management!(self, request, create_task, Endpoints::CreateTask)
     }
 
-    fn get_task(
+    async fn get_task(
         &self,
         request: Request<GetTaskRequest>,
     ) -> TeaclaveServiceResponseResult<GetTaskResponse> {
         authentication_and_forward_to_management!(self, request, get_task, Endpoints::GetTask)
     }
 
-    fn assign_data(
+    async fn assign_data(
         &self,
         request: Request<AssignDataRequest>,
     ) -> TeaclaveServiceResponseResult<AssignDataResponse> {
         authentication_and_forward_to_management!(self, request, assign_data, Endpoints::AssignData)
     }
 
-    fn approve_task(
+    async fn approve_task(
         &self,
         request: Request<ApproveTaskRequest>,
     ) -> TeaclaveServiceResponseResult<ApproveTaskResponse> {
@@ -414,14 +393,14 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
         )
     }
 
-    fn invoke_task(
+    async fn invoke_task(
         &self,
         request: Request<InvokeTaskRequest>,
     ) -> TeaclaveServiceResponseResult<InvokeTaskResponse> {
         authentication_and_forward_to_management!(self, request, invoke_task, Endpoints::InvokeTask)
     }
 
-    fn cancel_task(
+    async fn cancel_task(
         &self,
         request: Request<CancelTaskRequest>,
     ) -> TeaclaveServiceResponseResult<CancelTaskResponse> {
@@ -430,30 +409,34 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
 }
 
 impl TeaclaveFrontendService {
-    fn authenticate<T>(
+    async fn authenticate<T>(
         &self,
         request: &Request<T>,
     ) -> Result<UserAuthClaims, FrontendServiceError> {
         let id = request
-            .metadata
+            .metadata()
             .get("id")
+            .and_then(|x| x.to_str().ok())
             .ok_or(AuthenticationError::MissingUserId)?;
         let token = request
-            .metadata
+            .metadata()
             .get("token")
+            .and_then(|x| x.to_str().ok())
             .ok_or(AuthenticationError::MissingToken)?;
-        let credential = UserCredential::new(id, token);
+        let credential = Some(UserCredential::new(id, token));
         let auth_request = UserAuthenticateRequest { credential };
         let claims = self
             .authentication_client
             .clone()
             .lock()
-            .map_err(|_| {
-                FrontendServiceError::Service(anyhow!("failed to lock authentication client"))
-            })?
+            .await
             .user_authenticate(auth_request)
+            .await
             .map_err(|_| AuthenticationError::IncorrectCredential)?
-            .claims;
+            .into_inner()
+            .claims
+            .and_then(|x| x.try_into().ok())
+            .ok_or(AuthenticationError::IncorrectCredential)?;
 
         Ok(claims)
     }

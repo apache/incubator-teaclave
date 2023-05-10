@@ -18,8 +18,8 @@
  *
  */
 
-const char *authentication_service_address = "localhost:7776";
-const char *frontend_service_address = "localhost:7777";
+const char *authentication_service_address = "https://localhost:7776";
+const char *frontend_service_address = "https://localhost:7777";
 const char *enclave_info_path = "../../release/services/enclave_info.toml";
 #ifdef DCAP
 const char *as_root_ca_cert_path = "../../keys/dcap_root_ca_cert.pem";

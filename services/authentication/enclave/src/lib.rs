@@ -22,7 +22,6 @@ use anyhow::{anyhow, Result};
 
 use rand::RngCore;
 use std::sync::{Arc, RwLock};
-use std::thread;
 
 use teaclave_attestation::{verifier, AttestationConfig, AttestedTlsConfig, RemoteAttestation};
 use teaclave_binder::proto::{
@@ -35,11 +34,9 @@ use teaclave_config::build::{
 };
 use teaclave_config::RuntimeConfig;
 use teaclave_proto::teaclave_authentication_service::{
-    TeaclaveAuthenticationApiRequest, TeaclaveAuthenticationApiResponse,
-    TeaclaveAuthenticationInternalRequest, TeaclaveAuthenticationInternalResponse,
+    TeaclaveAuthenticationApiServer, TeaclaveAuthenticationInternalServer,
 };
-use teaclave_rpc::config::SgxTrustedTlsServerConfig;
-use teaclave_rpc::server::SgxTrustedTlsServer;
+use teaclave_rpc::{config::SgxTrustedTlsServerConfig, transport::Server};
 use teaclave_service_enclave_utils::{base_dir_for_db, ServiceEnclave};
 use teaclave_types::{EnclaveInfo, TeeServiceError, TeeServiceResult, UserRole};
 
@@ -49,7 +46,7 @@ mod internal_service;
 mod user_db;
 mod user_info;
 
-fn start_internal_endpoint(
+async fn start_internal_endpoint(
     addr: std::net::SocketAddr,
     db_client: user_db::DbClient,
     jwt_secret: Vec<u8>,
@@ -58,53 +55,42 @@ fn start_internal_endpoint(
 ) -> Result<()> {
     let server_config = SgxTrustedTlsServerConfig::from_attested_tls_config(attested_tls_config)?
         .attestation_report_verifier(
-        accepted_enclave_attrs,
-        AS_ROOT_CA_CERT,
-        verifier::universal_quote_verifier,
-    )?;
-
-    let mut server = SgxTrustedTlsServer::<
-        TeaclaveAuthenticationInternalResponse,
-        TeaclaveAuthenticationInternalRequest,
-    >::new(addr, server_config);
-
+            accepted_enclave_attrs,
+            AS_ROOT_CA_CERT,
+            verifier::universal_quote_verifier,
+        )?
+        .into();
     let service =
         internal_service::TeaclaveAuthenticationInternalService::new(db_client, jwt_secret);
-
-    match server.start(service) {
-        Ok(_) => Ok(()),
-        Err(e) => {
-            error!("Service exit, error: {}.", e);
-            Err(anyhow!("cannot start internal endpoint"))
-        }
-    }
+    Server::builder()
+        .tls_config(server_config)
+        .map_err(|_| anyhow!("TeaclaveFrontendServer tls config error"))?
+        .add_service(TeaclaveAuthenticationInternalServer::new(service))
+        .serve(addr)
+        .await?;
+    Ok(())
 }
 
-fn start_api_endpoint(
+async fn start_api_endpoint(
     addr: std::net::SocketAddr,
     db_client: user_db::DbClient,
     jwt_secret: Vec<u8>,
     attested_tls_config: Arc<RwLock<AttestedTlsConfig>>,
 ) -> Result<()> {
-    let server_config = SgxTrustedTlsServerConfig::from_attested_tls_config(attested_tls_config)?;
-
-    let mut server = SgxTrustedTlsServer::<
-        TeaclaveAuthenticationApiResponse,
-        TeaclaveAuthenticationApiRequest,
-    >::new(addr, server_config);
+    let tls_config =
+        SgxTrustedTlsServerConfig::from_attested_tls_config(attested_tls_config)?.into();
 
     let service = api_service::TeaclaveAuthenticationApiService::new(db_client, jwt_secret);
-
-    match server.start(service) {
-        Ok(_) => Ok(()),
-        Err(e) => {
-            error!("Service exit, error: {}.", e);
-            Err(anyhow!("cannot start API endpoint"))
-        }
-    }
+    Server::builder()
+        .tls_config(tls_config)
+        .map_err(|_| anyhow!("TeaclaveAuthenticationApiServer tls config error"))?
+        .add_service(TeaclaveAuthenticationApiServer::new(service))
+        .serve(addr)
+        .await?;
+    Ok(())
 }
 
-fn start_service(config: &RuntimeConfig) -> Result<()> {
+async fn start_service(config: &RuntimeConfig) -> Result<()> {
     info!("Starting Authentication...");
 
     let enclave_info = EnclaveInfo::verify_and_new(
@@ -146,33 +132,30 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
     }
 
     let client = database.get_client();
-    let api_endpoint_thread_handler = thread::spawn(move || {
-        let _ = start_api_endpoint(
-            api_listen_address,
-            client,
-            api_jwt_secret,
-            attested_tls_config_ref,
-        );
-    });
+    let api_endpoint_thread_handler = tokio::spawn(start_api_endpoint(
+        api_listen_address,
+        client,
+        api_jwt_secret,
+        attested_tls_config_ref,
+    ));
+
     info!(" Starting Authentication: setup API endpoint finished ...");
 
     let client = database.get_client();
-    let internal_endpoint_thread_handler = thread::spawn(move || {
-        let _ = start_internal_endpoint(
-            internal_listen_address,
-            client,
-            internal_jwt_secret,
-            attested_tls_config,
-            accepted_enclave_attrs,
-        );
-    });
+    let internal_endpoint_thread_handler = tokio::spawn(start_internal_endpoint(
+        internal_listen_address,
+        client,
+        internal_jwt_secret,
+        attested_tls_config,
+        accepted_enclave_attrs,
+    ));
     info!(" Starting Authentication: setup Internal endpoint finished ...");
 
-    api_endpoint_thread_handler
-        .join()
+    let _ = api_endpoint_thread_handler
+        .await
         .expect("cannot join API endpoint thread");
-    internal_endpoint_thread_handler
-        .join()
+    let _ = internal_endpoint_thread_handler
+        .await
         .expect("cannot join internal endpoint thread");
 
     info!(" Starting Authentication: start listening ...");
@@ -192,10 +175,16 @@ pub(crate) fn create_platform_admin_user(
 
 #[handle_ecall]
 fn handle_start_service(input: &StartServiceInput) -> TeeServiceResult<StartServiceOutput> {
-    match start_service(&input.config) {
+    let result = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .map_err(|_| TeeServiceError::SgxError)?
+        .block_on(start_service(&input.config));
+
+    match result {
         Ok(_) => Ok(StartServiceOutput),
         Err(e) => {
-            log::error!("Failed to start the service: {}", e);
+            error!("Failed to run service: {}", e);
             Err(TeeServiceError::ServiceError)
         }
     }
@@ -226,7 +215,7 @@ pub mod tests {
     use teaclave_test_utils::*;
 
     pub fn run_tests() -> bool {
-        run_tests!(
+        run_async_tests!(
             api_service::tests::test_user_login,
             api_service::tests::test_user_register,
             api_service::tests::test_user_update,

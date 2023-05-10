@@ -17,10 +17,9 @@
 
 use crate::teaclave_management_service_proto as proto;
 
-pub use proto::TeaclaveManagement;
-pub use proto::TeaclaveManagementClient;
-pub use proto::TeaclaveManagementRequest;
-pub use proto::TeaclaveManagementResponse;
+pub use proto::teaclave_management_client::TeaclaveManagementClient;
+pub use proto::teaclave_management_server::TeaclaveManagement;
+pub use proto::teaclave_management_server::TeaclaveManagementServer;
 
 pub type RegisterInputFileRequest = crate::teaclave_frontend_service::RegisterInputFileRequest;
 pub type UpdateInputFileRequest = crate::teaclave_frontend_service::UpdateInputFileRequest;

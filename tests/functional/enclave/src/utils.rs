@@ -17,7 +17,6 @@
 
 use anyhow::Result;
 use lazy_static::lazy_static;
-use std::collections::HashMap;
 use teaclave_attestation::verifier;
 use teaclave_config::build::AS_ROOT_CA_CERT;
 use teaclave_config::RuntimeConfig;
@@ -28,160 +27,192 @@ use teaclave_proto::teaclave_frontend_service::*;
 use teaclave_proto::teaclave_management_service::*;
 use teaclave_proto::teaclave_scheduler_service::*;
 use teaclave_proto::teaclave_storage_service::*;
-use teaclave_rpc::config::SgxTrustedTlsClientConfig;
-use teaclave_rpc::endpoint::Endpoint;
+use teaclave_rpc::transport::{Channel, ClientTlsConfig, Uri};
+use teaclave_rpc::CredentialService;
 use teaclave_types::*;
 
 macro_rules! impl_get_internal_service_client_fn {
-    ($service_name:ident, $fn_name:ident, $return:ident) => {
-        pub(crate) fn $fn_name(username: &str) -> $return {
+    ($service_name:ident, $fn_name:ident, $return:ty) => {
+        pub(crate) async fn $fn_name(username: &str) -> $return {
             let runtime_config = RuntimeConfig::from_toml("runtime.config.toml").expect("runtime");
             let address = runtime_config
                 .internal_endpoints
                 .$service_name
                 .advertised_address;
-            let channel = Endpoint::new(&address).connect().unwrap();
-            let metadata = hashmap!(
-                "id" => username,
-                "token" => "",
-                "role" => "PlatformAdmin"
-            );
-            $return::new_with_metadata(channel, metadata).unwrap()
+            let dst = address.parse::<Uri>().unwrap();
+            let dst = if dst.scheme().is_none() {
+                format!("https://{}", address).parse().unwrap()
+            } else {
+                dst
+            };
+            let endpoint = Channel::builder(dst);
+            let tls_config = teaclave_rpc::config::SgxTrustedTlsClientConfig::new().into();
+            let channel = endpoint
+                .tls_config(tls_config)
+                .unwrap()
+                .connect()
+                .await
+                .unwrap();
+            let cred =
+                teaclave_rpc::UserCredential::with_role(username, "", UserRole::PlatformAdmin);
+            <$return>::new(teaclave_rpc::InterceptedService::new(channel, cred))
         }
     };
 }
 
-impl_get_internal_service_client_fn!(management, get_management_client, TeaclaveManagementClient);
+impl_get_internal_service_client_fn!(
+    management,
+    get_management_client,
+    TeaclaveManagementClient<CredentialService>
+);
 impl_get_internal_service_client_fn!(
     scheduler,
     get_scheduler_client_internal,
-    TeaclaveSchedulerClient
+    TeaclaveSchedulerClient<CredentialService>
 );
-impl_get_internal_service_client_fn!(storage, get_storage_client_internal, TeaclaveStorageClient);
+impl_get_internal_service_client_fn!(
+    storage,
+    get_storage_client_internal,
+    TeaclaveStorageClient<CredentialService>
+);
 impl_get_internal_service_client_fn!(
     access_control,
     get_access_control_client_internal,
-    TeaclaveAccessControlClient
+    TeaclaveAccessControlClient<CredentialService>
 );
 
-pub fn get_scheduler_client() -> TeaclaveSchedulerClient {
-    get_scheduler_client_internal("mock_user")
+pub async fn get_scheduler_client() -> TeaclaveSchedulerClient<CredentialService> {
+    get_scheduler_client_internal("mock_user").await
 }
 
-pub fn get_storage_client() -> TeaclaveStorageClient {
-    get_storage_client_internal("mock_user")
+pub async fn get_storage_client() -> TeaclaveStorageClient<CredentialService> {
+    get_storage_client_internal("mock_user").await
 }
 
-pub fn get_access_control_client() -> TeaclaveAccessControlClient {
-    get_access_control_client_internal("mock_user")
+pub async fn get_access_control_client() -> TeaclaveAccessControlClient<CredentialService> {
+    get_access_control_client_internal("mock_user").await
 }
 
 pub const CONFIG_FILE: &str = "runtime.config.toml";
-pub const AUTH_SERVICE_ADDR: &str = "localhost:7776";
-pub const FRONTEND_SERVICE_ADDR: &str = "localhost:7777";
+pub const AUTH_SERVICE_ADDR: &str = "https://localhost:7776";
+pub const FRONTEND_SERVICE_ADDR: &str = "https://localhost:7777";
 
 lazy_static! {
     static ref ENCLAVE_INFO: EnclaveInfo = {
         let runtime_config = RuntimeConfig::from_toml(CONFIG_FILE).expect("runtime config");
         EnclaveInfo::from_bytes(&runtime_config.audit.enclave_info_bytes)
     };
-    static ref ADMIN_CREDENTIAL: UserCredential = {
-        let mut api_client =
-            create_authentication_api_client(shared_enclave_info(), AUTH_SERVICE_ADDR).unwrap();
-        login(&mut api_client, "admin", "teaclave").unwrap()
-    };
+}
+
+pub async fn get_api_client_with_admin_credential(
+) -> TeaclaveAuthenticationApiClient<CredentialService> {
+    create_authentication_api_client_with_credential(
+        shared_enclave_info(),
+        AUTH_SERVICE_ADDR,
+        "admin",
+        "teaclave",
+    )
+    .await
+    .unwrap()
 }
 
 pub fn shared_enclave_info() -> &'static EnclaveInfo {
     &ENCLAVE_INFO
 }
 
-pub fn shared_admin_credential() -> &'static UserCredential {
-    &ADMIN_CREDENTIAL
-}
-
 pub fn create_client_config(
     enclave_info: &EnclaveInfo,
     service_name: &str,
-) -> Result<SgxTrustedTlsClientConfig> {
+) -> Result<ClientTlsConfig> {
     let enclave_attr = enclave_info
         .get_enclave_attr(service_name)
         .expect("enclave attr");
-    let config = SgxTrustedTlsClientConfig::new().attestation_report_verifier(
-        vec![enclave_attr],
-        AS_ROOT_CA_CERT,
-        verifier::universal_quote_verifier,
-    );
+    let config = teaclave_rpc::config::SgxTrustedTlsClientConfig::new()
+        .attestation_report_verifier(
+            vec![enclave_attr],
+            AS_ROOT_CA_CERT,
+            verifier::universal_quote_verifier,
+        )
+        .into();
     Ok(config)
 }
 
-pub fn create_frontend_client(
+pub async fn create_frontend_client(
     enclave_info: &EnclaveInfo,
     service_addr: &str,
     cred: UserCredential,
-) -> Result<TeaclaveFrontendClient> {
+) -> Result<TeaclaveFrontendClient<CredentialService>> {
     let tls_config = create_client_config(enclave_info, "teaclave_frontend_service")?;
-    let channel = Endpoint::new(service_addr).config(tls_config).connect()?;
-
-    let mut metadata = HashMap::new();
-    metadata.insert("id".to_string(), cred.id);
-    metadata.insert("token".to_string(), cred.token);
-
-    let client = TeaclaveFrontendClient::new_with_metadata(channel, metadata)?;
+    let endpoint = Channel::builder(service_addr.parse::<Uri>()?);
+    let channel = endpoint
+        .tls_config(tls_config)
+        .unwrap()
+        .connect()
+        .await
+        .unwrap();
+    let cred = teaclave_rpc::UserCredential::new(cred.id, cred.token);
+    let client = TeaclaveFrontendClient::with_interceptor(channel, cred);
     Ok(client)
 }
 
-pub fn create_authentication_api_client(
+pub async fn create_authentication_api_client(
     enclave_info: &EnclaveInfo,
     service_addr: &str,
-) -> Result<TeaclaveAuthenticationApiClient> {
+) -> Result<TeaclaveAuthenticationApiClient<CredentialService>> {
     let tls_config = create_client_config(enclave_info, "teaclave_authentication_service")?;
-    let channel = Endpoint::new(service_addr).config(tls_config).connect()?;
-
-    let client = TeaclaveAuthenticationApiClient::new(channel)?;
+    let endpoint = Channel::builder(service_addr.parse::<Uri>()?);
+    let channel = endpoint.tls_config(tls_config).unwrap().connect_lazy();
+    let client = TeaclaveAuthenticationApiClient::with_interceptor(
+        channel,
+        teaclave_rpc::UserCredential::default(),
+    );
     Ok(client)
 }
 
-pub fn create_authentication_api_client_with_credential(
+pub async fn create_authentication_api_client_with_credential(
     enclave_info: &EnclaveInfo,
     service_addr: &str,
-    cred: &UserCredential,
-) -> Result<TeaclaveAuthenticationApiClient> {
+    username: &str,
+    password: &str,
+) -> Result<TeaclaveAuthenticationApiClient<CredentialService>> {
     let tls_config = create_client_config(enclave_info, "teaclave_authentication_service")?;
-    let channel = Endpoint::new(service_addr).config(tls_config).connect()?;
+    let endpoint = Channel::builder(service_addr.parse::<Uri>()?);
+    let channel = endpoint
+        .tls_config(tls_config)
+        .unwrap()
+        .connect()
+        .await
+        .unwrap();
 
-    let mut metadata = HashMap::new();
-    metadata.insert("id".to_string(), cred.id.to_owned());
-    metadata.insert("token".to_string(), cred.token.to_owned());
-    let client = TeaclaveAuthenticationApiClient::new_with_metadata(channel, metadata)?;
+    let mut client = TeaclaveAuthenticationApiClient::new(channel.clone());
+    let request = UserLoginRequest::new(username, password);
+    let token = client.user_login(request).await?.into_inner().token;
+    let cred = teaclave_rpc::UserCredential::new(username, token);
+    let client = TeaclaveAuthenticationApiClient::with_interceptor(channel, cred);
     Ok(client)
 }
 
-pub fn register_new_account(
-    api_client: &mut TeaclaveAuthenticationApiClient,
+pub async fn register_new_account(
+    api_client: &mut TeaclaveAuthenticationApiClient<CredentialService>,
     username: &str,
     password: &str,
     role: &str,
     attribute: &str,
 ) -> Result<()> {
     let request = UserRegisterRequest::new(username, password, role, attribute);
-    let response = api_client.user_register(request)?;
-
+    let response = api_client.user_register(request).await;
     log::debug!("User register: {:?}", response);
-
     Ok(())
 }
 
-pub fn login(
-    api_client: &mut TeaclaveAuthenticationApiClient,
+pub async fn login(
+    api_client: &mut TeaclaveAuthenticationApiClient<CredentialService>,
     username: &str,
     password: &str,
 ) -> Result<UserCredential> {
     let request = UserLoginRequest::new(username, password);
-    let response = api_client.user_login(request)?;
-
+    let response = api_client.user_login(request).await?.into_inner();
     log::debug!("User login: {:?}", response);
-
     Ok(UserCredential::new(username, response.token))
 }
 
@@ -192,17 +223,13 @@ pub const USERNAME3: &str = "frontend_user3";
 
 pub const TEST_PASSWORD: &str = "test_password";
 
-pub fn setup() {
+pub async fn setup() {
     // Register user for the first time
-    let mut api_client = create_authentication_api_client_with_credential(
-        shared_enclave_info(),
-        AUTH_SERVICE_ADDR,
-        shared_admin_credential(),
-    )
-    .unwrap();
+    let mut api_client = get_api_client_with_admin_credential().await;
 
     // Ignore error if register failed.
     for uname in vec![USERNAME, USERNAME1, USERNAME2, USERNAME3].iter() {
-        let _ = register_new_account(&mut api_client, uname, TEST_PASSWORD, "PlatformAdmin", "");
+        let _ =
+            register_new_account(&mut api_client, uname, TEST_PASSWORD, "PlatformAdmin", "").await;
     }
 }

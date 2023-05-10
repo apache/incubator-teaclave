@@ -15,7 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use teaclave_types::TeaclaveServiceResponseError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -24,8 +23,8 @@ pub(crate) enum TeaclavAccessControlError {
     AccessControlError,
 }
 
-impl From<TeaclavAccessControlError> for TeaclaveServiceResponseError {
+impl From<TeaclavAccessControlError> for teaclave_rpc::Status {
     fn from(error: TeaclavAccessControlError) -> Self {
-        TeaclaveServiceResponseError::RequestError(error.to_string())
+        teaclave_rpc::Status::permission_denied(error.to_string())
     }
 }

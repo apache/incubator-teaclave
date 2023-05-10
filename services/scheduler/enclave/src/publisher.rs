@@ -25,57 +25,31 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
-use teaclave_proto::teaclave_scheduler_service::*;
-use teaclave_proto::teaclave_storage_service::*;
-use teaclave_rpc::endpoint::Endpoint;
-use teaclave_rpc::Request;
-use teaclave_service_enclave_utils::teaclave_service;
-use teaclave_types::{
-    StagedTask, Storable, TeaclaveServiceResponseError, TeaclaveServiceResponseResult,
-};
-
 use anyhow::anyhow;
 use anyhow::Result;
+use teaclave_proto::teaclave_scheduler_service::*;
+use teaclave_proto::teaclave_storage_service::*;
+use teaclave_rpc::transport::{channel::Endpoint, Channel};
+use teaclave_rpc::Request;
+use teaclave_types::{StagedTask, Storable, TeaclaveServiceResponseResult};
 use thiserror::Error;
 
 #[derive(Clone)]
 pub(crate) struct PublisherService {
-    storage_client: Arc<Mutex<TeaclaveStorageClient>>,
-    scheduler_client: Arc<Mutex<TeaclaveSchedulerClient>>,
+    storage_client: Arc<Mutex<TeaclaveStorageClient<Channel>>>,
+    scheduler_client: Arc<Mutex<TeaclaveSchedulerClient<Channel>>>,
 }
 
 impl PublisherService {
-    pub(crate) fn new(
+    pub(crate) async fn new(
         storage_service_endpoint: Endpoint,
         scheduler_service_endpoint: Endpoint,
     ) -> Result<Self> {
-        let mut i = 0;
-        let channel = loop {
-            match storage_service_endpoint.connect() {
-                Ok(channel) => break channel,
-                Err(_) => {
-                    anyhow::ensure!(i < 10, "failed to connect to storage service");
-                    log::debug!("Failed to connect to storage service, retry {}", i);
-                    i += 1;
-                }
-            }
-            std::thread::sleep(std::time::Duration::from_secs(3));
-        };
-        let storage_client = Arc::new(Mutex::new(TeaclaveStorageClient::new(channel)?));
+        let channel = storage_service_endpoint.connect().await?;
+        let storage_client = Arc::new(Mutex::new(TeaclaveStorageClient::new(channel)));
+        let channel = scheduler_service_endpoint.connect().await?;
 
-        let mut i = 0;
-        let channel = loop {
-            match scheduler_service_endpoint.connect() {
-                Ok(channel) => break channel,
-                Err(_) => {
-                    anyhow::ensure!(i < 10, "failed to connect to storage service");
-                    log::debug!("Failed to connect to storage service, retry {}", i);
-                    i += 1;
-                }
-            }
-            std::thread::sleep(std::time::Duration::from_secs(1));
-        };
-        let scheduler_client = Arc::new(Mutex::new(TeaclaveSchedulerClient::new(channel)?));
+        let scheduler_client = Arc::new(Mutex::new(TeaclaveSchedulerClient::new(channel)));
 
         let service = Self {
             storage_client,

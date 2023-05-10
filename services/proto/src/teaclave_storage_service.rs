@@ -15,31 +15,20 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use anyhow::{Error, Result};
-
 use crate::teaclave_storage_service_proto as proto;
-pub use proto::TeaclaveStorage;
-pub use proto::TeaclaveStorageClient;
-pub use proto::TeaclaveStorageRequest;
-pub use proto::TeaclaveStorageResponse;
-use teaclave_rpc::into_request;
-
-#[into_request(TeaclaveStorageRequest::Get)]
-#[derive(Debug)]
-pub struct GetRequest {
-    pub key: Vec<u8>,
-}
+pub use proto::teaclave_storage_client::TeaclaveStorageClient;
+pub use proto::teaclave_storage_server::TeaclaveStorage;
+pub use proto::teaclave_storage_server::TeaclaveStorageServer;
+pub use proto::{
+    DeleteRequest, DeleteResponse, DequeueRequest, DequeueResponse, EnqueueRequest,
+    EnqueueResponse, GetKeysByPrefixRequest, GetKeysByPrefixResponse, GetRequest, GetResponse,
+    PutRequest, PutResponse,
+};
 
 impl GetRequest {
     pub fn new(key: impl Into<Vec<u8>>) -> Self {
         Self { key: key.into() }
     }
-}
-
-#[into_request(TeaclaveStorageResponse::Get)]
-#[derive(Debug)]
-pub struct GetResponse {
-    pub value: Vec<u8>,
 }
 
 impl GetResponse {
@@ -48,13 +37,6 @@ impl GetResponse {
             value: value.into(),
         }
     }
-}
-
-#[into_request(TeaclaveStorageRequest::Put)]
-#[derive(Debug)]
-pub struct PutRequest {
-    pub key: Vec<u8>,
-    pub value: Vec<u8>,
 }
 
 impl PutRequest {
@@ -66,31 +48,10 @@ impl PutRequest {
     }
 }
 
-#[into_request(TeaclaveStorageResponse::Put)]
-#[derive(Debug, Default)]
-pub struct PutResponse;
-
-#[into_request(TeaclaveStorageRequest::Delete)]
-#[derive(Debug)]
-pub struct DeleteRequest {
-    pub key: Vec<u8>,
-}
-
 impl DeleteRequest {
     pub fn new(key: impl Into<Vec<u8>>) -> Self {
         Self { key: key.into() }
     }
-}
-
-#[into_request(TeaclaveStorageResponse::Delete)]
-#[derive(Debug, Default)]
-pub struct DeleteResponse;
-
-#[into_request(TeaclaveStorageRequest::Enqueue)]
-#[derive(Debug)]
-pub struct EnqueueRequest {
-    pub key: Vec<u8>,
-    pub value: Vec<u8>,
 }
 
 impl EnqueueRequest {
@@ -102,26 +63,10 @@ impl EnqueueRequest {
     }
 }
 
-#[into_request(TeaclaveStorageResponse::Enqueue)]
-#[derive(Debug, Default)]
-pub struct EnqueueResponse;
-
-#[into_request(TeaclaveStorageRequest::Dequeue)]
-#[derive(Debug)]
-pub struct DequeueRequest {
-    pub key: Vec<u8>,
-}
-
 impl DequeueRequest {
     pub fn new(key: impl Into<Vec<u8>>) -> Self {
         Self { key: key.into() }
     }
-}
-
-#[into_request(TeaclaveStorageResponse::Dequeue)]
-#[derive(Debug)]
-pub struct DequeueResponse {
-    pub value: Vec<u8>,
 }
 
 impl DequeueResponse {
@@ -132,12 +77,6 @@ impl DequeueResponse {
     }
 }
 
-#[into_request(TeaclaveStorageRequest::GetKeysByPrefix)]
-#[derive(Debug)]
-pub struct GetKeysByPrefixRequest {
-    pub prefix: Vec<u8>,
-}
-
 impl GetKeysByPrefixRequest {
     pub fn new(prefix: impl Into<Vec<u8>>) -> Self {
         Self {
@@ -146,218 +85,31 @@ impl GetKeysByPrefixRequest {
     }
 }
 
-#[into_request(TeaclaveStorageResponse::GetKeysByPrefix)]
-#[derive(Default, Debug)]
-pub struct GetKeysByPrefixResponse {
-    pub keys: Vec<Vec<u8>>,
-}
-
 impl GetKeysByPrefixResponse {
     pub fn new(keys: Vec<Vec<u8>>) -> Self {
         Self { keys }
     }
 }
 
-impl std::convert::TryFrom<proto::GetRequest> for GetRequest {
-    type Error = Error;
-
-    fn try_from(proto: proto::GetRequest) -> Result<Self> {
-        let ret = Self { key: proto.key };
-
-        Ok(ret)
-    }
+#[derive(Clone, serde::Serialize, serde::Deserialize, Debug)]
+#[serde(rename_all = "snake_case")]
+pub enum TeaclaveStorageRequest {
+    Get(GetRequest),
+    Put(PutRequest),
+    Delete(DeleteRequest),
+    Enqueue(EnqueueRequest),
+    Dequeue(DequeueRequest),
+    GetKeysByPrefix(GetKeysByPrefixRequest),
 }
 
-impl From<GetRequest> for proto::GetRequest {
-    fn from(request: GetRequest) -> Self {
-        Self { key: request.key }
-    }
-}
-
-impl std::convert::TryFrom<proto::GetResponse> for GetResponse {
-    type Error = Error;
-
-    fn try_from(proto: proto::GetResponse) -> Result<Self> {
-        let ret = Self { value: proto.value };
-
-        Ok(ret)
-    }
-}
-
-impl From<GetResponse> for proto::GetResponse {
-    fn from(response: GetResponse) -> Self {
-        Self {
-            value: response.value,
-        }
-    }
-}
-
-impl std::convert::TryFrom<proto::PutRequest> for PutRequest {
-    type Error = Error;
-
-    fn try_from(proto: proto::PutRequest) -> Result<Self> {
-        let ret = Self {
-            key: proto.key,
-            value: proto.value,
-        };
-
-        Ok(ret)
-    }
-}
-
-impl From<PutRequest> for proto::PutRequest {
-    fn from(request: PutRequest) -> Self {
-        Self {
-            key: request.key,
-            value: request.value,
-        }
-    }
-}
-
-impl std::convert::TryFrom<proto::PutResponse> for PutResponse {
-    type Error = Error;
-
-    fn try_from(_proto: proto::PutResponse) -> Result<Self> {
-        Ok(Self {})
-    }
-}
-
-impl From<PutResponse> for proto::PutResponse {
-    fn from(_response: PutResponse) -> Self {
-        Self {}
-    }
-}
-
-impl std::convert::TryFrom<proto::DeleteRequest> for DeleteRequest {
-    type Error = Error;
-
-    fn try_from(proto: proto::DeleteRequest) -> Result<Self> {
-        let ret = Self { key: proto.key };
-
-        Ok(ret)
-    }
-}
-
-impl From<DeleteRequest> for proto::DeleteRequest {
-    fn from(request: DeleteRequest) -> Self {
-        Self { key: request.key }
-    }
-}
-
-impl std::convert::TryFrom<proto::DeleteResponse> for DeleteResponse {
-    type Error = Error;
-
-    fn try_from(_proto: proto::DeleteResponse) -> Result<Self> {
-        Ok(Self {})
-    }
-}
-
-impl From<DeleteResponse> for proto::DeleteResponse {
-    fn from(_response: DeleteResponse) -> Self {
-        Self {}
-    }
-}
-
-impl std::convert::TryFrom<proto::EnqueueRequest> for EnqueueRequest {
-    type Error = Error;
-
-    fn try_from(proto: proto::EnqueueRequest) -> Result<Self> {
-        let ret = Self {
-            key: proto.key,
-            value: proto.value,
-        };
-
-        Ok(ret)
-    }
-}
-
-impl From<EnqueueRequest> for proto::EnqueueRequest {
-    fn from(request: EnqueueRequest) -> Self {
-        Self {
-            key: request.key,
-            value: request.value,
-        }
-    }
-}
-
-impl std::convert::TryFrom<proto::EnqueueResponse> for EnqueueResponse {
-    type Error = Error;
-
-    fn try_from(_proto: proto::EnqueueResponse) -> Result<Self> {
-        Ok(Self {})
-    }
-}
-
-impl From<EnqueueResponse> for proto::EnqueueResponse {
-    fn from(_response: EnqueueResponse) -> Self {
-        Self {}
-    }
-}
-
-impl std::convert::TryFrom<proto::DequeueRequest> for DequeueRequest {
-    type Error = Error;
-
-    fn try_from(proto: proto::DequeueRequest) -> Result<Self> {
-        let ret = Self { key: proto.key };
-
-        Ok(ret)
-    }
-}
-
-impl From<DequeueRequest> for proto::DequeueRequest {
-    fn from(request: DequeueRequest) -> Self {
-        Self { key: request.key }
-    }
-}
-
-impl std::convert::TryFrom<proto::DequeueResponse> for DequeueResponse {
-    type Error = Error;
-
-    fn try_from(proto: proto::DequeueResponse) -> Result<Self> {
-        Ok(Self { value: proto.value })
-    }
-}
-
-impl From<DequeueResponse> for proto::DequeueResponse {
-    fn from(response: DequeueResponse) -> Self {
-        Self {
-            value: response.value,
-        }
-    }
-}
-
-impl std::convert::TryFrom<proto::GetKeysByPrefixRequest> for GetKeysByPrefixRequest {
-    type Error = Error;
-
-    fn try_from(proto: proto::GetKeysByPrefixRequest) -> Result<Self> {
-        let ret = Self {
-            prefix: proto.prefix,
-        };
-
-        Ok(ret)
-    }
-}
-
-impl From<GetKeysByPrefixRequest> for proto::GetKeysByPrefixRequest {
-    fn from(request: GetKeysByPrefixRequest) -> Self {
-        Self {
-            prefix: request.prefix,
-        }
-    }
-}
-
-impl std::convert::TryFrom<proto::GetKeysByPrefixResponse> for GetKeysByPrefixResponse {
-    type Error = Error;
-
-    fn try_from(proto: proto::GetKeysByPrefixResponse) -> Result<Self> {
-        Ok(Self { keys: proto.keys })
-    }
-}
-
-impl From<GetKeysByPrefixResponse> for proto::GetKeysByPrefixResponse {
-    fn from(response: GetKeysByPrefixResponse) -> Self {
-        Self {
-            keys: response.keys,
-        }
-    }
+#[allow(clippy::large_enum_variant)]
+#[derive(Clone, serde::Serialize, serde::Deserialize, Debug)]
+#[serde(tag = "response", content = "content", rename_all = "snake_case")]
+pub enum TeaclaveStorageResponse {
+    Get(GetResponse),
+    Put(PutResponse),
+    Delete(DeleteResponse),
+    Enqueue(EnqueueResponse),
+    Dequeue(DequeueResponse),
+    GetKeysByPrefix(GetKeysByPrefixResponse),
 }

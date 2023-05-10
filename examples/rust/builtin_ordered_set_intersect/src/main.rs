@@ -64,7 +64,7 @@ impl PlatformAdmin {
         let bytes = fs::read(AS_ROOT_CA_CERT_PATH)?;
         let as_root_ca_cert = pem::parse(bytes)?.contents;
         let mut client = teaclave_client_sdk::AuthenticationService::connect(
-            "localhost:7776",
+            "https://localhost:7776",
             &enclave_info,
             &as_root_ca_cert,
         )?;
@@ -91,7 +91,7 @@ impl Client {
         let bytes = fs::read(AS_ROOT_CA_CERT_PATH)?;
         let as_root_ca_cert = pem::parse(bytes)?.contents;
         let mut client = teaclave_client_sdk::AuthenticationService::connect(
-            "localhost:7776",
+            "https://localhost:7776",
             &enclave_info,
             &as_root_ca_cert,
         )?;
@@ -102,7 +102,7 @@ impl Client {
         let token = client.user_login(&user_data.user_id, &user_data.user_password)?;
 
         let mut client = teaclave_client_sdk::FrontendService::connect(
-            "localhost:7777",
+            "https://localhost:7777",
             &enclave_info,
             &as_root_ca_cert,
         )?;
