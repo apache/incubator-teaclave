@@ -15,20 +15,19 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use anyhow::Result;
+use anyhow::{bail, Result};
 use std::collections::HashMap;
-use std::convert::TryInto;
+use std::convert::{TryFrom, TryInto};
 use teaclave_attestation::verifier;
 use teaclave_proto::teaclave_authentication_service::TeaclaveAuthenticationApiClient;
-use teaclave_proto::teaclave_authentication_service_proto as authentication_proto;
 use teaclave_proto::teaclave_frontend_service::TeaclaveFrontendClient;
-use teaclave_proto::teaclave_frontend_service_proto as frontend_proto;
-use teaclave_rpc::config::SgxTrustedTlsClientConfig;
-use teaclave_rpc::endpoint::Endpoint;
+use teaclave_rpc::transport::{Channel, Uri};
+use teaclave_rpc::{config::SgxTrustedTlsClientConfig, CredentialService, UserCredential};
 use teaclave_types::FileAuthTag;
+use tokio::runtime::Runtime;
 use url::Url;
 
-pub use teaclave_proto::teaclave_authentication_service::{
+use teaclave_proto::teaclave_authentication_service_proto::{
     UserLoginRequest, UserLoginResponse, UserRegisterRequest, UserRegisterResponse,
 };
 pub use teaclave_proto::teaclave_frontend_service::GetFunctionResponse as Function;
@@ -48,38 +47,49 @@ pub use teaclave_types::{
 
 pub mod bindings;
 
+// This macro is intended for use cases where you are invoking from synchronous code to asynchronous code.
+macro_rules! do_request_with_credential {
+    ($client:ident,$fun:ident,$request:ident) => {{
+        let response = $client.rt.block_on($client.client.$fun($request))?;
+        Ok(response.into_inner())
+    }};
+}
+
 pub struct AuthenticationClient {
-    api_client: TeaclaveAuthenticationApiClient,
+    client: TeaclaveAuthenticationApiClient<CredentialService>,
+    rt: Runtime,
+    channel: Channel,
 }
 
 pub struct AuthenticationService;
 
 impl AuthenticationClient {
-    pub fn new(api_client: TeaclaveAuthenticationApiClient) -> Self {
-        Self { api_client }
+    pub fn new(channel: Channel, rt: Runtime) -> Self {
+        Self {
+            client: TeaclaveAuthenticationApiClient::with_interceptor(
+                channel.clone(),
+                UserCredential::default(),
+            ),
+            channel,
+            rt,
+        }
     }
 
     pub fn set_credential(&mut self, id: &str, token: &str) {
-        let mut metadata = HashMap::new();
-        metadata.insert("id".to_string(), id.to_string());
-        metadata.insert("token".to_string(), token.to_string());
-        self.api_client.set_metadata(metadata);
+        let cred = UserCredential::new(id, token);
+        self.client = TeaclaveAuthenticationApiClient::with_interceptor(self.channel.clone(), cred);
     }
 
     pub fn user_register_with_request(
         &mut self,
         request: UserRegisterRequest,
     ) -> Result<UserRegisterResponse> {
-        let response = self.api_client.user_register(request)?;
-
-        Ok(response)
+        do_request_with_credential!(self, user_register, request)
     }
 
     pub fn user_register_serialized(&mut self, serialized_request: &str) -> Result<String> {
-        let request: authentication_proto::UserRegisterRequest =
-            serde_json::from_str(serialized_request)?;
-        let response: authentication_proto::UserRegisterResponse =
-            self.user_register_with_request(request.try_into()?)?.into();
+        let request = serde_json::from_str(serialized_request)?;
+        let response = self.user_register_with_request(request)?;
         let serialized_response = serde_json::to_string(&response)?;
 
         Ok(serialized_response)
@@ -102,16 +112,13 @@ impl AuthenticationClient {
         &mut self,
         request: UserLoginRequest,
     ) -> Result<UserLoginResponse> {
-        let response = self.api_client.user_login(request)?;
-
-        Ok(response)
+        let response = self.rt.block_on(self.client.user_login(request))?;
+        Ok(response.into_inner())
     }
 
     pub fn user_login_serialized(&mut self, serialized_request: &str) -> Result<String> {
-        let request: authentication_proto::UserLoginRequest =
-            serde_json::from_str(serialized_request)?;
-        let response: authentication_proto::UserLoginResponse =
-            self.user_login_with_request(request.try_into()?)?.into();
+        let request = serde_json::from_str(serialized_request)?;
+        let response = self.user_login_with_request(request)?;
         let serialized_response = serde_json::to_string(&response)?;
 
         Ok(serialized_response)
@@ -134,15 +141,31 @@ impl AuthenticationService {
         let enclave_attr = enclave_info
             .get_enclave_attr("teaclave_authentication_service")
             .expect("enclave attr");
-        let config = SgxTrustedTlsClientConfig::new().attestation_report_verifier(
-            vec![enclave_attr],
-            as_root_ca_cert,
-            verifier::universal_quote_verifier,
-        );
-        let channel = Endpoint::new(url).config(config).connect()?;
-        let client = TeaclaveAuthenticationApiClient::new(channel)?;
-
-        Ok(AuthenticationClient::new(client))
+        let tls_config = SgxTrustedTlsClientConfig::new()
+            .attestation_report_verifier(
+                vec![enclave_attr],
+                as_root_ca_cert,
+                verifier::universal_quote_verifier,
+            )
+            .into();
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        let dst = url.parse::<Uri>()?;
+        if dst.scheme().is_none() {
+            bail!("Invaild Uri: no scheme");
+        }
+        let endpoint = Channel::builder(dst);
+        let client = rt.block_on(async {
+            endpoint
+                .tls_config(tls_config)
+                .unwrap()
+                .connect()
+                .await
+                .unwrap()
+        });
+        Ok(AuthenticationClient::new(client, rt))
     }
 }
 
@@ -158,40 +181,65 @@ impl FrontendService {
         let enclave_attr = enclave_info
             .get_enclave_attr("teaclave_frontend_service")
             .expect("enclave attr");
-        let config = SgxTrustedTlsClientConfig::new().attestation_report_verifier(
-            vec![enclave_attr],
-            as_root_ca_cert,
-            verifier::universal_quote_verifier,
-        );
-        let channel = Endpoint::new(url).config(config).connect()?;
-        let client = TeaclaveFrontendClient::new(channel)?;
+        let tls_config = teaclave_rpc::config::SgxTrustedTlsClientConfig::new()
+            .attestation_report_verifier(
+                vec![enclave_attr],
+                as_root_ca_cert,
+                verifier::universal_quote_verifier,
+            )
+            .into();
 
-        Ok(FrontendClient::new(client))
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        let dst = url.parse::<Uri>()?;
+        if dst.scheme().is_none() {
+            bail!("Invaild Uri: no scheme");
+        }
+
+        let endpoint = Channel::builder(dst);
+        let client = rt.block_on(async {
+            let channel = endpoint
+                .tls_config(tls_config)
+                .unwrap()
+                .connect()
+                .await
+                .unwrap();
+            channel
+        });
+
+        Ok(FrontendClient::new(client, rt))
     }
 }
 
 pub struct FrontendClient {
-    api_client: TeaclaveFrontendClient,
+    client: TeaclaveFrontendClient<CredentialService>,
+    rt: Runtime,
+    channel: Channel,
 }
 
 impl FrontendClient {
-    pub fn new(api_client: TeaclaveFrontendClient) -> Self {
-        Self { api_client }
+    pub fn new(channel: Channel, rt: Runtime) -> Self {
+        Self {
+            client: TeaclaveFrontendClient::with_interceptor(
+                channel.clone(),
+                UserCredential::default(),
+            ),
+            channel,
+            rt,
+        }
     }
 
+    // The id in AuthenticationServiceRequest is the username.
     pub fn set_credential(&mut self, id: &str, token: &str) {
-        let mut metadata = HashMap::new();
-        metadata.insert("id".to_string(), id.to_string());
-        metadata.insert("token".to_string(), token.to_string());
-        self.api_client.set_metadata(metadata);
+        let cred = UserCredential::new(id, token);
+        self.client = TeaclaveFrontendClient::with_interceptor(self.channel.clone(), cred);
     }
 
     pub fn register_function_serialized(&mut self, serialized_request: &str) -> Result<String> {
-        let request: frontend_proto::RegisterFunctionRequest =
-            serde_json::from_str(serialized_request)?;
-        let response: frontend_proto::RegisterFunctionResponse = self
-            .register_function_with_request(request.try_into()?)?
-            .into();
+        let request = serde_json::from_str(serialized_request)?;
+        let response = self.register_function_with_request(request)?;
         let serialized_response = serde_json::to_string(&response)?;
 
         Ok(serialized_response)
@@ -201,9 +249,7 @@ impl FrontendClient {
         &mut self,
         request: RegisterFunctionRequest,
     ) -> Result<RegisterFunctionResponse> {
-        let response = self.api_client.register_function(request)?;
-
-        Ok(response)
+        do_request_with_credential!(self, register_function, request)
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -244,22 +290,19 @@ impl FrontendClient {
         let request = builder.build();
         let response = self.register_function_with_request(request)?;
 
-        Ok(response.function_id.to_string())
+        Ok(response.function_id)
     }
 
     pub fn get_function_with_request(
         &mut self,
         request: GetFunctionRequest,
     ) -> Result<GetFunctionResponse> {
-        let response = self.api_client.get_function(request)?;
-
-        Ok(response)
+        do_request_with_credential!(self, get_function, request)
     }
 
     pub fn get_function_serialized(&mut self, serialized_request: &str) -> Result<String> {
-        let request: frontend_proto::GetFunctionRequest = serde_json::from_str(serialized_request)?;
-        let response: frontend_proto::GetFunctionResponse =
-            self.get_function_with_request(request.try_into()?)?.into();
+        let request = serde_json::from_str(serialized_request)?;
+        let response = self.get_function_with_request(request)?;
         let serialized_response = serde_json::to_string(&response)?;
 
         Ok(serialized_response)
@@ -277,11 +320,8 @@ impl FrontendClient {
         &mut self,
         serialized_request: &str,
     ) -> Result<String> {
-        let request: frontend_proto::GetFunctionUsageStatsRequest =
-            serde_json::from_str(serialized_request)?;
-        let response: frontend_proto::GetFunctionUsageStatsResponse = self
-            .get_function_usage_stats_with_request(request.try_into()?)?
-            .into();
+        let request = serde_json::from_str(serialized_request)?;
+        let response = self.get_function_usage_stats_with_request(request)?;
         let serialized_response = serde_json::to_string(&response)?;
 
         Ok(serialized_response)
@@ -299,26 +339,19 @@ impl FrontendClient {
         &mut self,
         request: GetFunctionUsageStatsRequest,
     ) -> Result<GetFunctionUsageStatsResponse> {
-        let response = self.api_client.get_function_usage_stats(request)?;
-
-        Ok(response)
+        do_request_with_credential!(self, get_function_usage_stats, request)
     }
 
     pub fn register_input_file_with_request(
         &mut self,
         request: RegisterInputFileRequest,
     ) -> Result<RegisterInputFileResponse> {
-        let response = self.api_client.register_input_file(request)?;
-
-        Ok(response)
+        do_request_with_credential!(self, register_input_file, request)
     }
 
     pub fn register_input_file_serialized(&mut self, serialized_request: &str) -> Result<String> {
-        let request: frontend_proto::RegisterInputFileRequest =
-            serde_json::from_str(serialized_request)?;
-        let response: frontend_proto::RegisterInputFileResponse = self
-            .register_input_file_with_request(request.try_into()?)?
-            .into();
+        let request = serde_json::from_str(serialized_request)?;
+        let response = self.register_input_file_with_request(request)?;
         let serialized_response = serde_json::to_string(&response)?;
 
         Ok(serialized_response)
@@ -335,24 +368,19 @@ impl FrontendClient {
         let request = RegisterInputFileRequest::new(url, cmac, file_crypto);
         let response = self.register_input_file_with_request(request)?;
 
-        Ok(response.data_id.to_string())
+        Ok(response.data_id)
     }
 
     pub fn register_output_file_with_request(
         &mut self,
         request: RegisterOutputFileRequest,
     ) -> Result<RegisterOutputFileResponse> {
-        let response = self.api_client.register_output_file(request)?;
-
-        Ok(response)
+        do_request_with_credential!(self, register_output_file, request)
     }
 
     pub fn register_output_file_serialized(&mut self, serialized_request: &str) -> Result<String> {
-        let request: frontend_proto::RegisterOutputFileRequest =
-            serde_json::from_str(serialized_request)?;
-        let response: frontend_proto::RegisterOutputFileResponse = self
-            .register_output_file_with_request(request.try_into()?)?
-            .into();
+        let request = serde_json::from_str(serialized_request)?;
+        let response = self.register_output_file_with_request(request)?;
         let serialized_response = serde_json::to_string(&response)?;
 
         Ok(serialized_response)
@@ -363,13 +391,12 @@ impl FrontendClient {
         let request = RegisterOutputFileRequest::new(url, file_crypto);
         let response = self.register_output_file_with_request(request)?;
 
-        Ok(response.data_id.to_string())
+        Ok(response.data_id)
     }
 
     pub fn create_task_serialized(&mut self, serialized_request: &str) -> Result<String> {
-        let request: frontend_proto::CreateTaskRequest = serde_json::from_str(serialized_request)?;
-        let response: frontend_proto::CreateTaskResponse =
-            self.create_task_with_request(request.try_into()?)?.into();
+        let request = serde_json::from_str(serialized_request)?;
+        let response = self.create_task_with_request(request)?;
         let serialized_response = serde_json::to_string(&response)?;
 
         Ok(serialized_response)
@@ -379,9 +406,7 @@ impl FrontendClient {
         &mut self,
         request: CreateTaskRequest,
     ) -> Result<CreateTaskResponse> {
-        let response = self.api_client.create_task(request)?;
-
-        Ok(response)
+        do_request_with_credential!(self, create_task, request)
     }
 
     pub fn create_task(
@@ -422,22 +447,19 @@ impl FrontendClient {
 
         let response = self.create_task_with_request(request)?;
 
-        Ok(response.task_id.to_string())
+        Ok(response.task_id)
     }
 
     pub fn assign_data_with_request(
         &mut self,
         request: AssignDataRequest,
     ) -> Result<AssignDataResponse> {
-        let response = self.api_client.assign_data(request)?;
-
-        Ok(response)
+        do_request_with_credential!(self, assign_data, request)
     }
 
     pub fn assign_data_serialized(&mut self, serialized_request: &str) -> Result<String> {
-        let request: frontend_proto::AssignDataRequest = serde_json::from_str(serialized_request)?;
-        let response: frontend_proto::AssignDataResponse =
-            self.assign_data_with_request(request.try_into()?)?.into();
+        let request = serde_json::from_str(serialized_request)?;
+        let response = self.assign_data_with_request(request)?;
         let serialized_response = serde_json::to_string(&response)?;
 
         Ok(serialized_response)
@@ -472,9 +494,7 @@ impl FrontendClient {
         &mut self,
         request: ApproveTaskRequest,
     ) -> Result<ApproveTaskResponse> {
-        let response = self.api_client.approve_task(request)?;
-
-        Ok(response)
+        do_request_with_credential!(self, approve_task, request)
     }
 
     pub fn approve_task(&mut self, task_id: &str) -> Result<()> {
@@ -485,9 +505,8 @@ impl FrontendClient {
     }
 
     pub fn approve_task_serialized(&mut self, serialized_request: &str) -> Result<String> {
-        let request: frontend_proto::ApproveTaskRequest = serde_json::from_str(serialized_request)?;
-        let response: frontend_proto::ApproveTaskResponse =
-            self.approve_task_with_request(request.try_into()?)?.into();
+        let request = serde_json::from_str(serialized_request)?;
+        let response = self.approve_task_with_request(request)?;
         let serialized_response = serde_json::to_string(&response)?;
 
         Ok(serialized_response)
@@ -497,15 +516,12 @@ impl FrontendClient {
         &mut self,
         request: InvokeTaskRequest,
     ) -> Result<InvokeTaskResponse> {
-        let response = self.api_client.invoke_task(request)?;
-
-        Ok(response)
+        do_request_with_credential!(self, invoke_task, request)
     }
 
     pub fn invoke_task_serialized(&mut self, serialized_request: &str) -> Result<String> {
-        let request: frontend_proto::InvokeTaskRequest = serde_json::from_str(serialized_request)?;
-        let response: frontend_proto::InvokeTaskResponse =
-            self.invoke_task_with_request(request.try_into()?)?.into();
+        let request = serde_json::from_str(serialized_request)?;
+        let response = self.invoke_task_with_request(request)?;
         let serialized_response = serde_json::to_string(&response)?;
 
         Ok(serialized_response)
@@ -519,15 +535,12 @@ impl FrontendClient {
     }
 
     pub fn get_task_with_request(&mut self, request: GetTaskRequest) -> Result<GetTaskResponse> {
-        let response = self.api_client.get_task(request)?;
-
-        Ok(response)
+        do_request_with_credential!(self, get_task, request)
     }
 
     pub fn get_task_serialized(&mut self, serialized_request: &str) -> Result<String> {
-        let request: frontend_proto::GetTaskRequest = serde_json::from_str(serialized_request)?;
-        let response: frontend_proto::GetTaskResponse =
-            self.get_task_with_request(request.try_into()?)?.into();
+        let request = serde_json::from_str(serialized_request)?;
+        let response = self.get_task_with_request(request)?;
         let serialized_response = serde_json::to_string(&response)?;
 
         Ok(serialized_response)
@@ -537,7 +550,8 @@ impl FrontendClient {
         loop {
             let request = GetTaskRequest::new(task_id.try_into()?);
             let response = self.get_task_with_request(request)?;
-            match response.result {
+            let result = teaclave_types::TaskResult::try_from(response.result)?;
+            match result {
                 TaskResult::NotReady => {
                     std::thread::sleep(std::time::Duration::from_secs(1));
                 }
@@ -555,15 +569,12 @@ impl FrontendClient {
         &mut self,
         request: CancelTaskRequest,
     ) -> Result<CancelTaskResponse> {
-        let response = self.api_client.cancel_task(request)?;
-
-        Ok(response)
+        do_request_with_credential!(self, cancel_task, request)
     }
 
     pub fn cancel_task_serialized(&mut self, serialized_request: &str) -> Result<String> {
-        let request: frontend_proto::CancelTaskRequest = serde_json::from_str(serialized_request)?;
-        let response: frontend_proto::CancelTaskResponse =
-            self.cancel_task_with_request(request.try_into()?)?.into();
+        let request = serde_json::from_str(serialized_request)?;
+        let response = self.cancel_task_with_request(request)?;
         let serialized_response = serde_json::to_string(&response)?;
 
         Ok(serialized_response)
@@ -594,36 +605,35 @@ mod tests {
     const ADMIN_ID: &str = "admin";
     const ADMIN_PASSWORD: &str = "teaclave";
 
-    #[test]
-    fn test_authentication_service() {
+    fn get_frontend_client() -> FrontendClient {
         let enclave_info = EnclaveInfo::from_file(ENCLAVE_INFO_PATH).unwrap();
         let bytes = fs::read(AS_ROOT_CA_CERT_PATH).unwrap();
         let as_root_ca_cert = pem::parse(bytes).unwrap().contents;
-        let mut client =
-            AuthenticationService::connect("localhost:7776", &enclave_info, &as_root_ca_cert)
-                .unwrap();
-        let token = client.user_login(ADMIN_ID, ADMIN_PASSWORD).unwrap();
-        client.set_credential(ADMIN_ID, &token);
-        let _ = client.user_register(USER_ID, USER_PASSWORD, "PlatformAdmin", "");
-        client.user_login(USER_ID, USER_PASSWORD).unwrap();
-    }
-
-    #[test]
-    fn test_frontend_service() {
-        let enclave_info = EnclaveInfo::from_file(ENCLAVE_INFO_PATH).unwrap();
-        let bytes = fs::read(AS_ROOT_CA_CERT_PATH).unwrap();
-        let as_root_ca_cert = pem::parse(bytes).unwrap().contents;
-        let mut client =
-            AuthenticationService::connect("localhost:7776", &enclave_info, &as_root_ca_cert)
-                .unwrap();
+        let mut client = AuthenticationService::connect(
+            "https://localhost:7776",
+            &enclave_info,
+            &as_root_ca_cert,
+        )
+        .unwrap();
         let token = client.user_login(ADMIN_ID, ADMIN_PASSWORD).unwrap();
         client.set_credential(ADMIN_ID, &token);
         let _ = client.user_register(USER_ID, USER_PASSWORD, "PlatformAdmin", "");
         let token = client.user_login(USER_ID, USER_PASSWORD).unwrap();
-
         let mut client =
-            FrontendService::connect("localhost:7777", &enclave_info, &as_root_ca_cert).unwrap();
+            FrontendService::connect("https://localhost:7777", &enclave_info, &as_root_ca_cert)
+                .unwrap();
         client.set_credential(USER_ID, &token);
+        client
+    }
+
+    #[test]
+    fn test_authentication_service() {
+        get_frontend_client();
+    }
+
+    #[test]
+    fn test_frontend_service() {
+        let mut client = get_frontend_client();
         let function_id = client
             .register_function(
                 "builtin-echo",
@@ -685,27 +695,14 @@ mod tests {
 
     #[test]
     fn test_frontend_service_with_request() {
-        let enclave_info = EnclaveInfo::from_file(ENCLAVE_INFO_PATH).unwrap();
-        let bytes = fs::read(AS_ROOT_CA_CERT_PATH).unwrap();
-        let as_root_ca_cert = pem::parse(bytes).unwrap().contents;
-        let mut client =
-            AuthenticationService::connect("localhost:7776", &enclave_info, &as_root_ca_cert)
-                .unwrap();
-        let token = client.user_login(ADMIN_ID, ADMIN_PASSWORD).unwrap();
-        client.set_credential(ADMIN_ID, &token);
-        let _ = client.user_register(USER_ID, USER_PASSWORD, "PlatformAdmin", "");
-        let token = client.user_login(USER_ID, USER_PASSWORD).unwrap();
-
-        let mut client =
-            FrontendService::connect("localhost:7777", &enclave_info, &as_root_ca_cert).unwrap();
-        client.set_credential(USER_ID, &token);
-        let request = RegisterFunctionRequest::default();
+        let mut client = get_frontend_client();
+        let request = RegisterFunctionRequestBuilder::new().build();
         let function_id = client
             .register_function_with_request(request)
             .unwrap()
             .function_id;
 
-        let request = GetFunctionRequest::new(function_id);
+        let request = GetFunctionRequest::new(function_id.try_into().unwrap());
         let response = client.get_function_with_request(request);
         assert!(response.is_ok());
 
@@ -720,7 +717,7 @@ mod tests {
             .outputs_ownership(hashmap!("output" =>  vec!["frontend_user", "mock_user"]));
         let response = client.create_task_with_request(request);
         assert!(response.is_ok());
-        let task_id = response.unwrap().task_id;
+        let task_id = response.unwrap().task_id.try_into().unwrap();
 
         let request = GetTaskRequest::new(task_id);
         let response = client.get_task_with_request(request);
@@ -729,20 +726,7 @@ mod tests {
 
     #[test]
     fn test_assign_data() {
-        let enclave_info = EnclaveInfo::from_file(ENCLAVE_INFO_PATH).unwrap();
-        let bytes = fs::read(AS_ROOT_CA_CERT_PATH).unwrap();
-        let as_root_ca_cert = pem::parse(bytes).unwrap().contents;
-        let mut client =
-            AuthenticationService::connect("localhost:7776", &enclave_info, &as_root_ca_cert)
-                .unwrap();
-        let token = client.user_login(ADMIN_ID, ADMIN_PASSWORD).unwrap();
-        client.set_credential(ADMIN_ID, &token);
-        let _ = client.user_register(USER_ID, USER_PASSWORD, "PlatformAdmin", "");
-        let token = client.user_login(USER_ID, USER_PASSWORD).unwrap();
-
-        let mut client =
-            FrontendService::connect("localhost:7777", &enclave_info, &as_root_ca_cert).unwrap();
-        client.set_credential(USER_ID, &token);
+        let mut client = get_frontend_client();
         let function_id = "function-00000000-0000-0000-0000-000000000002";
         let function_arguments = hashmap!("arg1" => "arg1_value");
         let outputs_ownership = hashmap!("output" => vec![USER_ID.to_string()]);
@@ -767,20 +751,7 @@ mod tests {
 
     #[test]
     fn test_assign_data_err() {
-        let enclave_info = EnclaveInfo::from_file(ENCLAVE_INFO_PATH).unwrap();
-        let bytes = fs::read(AS_ROOT_CA_CERT_PATH).unwrap();
-        let as_root_ca_cert = pem::parse(bytes).unwrap().contents;
-        let mut client =
-            AuthenticationService::connect("localhost:7776", &enclave_info, &as_root_ca_cert)
-                .unwrap();
-        let token = client.user_login(ADMIN_ID, ADMIN_PASSWORD).unwrap();
-        client.set_credential(ADMIN_ID, &token);
-        let _ = client.user_register(USER_ID, USER_PASSWORD, "PlatformAdmin", "");
-        let token = client.user_login(USER_ID, USER_PASSWORD).unwrap();
-
-        let mut client =
-            FrontendService::connect("localhost:7777", &enclave_info, &as_root_ca_cert).unwrap();
-        client.set_credential(USER_ID, &token);
+        let mut client = get_frontend_client();
         let function_id = "function-00000000-0000-0000-0000-000000000002";
         let function_arguments = hashmap!("arg1" => "arg1_value");
         let outputs_ownership = hashmap!("output" => vec!["incorrect_user".to_string()]);
@@ -806,20 +777,7 @@ mod tests {
 
     #[test]
     fn test_approve_task() {
-        let enclave_info = EnclaveInfo::from_file(ENCLAVE_INFO_PATH).unwrap();
-        let bytes = fs::read(AS_ROOT_CA_CERT_PATH).unwrap();
-        let as_root_ca_cert = pem::parse(bytes).unwrap().contents;
-        let mut client =
-            AuthenticationService::connect("localhost:7776", &enclave_info, &as_root_ca_cert)
-                .unwrap();
-        let token = client.user_login(ADMIN_ID, ADMIN_PASSWORD).unwrap();
-        client.set_credential(ADMIN_ID, &token);
-        let _ = client.user_register(USER_ID, USER_PASSWORD, "PlatformAdmin", "");
-        let token = client.user_login(USER_ID, USER_PASSWORD).unwrap();
-
-        let mut client =
-            FrontendService::connect("localhost:7777", &enclave_info, &as_root_ca_cert).unwrap();
-        client.set_credential(USER_ID, &token);
+        let mut client = get_frontend_client();
         let function_id = "function-00000000-0000-0000-0000-000000000002";
         let function_arguments = hashmap!("arg1" => "arg1_value");
         let outputs_ownership = hashmap!("output" => vec![USER_ID.to_string()]);
@@ -845,20 +803,7 @@ mod tests {
 
     #[test]
     fn test_cancel_task() {
-        let enclave_info = EnclaveInfo::from_file(ENCLAVE_INFO_PATH).unwrap();
-        let bytes = fs::read(AS_ROOT_CA_CERT_PATH).unwrap();
-        let as_root_ca_cert = pem::parse(bytes).unwrap().contents;
-        let mut client =
-            AuthenticationService::connect("localhost:7776", &enclave_info, &as_root_ca_cert)
-                .unwrap();
-        let token = client.user_login(ADMIN_ID, ADMIN_PASSWORD).unwrap();
-        client.set_credential(ADMIN_ID, &token);
-        let _ = client.user_register(USER_ID, USER_PASSWORD, "PlatformAdmin", "");
-        let token = client.user_login(USER_ID, USER_PASSWORD).unwrap();
-
-        let mut client =
-            FrontendService::connect("localhost:7777", &enclave_info, &as_root_ca_cert).unwrap();
-        client.set_credential(USER_ID, &token);
+        let mut client = get_frontend_client();
         let function_id = "function-00000000-0000-0000-0000-000000000002";
         let function_arguments = hashmap!("arg1" => "arg1_value");
         let outputs_ownership = hashmap!("output" => vec![USER_ID.to_string()]);

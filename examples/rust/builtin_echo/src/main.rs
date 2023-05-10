@@ -43,7 +43,7 @@ fn echo(message: &str) -> Result<Vec<u8>> {
     let bytes = fs::read(AS_ROOT_CA_CERT_PATH)?;
     let as_root_ca_cert = pem::parse(bytes)?.contents;
     let mut client = teaclave_client_sdk::AuthenticationService::connect(
-        "localhost:7776",
+        "https://localhost:7776",
         &enclave_info,
         &as_root_ca_cert,
     )?;
@@ -52,7 +52,7 @@ fn echo(message: &str) -> Result<Vec<u8>> {
     let token = client.user_login(USER_ID, USER_PASSWORD)?;
 
     let mut client = teaclave_client_sdk::FrontendService::connect(
-        "localhost:7777",
+        "https://localhost:7777",
         &enclave_info,
         &as_root_ca_cert,
     )?;

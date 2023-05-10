@@ -41,13 +41,16 @@ use teaclave_test_utils::run_inventory_tests;
 
 #[handle_ecall]
 fn handle_run_test(input: &RunTestInput) -> TeeServiceResult<RunTestOutput> {
-    utils::setup();
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+    rt.block_on(utils::setup());
     let ret = if input.test_names.is_empty() {
         run_inventory_tests!()
     } else {
         run_inventory_tests!(|s: &str| input.test_names.iter().any(|t| s.contains(t)))
     };
-
     assert!(ret);
     Ok(RunTestOutput)
 }

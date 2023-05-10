@@ -22,11 +22,10 @@ use teaclave_proto::teaclave_access_control_service::{
     AuthorizeFunctionResponse, AuthorizeStagedTaskRequest, AuthorizeStagedTaskResponse,
     AuthorizeTaskRequest, AuthorizeTaskResponse, TeaclaveAccessControl,
 };
-use teaclave_rpc::Request;
-use teaclave_service_enclave_utils::{bail, teaclave_service};
+use teaclave_rpc::{Request, Response};
+use teaclave_service_enclave_utils::bail;
 use teaclave_types::TeaclaveServiceResponseResult;
 
-#[teaclave_service(teaclave_access_control_service, TeaclaveAccessControl)]
 #[derive(Clone)]
 pub(crate) struct TeaclaveAccessControlService {
     access_control_module: AccessControlModule,
@@ -40,60 +39,61 @@ impl TeaclaveAccessControlService {
     }
 }
 
+#[teaclave_rpc::async_trait]
 impl TeaclaveAccessControl for TeaclaveAccessControlService {
-    fn authorize_data(
+    async fn authorize_data(
         &self,
         request: Request<AuthorizeDataRequest>,
     ) -> TeaclaveServiceResponseResult<AuthorizeDataResponse> {
-        let request = request.message;
+        let request = request.into_inner();
         let request =
             EnforceRequest::UserAccessData(request.subject_user_id, request.object_data_id);
         match self.access_control_module.enforce_request(request) {
             Ok(accept) => {
                 let response = AuthorizeDataResponse::new(accept);
-                Ok(response)
+                Ok(Response::new(response))
             }
             Err(_) => Err(TeaclavAccessControlError::AccessControlError.into()),
         }
     }
 
-    fn authorize_function(
+    async fn authorize_function(
         &self,
         request: Request<AuthorizeFunctionRequest>,
     ) -> TeaclaveServiceResponseResult<AuthorizeFunctionResponse> {
-        let request = request.message;
+        let request = request.into_inner();
         let request =
             EnforceRequest::UserAccessFunction(request.subject_user_id, request.object_function_id);
         match self.access_control_module.enforce_request(request) {
             Ok(accept) => {
                 let response = AuthorizeFunctionResponse::new(accept);
-                Ok(response)
+                Ok(Response::new(response))
             }
             Err(_) => Err(TeaclavAccessControlError::AccessControlError.into()),
         }
     }
 
-    fn authorize_task(
+    async fn authorize_task(
         &self,
         request: Request<AuthorizeTaskRequest>,
     ) -> TeaclaveServiceResponseResult<AuthorizeTaskResponse> {
-        let request = request.message;
+        let request = request.into_inner();
         let request =
             EnforceRequest::UserAccessTask(request.subject_user_id, request.object_task_id);
         match self.access_control_module.enforce_request(request) {
             Ok(accept) => {
                 let response = AuthorizeTaskResponse::new(accept);
-                Ok(response)
+                Ok(Response::new(response))
             }
             Err(_) => Err(TeaclavAccessControlError::AccessControlError.into()),
         }
     }
 
-    fn authorize_staged_task(
+    async fn authorize_staged_task(
         &self,
         request: Request<AuthorizeStagedTaskRequest>,
     ) -> TeaclaveServiceResponseResult<AuthorizeStagedTaskResponse> {
-        let request = request.message;
+        let request = request.into_inner();
         let enforce_access_function_request = EnforceRequest::TaskAccessFunction(
             request.subject_task_id.clone(),
             request.object_function_id,
@@ -104,7 +104,7 @@ impl TeaclaveAccessControl for TeaclaveAccessControlService {
         {
             Ok(accept) => {
                 if !accept {
-                    return Ok(AuthorizeStagedTaskResponse::new(false));
+                    return Ok(Response::new(AuthorizeStagedTaskResponse::new(false)));
                 }
             }
             Err(_) => bail!(TeaclavAccessControlError::AccessControlError),
@@ -120,7 +120,7 @@ impl TeaclaveAccessControl for TeaclaveAccessControlService {
             {
                 Ok(accept) => {
                     if !accept {
-                        return Ok(AuthorizeStagedTaskResponse::new(false));
+                        return Ok(Response::new(AuthorizeStagedTaskResponse::new(false)));
                     }
                 }
                 Err(_) => bail!(TeaclavAccessControlError::AccessControlError),
@@ -137,13 +137,13 @@ impl TeaclaveAccessControl for TeaclaveAccessControlService {
             {
                 Ok(accept) => {
                     if !accept {
-                        return Ok(AuthorizeStagedTaskResponse::new(false));
+                        return Ok(Response::new(AuthorizeStagedTaskResponse::new(false)));
                     }
                 }
                 Err(_) => bail!(TeaclavAccessControlError::AccessControlError),
             }
         }
-        Ok(AuthorizeStagedTaskResponse { accept: true })
+        Ok(Response::new(AuthorizeStagedTaskResponse { accept: true }))
     }
 }
 
@@ -152,102 +152,101 @@ pub mod tests {
     use super::*;
     use teaclave_rpc::IntoRequest;
 
-    pub fn user_access_data() {
+    pub async fn user_access_data() {
         let service = TeaclaveAccessControlService::new();
         let request = AuthorizeDataRequest::new("mock_user_a", "mock_data").into_request();
-        let response = service.authorize_data(request);
+        let response = service.authorize_data(request).await;
         assert!(response.is_ok());
-        assert!(response.unwrap().accept);
+        assert!(response.unwrap().into_inner().accept);
 
         let request = AuthorizeDataRequest::new("mock_user_b", "mock_data").into_request();
-        let response = service.authorize_data(request);
+        let response = service.authorize_data(request).await;
         assert!(response.is_ok());
-        assert!(response.unwrap().accept);
+        assert!(response.unwrap().into_inner().accept);
 
         let request = AuthorizeDataRequest::new("mock_user_c", "mock_data").into_request();
-        let response = service.authorize_data(request);
+        let response = service.authorize_data(request).await;
         assert!(response.is_ok());
-        assert!(response.unwrap().accept);
+        assert!(response.unwrap().into_inner().accept);
 
         let request = AuthorizeDataRequest::new("mock_user_d", "mock_data").into_request();
-        let response = service.authorize_data(request);
+        let response = service.authorize_data(request).await;
         assert!(response.is_ok());
-        assert!(!response.unwrap().accept);
+        assert!(!response.unwrap().into_inner().accept);
 
         let request = AuthorizeDataRequest::new("mock_user_a", "mock_data_b").into_request();
-        let response = service.authorize_data(request);
+        let response = service.authorize_data(request).await;
         assert!(response.is_ok());
-        assert!(!response.unwrap().accept);
+        assert!(!response.unwrap().into_inner().accept);
     }
 
-    pub fn user_access_function() {
+    pub async fn user_access_function() {
         let service = TeaclaveAccessControlService::new();
         let request =
             AuthorizeFunctionRequest::new("mock_public_function_owner", "mock_public_function")
                 .into_request();
-        let response = service.authorize_function(request);
+        let response = service.authorize_function(request).await;
         assert!(response.is_ok());
-        assert!(response.unwrap().accept);
-
+        assert!(response.unwrap().into_inner().accept);
         let request =
             AuthorizeFunctionRequest::new("mock_private_function_owner", "mock_private_function")
                 .into_request();
-        let response = service.authorize_function(request);
+        let response = service.authorize_function(request).await;
         assert!(response.is_ok());
-        assert!(response.unwrap().accept);
+        assert!(response.unwrap().into_inner().accept);
 
         let request =
             AuthorizeFunctionRequest::new("mock_private_function_owner", "mock_public_function")
                 .into_request();
-        let response = service.authorize_function(request);
+        let response = service.authorize_function(request).await;
         assert!(response.is_ok());
-        assert!(response.unwrap().accept);
+        assert!(response.unwrap().into_inner().accept);
 
         let request =
             AuthorizeFunctionRequest::new("mock_public_function_owner", "mock_private_function")
                 .into_request();
-        let response = service.authorize_function(request);
+        let response = service.authorize_function(request).await;
         assert!(response.is_ok());
-        assert!(!response.unwrap().accept);
+        assert!(!response.unwrap().into_inner().accept);
     }
 
-    pub fn user_access_task() {
+    pub async fn user_access_task() {
         let service = TeaclaveAccessControlService::new();
         let request = AuthorizeTaskRequest::new("mock_participant_a", "mock_task").into_request();
-        let response = service.authorize_task(request);
+        let response = service.authorize_task(request).await;
         assert!(response.is_ok());
-        assert!(response.unwrap().accept);
+        assert!(response.unwrap().into_inner().accept);
 
         let request = AuthorizeTaskRequest::new("mock_participant_b", "mock_task").into_request();
-        let response = service.authorize_task(request);
+        let response = service.authorize_task(request).await;
         assert!(response.is_ok());
-        assert!(response.unwrap().accept);
+        assert!(response.unwrap().into_inner().accept);
 
         let request = AuthorizeTaskRequest::new("mock_participant_c", "mock_task").into_request();
-        let response = service.authorize_task(request);
+        let response = service.authorize_task(request).await;
         assert!(response.is_ok());
-        assert!(!response.unwrap().accept);
+        assert!(!response.unwrap().into_inner().accept);
     }
 
-    pub fn task_access_function() {
+    pub async fn task_access_function() {
         let service = TeaclaveAccessControlService::new();
         let mut request = get_correct_authorized_stage_task_req();
         request.object_function_id = "mock_staged_allowed_private_function".to_string();
-        let response = service.authorize_staged_task(request.into_request());
+        let response = service.authorize_staged_task(request.into_request()).await;
         assert!(response.is_ok());
-        assert!(response.unwrap().accept);
+        assert!(response.unwrap().into_inner().accept);
 
         let mut request = get_correct_authorized_stage_task_req();
         request.object_function_id = "mock_staged_public_function".to_string();
-        let response = service.authorize_staged_task(request.into_request());
+        let response = service.authorize_staged_task(request.into_request()).await;
         assert!(response.is_ok());
-        assert!(response.unwrap().accept);
+        assert!(response.unwrap().into_inner().accept);
 
         let mut request = get_correct_authorized_stage_task_req();
         request.object_function_id = "mock_staged_disallowed_private_function".to_string();
-        let response = service.authorize_staged_task(request.into_request());
+        let response = service.authorize_staged_task(request.into_request()).await;
         assert!(response.is_ok());
-        assert!(!response.unwrap().accept);
+        assert!(!response.unwrap().into_inner().accept);
     }
 
     fn get_correct_authorized_stage_task_req() -> AuthorizeStagedTaskRequest {
@@ -266,43 +265,42 @@ pub mod tests {
             ],
         }
     }
-    pub fn task_access_data() {
+
+    pub async fn task_access_data() {
         let service = TeaclaveAccessControlService::new();
         let request = get_correct_authorized_stage_task_req().into_request();
-        let response = service.authorize_staged_task(request);
+        let response = service.authorize_staged_task(request).await;
         assert!(response.is_ok());
-        assert!(response.unwrap().accept);
-
+        assert!(response.unwrap().into_inner().accept);
         let mut request = get_correct_authorized_stage_task_req();
         request
             .object_input_data_id_list
             .push("mock_staged_disallowed_data1".to_string());
-        let response = service.authorize_staged_task(request.into_request());
+        let response = service.authorize_staged_task(request.into_request()).await;
         assert!(response.is_ok());
-        assert!(!response.unwrap().accept);
-
+        assert!(!response.unwrap().into_inner().accept);
         let mut request = get_correct_authorized_stage_task_req();
         request
             .object_input_data_id_list
             .push("mock_staged_disallowed_data2".to_string());
-        let response = service.authorize_staged_task(request.into_request());
+        let response = service.authorize_staged_task(request.into_request()).await;
         assert!(response.is_ok());
-        assert!(!response.unwrap().accept);
+        assert!(!response.unwrap().into_inner().accept);
 
         let mut request = get_correct_authorized_stage_task_req();
         request
             .object_output_data_id_list
             .push("mock_staged_disallowed_data1".to_string());
-        let response = service.authorize_staged_task(request.into_request());
+        let response = service.authorize_staged_task(request.into_request()).await;
         assert!(response.is_ok());
-        assert!(!response.unwrap().accept);
+        assert!(!response.unwrap().into_inner().accept);
 
         let mut request = get_correct_authorized_stage_task_req();
         request
             .object_output_data_id_list
             .push("mock_staged_disallowed_data2".to_string());
-        let response = service.authorize_staged_task(request.into_request());
+        let response = service.authorize_staged_task(request.into_request()).await;
         assert!(response.is_ok());
-        assert!(!response.unwrap().accept);
+        assert!(!response.unwrap().into_inner().accept);
     }
 }

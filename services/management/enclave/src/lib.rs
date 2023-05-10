@@ -28,18 +28,17 @@ use teaclave_binder::proto::{
 use teaclave_binder::{handle_ecall, register_ecall_handler};
 use teaclave_config::build::{AS_ROOT_CA_CERT, AUDITOR_PUBLIC_KEYS, MANAGEMENT_INBOUND_SERVICES};
 use teaclave_config::RuntimeConfig;
-use teaclave_proto::teaclave_management_service::{
-    TeaclaveManagementRequest, TeaclaveManagementResponse,
-};
-use teaclave_rpc::config::SgxTrustedTlsServerConfig;
-use teaclave_rpc::server::SgxTrustedTlsServer;
+use teaclave_proto::teaclave_management_service::TeaclaveManagementServer;
 use teaclave_service_enclave_utils::{create_trusted_storage_endpoint, ServiceEnclave};
 use teaclave_types::{EnclaveInfo, TeeServiceError, TeeServiceResult};
 
 mod error;
 mod service;
 
-fn start_service(config: &RuntimeConfig) -> Result<()> {
+// Sets the number of worker threads the Runtime will use.
+const N_WORKERS: usize = 8;
+
+async fn start_service(config: &RuntimeConfig) -> Result<()> {
     info!("Starting Management...");
 
     let listen_address = config.internal_endpoints.management.listen_address;
@@ -62,21 +61,17 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
             None => Err(anyhow!("cannot get enclave attribute of {}", service)),
         })
         .collect::<Result<_>>()?;
-    let server_config =
-        SgxTrustedTlsServerConfig::from_attested_tls_config(attested_tls_config.clone())?
-            .attestation_report_verifier(
-                accepted_enclave_attrs,
-                AS_ROOT_CA_CERT,
-                verifier::universal_quote_verifier,
-            )?;
 
+    let server_config = teaclave_rpc::config::SgxTrustedTlsServerConfig::from_attested_tls_config(
+        attested_tls_config.clone(),
+    )?
+    .attestation_report_verifier(
+        accepted_enclave_attrs,
+        AS_ROOT_CA_CERT,
+        verifier::universal_quote_verifier,
+    )?
+    .into();
     info!(" Starting Management: Server config setup finished ...");
-
-    let mut server =
-        SgxTrustedTlsServer::<TeaclaveManagementResponse, TeaclaveManagementRequest>::new(
-            listen_address,
-            server_config,
-        );
 
     let storage_service_endpoint = create_trusted_storage_endpoint(
         &config.internal_endpoints.storage.advertised_address,
@@ -88,24 +83,31 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
 
     info!(" Starting Management: setup storage endpoint finished ...");
 
-    let service = service::TeaclaveManagementService::new(storage_service_endpoint)?;
+    let service = service::TeaclaveManagementService::new(storage_service_endpoint).await?;
 
     info!(" Starting Management: start listening ...");
-    match server.start(service) {
-        Ok(_) => (),
-        Err(e) => {
-            error!("Service exit, error: {}.", e);
-        }
-    }
+    teaclave_rpc::transport::Server::builder()
+        .tls_config(server_config)
+        .map_err(|_| anyhow::anyhow!("TeaclaveFrontendServer tls config error"))?
+        .add_service(TeaclaveManagementServer::new(service))
+        .serve(listen_address)
+        .await?;
     Ok(())
 }
 
 #[handle_ecall]
 fn handle_start_service(input: &StartServiceInput) -> TeeServiceResult<StartServiceOutput> {
-    match start_service(&input.config) {
+    let result = tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(N_WORKERS)
+        .enable_all()
+        .build()
+        .map_err(|_| TeeServiceError::SgxError)?
+        .block_on(start_service(&input.config));
+
+    match result {
         Ok(_) => Ok(StartServiceOutput),
         Err(e) => {
-            log::error!("Failed to start the service: {}", e);
+            error!("Failed to run service: {}", e);
             Err(TeeServiceError::ServiceError)
         }
     }

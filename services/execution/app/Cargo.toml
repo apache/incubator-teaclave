@@ -29,7 +29,8 @@ default =[]
 libos = [
   "teaclave_execution_service_enclave/libos",
   "teaclave_config/build_config",
-  "teaclave_logger"
+  "teaclave_logger",
+  "tokio"
   ]
 
 [dependencies]
@@ -38,6 +39,7 @@ anyhow      = { version = "1.0.26" }
 libc        = { version = "0.2.66" }
 log         = { version = "0.4.17", features = ["release_max_level_info"] }
 signal-hook = { version = "0.1.13" }
+tokio       = { version = "1.0", features = ["rt-multi-thread", "time", "macros"], optional = true }
 
 teaclave_config                    = { path = "../../../config" }
 teaclave_logger                    = { path = "../../../logger", optional = true }

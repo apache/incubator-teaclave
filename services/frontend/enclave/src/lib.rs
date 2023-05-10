@@ -29,11 +29,8 @@ use teaclave_binder::proto::{
 use teaclave_binder::{handle_ecall, register_ecall_handler};
 use teaclave_config::build::AS_ROOT_CA_CERT;
 use teaclave_config::RuntimeConfig;
-use teaclave_proto::teaclave_frontend_service::{
-    TeaclaveFrontendRequest, TeaclaveFrontendResponse,
-};
-use teaclave_rpc::config::SgxTrustedTlsServerConfig;
-use teaclave_rpc::server::SgxTrustedTlsServer;
+use teaclave_proto::teaclave_frontend_service::TeaclaveFrontendServer;
+use teaclave_rpc::{config::SgxTrustedTlsServerConfig, transport::Server};
 use teaclave_service_enclave_utils::{
     create_trusted_authentication_endpoint, create_trusted_management_endpoint, ServiceEnclave,
 };
@@ -42,7 +39,10 @@ use teaclave_types::{TeeServiceError, TeeServiceResult};
 mod error;
 mod service;
 
-fn start_service(config: &RuntimeConfig) -> Result<()> {
+// Sets the number of worker threads the Runtime will use.
+const N_WORKERS: usize = 8;
+
+async fn start_service(config: &RuntimeConfig) -> Result<()> {
     info!("Starting FrontEnd ...");
 
     let listen_address = config.api_endpoints.frontend.listen_address;
@@ -55,12 +55,7 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
     info!(" Starting FrontEnd: Self attestation finished ...");
 
     let server_config =
-        SgxTrustedTlsServerConfig::from_attested_tls_config(attested_tls_config.clone())?;
-    let mut server = SgxTrustedTlsServer::<TeaclaveFrontendResponse, TeaclaveFrontendRequest>::new(
-        listen_address,
-        server_config,
-    );
-
+        SgxTrustedTlsServerConfig::from_attested_tls_config(attested_tls_config.clone())?.into();
     info!(" Starting FrontEnd: Server config setup finished ...");
 
     let enclave_info = teaclave_types::EnclaveInfo::from_bytes(&config.audit.enclave_info_bytes);
@@ -87,24 +82,32 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
     let service = service::TeaclaveFrontendService::new(
         authentication_service_endpoint,
         management_service_endpoint,
-    )?;
+    )
+    .await?;
 
     info!(" Starting FrontEnd: start listening ...");
-    match server.start(service) {
-        Ok(_) => (),
-        Err(e) => {
-            error!("Service exit, error: {}.", e);
-        }
-    }
+    Server::builder()
+        .tls_config(server_config)
+        .map_err(|_| anyhow!("TeaclaveFrontendServer tls config error"))?
+        .add_service(TeaclaveFrontendServer::new(service))
+        .serve(listen_address)
+        .await?;
     Ok(())
 }
 
 #[handle_ecall]
 fn handle_start_service(input: &StartServiceInput) -> TeeServiceResult<StartServiceOutput> {
-    match start_service(&input.config) {
+    let result = tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(N_WORKERS)
+        .enable_all()
+        .build()
+        .map_err(|_| TeeServiceError::SgxError)?
+        .block_on(start_service(&input.config));
+
+    match result {
         Ok(_) => Ok(StartServiceOutput),
         Err(e) => {
-            log::error!("Failed to start the service: {}", e);
+            error!("Failed to run service: {}", e);
             Err(TeeServiceError::ServiceError)
         }
     }

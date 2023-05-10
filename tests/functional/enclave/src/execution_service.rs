@@ -16,14 +16,14 @@
 // under the License.
 
 use crate::utils::*;
+use futures::FutureExt;
 use teaclave_proto::teaclave_storage_service::*;
-use teaclave_test_utils::test_case;
+use teaclave_test_utils::async_test_case;
 use teaclave_types::*;
-
 use uuid::Uuid;
 
-#[test_case]
-fn test_execute_function() {
+#[async_test_case]
+async fn test_execute_function() {
     let task_id = Uuid::new_v4();
     let ts = TaskState {
         task_id,
@@ -44,26 +44,25 @@ fn test_execute_function() {
         ))
         .build();
 
-    let mut storage_client = get_storage_client();
+    let mut storage_client = get_storage_client().await;
     let enqueue_request = EnqueueRequest::new(
         StagedTask::get_queue_key().as_bytes(),
         staged_task.to_vec().unwrap(),
     );
-    let _enqueue_response = storage_client.enqueue(enqueue_request).unwrap();
+    let _enqueue_response = storage_client.enqueue(enqueue_request).await.unwrap();
     let put_request = PutRequest::new(ts.key().as_slice(), ts.to_vec().unwrap().as_slice());
-    let _put_response = storage_client.put(put_request).unwrap();
-
+    let _put_response = storage_client.put(put_request).await.unwrap();
     std::thread::sleep(std::time::Duration::from_secs(15));
 
     let get_request = GetRequest::new(ts.key().as_slice());
-    let get_response = storage_client.get(get_request).unwrap();
+    let get_response = storage_client.get(get_request).await.unwrap().into_inner();
     let updated_task = TaskState::from_slice(get_response.value.as_slice()).unwrap();
     let result = updated_task.result.unwrap();
     assert_eq!(result.return_value, b"Hello, Teaclave Tests!");
-    let info_log = result.log.iter().find(|l| l.contains("INFO")).unwrap();
 
-    assert_eq!(
-        info_log,
-        "[INFO teaclave_function::echo] Hello, Teaclave Tests!"
-    );
+    let info_log = result
+        .log
+        .iter()
+        .find(|l| l.contains("[INFO teaclave_function::echo] Hello, Teaclave Tests!"));
+    assert!(info_log.is_some())
 }

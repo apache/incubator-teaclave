@@ -25,11 +25,16 @@ use teaclave_types::{TeeServiceError, TeeServiceResult};
 
 #[handle_ecall]
 fn handle_start_service(input: &StartServiceInput) -> TeeServiceResult<StartServiceOutput> {
-    match super::start_service(&input.config) {
+    let result = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .map_err(|_| TeeServiceError::SgxError)?
+        .block_on(super::start_service(&input.config));
+
+    match result {
         Ok(_) => Ok(StartServiceOutput),
-        // terminate the enclave for executor
         Err(e) => {
-            log::error!("Service shutdown, reason: {}", e);
+            log::error!("Failed to run service: {}", e);
             Err(TeeServiceError::EnclaveForceTermination)
         }
     }

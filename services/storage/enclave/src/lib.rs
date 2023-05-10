@@ -20,8 +20,8 @@ extern crate log;
 extern crate sgx_types;
 
 use std::cell::RefCell;
-use std::sync::mpsc::channel;
 use std::thread;
+use tokio::sync::mpsc::unbounded_channel;
 
 use anyhow::{anyhow, Result};
 use rusty_leveldb::DB;
@@ -34,9 +34,8 @@ use teaclave_binder::proto::{
 use teaclave_binder::{handle_ecall, register_ecall_handler};
 use teaclave_config::build::{AS_ROOT_CA_CERT, AUDITOR_PUBLIC_KEYS, STORAGE_INBOUND_SERVICES};
 use teaclave_config::RuntimeConfig;
-use teaclave_proto::teaclave_storage_service::{TeaclaveStorageRequest, TeaclaveStorageResponse};
+use teaclave_proto::teaclave_storage_service::TeaclaveStorageServer;
 use teaclave_rpc::config::SgxTrustedTlsServerConfig;
-use teaclave_rpc::server::SgxTrustedTlsServer;
 use teaclave_service_enclave_utils::ServiceEnclave;
 use teaclave_types::{EnclaveInfo, TeeServiceError, TeeServiceResult};
 
@@ -44,7 +43,7 @@ mod error;
 mod proxy;
 mod service;
 
-fn start_service(config: &RuntimeConfig) -> Result<()> {
+async fn start_service(config: &RuntimeConfig) -> Result<()> {
     info!("Starting Storage...");
 
     let listen_address = config.internal_endpoints.storage.listen_address;
@@ -67,16 +66,19 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
             None => Err(anyhow!("cannot get enclave attribute of {}", service)),
         })
         .collect::<Result<_>>()?;
-    let server_config = SgxTrustedTlsServerConfig::from_attested_tls_config(attested_tls_config)?
-        .attestation_report_verifier(
-        accepted_enclave_attrs,
-        AS_ROOT_CA_CERT,
-        verifier::universal_quote_verifier,
-    )?;
+
+    let server_config =
+        SgxTrustedTlsServerConfig::from_attested_tls_config(attested_tls_config.clone())?
+            .attestation_report_verifier(
+                accepted_enclave_attrs,
+                AS_ROOT_CA_CERT,
+                verifier::universal_quote_verifier,
+            )?
+            .into();
     info!(" Starting Storage: Server config setup finished ...");
 
-    let (sender, receiver) = channel();
-    thread::spawn(move || {
+    let (sender, receiver) = unbounded_channel();
+    let storage_handle = thread::spawn(move || {
         info!(" Starting Storage: opening database ...");
         #[cfg(test_mode)]
         let db = test_mode::create_mock_db();
@@ -89,20 +91,17 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
         storage_service.start();
     });
 
-    let mut server = SgxTrustedTlsServer::<TeaclaveStorageResponse, TeaclaveStorageRequest>::new(
-        listen_address,
-        server_config,
-    );
-
     let service = proxy::ProxyService::new(sender);
 
     info!(" Starting Storage: start listening ...");
-    match server.start(service) {
-        Ok(_) => (),
-        Err(e) => {
-            error!("Service exit, error: {}.", e);
-        }
-    }
+
+    teaclave_rpc::transport::Server::builder()
+        .tls_config(server_config)
+        .map_err(|_| anyhow::anyhow!("TeaclaveFrontendServer tls config error"))?
+        .add_service(TeaclaveStorageServer::new(service))
+        .serve(listen_address)
+        .await?;
+    storage_handle.join().unwrap();
     Ok(())
 }
 
@@ -132,10 +131,16 @@ mod test_mode {
 
 #[handle_ecall]
 fn handle_start_service(input: &StartServiceInput) -> TeeServiceResult<StartServiceOutput> {
-    match start_service(&input.config) {
+    let result = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .map_err(|_| TeeServiceError::SgxError)?
+        .block_on(start_service(&input.config));
+
+    match result {
         Ok(_) => Ok(StartServiceOutput),
         Err(e) => {
-            log::error!("Failed to start the service: {}", e);
+            error!("Failed to run service: {}", e);
             Err(TeeServiceError::ServiceError)
         }
     }

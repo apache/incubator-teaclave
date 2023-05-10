@@ -27,28 +27,22 @@ edition = "2021"
 default = []
 app = [
     "teaclave_types/app",
-    "teaclave_rpc/app",
     "teaclave_crypto/app",
 ]
 mesalock_sgx = [
     "teaclave_types/mesalock_sgx",
-    "teaclave_rpc/mesalock_sgx",
     "teaclave_crypto/mesalock_sgx",
 ]
 cov = ["sgx_cov"]
 
 [dependencies]
 anyhow       = { version = "1.0.26" }
-base64       = { version = "0.13.0" }
-cfg-if       = { version = "0.1.9" }
-prost        = { version = "0.11" }
-rand         = { version = "0.8.5" }
+prost        = { version = "0.9" }
 serde        = { version = "1.0.39", features = ["derive"] }
 serde_json   = { version = "1.0.39" }
+tonic        = { version = "0.6.1", features = ["tls", "compression"]}
 url          = { version = "2.1.1" }
 uuid          = { version = "0.8.1", features = ["v4"] }
-
-teaclave_rpc = { path = "../../rpc" }
 teaclave_types = { path = "../../types" }
 teaclave_crypto = { path = "../../crypto" }
 
@@ -56,3 +50,6 @@ sgx_cov      = { version = "2.0.0", optional = true }
 
 [target.'cfg(not(target_vendor = "teaclave"))'.dependencies]
 sgx_types    = { version = "2.0.0" }
+
+[build-dependencies]
+tonic-build = { version = "0.6.0", features = ["prost","compression"] }

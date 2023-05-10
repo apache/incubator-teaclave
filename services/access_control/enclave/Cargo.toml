@@ -49,6 +49,7 @@ log        = { version = "0.4.17", features = ["release_max_level_info"] }
 serde      = { version = "1.0.92" }
 serde_json = { version = "1.0.39" }
 thiserror  = { version = "1.0.9" }
+tokio      = { version = "1.0", features = ["rt-multi-thread", "time", "macros"] }
 ring       = { version = "0.16.5" }
 rand       = { version = "0.8.5" }
 

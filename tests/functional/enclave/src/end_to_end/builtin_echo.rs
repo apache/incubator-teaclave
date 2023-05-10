@@ -16,16 +16,20 @@
 // under the License.
 
 use super::*;
-use teaclave_test_utils::test_case;
-
-#[test_case]
-pub fn test_echo_task_success() {
+use futures::FutureExt;
+use teaclave_test_utils::async_test_case;
+#[async_test_case]
+pub async fn test_echo_task_success() {
     // Authenticate user before talking to frontend service
-    let mut api_client =
-        create_authentication_api_client(shared_enclave_info(), AUTH_SERVICE_ADDR).unwrap();
-    let cred = login(&mut api_client, USERNAME, TEST_PASSWORD).unwrap();
-    let mut client =
-        create_frontend_client(shared_enclave_info(), FRONTEND_SERVICE_ADDR, cred).unwrap();
+    let mut api_client = create_authentication_api_client(shared_enclave_info(), AUTH_SERVICE_ADDR)
+        .await
+        .unwrap();
+    let cred = login(&mut api_client, USERNAME, TEST_PASSWORD)
+        .await
+        .unwrap();
+    let mut client = create_frontend_client(shared_enclave_info(), FRONTEND_SERVICE_ADDR, cred)
+        .await
+        .unwrap();
     let arg = FunctionArgument::new("message", "", true);
 
     // Register Function
@@ -35,22 +39,26 @@ pub fn test_echo_task_success() {
         .arguments(vec![arg])
         .build();
 
-    let response = client.register_function(request).unwrap();
+    let response = client
+        .register_function(request)
+        .await
+        .unwrap()
+        .into_inner();
 
     log::debug!("Register function: {:?}", response);
 
     // Create Task
-    let function_id = response.function_id;
+    let function_id = response.function_id.try_into().unwrap();
     let request = CreateTaskRequest::new()
         .function_id(function_id)
         .function_arguments(hashmap!("message" => "Hello From Teaclave!"))
         .executor(Executor::Builtin);
 
-    let response = client.create_task(request).unwrap();
+    let response = client.create_task(request).await.unwrap().into_inner();
 
     log::debug!("Create task: {:?}", response);
 
-    let task_id = response.task_id;
+    let task_id = response.task_id.try_into().unwrap();
 
     // Assign Data To Task
     // This task does not have any input/output files, we can opt to skip the assignment process.
@@ -60,9 +68,9 @@ pub fn test_echo_task_success() {
     // approve_task(&mut client, &task_id).unwrap();
 
     // Invoke Task
-    invoke_task(&mut client, &task_id).unwrap();
+    invoke_task(&mut client, &task_id).await.unwrap();
 
     // Get Task
-    let ret_val = get_task_until(&mut client, &task_id, TaskStatus::Finished);
+    let ret_val = get_task_until(&mut client, &task_id, TaskStatus::Finished).await;
     assert_eq!(&ret_val, "Hello From Teaclave!");
 }

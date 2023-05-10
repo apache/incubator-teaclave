@@ -15,142 +15,107 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use teaclave_attestation::verifier;
-use teaclave_config::build::AS_ROOT_CA_CERT;
+use crate::utils::*;
+use futures::FutureExt;
 use teaclave_config::RuntimeConfig;
 use teaclave_proto::teaclave_authentication_service::*;
 use teaclave_proto::teaclave_common::*;
-use teaclave_rpc::config::SgxTrustedTlsClientConfig;
-use teaclave_rpc::endpoint::Endpoint;
-use teaclave_test_utils::test_case;
+use teaclave_rpc::{
+    transport::{Channel, Uri},
+    CredentialService,
+};
+use teaclave_test_utils::async_test_case;
 use teaclave_types::EnclaveInfo;
-
-use crate::utils::shared_admin_credential;
-use std::collections::HashMap;
-
-fn get_api_client() -> TeaclaveAuthenticationApiClient {
+async fn get_api_client() -> TeaclaveAuthenticationApiClient<CredentialService> {
     let runtime_config = RuntimeConfig::from_toml("runtime.config.toml").expect("runtime");
     let enclave_info = EnclaveInfo::from_bytes(&runtime_config.audit.enclave_info_bytes);
-    let enclave_attr = enclave_info
-        .get_enclave_attr("teaclave_authentication_service")
-        .expect("authentication");
-    let config = SgxTrustedTlsClientConfig::new().attestation_report_verifier(
-        vec![enclave_attr],
-        AS_ROOT_CA_CERT,
-        verifier::universal_quote_verifier,
-    );
-
-    let channel = Endpoint::new("localhost:7776")
-        .config(config)
-        .connect()
-        .unwrap();
-    TeaclaveAuthenticationApiClient::new(channel).unwrap()
+    create_authentication_api_client(&enclave_info, "https://localhost:7776")
+        .await
+        .unwrap()
 }
 
-fn get_api_client_with_credential(cred: &UserCredential) -> TeaclaveAuthenticationApiClient {
+async fn get_internal_client() -> TeaclaveAuthenticationInternalClient<CredentialService> {
     let runtime_config = RuntimeConfig::from_toml("runtime.config.toml").expect("runtime");
     let enclave_info = EnclaveInfo::from_bytes(&runtime_config.audit.enclave_info_bytes);
-    let enclave_attr = enclave_info
-        .get_enclave_attr("teaclave_authentication_service")
-        .expect("authentication");
-    let config = SgxTrustedTlsClientConfig::new().attestation_report_verifier(
-        vec![enclave_attr],
-        AS_ROOT_CA_CERT,
-        verifier::universal_quote_verifier,
-    );
-
-    let channel = Endpoint::new("localhost:7776")
-        .config(config)
+    let tls_config =
+        create_client_config(&enclave_info, "teaclave_authentication_service").unwrap();
+    let service_addr = runtime_config
+        .internal_endpoints
+        .authentication
+        .advertised_address;
+    let endpoint = Channel::builder(service_addr.parse::<Uri>().unwrap());
+    let channel = endpoint
+        .tls_config(tls_config)
+        .unwrap()
         .connect()
+        .await
         .unwrap();
-    let mut metadata = HashMap::new();
-    metadata.insert("id".to_string(), cred.id.to_owned());
-    metadata.insert("token".to_string(), cred.token.to_owned());
-    TeaclaveAuthenticationApiClient::new_with_metadata(channel, metadata).unwrap()
-}
-
-fn get_internal_client() -> TeaclaveAuthenticationInternalClient {
-    let runtime_config = RuntimeConfig::from_toml("runtime.config.toml").expect("runtime");
-    let enclave_info = EnclaveInfo::from_bytes(&runtime_config.audit.enclave_info_bytes);
-    let enclave_attr = enclave_info
-        .get_enclave_attr("teaclave_authentication_service")
-        .expect("authentication");
-    let config = SgxTrustedTlsClientConfig::new().attestation_report_verifier(
-        vec![enclave_attr],
-        AS_ROOT_CA_CERT,
-        verifier::universal_quote_verifier,
-    );
-
-    let channel = Endpoint::new(
-        &runtime_config
-            .internal_endpoints
-            .authentication
-            .advertised_address,
+    TeaclaveAuthenticationInternalClient::with_interceptor(
+        channel,
+        teaclave_rpc::UserCredential::default(),
     )
-    .config(config)
-    .connect()
-    .unwrap();
-    TeaclaveAuthenticationInternalClient::new(channel).unwrap()
 }
 
-#[test_case]
-fn test_login_success() {
-    debug!("{:?}", shared_admin_credential());
-    let mut client = get_api_client_with_credential(shared_admin_credential());
+#[async_test_case]
+async fn test_login_success() {
+    let mut client = get_api_client_with_admin_credential().await;
     let request = UserRegisterRequest::new("test_login_id1", "test_password", "PlatformAdmin", "");
-    let response_result = client.user_register(request);
+    let response_result = client.user_register(request).await;
     let _ = response_result.unwrap();
 
-    let mut client = get_api_client();
+    let mut client = get_api_client().await;
     let request = UserLoginRequest::new("test_login_id1", "test_password");
-    let response_result = client.user_login(request);
+    let response_result = client.user_login(request).await;
     debug!("{:?}", response_result);
     assert!(response_result.is_ok());
 }
 
-#[test_case]
-fn test_login_fail() {
-    let mut client = get_api_client_with_credential(shared_admin_credential());
+#[async_test_case]
+async fn test_login_fail() {
+    let mut client = get_api_client_with_admin_credential().await;
     let request = UserRegisterRequest::new("test_login_id2", "test_password", "PlatformAdmin", "");
-    let response_result = client.user_register(request);
+    let response_result = client.user_register(request).await;
     assert!(response_result.is_ok());
 
-    let mut client = get_api_client();
+    let mut client = get_api_client().await;
     let request = UserLoginRequest::new("test_login_id2", "wrong_password");
-    let response_result = client.user_login(request);
+    let response_result = client.user_login(request).await;
     debug!("{:?}", response_result);
     assert!(response_result.is_err());
 }
 
-#[test_case]
-fn test_authenticate_success() {
-    let mut api_client = get_api_client_with_credential(shared_admin_credential());
+#[async_test_case]
+async fn test_authenticate_success() {
+    let mut api_client = get_api_client_with_admin_credential().await;
     let request = UserRegisterRequest::new(
         "test_authenticate_id1",
         "test_password",
         "PlatformAdmin",
         "",
     );
-    let response_result = api_client.user_register(request);
+    let response_result = api_client.user_register(request).await;
     assert!(response_result.is_ok());
 
-    let mut api_client = get_api_client();
+    let mut api_client = get_api_client().await;
     let request = UserLoginRequest::new("test_authenticate_id1", "test_password");
-    let response_result = api_client.user_login(request);
+    let response_result = api_client.user_login(request).await;
     assert!(response_result.is_ok());
 
-    let mut internal_client = get_internal_client();
-    let credential = UserCredential::new("test_authenticate_id1", response_result.unwrap().token);
+    let mut internal_client = get_internal_client().await;
+    let credential = UserCredential::new(
+        "test_authenticate_id1",
+        response_result.unwrap().into_inner().token,
+    );
     let request = UserAuthenticateRequest::new(credential);
-    let response_result = internal_client.user_authenticate(request);
+    let response_result = internal_client.user_authenticate(request).await;
     debug!("{:?}", response_result);
     assert!(response_result.is_ok());
 }
 
-#[test_case]
-fn test_authenticate_fail() {
-    let mut api_client = get_api_client_with_credential(shared_admin_credential());
-    let mut internal_client = get_internal_client();
+#[async_test_case]
+async fn test_authenticate_fail() {
+    let mut api_client = get_api_client_with_admin_credential().await;
+    let mut internal_client = get_internal_client().await;
 
     let request = UserRegisterRequest::new(
         "test_authenticate_id2",
@@ -158,36 +123,36 @@ fn test_authenticate_fail() {
         "PlatformAdmin",
         "",
     );
-    let response_result = api_client.user_register(request);
+    let response_result = api_client.user_register(request).await;
     assert!(response_result.is_ok());
 
     let credential = UserCredential::new("test_authenticate_id2", "wrong_token");
     let request = UserAuthenticateRequest::new(credential);
-    let response_result = internal_client.user_authenticate(request);
+    let response_result = internal_client.user_authenticate(request).await;
     debug!("{:?}", response_result);
     assert!(response_result.is_err());
 }
 
-#[test_case]
-fn test_register_success() {
-    let mut client = get_api_client_with_credential(shared_admin_credential());
+#[async_test_case]
+async fn test_register_success() {
+    let mut client = get_api_client_with_admin_credential().await;
     let request =
         UserRegisterRequest::new("test_register_id1", "test_password", "PlatformAdmin", "");
-    let response_result = client.user_register(request);
+    let response_result = client.user_register(request).await;
     debug!("{:?}", response_result);
     assert!(response_result.is_ok());
 }
 
-#[test_case]
-fn test_register_fail() {
-    let mut client = get_api_client_with_credential(shared_admin_credential());
+#[async_test_case]
+async fn test_register_fail() {
+    let mut client = get_api_client_with_admin_credential().await;
     let request =
         UserRegisterRequest::new("test_register_id2", "test_password", "PlatformAdmin", "");
-    let response_result = client.user_register(request);
+    let response_result = client.user_register(request).await;
     assert!(response_result.is_ok());
     let request =
         UserRegisterRequest::new("test_register_id2", "test_password", "PlatformAdmin", "");
-    let response_result = client.user_register(request);
+    let response_result = client.user_register(request).await;
     debug!("{:?}", response_result);
     assert!(response_result.is_err());
 }

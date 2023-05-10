@@ -15,8 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use std::sync::{Arc, Mutex};
-
+use std::sync::Arc;
+use tokio::sync::Mutex;
 #[macro_use]
 extern crate log;
 extern crate sgx_types;
@@ -30,11 +30,7 @@ use teaclave_binder::proto::{
 use teaclave_binder::{handle_ecall, register_ecall_handler};
 use teaclave_config::build::{AS_ROOT_CA_CERT, AUDITOR_PUBLIC_KEYS, SCHEDULER_INBOUND_SERVICES};
 use teaclave_config::RuntimeConfig;
-use teaclave_proto::teaclave_scheduler_service::{
-    TeaclaveSchedulerRequest, TeaclaveSchedulerResponse,
-};
-use teaclave_rpc::config::SgxTrustedTlsServerConfig;
-use teaclave_rpc::server::SgxTrustedTlsServer;
+use teaclave_proto::teaclave_scheduler_service::TeaclaveSchedulerServer;
 use teaclave_service_enclave_utils::create_trusted_storage_endpoint;
 use teaclave_service_enclave_utils::ServiceEnclave;
 use teaclave_types::{EnclaveInfo, TeeServiceError, TeeServiceResult};
@@ -43,7 +39,10 @@ mod error;
 mod publisher;
 mod service;
 
-fn start_service(config: &RuntimeConfig) -> Result<()> {
+// Sets the number of worker threads the Runtime will use.
+const N_WORKERS: usize = 8;
+
+async fn start_service(config: &RuntimeConfig) -> Result<()> {
     info!("Starting Scheduler...");
 
     let listen_address = config.internal_endpoints.scheduler.listen_address;
@@ -66,20 +65,17 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
             None => Err(anyhow!("cannot get enclave attribute of {}", service)),
         })
         .collect::<Result<_>>()?;
-    let server_config =
-        SgxTrustedTlsServerConfig::from_attested_tls_config(attested_tls_config.clone())?
-            .attestation_report_verifier(
-                accepted_enclave_attrs,
-                AS_ROOT_CA_CERT,
-                verifier::universal_quote_verifier,
-            )?;
-    info!(" Starting Scheduler: Server config setup finished ...");
 
-    let mut server =
-        SgxTrustedTlsServer::<TeaclaveSchedulerResponse, TeaclaveSchedulerRequest>::new(
-            listen_address,
-            server_config,
-        );
+    let server_config = teaclave_rpc::config::SgxTrustedTlsServerConfig::from_attested_tls_config(
+        attested_tls_config.clone(),
+    )?
+    .attestation_report_verifier(
+        accepted_enclave_attrs,
+        AS_ROOT_CA_CERT,
+        verifier::universal_quote_verifier,
+    )?
+    .into();
+    info!(" Starting Scheduler: Server config setup finished ...");
 
     let storage_service_address = &config.internal_endpoints.storage.advertised_address;
     let storage_service_endpoint = create_trusted_storage_endpoint(
@@ -91,7 +87,8 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
     )?;
     info!(" Starting Scheduler: setup storage endpoint finished ...");
 
-    let service_resources = service::TeaclaveSchedulerResources::new(storage_service_endpoint)?;
+    let service_resources =
+        service::TeaclaveSchedulerResources::new(storage_service_endpoint).await?;
 
     let service_resources = Arc::new(Mutex::new(service_resources));
 
@@ -100,18 +97,21 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
     let deamon = service::TeaclaveSchedulerDeamon::new(&service_resources);
 
     let deamon_handle = std::thread::spawn(move || {
-        let _ = deamon.run();
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        let _ = rt.block_on(deamon.run());
     });
 
     info!(" Starting Scheduler: start listening ...");
 
-    match server.start(service) {
-        Ok(_) => (),
-        Err(e) => {
-            error!("Service exit, error: {}.", e);
-        }
-    }
-
+    teaclave_rpc::transport::Server::builder()
+        .tls_config(server_config)
+        .map_err(|_| anyhow::anyhow!("TeaclaveFrontendServer tls config error"))?
+        .add_service(TeaclaveSchedulerServer::new(service))
+        .serve(listen_address)
+        .await?;
     deamon_handle.join().unwrap();
 
     Ok(())
@@ -119,10 +119,17 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
 
 #[handle_ecall]
 fn handle_start_service(input: &StartServiceInput) -> TeeServiceResult<StartServiceOutput> {
-    match start_service(&input.config) {
+    let result = tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(N_WORKERS)
+        .enable_all()
+        .build()
+        .map_err(|_| TeeServiceError::SgxError)?
+        .block_on(start_service(&input.config));
+
+    match result {
         Ok(_) => Ok(StartServiceOutput),
         Err(e) => {
-            log::error!("Failed to start the service: {}", e);
+            error!("Failed to run service: {}", e);
             Err(TeeServiceError::ServiceError)
         }
     }

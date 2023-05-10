@@ -15,12 +15,17 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#[allow(dead_code)]
-#[cfg(feature = "mesalock_sgx")]
-pub(crate) fn get_tcs_num() -> usize {
-    if sgx_trts::enclave::rsgx_is_supported_EDMM() {
-        sgx_trts::enclave::SgxGlobalData::new().get_dyn_tcs_num() as usize
-    } else {
-        (sgx_trts::enclave::SgxGlobalData::new().get_tcs_max_num() - 1) as usize
-    }
+#[macro_export]
+macro_rules! ensure {
+    ($cond:expr,$err:expr $(,)?) => {
+        if !$cond {
+            return std::result::Result::Err($err.into());
+        }
+    };
+
+    ($cond:expr,$code:expr,$err:expr $(,)?) => {
+        if !$cond {
+            return std::result::Result::Err($crate::Status::new($code, $err.to_string()));
+        }
+    };
 }

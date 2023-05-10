@@ -48,6 +48,7 @@ cfg-if    = { version = "0.1.9" }
 log       = { version = "0.4.17", features = ["release_max_level_info"] }
 serde     = { version = "1.0.92" }
 thiserror = { version = "1.0.9" }
+tokio     = { version = "1.0", features = ["rt-multi-thread", "time", "macros"] }
 
 rusty-leveldb                  = { path = "../../../common/rusty_leveldb_sgx" }
 teaclave_attestation           = { path = "../../../attestation" }

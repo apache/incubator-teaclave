@@ -28,8 +28,14 @@ fn main() {
     let config_path = "runtime.config.toml";
     let config = teaclave_config::RuntimeConfig::from_toml(config_path)
         .expect("Failed to load config file.");
-    if let Err(e) = teaclave_execution_service_enclave::start_service(&config) {
-        log::error!("app will exit, error {:?}", e);
+    let result = tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(8)
+        .enable_all()
+        .build()
+        .expect("failed to create tokio runtime")
+        .block_on(teaclave_execution_service_enclave::start_service(&config));
+    if result.is_err() {
+        log::error!("app will exit, error {:?}", result);
     }
 }
 

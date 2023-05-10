@@ -18,17 +18,16 @@
 #![feature(strict_provenance)]
 
 extern crate sgx_types;
-#[cfg(feature = "mesalock_sgx")]
-use std::untrusted::path::PathEx;
-
 use anyhow::{anyhow, ensure, Result};
 use log::info;
 use teaclave_attestation::{verifier, AttestationConfig, RemoteAttestation};
 use teaclave_config::build::{AS_ROOT_CA_CERT, AUDITOR_PUBLIC_KEYS};
 use teaclave_config::RuntimeConfig;
 use teaclave_service_enclave_utils::create_trusted_scheduler_endpoint;
-
 use teaclave_types::EnclaveInfo;
+
+#[cfg(feature = "mesalock_sgx")]
+use std::untrusted::path::PathEx;
 
 #[cfg(feature = "mesalock_sgx")]
 mod ecall;
@@ -36,7 +35,7 @@ mod file_handler;
 mod service;
 mod task_file_manager;
 
-pub fn start_service(config: &RuntimeConfig) -> Result<()> {
+pub async fn start_service(config: &RuntimeConfig) -> Result<()> {
     info!("Starting Execution...");
 
     let attestation_config = AttestationConfig::from_teaclave_config(config)?;
@@ -77,9 +76,9 @@ pub fn start_service(config: &RuntimeConfig) -> Result<()> {
 
     info!(" Starting Execution: start ...");
     let mut service =
-        service::TeaclaveExecutionService::new(scheduler_service_endpoint, fusion_base)?;
+        service::TeaclaveExecutionService::new(scheduler_service_endpoint, fusion_base).await?;
 
-    service.start()
+    service.start().await
 }
 
 #[cfg(feature = "enclave_unit_test")]

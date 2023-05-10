@@ -30,11 +30,8 @@ use teaclave_config::build::{
     ACCESS_CONTROL_INBOUND_SERVICES, AS_ROOT_CA_CERT, AUDITOR_PUBLIC_KEYS,
 };
 use teaclave_config::RuntimeConfig;
-use teaclave_proto::teaclave_access_control_service::{
-    TeaclaveAccessControlRequest, TeaclaveAccessControlResponse,
-};
-use teaclave_rpc::config::SgxTrustedTlsServerConfig;
-use teaclave_rpc::server::SgxTrustedTlsServer;
+use teaclave_proto::teaclave_access_control_service::TeaclaveAccessControlServer;
+use teaclave_rpc::{config::SgxTrustedTlsServerConfig, transport::Server};
 use teaclave_service_enclave_utils::ServiceEnclave;
 use teaclave_types::{EnclaveInfo, TeeServiceError, TeeServiceResult};
 
@@ -42,7 +39,10 @@ mod acs;
 mod error;
 mod service;
 
-fn start_service(config: &RuntimeConfig) -> Result<()> {
+// Sets the number of worker threads the Runtime will use.
+const N_WORKERS: usize = 8;
+
+async fn start_service(config: &RuntimeConfig) -> Result<()> {
     let listen_address = config.internal_endpoints.access_control.listen_address;
     let attestation_config = AttestationConfig::from_teaclave_config(config)?;
     let attested_tls_config = RemoteAttestation::new(attestation_config)
@@ -61,34 +61,40 @@ fn start_service(config: &RuntimeConfig) -> Result<()> {
             None => Err(anyhow!("cannot get enclave attribute of {}", service)),
         })
         .collect::<Result<_>>()?;
+
     let server_config = SgxTrustedTlsServerConfig::from_attested_tls_config(attested_tls_config)?
         .attestation_report_verifier(
-        accepted_enclave_attrs,
-        AS_ROOT_CA_CERT,
-        verifier::universal_quote_verifier,
-    )?;
-
+            accepted_enclave_attrs,
+            AS_ROOT_CA_CERT,
+            verifier::universal_quote_verifier,
+        )?
+        .into();
     acs::init_acs()?;
-    let mut server = SgxTrustedTlsServer::<
-        TeaclaveAccessControlResponse,
-        TeaclaveAccessControlRequest,
-    >::new(listen_address, server_config);
+
     let service = service::TeaclaveAccessControlService::new();
-    match server.start(service) {
-        Ok(_) => (),
-        Err(e) => {
-            error!("Service exit, error: {}.", e);
-        }
-    }
+
+    Server::builder()
+        .tls_config(server_config)
+        .map_err(|_| anyhow::anyhow!("TeaclaveFrontendServer tls config error"))?
+        .add_service(TeaclaveAccessControlServer::new(service))
+        .serve(listen_address)
+        .await?;
     Ok(())
 }
 
 #[handle_ecall]
 fn handle_start_service(input: &StartServiceInput) -> TeeServiceResult<StartServiceOutput> {
-    match start_service(&input.config) {
+    let result = tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(N_WORKERS)
+        .enable_all()
+        .build()
+        .map_err(|_| TeeServiceError::SgxError)?
+        .block_on(start_service(&input.config));
+
+    match result {
         Ok(_) => Ok(StartServiceOutput),
         Err(e) => {
-            log::error!("Failed to start the service: {}", e);
+            error!("Failed to run service: {}", e);
             Err(TeeServiceError::ServiceError)
         }
     }
@@ -122,7 +128,7 @@ pub mod tests {
         if crate::acs::init_acs().is_err() {
             return false;
         }
-        run_tests!(
+        run_async_tests!(
             service::tests::user_access_data,
             service::tests::user_access_function,
             service::tests::user_access_task,

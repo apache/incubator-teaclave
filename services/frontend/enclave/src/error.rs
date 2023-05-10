@@ -15,7 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use teaclave_types::TeaclaveServiceResponseError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -44,9 +43,17 @@ pub(crate) enum FrontendServiceError {
     Authentication(AuthenticationError),
 }
 
-impl From<FrontendServiceError> for TeaclaveServiceResponseError {
+impl From<FrontendServiceError> for teaclave_rpc::Status {
     fn from(error: FrontendServiceError) -> Self {
         log::debug!("FrontendServiceError: {:?}", error);
-        TeaclaveServiceResponseError::RequestError(error.to_string())
+        match error {
+            FrontendServiceError::PermissionDenied => {
+                teaclave_rpc::Status::permission_denied("permission denied")
+            }
+            FrontendServiceError::Service(e) => teaclave_rpc::Status::internal(e.to_string()),
+            FrontendServiceError::Authentication(e) => {
+                teaclave_rpc::Status::unauthenticated(e.to_string())
+            }
+        }
     }
 }

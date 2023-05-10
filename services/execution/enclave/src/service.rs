@@ -24,7 +24,7 @@ use std::thread;
 use crate::task_file_manager::TaskFileManager;
 use teaclave_proto::teaclave_common::{ExecutorCommand, ExecutorStatus};
 use teaclave_proto::teaclave_scheduler_service::*;
-use teaclave_rpc::endpoint::Endpoint;
+use teaclave_rpc::transport::{channel::Endpoint, Channel};
 use teaclave_types::*;
 use teaclave_worker::Worker;
 
@@ -37,30 +37,19 @@ static WORKER_BASE_DIR: &str = "/tmp/teaclave_agent/";
 pub(crate) struct TeaclaveExecutionService {
     #[allow(dead_code)]
     worker: Arc<Worker>,
-    scheduler_client: Arc<Mutex<TeaclaveSchedulerClient>>,
+    scheduler_client: TeaclaveSchedulerClient<Channel>,
     fusion_base: PathBuf,
     id: Uuid,
     status: ExecutorStatus,
 }
 
 impl TeaclaveExecutionService {
-    pub(crate) fn new(
+    pub(crate) async fn new(
         scheduler_service_endpoint: Endpoint,
         fusion_base: impl AsRef<Path>,
     ) -> Result<Self> {
-        let mut i = 0;
-        let channel = loop {
-            match scheduler_service_endpoint.connect() {
-                Ok(channel) => break channel,
-                Err(_) => {
-                    anyhow::ensure!(i < 10, "failed to connect to scheduler service");
-                    log::debug!("Failed to connect to scheduler service, retry {}", i);
-                    i += 1;
-                }
-            }
-            std::thread::sleep(std::time::Duration::from_secs(3));
-        };
-        let scheduler_client = Arc::new(Mutex::new(TeaclaveSchedulerClient::new(channel)?));
+        let channel = scheduler_service_endpoint.connect().await?;
+        let scheduler_client = TeaclaveSchedulerClient::new(channel);
 
         Ok(TeaclaveExecutionService {
             worker: Arc::new(Worker::default()),
@@ -71,7 +60,7 @@ impl TeaclaveExecutionService {
         })
     }
 
-    pub(crate) fn start(&mut self) -> Result<()> {
+    pub(crate) async fn start(&mut self) -> Result<()> {
         let (tx, rx) = mpsc::channel();
         let mut current_task: Arc<Option<StagedTask>> = Arc::new(None);
         let mut task_handle: Option<thread::JoinHandle<()>> = None;
@@ -79,17 +68,17 @@ impl TeaclaveExecutionService {
         loop {
             std::thread::sleep(std::time::Duration::from_secs(3));
 
-            match self.heartbeat() {
+            match self.heartbeat().await {
                 Ok(ExecutorCommand::Stop) => {
                     log::info!("Executor {} is stopped", self.id);
                     return Err(anyhow::anyhow!("EnclaveForceTermination"));
                 }
                 Ok(ExecutorCommand::NewTask) if self.status == ExecutorStatus::Idle => {
-                    match self.pull_task() {
+                    match self.pull_task().await {
                         Ok(task) => {
                             self.status = ExecutorStatus::Executing;
-                            self.update_task_status(&task.task_id, TaskStatus::Running)?;
-                            log::info!("Executor {} accepted a new task, executing...", self.id);
+                            self.update_task_status(&task.task_id, TaskStatus::Running)
+                                .await?;
                             let tx_task = tx.clone();
                             let fusion_base = self.fusion_base.clone();
                             current_task = Arc::new(Some(task));
@@ -132,6 +121,7 @@ impl TeaclaveExecutionService {
                     let task_copy = current_task.clone();
                     match self
                         .update_task_result(&task_copy.as_ref().as_ref().unwrap().task_id, result)
+                        .await
                     {
                         Ok(_) => (),
                         Err(e) => {
@@ -156,62 +146,40 @@ impl TeaclaveExecutionService {
         }
     }
 
-    fn pull_task(&mut self) -> Result<StagedTask> {
+    async fn pull_task(&mut self) -> Result<StagedTask> {
         let request = PullTaskRequest {
-            executor_id: self.id,
+            executor_id: self.id.to_string(),
         };
-        let response = self
-            .scheduler_client
-            .clone()
-            .lock()
-            .map_err(|_| anyhow::anyhow!("Cannot lock scheduler client"))?
-            .pull_task(request)?;
+        let response = self.scheduler_client.pull_task(request).await?.into_inner();
 
         log::debug!("pull_stask response: {:?}", response);
-        Ok(response.staged_task)
+        let staged_task = StagedTask::from_slice(&response.staged_task)?;
+        Ok(staged_task)
     }
 
-    fn heartbeat(&mut self) -> Result<ExecutorCommand> {
-        let request = HeartbeatRequest {
-            executor_id: self.id,
-            status: self.status,
-        };
-        let response = self
-            .scheduler_client
-            .clone()
-            .lock()
-            .map_err(|_| anyhow::anyhow!("Cannot lock scheduler client"))?
-            .heartbeat(request)?;
+    async fn heartbeat(&mut self) -> Result<ExecutorCommand> {
+        let request = HeartbeatRequest::new(self.id, self.status);
+        let response = self.scheduler_client.heartbeat(request).await?.into_inner();
 
         log::debug!("heartbeat_with_result response: {:?}", response);
-        Ok(response.command)
+        response.command.try_into()
     }
 
-    fn update_task_result(
+    async fn update_task_result(
         &mut self,
         task_id: &Uuid,
         task_result: Result<TaskOutputs>,
     ) -> Result<()> {
         let request = UpdateTaskResultRequest::new(*task_id, task_result);
 
-        let _response = self
-            .scheduler_client
-            .clone()
-            .lock()
-            .map_err(|_| anyhow::anyhow!("Cannot lock scheduler client"))?
-            .update_task_result(request)?;
+        let _response = self.scheduler_client.update_task_result(request).await?;
 
         Ok(())
     }
 
-    fn update_task_status(&mut self, task_id: &Uuid, task_status: TaskStatus) -> Result<()> {
+    async fn update_task_status(&mut self, task_id: &Uuid, task_status: TaskStatus) -> Result<()> {
         let request = UpdateTaskStatusRequest::new(task_id.to_owned(), task_status);
-        let _response = self
-            .scheduler_client
-            .clone()
-            .lock()
-            .map_err(|_| anyhow::anyhow!("Cannot lock scheduler client"))?
-            .update_task_status(request)?;
+        let _response = self.scheduler_client.update_task_status(request).await?;
 
         Ok(())
     }

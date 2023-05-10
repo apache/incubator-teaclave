@@ -1,43 +1,37 @@
----
-permalink: /docs/codebase/rpc
+--- 
+permalink: /docs/codebase/rpc 
 ---
 
 # RPC
 
-This directory contains an RPC implementation over attested TLS connection
-written in Rust, providing trusted channels to send and handle requests.
-RPC interfaces and request/response messages can be defined in ProtoBuf and
-used for generating Rust structs and traits to implement services or client
-function to send requests.
+This directory contains TLS configuration over an attested TLS connection,
+providing trusted channels to send and handle requests.
 
-Similar with other RPC frameworks, there are several concepts of RPC in
-Teaclave.
+Re-export [Tonic](https://github.com/hyperium/tonic) to support the general
+gRPC framework. `Tonic` is a gRPC over HTTP/2 implementation focused on high
+performance, interoperability, and flexibility.
 
 ## Channel and Client
 
-A channel in RPC represent a connection to the target service. Clients can use
-the channel to send requests. In Teaclave, we implement `SgxTrustedTlsChannel`,
-which can establish and attested a remote connection. For example, to connect
-the management service, you need to establish a trusted channel with the service
-first. Then, create a client of management service with the channel. At last,
-you can use this client to send requests like `InvokeTask`.
+A channel in gRPC represents a connection to the target service. Clients can
+use the channel to send requests. When constructing a client, you can use the
+`SgxTrustedTlsClientConfig` to set up TLS and attestation configurations so
+that we can establish and attest to a remote connection. For example, to
+connect the management service, you need to establish a trusted channel with
+the service first. Then, create a client for the management service with the
+channel. At last, you can use this client to send requests like `InvokeTask`.
 
-When constructing a client, you can use the `SgxTrustedTlsClientConfig` to setup
-TLS and attestation configs.
 
 ## Server and Service
 
-Server is an entity to listening a network address, processing incoming
-messages, and forwarding requests to certain service. Similar with channel in
-Teaclave, we implement `SgxTrustedTlsServer`, which can establish an attested TLS
-channel with clients.
+A server is an entity that listens to a network address, processes incoming
+messages, and forwards requests to certain services. Similar to the client, you
+can use `SgxTrustedTlsServerConfig` to set up TLS and attestation
+configurations for the channel with clients.
 
-Similar with the client, you can use `SgxTrustedTlsServerConfig` to setup TLS
-and attestation configs.
 
-## Protocol
+## Interceptor
 
-There are many RPC protocols that can be implemented in the RPC framework. Currently,
-there's only one simple protocol called `JsonProtocol`. Simply speaking, for
-the json protocol, one RPC message will contain a length of the following
-requests (in big endian) and a json serialized request.
+In Teaclave, we implement `CredentialService` based on the `Interceptor` trait
+to add a credential to the MetadataMap of each request before it is sent, so
+servers can check the authentication credential of each request.

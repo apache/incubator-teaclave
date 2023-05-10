@@ -15,9 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use teaclave_types::TeaclaveServiceResponseError;
+use teaclave_rpc::{Code, Status};
 use thiserror::Error;
-
 #[derive(Error, Debug)]
 pub enum SchedulerServiceError {
     #[error("service internal error")]
@@ -30,9 +29,14 @@ pub enum SchedulerServiceError {
     StorageError,
 }
 
-impl From<SchedulerServiceError> for TeaclaveServiceResponseError {
+impl From<SchedulerServiceError> for Status {
     fn from(error: SchedulerServiceError) -> Self {
         log::debug!("SchedulerServiceError: {:?}", error);
-        TeaclaveServiceResponseError::RequestError(error.to_string())
+        let msg = error.to_string();
+        let code = match error {
+            SchedulerServiceError::Service(_) => Code::Internal,
+            _ => Code::Unknown,
+        };
+        Status::new(code, msg)
     }
 }

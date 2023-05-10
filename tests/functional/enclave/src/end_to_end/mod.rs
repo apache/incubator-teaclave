@@ -16,36 +16,39 @@
 // under the License.
 
 use crate::utils::*;
+use teaclave_proto::teaclave_common::i32_from_task_status;
 use teaclave_proto::teaclave_frontend_service::*;
 use teaclave_types::*;
 use url::Url;
-
 mod builtin_echo;
 mod builtin_gbdt_train;
 mod mesapy_data_fusion;
 mod mesapy_echo;
+use teaclave_rpc::CredentialService;
 
-fn get_task(client: &mut TeaclaveFrontendClient, task_id: &ExternalID) -> GetTaskResponse {
+async fn get_task(
+    client: &mut TeaclaveFrontendClient<CredentialService>,
+    task_id: &ExternalID,
+) -> GetTaskResponse {
     let request = GetTaskRequest::new(task_id.clone());
-    let response = client.get_task(request).unwrap();
+    let response = client.get_task(request).await.unwrap().into_inner();
     log::debug!("Get task: {:?}", response);
     response
 }
 
-fn get_task_until(
-    client: &mut TeaclaveFrontendClient,
+async fn get_task_until(
+    client: &mut TeaclaveFrontendClient<CredentialService>,
     task_id: &ExternalID,
     status: TaskStatus,
 ) -> String {
+    let status = i32_from_task_status(status);
     loop {
-        let request = GetTaskRequest::new(task_id.clone());
-        let response = client.get_task(request).unwrap();
-        log::debug!("Get task: {:?}", response);
-
+        let response = get_task(client, task_id).await;
         std::thread::sleep(std::time::Duration::from_secs(1));
 
         if response.status == status {
-            match response.result {
+            let result = teaclave_types::TaskResult::try_from(response.result).unwrap();
+            match result {
                 TaskResult::Ok(outputs) => {
                     let ret_val = String::from_utf8(outputs.return_value).unwrap();
                     log::debug!("Task returns: {:?}", ret_val);
@@ -61,16 +64,22 @@ fn get_task_until(
     }
 }
 
-fn approve_task(client: &mut TeaclaveFrontendClient, task_id: &ExternalID) -> anyhow::Result<()> {
+async fn approve_task(
+    client: &mut TeaclaveFrontendClient<CredentialService>,
+    task_id: &ExternalID,
+) -> anyhow::Result<()> {
     let request = ApproveTaskRequest::new(task_id.clone());
-    let response = client.approve_task(request)?;
+    let response = client.approve_task(request).await?.into_inner();
     log::debug!("Approve task: {:?}", response);
     Ok(())
 }
 
-fn invoke_task(client: &mut TeaclaveFrontendClient, task_id: &ExternalID) -> anyhow::Result<()> {
+async fn invoke_task(
+    client: &mut TeaclaveFrontendClient<CredentialService>,
+    task_id: &ExternalID,
+) -> anyhow::Result<()> {
     let request = InvokeTaskRequest::new(task_id.clone());
-    let response = client.invoke_task(request)?;
+    let response = client.invoke_task(request).await?.into_inner();
     log::debug!("Invoke task: {:?}", response);
     Ok(())
 }

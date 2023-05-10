@@ -29,16 +29,11 @@ use teaclave_test_utils::check_all_passed;
 use teaclave_types::TeeServiceResult;
 
 mod rusty_leveldb_sgx;
-mod teaclave_rpc;
 mod teaclave_worker;
 
 #[handle_ecall]
 fn handle_run_test(_: &RunTestInput) -> TeeServiceResult<RunTestOutput> {
-    let ret = check_all_passed!(
-        rusty_leveldb_sgx::run_tests(),
-        teaclave_rpc::run_tests(),
-        teaclave_worker::run_tests()
-    );
+    let ret = check_all_passed!(rusty_leveldb_sgx::run_tests(), teaclave_worker::run_tests());
     assert!(ret);
 
     Ok(RunTestOutput)

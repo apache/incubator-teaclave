@@ -42,13 +42,7 @@ message with `token` inside (in string type).
 
 With this definition, the build system will help to generate utility functions,
 traits, and structures for clients to send RPC requests, and for service to
-implement functions of handling requests. This is done by a build time tool
-called [`proto_gen`](https://github.com/apache/incubator-teaclave/tree/master/services/proto/proto_gen).
-
-There is another layer in the `teaclave_proto` crate to help convert protobuf's
-simple data type to Rust's more concise data type. For example, a URL is defined
-in the string type in protobuf, while in Rust we can use the `Url` struct to
-store a URL.
+implement functions of handling requests. This is done by [`tonic_build`](https://github.com/hyperium/tonic/tree/master/tonic-build).
 
 For more protocol definitions for other services, please see proto files in
 the [`proto` directory](https://github.com/apache/incubator-teaclave/tree/master/services/proto/src/proto).
@@ -113,16 +107,16 @@ let attested_tls_config = RemoteAttestation::new(attestation_config)
     .generate_and_endorse()?
     .attested_tls_config()
     .ok_or_else(|| anyhow!("cannot get attested TLS config"))?;
-let server_config = SgxTrustedTlsServerConfig::from_attested_tls_config(attested_tls_config)?;
-
-let mut server = SgxTrustedTlsServer::<
-    TeaclaveAuthenticationApiResponse,
-    TeaclaveAuthenticationApiRequest,
->::new(addr, server_config);
+let server_config = SgxTrustedTlsServerConfig::from_attested_tls_config(attested_tls_config)?.into();
 
 let service = api_service::TeaclaveAuthenticationApiService::new(db_client, jwt_secret);
 
-match server.start(service) {}
+Server::builder()
+    .tls_config(tls_config)
+    .map_err(|_| anyhow!("TeaclaveAuthenticationApiServer tls config error"))?
+    .add_service(TeaclaveAuthenticationApiServer::new(service))
+    .serve(addr)
+    .await?;
 ```
 
 ## Topology
