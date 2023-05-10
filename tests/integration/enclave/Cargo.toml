@@ -51,7 +51,7 @@ serde       = { version = "1.0.92" }
 serde_json  = { version = "1.0.39" }
 thiserror   = { version = "1.0.9" }
 rand        = { version = "0.8.5" }
-rustls      = { version = "0.17.0", features = ["dangerous_configuration"] }
+rustls      = { version = "0.19.0", features = ["dangerous_configuration"] }
 
 rusty-leveldb = { path = "../../../common/rusty_leveldb_sgx", default-features = false, optional = true }
 

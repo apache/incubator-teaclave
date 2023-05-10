@@ -58,6 +58,7 @@ simple_asn1       = { git = "https://github.com/acw/simple_asn1", rev = "7db7a48
 gbdt              = { git = "https://github.com/apache/incubator-teaclave-crates" }
 getrandom         = { git = "https://github.com/apache/incubator-teaclave-crates" }
 image             = { git = "https://github.com/apache/incubator-teaclave-crates" }
+mio               = { git = "https://github.com/apache/incubator-teaclave-crates" }
 num_cpus          = { git = "https://github.com/apache/incubator-teaclave-crates" }
 rand              = { git = "https://github.com/apache/incubator-teaclave-crates" }
 ring              = { git = "https://github.com/apache/incubator-teaclave-crates" }

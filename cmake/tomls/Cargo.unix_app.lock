@@ -1412,11 +1412,11 @@ dependencies = [
 
 [[package]]
 name = "rustls"
-version = "0.17.0"
+version = "0.19.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c0d4a31f5d68413404705d6982529b0e11a9aacd4839d1d6222ee3b8cb4015e1"
+checksum = "35edb675feee39aec9c99fa5ff985081995a06d594114ae14cbe797ad7b7a6d7"
 dependencies = [
- "base64 0.11.0",
+ "base64 0.13.1",
  "log",
  "ring",
  "sct 0.6.1",
@@ -1860,7 +1860,7 @@ dependencies = [
  "log",
  "num-bigint",
  "percent-encoding",
- "rustls 0.17.0",
+ "rustls 0.19.1",
  "serde",
  "serde_json",
  "sgx_crypto",
@@ -1887,7 +1887,7 @@ dependencies = [
  "hex",
  "http",
  "pem",
- "rustls 0.17.0",
+ "rustls 0.19.1",
  "structopt",
  "teaclave_attestation",
  "teaclave_crypto",
@@ -1988,7 +1988,7 @@ dependencies = [
  "http",
  "libc",
  "log",
- "rustls 0.17.0",
+ "rustls 0.19.1",
  "serde",
  "serde_json",
  "sgx_libc",
