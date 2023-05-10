@@ -10,8 +10,14 @@ results with the Teclave's client SDK in both single and multi-party setups.
 
 Before trying these examples, please make sure all services in the Teaclave
 platform has been properly launched. Also, for examples implemented in Python,
-don't forget to set the `PYTHONPATH` to the `sdk` path so that the scripts can
-successfully import the `teaclave` module.
+don't forget to generate protocol stub files and set the `PYTHONPATH` to the
+`sdk` path so that the scripts can successfully import the `teaclave` module.
+
+Generate stub files by grpcio-tools and grpclib.
+
+```
+python3 -m grpc_tools.protoc --proto_path=../../services/proto/src/proto --python_out=. --grpclib_python_out=. ../../services/proto/src/proto/{teaclave_authentication_service.proto,teaclave_frontend_service.proto,teaclave_common.proto}
+```
 
 For instance, use the following command to invoke an echo function in Teaclave:
 

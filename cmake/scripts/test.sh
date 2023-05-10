@@ -79,6 +79,14 @@ wait_port() {
   done
 }
 
+generate_python_grpc_stubs() {
+  python3 -m grpc_tools.protoc \
+          --proto_path=${TEACLAVE_PROJECT_ROOT}/services/proto/src/proto \
+          --python_out=${TEACLAVE_PROJECT_ROOT}/sdk/python \
+          --grpclib_python_out=${TEACLAVE_PROJECT_ROOT}/sdk/python \
+          ${TEACLAVE_PROJECT_ROOT}/services/proto/src/proto/*.proto
+}
+
 run_integration_tests() {
   trap cleanup INT TERM ERR
 
@@ -152,7 +160,9 @@ run_functional_tests() {
 
   ./teaclave_functional_tests -t end_to_end
 
-  # Run script tests
+  generate_python_grpc_stubs
+  
+  export PYTHONPATH=${TEACLAVE_PROJECT_ROOT}/sdk/python
   ./scripts/functional_tests.py -v
 
   popd
@@ -283,6 +293,8 @@ run_examples() {
   sleep 3    # wait for execution services
   popd
 
+  generate_python_grpc_stubs
+
   # run builtin examples
   builtin_examples
 
@@ -328,6 +340,8 @@ run_libos_examples() {
   sleep 3    # wait for execution services
   popd
 
+  generate_python_grpc_stubs
+          
   # run builtin examples
   builtin_examples
 
@@ -373,6 +387,8 @@ run_cancel_test() {
 
   echo "executor 1 pid: $exe_pid1"
   echo "executor 2 pid: $exe_pid2"
+
+  generate_python_grpc_stubs
 
   pushd ${TEACLAVE_PROJECT_ROOT}/examples/python
   export PYTHONPATH=${TEACLAVE_PROJECT_ROOT}/sdk/python

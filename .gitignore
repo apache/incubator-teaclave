@@ -32,3 +32,6 @@ cov_report
 examples/c/builtin_echo
 examples/c/builtin_ordered_set_intersect
 examples/python/out.jpg
+# ignore grpc files during building and testing
+sdk/python/*_pb2.py
+sdk/python/*_grpc.py

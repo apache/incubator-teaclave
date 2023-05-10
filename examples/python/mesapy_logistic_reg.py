@@ -20,11 +20,9 @@
 An example about Logistic Regression in MesaPy.
 """
 
-import sys
-import binascii
 from typing import List
 from teaclave import FunctionInput, FunctionOutput, FunctionArgument, OwnerList, DataMap
-from utils import USER_ID, USER_PASSWORD, connect_authentication_service, connect_frontend_service, PlatformAdmin
+from utils import connect_authentication_service, connect_frontend_service
 
 from enum import Enum
 
@@ -77,13 +75,6 @@ class OutputData:
 
     def set_label(self, label="result_data_0"):
         self.label = label
-
-
-class DataList:
-
-    def __init__(self, data_name, data_id):
-        self.data_name = data_name
-        self.data_id = data_id
 
 
 class ConfigClient:
@@ -161,7 +152,7 @@ class ConfigClient:
             key = da.file_key
             iv = da.iv
             input_id = client.register_input_file(url, schema, key, iv, cmac)
-            input_data_list.append(DataList(da.label, input_id))
+            input_data_list.append(DataMap(da.label, input_id))
         print(f"[+] {self.user_id} registering output file")
         output_data_list = []
         for out_data in outputs:
@@ -170,7 +161,7 @@ class ConfigClient:
             key = out_data.file_key
             iv = out_data.iv
             output_id = client.register_output_file(out_url, schema, key, iv)
-            output_data_list.append(DataList(out_data.label, output_id))
+            output_data_list.append(DataMap(out_data.label, output_id))
         print(f"[+] {self.user_id} assigning data to task")
 
         client.assign_data_to_task(task_id, input_data_list, output_data_list)

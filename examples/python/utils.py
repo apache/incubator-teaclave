@@ -45,7 +45,7 @@ class PlatformAdmin:
     def __init__(self, user_id: str, user_password: str):
         self.client = AuthenticationService(AUTHENTICATION_SERVICE_ADDRESS,
                                             AS_ROOT_CA_CERT_PATH,
-                                            ENCLAVE_INFO_PATH).connect()
+                                            ENCLAVE_INFO_PATH)
         token = self.client.user_login(user_id, user_password)
         self.client.metadata = {"id": user_id, "token": token}
 
@@ -55,10 +55,9 @@ class PlatformAdmin:
 
 def connect_authentication_service():
     return AuthenticationService(AUTHENTICATION_SERVICE_ADDRESS,
-                                 AS_ROOT_CA_CERT_PATH,
-                                 ENCLAVE_INFO_PATH).connect()
+                                 AS_ROOT_CA_CERT_PATH, ENCLAVE_INFO_PATH)
 
 
 def connect_frontend_service():
     return FrontendService(FRONTEND_SERVICE_ADDRESS, AS_ROOT_CA_CERT_PATH,
-                           ENCLAVE_INFO_PATH).connect()
+                           ENCLAVE_INFO_PATH)

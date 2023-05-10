@@ -17,10 +17,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import sys
-
-from teaclave import FunctionInput, FunctionOutput, FunctionArgument, OwnerList, DataMap
-from utils import USER_ID, USER_PASSWORD, connect_authentication_service, connect_frontend_service, PlatformAdmin
+from teaclave import FunctionInput, OwnerList, DataMap
+from utils import connect_authentication_service, connect_frontend_service, PlatformAdmin
 
 # In the example, user 0 creates the task and user 0, 1, upload their private data.
 # Then user 0 invokes the task and user 0, 1 get the result.
@@ -67,13 +65,6 @@ USER_DATA_1 = UserData("user1", "password",
                            0xa3, 0x1d, 0xd0, 0xb7, 0xde, 0x0b, 0x6c, 0xc7,
                            0xe0, 0xde, 0xc1, 0xdc, 0xf7, 0xa4, 0x64, 0x79
                        ], [], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-
-
-class DataList:
-
-    def __init__(self, data_name, data_id):
-        self.data_name = data_name
-        self.data_id = data_id
 
 
 class Client:
@@ -134,7 +125,7 @@ class Client:
         input_id = client.register_input_file(url, schema, key, iv, cmac)
 
         print(f"[+] {self.user_id} assigning data to task")
-        client.assign_data_to_task(task_id, [DataList(input_label, input_id)],
+        client.assign_data_to_task(task_id, [DataMap(input_label, input_id)],
                                    [])
 
     def approve_task(self, task_id):

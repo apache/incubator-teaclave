@@ -17,7 +17,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import sys
 import base64
 
 from utils import USER_ID, USER_PASSWORD, connect_authentication_service, connect_frontend_service
