@@ -33,6 +33,14 @@ from OpenSSL.crypto import load_certificate, FILETYPE_PEM, FILETYPE_ASN1
 from OpenSSL.crypto import X509Store, X509StoreContext
 from OpenSSL import crypto
 
+import h2.connection
+import h2.events
+
+from io import BytesIO
+from h2.config import H2Configuration
+from urllib.parse import unquote
+from teaclave_authentication_service_pb2 import UserLoginRequest, UserLoginResponse
+
 HOSTNAME = 'localhost'
 AUTHENTICATION_SERVICE_ADDRESS = (HOSTNAME, 7776)
 CONTEXT = ssl._create_unverified_context()
@@ -50,19 +58,6 @@ if os.environ.get('TEACLAVE_PROJECT_ROOT'):
 else:
     AS_ROOT_CA_CERT_PATH = "../../keys/" + AS_ROOT_CERT_FILENAME
     ENCLAVE_INFO_PATH = "../../release/tests/enclave_info.toml"
-
-
-def write_message(sock, message):
-    message = json.dumps(message)
-    message = message.encode()
-    sock.write(struct.pack(">Q", len(message)))
-    sock.write(message)
-
-
-def read_message(sock):
-    response_len = struct.unpack(">Q", sock.read(8))
-    response = sock.read(response_len[0])
-    return response
 
 
 def verify_report(cert, endpoint_name):
@@ -121,50 +116,114 @@ def verify_report(cert, endpoint_name):
         raise Exception("mr_signer error")
 
 
+def encode_message(message):
+    message_bin = message.SerializeToString()
+    header = struct.pack('?', False) + struct.pack('>I', len(message_bin))
+    return header + message_bin
+
+
+def decode_message(message_bin, message_type):
+    f = BytesIO(message_bin)
+    meta = f.read(5)
+    message_len = struct.unpack('>I', meta[1:])[0]
+    message_body = f.read(message_len)
+    message = message_type.FromString(message_body)
+    return message
+
+
 class TestAuthenticationService(unittest.TestCase):
 
     def setUp(self):
         sock = socket.create_connection(AUTHENTICATION_SERVICE_ADDRESS)
+        CONTEXT.set_alpn_protocols(['h2'])
         self.socket = CONTEXT.wrap_socket(sock, server_hostname=HOSTNAME)
         cert = self.socket.getpeercert(binary_form=True)
         verify_report(cert, "authentication")
+        config = H2Configuration(client_side=True, header_encoding='ascii')
+        self.connection = h2.connection.H2Connection(config)
+        self.connection.initiate_connection()
+        self.socket.sendall(self.connection.data_to_send())
+        self.stream_id = 1
+
+    def set_headers(self, method_path):
+        headers = [(':method', 'POST'), (':path', method_path),
+                   (':authority', HOSTNAME), (':scheme', 'https'),
+                   ('content-type', 'application/grpc')]
+        return headers
+
+    def send_message(self, message, method_path):
+        headers = self.set_headers(method_path)
+        self.connection.send_headers(self.stream_id, headers)
+        message_data = encode_message(message)
+        self.connection.send_data(self.stream_id,
+                                  message_data,
+                                  end_stream=True)
+        self.socket.sendall(self.connection.data_to_send())
+
+    def recv_message(self):
+        body = None
+        headers = None
+        response_stream_ended = False
+        max_frame_size = self.connection.max_outbound_frame_size
+        print(max_frame_size)
+        while not response_stream_ended:
+            # read raw data from the socket
+            data = self.socket.recv(max_frame_size)
+            if not data:
+                break
+
+            # feed raw data into h2, and process resulting events
+            events = self.connection.receive_data(data)
+            for event in events:
+                if isinstance(event, h2.events.ResponseReceived):
+                    headers = dict(event.headers)
+                if isinstance(event, h2.events.DataReceived):
+                    # update flow control so the server doesn't starve us
+                    self.connection.acknowledge_received_data(
+                        event.flow_controlled_length, event.stream_id)
+                    # more response body data received
+                    body += event.data
+                if isinstance(event, h2.events.StreamEnded):
+                    # response body completed, let's exit the loop
+                    response_stream_ended = True
+                    break
+            # send any pending data to the server
+            self.socket.sendall(self.connection.data_to_send())
+        return (headers, body)
 
     def tearDown(self):
+        self.connection.close_connection()
+        self.socket.sendall(self.connection.data_to_send())
         self.socket.close()
 
     def test_invalid_request(self):
+        path = '/teaclave_authentication_service_proto.TeaclaveAuthenticationApi/InvalidRequest'
         user_id = "invalid_id"
         user_password = "invalid_password"
 
-        message = {
-            "invalid_request": "user_login",
-            "id": user_id,
-            "password": user_password
-        }
-        write_message(self.socket, message)
+        message = UserLoginRequest(id=user_id, password=user_password)
+        self.send_message(message, path)
 
-        response = read_message(self.socket)
-        self.assertEqual(
-            response, b'{"result":"err","request_error":"invalid request"}')
+        (headers, response) = self.recv_message()
+        self.assertEqual(response, None)
+        # https://grpc.github.io/grpc/core/md_doc_statuscodes.html
+        # grpc status UNIMPLEMENTED: 12
+        self.assertEqual(headers['grpc-status'], '12')
 
     def test_login_permission_denied(self):
+        path = '/teaclave_authentication_service_proto.TeaclaveAuthenticationApi/UserLogin'
         user_id = "invalid_id"
         user_password = "invalid_password"
 
-        message = {
-            "message": {
-                "user_login": {
-                    "id": user_id,
-                    "password": user_password
-                }
-            }
-        }
-        write_message(self.socket, message)
-
-        response = read_message(self.socket)
-        self.assertEqual(
-            response,
-            b'{"result":"err","request_error":"authentication failed"}')
+        message = UserLoginRequest(id=user_id, password=user_password)
+        self.send_message(message, path)
+        (headers, body) = self.recv_message()
+        self.assertEqual(body, None)
+        self.assertEqual(headers['grpc-status'], '16')
+        message = unquote(headers['grpc-message'],
+                          encoding='utf-8',
+                          errors='replace')
+        self.assertEqual(message, 'authentication failed')
 
 
 if __name__ == '__main__':

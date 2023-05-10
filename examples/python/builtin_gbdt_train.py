@@ -17,8 +17,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import sys
-
 from teaclave import FunctionInput, FunctionOutput, FunctionArgument, OwnerList, DataMap
 from utils import USER_ID, USER_PASSWORD, connect_authentication_service, connect_frontend_service
 

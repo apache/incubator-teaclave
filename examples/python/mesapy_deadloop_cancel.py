@@ -17,10 +17,9 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import sys
 import time
 
-from teaclave import FunctionInput, FunctionOutput, OwnerList, DataMap, TaskStatus
+from teaclave import TaskStatus
 from utils import USER_ID, USER_PASSWORD, connect_authentication_service, connect_frontend_service, PlatformAdmin
 
 

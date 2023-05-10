@@ -17,13 +17,9 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import os
-import sys
 import json
 
 from PIL import Image, ImageDraw
-import requests
-
 from utils import USER_ID, USER_PASSWORD, connect_authentication_service, connect_frontend_service
 from teaclave import FunctionArgument
 

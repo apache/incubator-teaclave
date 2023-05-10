@@ -17,10 +17,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import sys
-
-from teaclave import FunctionInput, FunctionOutput, FunctionArgument, OwnerList, DataMap
-from utils import USER_ID, USER_PASSWORD, connect_authentication_service, connect_frontend_service, PlatformAdmin
+from teaclave import FunctionInput, FunctionArgument, OwnerList, DataMap
+from utils import connect_authentication_service, connect_frontend_service, PlatformAdmin
 
 
 def get_client(user_id, user_password):
