@@ -170,30 +170,18 @@ impl TeaclaveStorageService {
         request: teaclave_rpc::Request<TeaclaveStorageRequest>,
     ) -> std::result::Result<TeaclaveStorageResponse, StorageServiceError> {
         match request.into_inner() {
-            TeaclaveStorageRequest::Get(r) => {
-                let response = self.get(r)?;
-                Ok(response).map(TeaclaveStorageResponse::Get)
-            }
-            TeaclaveStorageRequest::Put(r) => {
-                let response = self.put(r)?;
-                Ok(response).map(TeaclaveStorageResponse::Put)
-            }
-            TeaclaveStorageRequest::Delete(r) => {
-                let response = self.delete(r)?;
-                Ok(response).map(TeaclaveStorageResponse::Delete)
-            }
+            TeaclaveStorageRequest::Get(r) => self.get(r).map(TeaclaveStorageResponse::Get),
+            TeaclaveStorageRequest::Put(r) => self.put(r).map(TeaclaveStorageResponse::Empty),
+            TeaclaveStorageRequest::Delete(r) => self.delete(r).map(TeaclaveStorageResponse::Empty),
             TeaclaveStorageRequest::Enqueue(r) => {
-                let response = self.enqueue(r)?;
-                Ok(response).map(TeaclaveStorageResponse::Enqueue)
+                self.enqueue(r).map(TeaclaveStorageResponse::Empty)
             }
             TeaclaveStorageRequest::Dequeue(r) => {
-                let response = self.dequeue(r)?;
-                Ok(response).map(TeaclaveStorageResponse::Dequeue)
+                self.dequeue(r).map(TeaclaveStorageResponse::Dequeue)
             }
-            TeaclaveStorageRequest::GetKeysByPrefix(r) => {
-                let response = self.get_keys_by_prefix(r)?;
-                Ok(response).map(TeaclaveStorageResponse::GetKeysByPrefix)
-            }
+            TeaclaveStorageRequest::GetKeysByPrefix(r) => self
+                .get_keys_by_prefix(r)
+                .map(TeaclaveStorageResponse::GetKeysByPrefix),
         }
     }
 }
@@ -206,7 +194,7 @@ impl TeaclaveStorageService {
         }
     }
 
-    fn put(&self, request: PutRequest) -> std::result::Result<PutResponse, StorageServiceError> {
+    fn put(&self, request: PutRequest) -> std::result::Result<(), StorageServiceError> {
         self.database
             .borrow_mut()
             .put(&request.key, &request.value)
@@ -216,13 +204,10 @@ impl TeaclaveStorageService {
             .borrow_mut()
             .flush()
             .map_err(StorageServiceError::Database)?;
-        Ok(PutResponse {})
+        Ok(())
     }
 
-    fn delete(
-        &self,
-        request: DeleteRequest,
-    ) -> std::result::Result<DeleteResponse, StorageServiceError> {
+    fn delete(&self, request: DeleteRequest) -> std::result::Result<(), StorageServiceError> {
         self.database
             .borrow_mut()
             .delete(&request.key)
@@ -232,17 +217,14 @@ impl TeaclaveStorageService {
             .borrow_mut()
             .flush()
             .map_err(StorageServiceError::Database)?;
-        Ok(DeleteResponse {})
+        Ok(())
     }
 
-    fn enqueue(
-        &self,
-        request: EnqueueRequest,
-    ) -> std::result::Result<EnqueueResponse, StorageServiceError> {
+    fn enqueue(&self, request: EnqueueRequest) -> std::result::Result<(), StorageServiceError> {
         let mut db = self.database.borrow_mut();
         let mut queue = DBQueue::open(&mut db, &request.key);
         match queue.enqueue(&request.value) {
-            Ok(_) => Ok(EnqueueResponse {}),
+            Ok(_) => Ok(()),
             Err(e) => bail!(e),
         }
     }

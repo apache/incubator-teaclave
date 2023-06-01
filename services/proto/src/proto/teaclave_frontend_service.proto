@@ -23,6 +23,7 @@ syntax = "proto3";
 package teaclave_frontend_service_proto;
 
 import "teaclave_common.proto";
+import "google/protobuf/empty.proto";
 
 message RegisterInputFileRequest {
   string url = 1;
@@ -183,14 +184,9 @@ message DeleteFunctionRequest {
   string function_id = 1;
 }
 
-message DeleteFunctionResponse { }
-
 message DisableFunctionRequest {
   string function_id = 1;
 }
-
-message DisableFunctionResponse { }
-
 
 message ListFunctionsRequest {
   string user_id = 1;
@@ -244,25 +240,17 @@ message AssignDataRequest {
   repeated DataMap outputs = 3;
 }
 
-message AssignDataResponse { }
-
 message ApproveTaskRequest {
   string task_id = 1;
 }
-
-message ApproveTaskResponse { }
 
 message InvokeTaskRequest {
   string task_id = 1;
 }
 
-message InvokeTaskResponse { }
-
 message CancelTaskRequest {
   string task_id = 1;
 }
-
-message CancelTaskResponse { }
 
 service TeaclaveFrontend {
   rpc RegisterInputFile (RegisterInputFileRequest) returns (RegisterInputFileResponse);
@@ -278,12 +266,12 @@ service TeaclaveFrontend {
   rpc GetFunctionUsageStats (GetFunctionUsageStatsRequest) returns (GetFunctionUsageStatsResponse);
   rpc UpdateFunction (UpdateFunctionRequest) returns (UpdateFunctionResponse);
   rpc ListFunctions (ListFunctionsRequest) returns (ListFunctionsResponse);
-  rpc DeleteFunction (DeleteFunctionRequest) returns (DeleteFunctionResponse);
-  rpc DisableFunction (DisableFunctionRequest) returns (DisableFunctionResponse);
+  rpc DeleteFunction (DeleteFunctionRequest) returns (google.protobuf.Empty);
+  rpc DisableFunction (DisableFunctionRequest) returns (google.protobuf.Empty);
   rpc CreateTask (CreateTaskRequest) returns (CreateTaskResponse);
   rpc GetTask (GetTaskRequest) returns (GetTaskResponse);
-  rpc AssignData (AssignDataRequest) returns (AssignDataResponse);
-  rpc ApproveTask (ApproveTaskRequest) returns (ApproveTaskResponse);
-  rpc InvokeTask (InvokeTaskRequest) returns (InvokeTaskResponse);
-  rpc CancelTask (CancelTaskRequest) returns (CancelTaskResponse);
+  rpc AssignData (AssignDataRequest) returns (google.protobuf.Empty);
+  rpc ApproveTask (ApproveTaskRequest) returns (google.protobuf.Empty);
+  rpc InvokeTask (InvokeTaskRequest) returns (google.protobuf.Empty);
+  rpc CancelTask (CancelTaskRequest) returns (google.protobuf.Empty);
 }

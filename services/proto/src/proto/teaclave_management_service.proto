@@ -23,6 +23,7 @@ syntax = "proto3";
 package teaclave_management_service_proto;
 
 import "teaclave_frontend_service.proto";
+import "google/protobuf/empty.proto";
 
 service TeaclaveManagement {
   rpc RegisterInputFile (teaclave_frontend_service_proto.RegisterInputFileRequest) returns (teaclave_frontend_service_proto.RegisterInputFileResponse);
@@ -37,13 +38,13 @@ service TeaclaveManagement {
   rpc UpdateFunction (teaclave_frontend_service_proto.UpdateFunctionRequest) returns (teaclave_frontend_service_proto.UpdateFunctionResponse);
   rpc GetFunction (teaclave_frontend_service_proto.GetFunctionRequest) returns (teaclave_frontend_service_proto.GetFunctionResponse);
   rpc GetFunctionUsageStats (teaclave_frontend_service_proto.GetFunctionUsageStatsRequest) returns (teaclave_frontend_service_proto.GetFunctionUsageStatsResponse);
-  rpc DeleteFunction (teaclave_frontend_service_proto.DeleteFunctionRequest) returns (teaclave_frontend_service_proto.DeleteFunctionResponse);
-  rpc DisableFunction (teaclave_frontend_service_proto.DisableFunctionRequest) returns (teaclave_frontend_service_proto.DisableFunctionResponse);
+  rpc DeleteFunction (teaclave_frontend_service_proto.DeleteFunctionRequest) returns (google.protobuf.Empty);
+  rpc DisableFunction (teaclave_frontend_service_proto.DisableFunctionRequest) returns (google.protobuf.Empty);
   rpc ListFunctions (teaclave_frontend_service_proto.ListFunctionsRequest) returns (teaclave_frontend_service_proto.ListFunctionsResponse);
   rpc CreateTask (teaclave_frontend_service_proto.CreateTaskRequest) returns (teaclave_frontend_service_proto.CreateTaskResponse);
   rpc GetTask (teaclave_frontend_service_proto.GetTaskRequest) returns (teaclave_frontend_service_proto.GetTaskResponse);
-  rpc AssignData (teaclave_frontend_service_proto.AssignDataRequest) returns (teaclave_frontend_service_proto.AssignDataResponse);
-  rpc ApproveTask (teaclave_frontend_service_proto.ApproveTaskRequest) returns (teaclave_frontend_service_proto.ApproveTaskResponse);
-  rpc InvokeTask (teaclave_frontend_service_proto.InvokeTaskRequest) returns (teaclave_frontend_service_proto.InvokeTaskResponse);
-  rpc CancelTask (teaclave_frontend_service_proto.CancelTaskRequest) returns (teaclave_frontend_service_proto.CancelTaskResponse);
+  rpc AssignData (teaclave_frontend_service_proto.AssignDataRequest) returns (google.protobuf.Empty);
+  rpc ApproveTask (teaclave_frontend_service_proto.ApproveTaskRequest) returns (google.protobuf.Empty);
+  rpc InvokeTask (teaclave_frontend_service_proto.InvokeTaskRequest) returns (google.protobuf.Empty);
+  rpc CancelTask (teaclave_frontend_service_proto.CancelTaskRequest) returns (google.protobuf.Empty);
 }

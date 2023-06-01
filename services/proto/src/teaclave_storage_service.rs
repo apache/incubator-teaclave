@@ -20,9 +20,8 @@ pub use proto::teaclave_storage_client::TeaclaveStorageClient;
 pub use proto::teaclave_storage_server::TeaclaveStorage;
 pub use proto::teaclave_storage_server::TeaclaveStorageServer;
 pub use proto::{
-    DeleteRequest, DeleteResponse, DequeueRequest, DequeueResponse, EnqueueRequest,
-    EnqueueResponse, GetKeysByPrefixRequest, GetKeysByPrefixResponse, GetRequest, GetResponse,
-    PutRequest, PutResponse,
+    DeleteRequest, DequeueRequest, DequeueResponse, EnqueueRequest, GetKeysByPrefixRequest,
+    GetKeysByPrefixResponse, GetRequest, GetResponse, PutRequest,
 };
 
 impl GetRequest {
@@ -107,9 +106,7 @@ pub enum TeaclaveStorageRequest {
 #[serde(tag = "response", content = "content", rename_all = "snake_case")]
 pub enum TeaclaveStorageResponse {
     Get(GetResponse),
-    Put(PutResponse),
-    Delete(DeleteResponse),
-    Enqueue(EnqueueResponse),
     Dequeue(DequeueResponse),
     GetKeysByPrefix(GetKeysByPrefixResponse),
+    Empty(()),
 }

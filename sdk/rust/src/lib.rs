@@ -28,17 +28,16 @@ use tokio::runtime::Runtime;
 use url::Url;
 
 use teaclave_proto::teaclave_authentication_service_proto::{
-    UserLoginRequest, UserLoginResponse, UserRegisterRequest, UserRegisterResponse,
+    UserLoginRequest, UserLoginResponse, UserRegisterRequest,
 };
 pub use teaclave_proto::teaclave_frontend_service::GetFunctionResponse as Function;
 pub use teaclave_proto::teaclave_frontend_service::{
-    ApproveTaskRequest, ApproveTaskResponse, AssignDataRequest, AssignDataResponse,
-    CancelTaskRequest, CancelTaskResponse, CreateTaskRequest, CreateTaskResponse,
-    GetFunctionRequest, GetFunctionResponse, GetFunctionUsageStatsRequest,
+    ApproveTaskRequest, AssignDataRequest, CancelTaskRequest, CreateTaskRequest,
+    CreateTaskResponse, GetFunctionRequest, GetFunctionResponse, GetFunctionUsageStatsRequest,
     GetFunctionUsageStatsResponse, GetTaskRequest, GetTaskResponse, InvokeTaskRequest,
-    InvokeTaskResponse, RegisterFunctionRequest, RegisterFunctionRequestBuilder,
-    RegisterFunctionResponse, RegisterInputFileRequest, RegisterInputFileResponse,
-    RegisterOutputFileRequest, RegisterOutputFileResponse,
+    RegisterFunctionRequest, RegisterFunctionRequestBuilder, RegisterFunctionResponse,
+    RegisterInputFileRequest, RegisterInputFileResponse, RegisterOutputFileRequest,
+    RegisterOutputFileResponse,
 };
 pub use teaclave_types::{
     EnclaveInfo, Executor, FileCrypto, FunctionArgument, FunctionInput, FunctionOutput,
@@ -80,19 +79,14 @@ impl AuthenticationClient {
         self.client = TeaclaveAuthenticationApiClient::with_interceptor(self.channel.clone(), cred);
     }
 
-    pub fn user_register_with_request(
-        &mut self,
-        request: UserRegisterRequest,
-    ) -> Result<UserRegisterResponse> {
+    pub fn user_register_with_request(&mut self, request: UserRegisterRequest) -> Result<()> {
         do_request_with_credential!(self, user_register, request)
     }
 
     pub fn user_register_serialized(&mut self, serialized_request: &str) -> Result<String> {
         let request = serde_json::from_str(serialized_request)?;
-        let response = self.user_register_with_request(request)?;
-        let serialized_response = serde_json::to_string(&response)?;
-
-        Ok(serialized_response)
+        self.user_register_with_request(request)?;
+        Ok(String::new())
     }
 
     pub fn user_register(
@@ -103,9 +97,7 @@ impl AuthenticationClient {
         attribute: &str,
     ) -> Result<()> {
         let request = UserRegisterRequest::new(user_id, user_password, role, attribute);
-        let _response = self.user_register_with_request(request)?;
-
-        Ok(())
+        self.user_register_with_request(request)
     }
 
     pub fn user_login_with_request(
@@ -450,19 +442,14 @@ impl FrontendClient {
         Ok(response.task_id)
     }
 
-    pub fn assign_data_with_request(
-        &mut self,
-        request: AssignDataRequest,
-    ) -> Result<AssignDataResponse> {
+    pub fn assign_data_with_request(&mut self, request: AssignDataRequest) -> Result<()> {
         do_request_with_credential!(self, assign_data, request)
     }
 
     pub fn assign_data_serialized(&mut self, serialized_request: &str) -> Result<String> {
         let request = serde_json::from_str(serialized_request)?;
-        let response = self.assign_data_with_request(request)?;
-        let serialized_response = serde_json::to_string(&response)?;
-
-        Ok(serialized_response)
+        self.assign_data_with_request(request)?;
+        Ok(String::new())
     }
 
     pub fn assign_data(
@@ -485,53 +472,37 @@ impl FrontendClient {
             }
         }
         let request = AssignDataRequest::new(task_id.try_into()?, input_data, output_data);
-        let _ = self.assign_data_with_request(request)?;
-
-        Ok(())
+        self.assign_data_with_request(request)
     }
 
-    pub fn approve_task_with_request(
-        &mut self,
-        request: ApproveTaskRequest,
-    ) -> Result<ApproveTaskResponse> {
+    pub fn approve_task_with_request(&mut self, request: ApproveTaskRequest) -> Result<()> {
         do_request_with_credential!(self, approve_task, request)
     }
 
     pub fn approve_task(&mut self, task_id: &str) -> Result<()> {
         let request = ApproveTaskRequest::new(task_id.try_into()?);
-        let _ = self.approve_task_with_request(request)?;
-
-        Ok(())
+        self.approve_task_with_request(request)
     }
 
     pub fn approve_task_serialized(&mut self, serialized_request: &str) -> Result<String> {
         let request = serde_json::from_str(serialized_request)?;
-        let response = self.approve_task_with_request(request)?;
-        let serialized_response = serde_json::to_string(&response)?;
-
-        Ok(serialized_response)
+        self.approve_task_with_request(request)?;
+        Ok(String::new())
     }
 
-    pub fn invoke_task_with_request(
-        &mut self,
-        request: InvokeTaskRequest,
-    ) -> Result<InvokeTaskResponse> {
+    pub fn invoke_task_with_request(&mut self, request: InvokeTaskRequest) -> Result<()> {
         do_request_with_credential!(self, invoke_task, request)
     }
 
     pub fn invoke_task_serialized(&mut self, serialized_request: &str) -> Result<String> {
         let request = serde_json::from_str(serialized_request)?;
-        let response = self.invoke_task_with_request(request)?;
-        let serialized_response = serde_json::to_string(&response)?;
-
-        Ok(serialized_response)
+        self.invoke_task_with_request(request)?;
+        Ok(String::new())
     }
 
     pub fn invoke_task(&mut self, task_id: &str) -> Result<()> {
         let request = InvokeTaskRequest::new(task_id.try_into()?);
-        let _ = self.invoke_task_with_request(request)?;
-
-        Ok(())
+        self.invoke_task_with_request(request)
     }
 
     pub fn get_task_with_request(&mut self, request: GetTaskRequest) -> Result<GetTaskResponse> {
@@ -565,26 +536,19 @@ impl FrontendClient {
         }
     }
 
-    pub fn cancel_task_with_request(
-        &mut self,
-        request: CancelTaskRequest,
-    ) -> Result<CancelTaskResponse> {
+    pub fn cancel_task_with_request(&mut self, request: CancelTaskRequest) -> Result<()> {
         do_request_with_credential!(self, cancel_task, request)
     }
 
     pub fn cancel_task_serialized(&mut self, serialized_request: &str) -> Result<String> {
         let request = serde_json::from_str(serialized_request)?;
-        let response = self.cancel_task_with_request(request)?;
-        let serialized_response = serde_json::to_string(&response)?;
-
-        Ok(serialized_response)
+        self.cancel_task_with_request(request)?;
+        Ok(String::new())
     }
 
     pub fn cancel_task(&mut self, task_id: &str) -> Result<()> {
         let request = CancelTaskRequest::new(task_id.try_into()?);
-        let _ = self.cancel_task_with_request(request)?;
-
-        Ok(())
+        self.cancel_task_with_request(request)
     }
 }
 

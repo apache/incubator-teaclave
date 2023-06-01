@@ -35,6 +35,7 @@ from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 
 from google.protobuf.json_format import MessageToDict
+from google.protobuf.empty_pb2 import Empty
 from grpclib.client import Channel, _ChannelState
 from grpclib.protocol import H2Protocol
 
@@ -372,7 +373,7 @@ class UserRegisterRequest(Request):
 
     def __init__(self, metadata: Metadata, user_id: str, user_password: str,
                  role: str, attribute: str):
-        super().__init__("UserRegister", auth.UserRegisterResponse, metadata)
+        super().__init__("UserRegister", Empty, metadata)
         self.message = auth.UserRegisterRequest(id=user_id,
                                                 password=user_password,
                                                 role=role,
@@ -383,7 +384,7 @@ class UserUpdateRequest(Request):
 
     def __init__(self, metadata: Metadata, user_id: str, user_password: str,
                  role: str, attribute: str):
-        super().__init__("UserUpdate", auth.UserUpdateResponse)
+        super().__init__("UserUpdate", Empty)
         self.message = auth.UserUpdateRequest(id=user_id,
                                               password=user_password,
                                               role=role,
@@ -401,8 +402,7 @@ class UserLoginRequest(Request):
 class UserChangePasswordRequest(Request):
 
     def __init__(self, metadata: Metadata, password: str):
-        super().__init__("UserChangePassword", auth.UserChangePasswordResponse,
-                         metadata)
+        super().__init__("UserChangePassword", Empty, metadata)
         self.message = auth.UserChangePasswordRequest(password=password)
 
 
@@ -417,7 +417,7 @@ class ResetUserPasswordRequest(Request):
 class DeleteUserRequest(Request):
 
     def __init__(self, metadata: Metadata, user_id: str):
-        super().__init__("DeleteUser", auth.DeleteUserResponse, metadata)
+        super().__init__("DeleteUser", Empty, metadata)
         self.message = auth.DeleteUserRequest(id=user_id)
 
 
@@ -650,15 +650,14 @@ class ListFunctionsRequest(Request):
 class DeleteFunctionRequest(Request):
 
     def __init__(self, metadata: Metadata, function_id: str):
-        super().__init__("ListFunctions", fe.DeleteFunctionResponse, metadata)
+        super().__init__("ListFunctions", Empty, metadata)
         self.message = fe.DeleteFunctionRequest(function_id=function_id)
 
 
 class DisableFunctionRequest(Request):
 
     def __init__(self, metadata: Metadata, function_id: str):
-        super().__init__("DisableFunction", fe.DisableFunctionResponse,
-                         metadata)
+        super().__init__("DisableFunction", Empty, metadata)
         self.message = fe.DisableFunctionRequest(function_id=function_id)
 
 
@@ -734,7 +733,7 @@ class AssignDataRequest(Request):
 
     def __init__(self, metadata: Metadata, task_id: str, inputs: List[DataMap],
                  outputs: List[DataMap]):
-        super().__init__("AssignData", fe.AssignDataResponse, metadata)
+        super().__init__("AssignData", Empty, metadata)
         inputs = [x.message for x in inputs]
         outputs = [x.message for x in outputs]
         self.message = fe.AssignDataRequest(task_id=task_id,
@@ -745,21 +744,21 @@ class AssignDataRequest(Request):
 class ApproveTaskRequest(Request):
 
     def __init__(self, metadata: Metadata, task_id: str):
-        super().__init__("ApproveTask", fe.ApproveTaskResponse, metadata)
+        super().__init__("ApproveTask", Empty, metadata)
         self.message = fe.ApproveTaskRequest(task_id=task_id)
 
 
 class InvokeTaskRequest(Request):
 
     def __init__(self, metadata: Metadata, task_id: str):
-        super().__init__("InvokeTask", fe.InvokeTaskResponse, metadata)
+        super().__init__("InvokeTask", Empty, metadata)
         self.message = fe.InvokeTaskRequest(task_id=task_id)
 
 
 class CancelTaskRequest(Request):
 
     def __init__(self, metadata: Metadata, task_id: str):
-        super().__init__("CancelTask", fe.CancelTaskResponse, metadata)
+        super().__init__("CancelTask", Empty, metadata)
         self.message = fe.CancelTaskRequest(task_id=task_id)
 
 

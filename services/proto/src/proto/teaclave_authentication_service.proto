@@ -22,6 +22,7 @@ syntax = "proto3";
 package teaclave_authentication_service_proto;
 
 import "teaclave_common.proto";
+import "google/protobuf/empty.proto";
 
 message UserRegisterRequest {
   string id = 1;
@@ -30,16 +31,12 @@ message UserRegisterRequest {
   string attribute = 4;
 }
 
-message UserRegisterResponse { }
-
 message UserUpdateRequest {
     string id = 1;
     string password = 2;
     string role = 3;
     string attribute = 4;
 }
-
-message UserUpdateResponse { }
 
 message UserLoginRequest {
   string id = 1;
@@ -85,21 +82,17 @@ message UserChangePasswordRequest {
   string password = 1;
 }
 
-message UserChangePasswordResponse {}
-
 message DeleteUserRequest {
   string id = 1;
 }
 
-message DeleteUserResponse {}
-
 service TeaclaveAuthenticationApi {
-  rpc UserRegister(UserRegisterRequest) returns (UserRegisterResponse);
-  rpc UserUpdate(UserUpdateRequest) returns (UserUpdateResponse);
+  rpc UserRegister(UserRegisterRequest) returns (google.protobuf.Empty);
+  rpc UserUpdate(UserUpdateRequest) returns (google.protobuf.Empty);
   rpc UserLogin (UserLoginRequest) returns (UserLoginResponse);
-  rpc UserChangePassword (UserChangePasswordRequest) returns (UserChangePasswordResponse);
+  rpc UserChangePassword (UserChangePasswordRequest) returns (google.protobuf.Empty);
   rpc ResetUserPassword (ResetUserPasswordRequest) returns (ResetUserPasswordResponse);
-  rpc DeleteUser (DeleteUserRequest) returns (DeleteUserResponse);
+  rpc DeleteUser (DeleteUserRequest) returns (google.protobuf.Empty);
   rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
 }
 

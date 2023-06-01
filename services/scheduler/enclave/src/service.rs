@@ -241,7 +241,7 @@ impl TeaclaveScheduler for TeaclaveSchedulerService {
     async fn publish_task(
         &self,
         request: Request<PublishTaskRequest>,
-    ) -> TeaclaveServiceResponseResult<PublishTaskResponse> {
+    ) -> TeaclaveServiceResponseResult<()> {
         // XXX: Publisher is not implemented
 
         let mut resources = self.resources.lock().await;
@@ -249,13 +249,13 @@ impl TeaclaveScheduler for TeaclaveSchedulerService {
         let staged_task =
             StagedTask::from_slice(&request.get_ref().staged_task).map_err(tonic_error)?;
         resources.task_queue.push_back(staged_task);
-        Ok(Response::new(PublishTaskResponse {}))
+        Ok(Response::new(()))
     }
 
     // Subscriber
     async fn subscribe(
         &self,
-        _request: Request<SubscribeRequest>,
+        _request: Request<()>,
     ) -> TeaclaveServiceResponseResult<SubscribeResponse> {
         // TODO: subscribe a specific topic
         unimplemented!()
@@ -336,7 +336,7 @@ impl TeaclaveScheduler for TeaclaveSchedulerService {
     async fn update_task_status(
         &self,
         request: Request<UpdateTaskStatusRequest>,
-    ) -> TeaclaveServiceResponseResult<UpdateTaskStatusResponse> {
+    ) -> TeaclaveServiceResponseResult<()> {
         let resources = self.resources.lock().await;
 
         let task_id = Uuid::parse_str(&request.get_ref().task_id).map_err(tonic_error)?;
@@ -351,13 +351,13 @@ impl TeaclaveScheduler for TeaclaveSchedulerService {
 
         let ts = TaskState::from(task);
         resources.put_into_db(&ts).await.map_err(tonic_error)?;
-        Ok(Response::new(UpdateTaskStatusResponse {}))
+        Ok(Response::new(()))
     }
 
     async fn update_task_result(
         &self,
         request: Request<UpdateTaskResultRequest>,
-    ) -> TeaclaveServiceResponseResult<UpdateTaskResultResponse> {
+    ) -> TeaclaveServiceResponseResult<()> {
         let resources = self.resources.lock().await;
 
         let request = request.into_inner();
@@ -382,6 +382,6 @@ impl TeaclaveScheduler for TeaclaveSchedulerService {
 
         let ts = TaskState::from(task);
         resources.put_into_db(&ts).await.map_err(tonic_error)?;
-        Ok(Response::new(UpdateTaskResultResponse {}))
+        Ok(Response::new(()))
     }
 }

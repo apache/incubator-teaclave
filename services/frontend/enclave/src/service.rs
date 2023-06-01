@@ -25,13 +25,12 @@ use teaclave_proto::teaclave_authentication_service::{
 };
 use teaclave_proto::teaclave_common::UserCredential;
 use teaclave_proto::teaclave_frontend_service::{
-    ApproveTaskRequest, ApproveTaskResponse, AssignDataRequest, AssignDataResponse,
-    CancelTaskRequest, CancelTaskResponse, CreateTaskRequest, CreateTaskResponse,
-    DeleteFunctionRequest, DeleteFunctionResponse, DisableFunctionRequest, DisableFunctionResponse,
-    GetFunctionRequest, GetFunctionResponse, GetFunctionUsageStatsRequest,
-    GetFunctionUsageStatsResponse, GetInputFileRequest, GetInputFileResponse, GetOutputFileRequest,
-    GetOutputFileResponse, GetTaskRequest, GetTaskResponse, InvokeTaskRequest, InvokeTaskResponse,
-    ListFunctionsRequest, ListFunctionsResponse, RegisterFunctionRequest, RegisterFunctionResponse,
+    ApproveTaskRequest, AssignDataRequest, CancelTaskRequest, CreateTaskRequest,
+    CreateTaskResponse, DeleteFunctionRequest, DisableFunctionRequest, GetFunctionRequest,
+    GetFunctionResponse, GetFunctionUsageStatsRequest, GetFunctionUsageStatsResponse,
+    GetInputFileRequest, GetInputFileResponse, GetOutputFileRequest, GetOutputFileResponse,
+    GetTaskRequest, GetTaskResponse, InvokeTaskRequest, ListFunctionsRequest,
+    ListFunctionsResponse, RegisterFunctionRequest, RegisterFunctionResponse,
     RegisterFusionOutputRequest, RegisterFusionOutputResponse, RegisterInputFileRequest,
     RegisterInputFileResponse, RegisterInputFromOutputRequest, RegisterInputFromOutputResponse,
     RegisterOutputFileRequest, RegisterOutputFileResponse, TeaclaveFrontend, UpdateFunctionRequest,
@@ -327,7 +326,7 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
     async fn delete_function(
         &self,
         request: Request<DeleteFunctionRequest>,
-    ) -> TeaclaveServiceResponseResult<DeleteFunctionResponse> {
+    ) -> TeaclaveServiceResponseResult<()> {
         authentication_and_forward_to_management!(
             self,
             request,
@@ -339,7 +338,7 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
     async fn disable_function(
         &self,
         request: Request<DisableFunctionRequest>,
-    ) -> TeaclaveServiceResponseResult<DisableFunctionResponse> {
+    ) -> TeaclaveServiceResponseResult<()> {
         authentication_and_forward_to_management!(
             self,
             request,
@@ -377,14 +376,14 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
     async fn assign_data(
         &self,
         request: Request<AssignDataRequest>,
-    ) -> TeaclaveServiceResponseResult<AssignDataResponse> {
+    ) -> TeaclaveServiceResponseResult<()> {
         authentication_and_forward_to_management!(self, request, assign_data, Endpoints::AssignData)
     }
 
     async fn approve_task(
         &self,
         request: Request<ApproveTaskRequest>,
-    ) -> TeaclaveServiceResponseResult<ApproveTaskResponse> {
+    ) -> TeaclaveServiceResponseResult<()> {
         authentication_and_forward_to_management!(
             self,
             request,
@@ -396,14 +395,14 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
     async fn invoke_task(
         &self,
         request: Request<InvokeTaskRequest>,
-    ) -> TeaclaveServiceResponseResult<InvokeTaskResponse> {
+    ) -> TeaclaveServiceResponseResult<()> {
         authentication_and_forward_to_management!(self, request, invoke_task, Endpoints::InvokeTask)
     }
 
     async fn cancel_task(
         &self,
         request: Request<CancelTaskRequest>,
-    ) -> TeaclaveServiceResponseResult<CancelTaskResponse> {
+    ) -> TeaclaveServiceResponseResult<()> {
         authentication_and_forward_to_management!(self, request, cancel_task, Endpoints::CancelTask)
     }
 }
