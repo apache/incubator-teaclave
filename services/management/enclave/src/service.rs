@@ -24,13 +24,12 @@ use teaclave_proto::teaclave_frontend_service::{
     from_proto_file_ids, from_proto_ownership, to_proto_file_ids, to_proto_ownership,
 };
 use teaclave_proto::teaclave_frontend_service::{
-    ApproveTaskRequest, ApproveTaskResponse, AssignDataRequest, AssignDataResponse,
-    CancelTaskRequest, CancelTaskResponse, CreateTaskRequest, CreateTaskResponse,
-    DeleteFunctionRequest, DeleteFunctionResponse, DisableFunctionRequest, DisableFunctionResponse,
-    GetFunctionRequest, GetFunctionResponse, GetFunctionUsageStatsRequest,
-    GetFunctionUsageStatsResponse, GetInputFileRequest, GetInputFileResponse, GetOutputFileRequest,
-    GetOutputFileResponse, GetTaskRequest, GetTaskResponse, InvokeTaskRequest, InvokeTaskResponse,
-    ListFunctionsRequest, ListFunctionsResponse, RegisterFunctionRequest, RegisterFunctionResponse,
+    ApproveTaskRequest, AssignDataRequest, CancelTaskRequest, CreateTaskRequest,
+    CreateTaskResponse, DeleteFunctionRequest, DisableFunctionRequest, GetFunctionRequest,
+    GetFunctionResponse, GetFunctionUsageStatsRequest, GetFunctionUsageStatsResponse,
+    GetInputFileRequest, GetInputFileResponse, GetOutputFileRequest, GetOutputFileResponse,
+    GetTaskRequest, GetTaskResponse, InvokeTaskRequest, ListFunctionsRequest,
+    ListFunctionsResponse, RegisterFunctionRequest, RegisterFunctionResponse,
     RegisterFusionOutputRequest, RegisterFusionOutputResponse, RegisterInputFileRequest,
     RegisterInputFileResponse, RegisterInputFromOutputRequest, RegisterInputFromOutputResponse,
     RegisterOutputFileRequest, RegisterOutputFileResponse, UpdateFunctionRequest,
@@ -452,7 +451,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
     async fn delete_function(
         &self,
         request: Request<DeleteFunctionRequest>,
-    ) -> TeaclaveServiceResponseResult<DeleteFunctionResponse> {
+    ) -> TeaclaveServiceResponseResult<()> {
         let user_id = get_request_user_id(&request)?;
         let function_id = request
             .into_inner()
@@ -471,8 +470,8 @@ impl TeaclaveManagement for TeaclaveManagementService {
         self.delete_from_db(&function_id)
             .await
             .map_err(|_| ManagementServiceError::InvalidFunctionId)?;
-        let response = DeleteFunctionResponse {};
-        Ok(Response::new(response))
+
+        Ok(Response::new(()))
     }
 
     // access control: function.owner == user_id
@@ -482,7 +481,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
     async fn disable_function(
         &self,
         request: Request<DisableFunctionRequest>,
-    ) -> TeaclaveServiceResponseResult<DisableFunctionResponse> {
+    ) -> TeaclaveServiceResponseResult<()> {
         let user_id = get_request_user_id(&request)?;
         let role = get_request_role(&request)?;
         let function_id = request
@@ -537,8 +536,8 @@ impl TeaclaveManagement for TeaclaveManagementService {
 
         function.user_allowlist.clear();
         self.write_to_db(&function).await?;
-        let response = DisableFunctionResponse {};
-        Ok(Response::new(response))
+
+        Ok(Response::new(()))
     }
 
     // access contro: user_id = request.user_id
@@ -699,7 +698,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
     async fn assign_data(
         &self,
         request: Request<AssignDataRequest>,
-    ) -> TeaclaveServiceResponseResult<AssignDataResponse> {
+    ) -> TeaclaveServiceResponseResult<()> {
         let user_id = get_request_user_id(&request)?;
         let request = request.into_inner();
         let task_id = request
@@ -745,7 +744,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
         let ts: TaskState = task.into();
         self.write_to_db(&ts).await?;
 
-        Ok(Response::new(AssignDataResponse {}))
+        Ok(Response::new(()))
     }
 
     // access_control:
@@ -754,7 +753,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
     async fn approve_task(
         &self,
         request: Request<ApproveTaskRequest>,
-    ) -> TeaclaveServiceResponseResult<ApproveTaskResponse> {
+    ) -> TeaclaveServiceResponseResult<()> {
         let user_id = get_request_user_id(&request)?;
 
         let task_id = request
@@ -781,7 +780,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
         let ts: TaskState = task.into();
         self.write_to_db(&ts).await?;
 
-        Ok(Response::new(ApproveTaskResponse {}))
+        Ok(Response::new(()))
     }
 
     // access_control:
@@ -790,7 +789,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
     async fn invoke_task(
         &self,
         request: Request<InvokeTaskRequest>,
-    ) -> TeaclaveServiceResponseResult<InvokeTaskResponse> {
+    ) -> TeaclaveServiceResponseResult<()> {
         let user_id = get_request_user_id(&request)?;
         let task_id = request
             .into_inner()
@@ -851,7 +850,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
 
         function_usage.use_numbers = function_current_use_numbers + 1;
         self.write_to_db(&function_usage).await?;
-        Ok(Response::new(InvokeTaskResponse {}))
+        Ok(Response::new(()))
     }
 
     // access_control:
@@ -860,7 +859,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
     async fn cancel_task(
         &self,
         request: Request<CancelTaskRequest>,
-    ) -> TeaclaveServiceResponseResult<CancelTaskResponse> {
+    ) -> TeaclaveServiceResponseResult<()> {
         let user_id = get_request_user_id(&request)?;
         let role = get_request_role(&request)?;
         let task_id = request
@@ -913,7 +912,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
             }
         }
 
-        Ok(Response::new(CancelTaskResponse {}))
+        Ok(Response::new(()))
     }
 }
 

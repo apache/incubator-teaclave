@@ -88,7 +88,7 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
     async fn user_register(
         &self,
         request: Request<UserRegisterRequest>,
-    ) -> TeaclaveServiceResponseResult<UserRegisterResponse> {
+    ) -> TeaclaveServiceResponseResult<()> {
         let requester_role = self.validate_credential_in_request(&request)?;
 
         let request = request.get_ref();
@@ -112,7 +112,7 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
 
         let new_user = UserInfo::new(&request.id, &request.password, role);
         match self.db_client.lock().unwrap().create_user(&new_user) {
-            Ok(_) => Ok(Response::new(UserRegisterResponse {})),
+            Ok(_) => Ok(Response::new(())),
             Err(e) => bail!(AuthenticationServiceError::Service(e.into())),
         }
     }
@@ -120,7 +120,7 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
     async fn user_update(
         &self,
         request: Request<UserUpdateRequest>,
-    ) -> TeaclaveServiceResponseResult<UserUpdateResponse> {
+    ) -> TeaclaveServiceResponseResult<()> {
         let requester_role = self.validate_credential_in_request(&request)?;
 
         let request = request.get_ref();
@@ -150,7 +150,7 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
 
         let updated_user = UserInfo::new(&request.id, &request.password, role);
         match self.db_client.lock().unwrap().update_user(&updated_user) {
-            Ok(_) => Ok(Response::new(UserUpdateResponse {})),
+            Ok(_) => Ok(Response::new(())),
             Err(e) => bail!(AuthenticationServiceError::Service(e.into())),
         }
     }
@@ -188,7 +188,7 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
     async fn user_change_password(
         &self,
         request: Request<UserChangePasswordRequest>,
-    ) -> TeaclaveServiceResponseResult<UserChangePasswordResponse> {
+    ) -> TeaclaveServiceResponseResult<()> {
         let requester_role = self.validate_credential_in_request(&request)?;
 
         let id: String = request
@@ -205,7 +205,7 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
         let updated_user = UserInfo::new(&id, &request.password, requester_role);
 
         match self.db_client.lock().unwrap().update_user(&updated_user) {
-            Ok(_) => Ok(Response::new(UserChangePasswordResponse {})),
+            Ok(_) => Ok(Response::new(())),
             Err(e) => bail!(AuthenticationServiceError::Service(e.into())),
         }
     }
@@ -249,7 +249,7 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
     async fn delete_user(
         &self,
         request: Request<DeleteUserRequest>,
-    ) -> TeaclaveServiceResponseResult<DeleteUserResponse> {
+    ) -> TeaclaveServiceResponseResult<()> {
         let requester_role = self.validate_credential_in_request(&request)?;
 
         let request = request.get_ref();
@@ -269,7 +269,7 @@ impl TeaclaveAuthenticationApi for TeaclaveAuthenticationApiService {
             AuthenticationServiceError::PermissionDenied
         );
         match self.db_client.lock().unwrap().delete_user(&request.id) {
-            Ok(_) => Ok(Response::new(DeleteUserResponse {})),
+            Ok(_) => Ok(Response::new(())),
             Err(e) => bail!(AuthenticationServiceError::Service(e.into())),
         }
     }

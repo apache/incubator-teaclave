@@ -25,10 +25,7 @@ pub use proto::{
     HeartbeatRequest, PublishTaskRequest, PullTaskRequest, UpdateTaskResultRequest,
     UpdateTaskStatusRequest,
 };
-pub use proto::{
-    HeartbeatResponse, PublishTaskResponse, PullTaskResponse, SubscribeRequest, SubscribeResponse,
-    UpdateTaskResultResponse, UpdateTaskStatusResponse,
-};
+pub use proto::{HeartbeatResponse, PullTaskResponse, SubscribeResponse};
 use teaclave_types::Storable;
 use teaclave_types::{StagedTask, TaskFailure, TaskOutputs, TaskResult, TaskStatus};
 use uuid::Uuid;

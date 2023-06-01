@@ -21,6 +21,8 @@
 syntax = "proto3";
 package teaclave_storage_service_proto;
 
+import "google/protobuf/empty.proto";
+
 message GetRequest {
   bytes key = 1;
 }
@@ -34,20 +36,14 @@ message PutRequest {
   bytes value = 2;
 }
 
-message PutResponse { }
-
 message DeleteRequest {
   bytes key = 1;
 }
-
-message DeleteResponse { }
 
 message EnqueueRequest {
   bytes key = 1;
   bytes value = 2;
 }
-
-message EnqueueResponse { }
 
 message DequeueRequest {
   bytes key = 1;
@@ -67,9 +63,9 @@ message GetKeysByPrefixResponse {
 
 service TeaclaveStorage {
   rpc Get(GetRequest) returns (GetResponse);
-  rpc Put(PutRequest) returns (PutResponse);
-  rpc Delete(DeleteRequest) returns (DeleteResponse);
-  rpc Enqueue(EnqueueRequest) returns (EnqueueResponse);
+  rpc Put(PutRequest) returns (google.protobuf.Empty);
+  rpc Delete(DeleteRequest) returns (google.protobuf.Empty);
+  rpc Enqueue(EnqueueRequest) returns (google.protobuf.Empty);
   rpc Dequeue(DequeueRequest) returns (DequeueResponse);
   rpc GetKeysByPrefix(GetKeysByPrefixRequest) returns (GetKeysByPrefixResponse);
 }

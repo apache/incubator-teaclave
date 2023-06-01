@@ -69,8 +69,7 @@ async fn approve_task(
     task_id: &ExternalID,
 ) -> anyhow::Result<()> {
     let request = ApproveTaskRequest::new(task_id.clone());
-    let response = client.approve_task(request).await?.into_inner();
-    log::debug!("Approve task: {:?}", response);
+    client.approve_task(request).await?;
     Ok(())
 }
 
@@ -79,7 +78,6 @@ async fn invoke_task(
     task_id: &ExternalID,
 ) -> anyhow::Result<()> {
     let request = InvokeTaskRequest::new(task_id.clone());
-    let response = client.invoke_task(request).await?.into_inner();
-    log::debug!("Invoke task: {:?}", response);
+    client.invoke_task(request).await?;
     Ok(())
 }

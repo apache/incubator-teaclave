@@ -22,8 +22,8 @@ syntax = "proto3";
 package teaclave_scheduler_service_proto;
 
 import "teaclave_common.proto";
+import "google/protobuf/empty.proto";
 
-message SubscribeRequest {}
 message SubscribeResponse {
   bool success = 1;
 }
@@ -47,29 +47,27 @@ message UpdateTaskStatusRequest {
   string task_id = 1;
   teaclave_common_proto.TaskStatus task_status = 2;
 }
-message UpdateTaskStatusResponse {}
 
 message UpdateTaskResultRequest {
   string task_id = 1;
   teaclave_common_proto.TaskResult result = 2;
 }
-message UpdateTaskResultResponse {}
+
 
 message PublishTaskRequest {
   bytes staged_task = 1;
 }
-message PublishTaskResponse {}
 
 service TeaclaveScheduler {
   // Publisher
-  rpc PublishTask(PublishTaskRequest) returns (PublishTaskResponse);
+  rpc PublishTask(PublishTaskRequest) returns (google.protobuf.Empty);
 
   // Subscriber
-  rpc Subscribe(SubscribeRequest) returns (SubscribeResponse);
+  rpc Subscribe(google.protobuf.Empty) returns (SubscribeResponse);
   rpc PullTask(PullTaskRequest) returns (PullTaskResponse);
 
-  rpc UpdateTaskStatus(UpdateTaskStatusRequest) returns (UpdateTaskStatusResponse);
-  rpc UpdateTaskResult(UpdateTaskResultRequest) returns (UpdateTaskResultResponse);
+  rpc UpdateTaskStatus(UpdateTaskStatusRequest) returns (google.protobuf.Empty);
+  rpc UpdateTaskResult(UpdateTaskResultRequest) returns (google.protobuf.Empty);
 
   rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
 }
