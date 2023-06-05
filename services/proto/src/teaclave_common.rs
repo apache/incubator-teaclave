@@ -16,11 +16,17 @@
 // under the License.
 
 use crate::teaclave_common_proto as proto;
-use anyhow::{bail, Error, Result};
 pub use proto::*;
-use std::convert::TryInto;
+
 use teaclave_crypto::TeaclaveFile128Key;
-use teaclave_types::{FileCrypto, TaskFailure, TaskOutputs, TaskResult, TaskStatus};
+use teaclave_types::{
+    Entry, EntryBuilder, FileCrypto, TaskFailure, TaskOutputs, TaskResult, TaskStatus,
+};
+
+use std::convert::TryInto;
+use std::net::Ipv4Addr;
+
+use anyhow::{bail, ensure, Error, Result};
 
 impl UserCredential {
     pub fn new(id: impl Into<String>, token: impl Into<String>) -> Self {
@@ -268,6 +274,41 @@ impl std::convert::From<ExecutorCommand> for i32 {
             ExecutorCommand::NoAction => proto::ExecutorCommand::NoAction as i32,
             ExecutorCommand::Stop => proto::ExecutorCommand::Stop as i32,
             ExecutorCommand::NewTask => proto::ExecutorCommand::NewTask as i32,
+        }
+    }
+}
+
+impl std::convert::TryFrom<proto::Entry> for Entry {
+    type Error = Error;
+
+    fn try_from(proto: crate::teaclave_common_proto::Entry) -> Result<Self> {
+        const IPV4_LENTGH: usize = 4;
+
+        let len = proto.ip.len();
+        ensure!(len == IPV4_LENTGH, "invalid ip length: {}", len);
+        let ip = Ipv4Addr::from(<Vec<u8> as TryInto<[u8; 4]>>::try_into(proto.ip).unwrap());
+
+        let builder = EntryBuilder::new();
+        let entry = builder
+            .microsecond(proto.microsecond)
+            .ip(ip)
+            .user(proto.user)
+            .message(proto.message.clone())
+            .result(proto.result)
+            .build();
+
+        Ok(entry)
+    }
+}
+
+impl From<Entry> for proto::Entry {
+    fn from(entry: Entry) -> Self {
+        Self {
+            microsecond: entry.datetime().timestamp_micros(),
+            ip: entry.ip().octets().to_vec(),
+            user: entry.user(),
+            message: entry.message(),
+            result: entry.result(),
         }
     }
 }

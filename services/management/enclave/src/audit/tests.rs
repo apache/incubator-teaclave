@@ -15,47 +15,26 @@
 // specific language governing permissions and limitations
 // under the License.
 
-extern crate sgx_types;
+use super::*;
 
-mod attestation;
-mod audit;
-mod crypto;
-mod error;
-mod file;
-mod file_agent;
-mod function;
-mod macros;
-mod staged_file;
-mod staged_function;
-mod staged_task;
-mod storage;
-mod task;
-mod task_state;
-mod user;
-mod worker;
+use teaclave_types::EntryBuilder;
 
-pub use attestation::*;
-pub use audit::*;
-pub use crypto::*;
-pub use error::*;
-pub use file::*;
-pub use file_agent::*;
-pub use function::*;
-pub use macros::*;
-pub use staged_file::*;
-pub use staged_function::*;
-pub use staged_task::*;
-pub use storage::*;
-pub use task::*;
-pub use task_state::*;
-pub use user::*;
-pub use worker::*;
+pub fn test_entry_doc_conversion() {
+    let schema = Auditor::log_schema();
+    let entry = EntryBuilder::new().microsecond(0).build();
 
-#[cfg(feature = "enclave_unit_test")]
-pub mod tests {
-    use super::*;
+    let doc = schema
+        .parse_document(
+            r#"{
+            "date": "1970-01-01T00:00:00.00Z",
+            "ip": "0000:0000:0000:0000:0000:0000:0000:0000",
+            "user": "",
+            "message": "",
+            "result": false
+        }"#,
+        )
+        .unwrap();
 
-    pub fn run_tests() -> bool {
-        worker::tests::run_tests()
-    }
+    assert_eq!(entry, Auditor::try_convert_to_entry(doc.clone()).unwrap());
+    assert_eq!(Auditor::convert_to_doc(entry), doc);
 }

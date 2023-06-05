@@ -22,8 +22,13 @@ syntax = "proto3";
 
 package teaclave_management_service_proto;
 
+import "teaclave_common.proto";
 import "teaclave_frontend_service.proto";
 import "google/protobuf/empty.proto";
+
+message SaveLogsRequest {
+    repeated teaclave_common_proto.Entry logs = 1;
+}
 
 service TeaclaveManagement {
   rpc RegisterInputFile (teaclave_frontend_service_proto.RegisterInputFileRequest) returns (teaclave_frontend_service_proto.RegisterInputFileResponse);
@@ -47,4 +52,5 @@ service TeaclaveManagement {
   rpc ApproveTask (teaclave_frontend_service_proto.ApproveTaskRequest) returns (google.protobuf.Empty);
   rpc InvokeTask (teaclave_frontend_service_proto.InvokeTaskRequest) returns (google.protobuf.Empty);
   rpc CancelTask (teaclave_frontend_service_proto.CancelTaskRequest) returns (google.protobuf.Empty);
+  rpc SaveLogs (SaveLogsRequest) returns (google.protobuf.Empty);
 }

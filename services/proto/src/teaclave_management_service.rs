@@ -16,6 +16,7 @@
 // under the License.
 
 use crate::teaclave_management_service_proto as proto;
+pub use proto::*;
 
 pub use proto::teaclave_management_client::TeaclaveManagementClient;
 pub use proto::teaclave_management_server::TeaclaveManagement;

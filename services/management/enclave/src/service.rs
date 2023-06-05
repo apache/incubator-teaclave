@@ -15,7 +15,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use crate::error::ManagementServiceError;
+use super::*;
+
+use audit::Auditor;
+use error::ManagementServiceError;
+
 use anyhow::anyhow;
 use std::convert::TryInto;
 use std::sync::Arc;
@@ -36,7 +40,7 @@ use teaclave_proto::teaclave_frontend_service::{
     UpdateFunctionResponse, UpdateInputFileRequest, UpdateInputFileResponse,
     UpdateOutputFileRequest, UpdateOutputFileResponse,
 };
-use teaclave_proto::teaclave_management_service::TeaclaveManagement;
+use teaclave_proto::teaclave_management_service::{SaveLogsRequest, TeaclaveManagement};
 use teaclave_proto::teaclave_storage_service::{
     DeleteRequest, EnqueueRequest, GetKeysByPrefixRequest, GetRequest, PutRequest,
     TeaclaveStorageClient,
@@ -52,6 +56,7 @@ use uuid::Uuid;
 #[derive(Clone)]
 pub(crate) struct TeaclaveManagementService {
     storage_client: Arc<Mutex<TeaclaveStorageClient<Channel>>>,
+    auditor: audit::Auditor,
 }
 
 #[teaclave_rpc::async_trait]
@@ -914,6 +919,27 @@ impl TeaclaveManagement for TeaclaveManagementService {
 
         Ok(Response::new(()))
     }
+
+    // access_control: none
+    async fn save_logs(
+        &self,
+        request: Request<SaveLogsRequest>,
+    ) -> TeaclaveServiceResponseResult<()> {
+        let request = request.into_inner();
+
+        let entries: Result<Vec<Entry>> = request.logs.into_iter().map(Entry::try_from).collect();
+        let logs = entries.map_err(|e| {
+            let err_msg = format!("failed to transform entries {:?}", e);
+            ManagementServiceError::AuditError(err_msg)
+        })?;
+
+        self.auditor.add_logs(logs).await.map_err(|e| {
+            let err_msg = format!("failed to save logs {:?}", e);
+            ManagementServiceError::AuditError(err_msg)
+        })?;
+
+        Ok(Response::new(()))
+    }
 }
 
 impl TeaclaveManagementService {
@@ -923,7 +949,11 @@ impl TeaclaveManagementService {
             .await
             .map_err(|e| anyhow!("Failed to connect to storage service, {:?}", e))?;
         let storage_client = Arc::new(Mutex::new(TeaclaveStorageClient::new(channel)));
-        let service = Self { storage_client };
+        let auditor = Auditor::try_new(storage_client.clone())?;
+        let service = Self {
+            storage_client,
+            auditor,
+        };
 
         #[cfg(test_mode)]
         service.add_mock_data().await?;
