@@ -322,6 +322,15 @@ pub mod tests {
         assert!(service.get(request).is_err());
     }
 
+    pub fn test_empty_value() {
+        let service = get_mock_service();
+        let request = PutRequest::new("test_empty_value", "");
+        assert!(service.put(request).is_ok());
+        let request = GetRequest::new("test_empty_value");
+        let response = service.get(request).unwrap();
+        assert_eq!(response.value, Vec::<u8>::new());
+    }
+
     pub fn test_enqueue() {
         let service = get_mock_service();
         let request = EnqueueRequest::new("test_enqueue_key", "1");

@@ -175,6 +175,7 @@ pub mod tests {
             service::tests::test_get_key,
             service::tests::test_put_key,
             service::tests::test_delete_key,
+            service::tests::test_empty_value,
             service::tests::test_enqueue,
             service::tests::test_dequeue,
             service::tests::test_get_keys_by_prefix,
