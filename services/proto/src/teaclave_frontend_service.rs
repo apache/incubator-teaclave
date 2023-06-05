@@ -20,7 +20,7 @@ use anyhow::{Error, Result};
 use core::convert::TryInto;
 use std::collections::HashMap;
 use teaclave_types::{
-    Executor, ExecutorType, ExternalID, FileAuthTag, FileCrypto, FunctionArgument,
+    Entry, Executor, ExecutorType, ExternalID, FileAuthTag, FileCrypto, FunctionArgument,
     FunctionArguments, FunctionBuilder, FunctionInput, FunctionOutput, OwnerList, TaskFileOwners,
 };
 use url::Url;
@@ -651,4 +651,24 @@ pub fn from_proto_file_ids(vector: Vec<proto::DataMap>) -> Result<HashMap<String
                 .map(|ext_id| (item.data_name, ext_id))
         })
         .collect()
+}
+
+impl QueryAuditLogsRequest {
+    pub fn new(query: String, limit: usize) -> Self {
+        Self {
+            query,
+            limit: limit as u64,
+        }
+    }
+}
+
+impl QueryAuditLogsResponse {
+    pub fn new(entries: Vec<Entry>) -> Self {
+        let logs: Vec<crate::teaclave_common_proto::Entry> = entries
+            .into_iter()
+            .map(crate::teaclave_common_proto::Entry::from)
+            .collect();
+
+        Self { logs }
+    }
 }

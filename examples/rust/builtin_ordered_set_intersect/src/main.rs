@@ -202,6 +202,14 @@ impl Client {
         let response = self.client.get_task_result(&task_id)?;
         Ok(response)
     }
+
+    fn query_audit_logs(
+        &mut self,
+        message: &str,
+        limit: usize,
+    ) -> Result<Vec<teaclave_client_sdk::Entry>> {
+        self.client.query_audit_logs(message.to_owned(), limit)
+    }
 }
 
 fn main() -> Result<()> {
@@ -277,6 +285,15 @@ fn main() -> Result<()> {
         String::from_utf8(result_user1.0),
         result_user1.1
     );
+
+    // Wait for the logs to be sent to the auditor
+    std::thread::sleep(std::time::Duration::from_secs(35));
+
+    println!("[+] getting audit logs");
+    let logs = user1.query_audit_logs("*", 1000)?;
+    for log in logs {
+        println!("{:?}", log);
+    }
 
     println!("[+] done");
     Ok(())

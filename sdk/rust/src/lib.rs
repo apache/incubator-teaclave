@@ -35,12 +35,12 @@ pub use teaclave_proto::teaclave_frontend_service::{
     ApproveTaskRequest, AssignDataRequest, CancelTaskRequest, CreateTaskRequest,
     CreateTaskResponse, GetFunctionRequest, GetFunctionResponse, GetFunctionUsageStatsRequest,
     GetFunctionUsageStatsResponse, GetTaskRequest, GetTaskResponse, InvokeTaskRequest,
-    RegisterFunctionRequest, RegisterFunctionRequestBuilder, RegisterFunctionResponse,
-    RegisterInputFileRequest, RegisterInputFileResponse, RegisterOutputFileRequest,
-    RegisterOutputFileResponse,
+    QueryAuditLogsRequest, QueryAuditLogsResponse, RegisterFunctionRequest,
+    RegisterFunctionRequestBuilder, RegisterFunctionResponse, RegisterInputFileRequest,
+    RegisterInputFileResponse, RegisterOutputFileRequest, RegisterOutputFileResponse,
 };
 pub use teaclave_types::{
-    EnclaveInfo, Executor, FileCrypto, FunctionArgument, FunctionInput, FunctionOutput,
+    EnclaveInfo, Entry, Executor, FileCrypto, FunctionArgument, FunctionInput, FunctionOutput,
     FunctionUsage, TaskResult,
 };
 
@@ -549,6 +549,28 @@ impl FrontendClient {
     pub fn cancel_task(&mut self, task_id: &str) -> Result<()> {
         let request = CancelTaskRequest::new(task_id.try_into()?);
         self.cancel_task_with_request(request)
+    }
+
+    pub fn query_audit_logs(&mut self, query: String, limit: usize) -> Result<Vec<Entry>> {
+        let request = QueryAuditLogsRequest::new(query, limit);
+        let response = self.query_audit_logs_with_request(request)?;
+
+        response.logs.into_iter().map(Entry::try_from).collect()
+    }
+
+    pub fn query_audit_logs_serialized(&mut self, serialized_request: &str) -> Result<String> {
+        let request = serde_json::from_str(serialized_request)?;
+        let response = self.query_audit_logs_with_request(request)?;
+        let serialized_response = serde_json::to_string(&response)?;
+
+        Ok(serialized_response)
+    }
+
+    pub fn query_audit_logs_with_request(
+        &mut self,
+        request: QueryAuditLogsRequest,
+    ) -> Result<QueryAuditLogsResponse> {
+        do_request_with_credential!(self, query_audit_logs, request)
     }
 }
 

@@ -53,4 +53,5 @@ service TeaclaveManagement {
   rpc InvokeTask (teaclave_frontend_service_proto.InvokeTaskRequest) returns (google.protobuf.Empty);
   rpc CancelTask (teaclave_frontend_service_proto.CancelTaskRequest) returns (google.protobuf.Empty);
   rpc SaveLogs (SaveLogsRequest) returns (google.protobuf.Empty);
+  rpc QueryAuditLogs (teaclave_frontend_service_proto.QueryAuditLogsRequest) returns (teaclave_frontend_service_proto.QueryAuditLogsResponse);
 }

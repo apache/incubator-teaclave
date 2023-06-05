@@ -103,3 +103,9 @@ impl UserAuthClaims {
         UserRole::from_str(&self.role)
     }
 }
+
+impl std::fmt::Display for UserAuthClaims {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{{ user: {}, role: {:?} }}", self.sub, self.get_role())
+    }
+}

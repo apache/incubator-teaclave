@@ -17,6 +17,7 @@
 
 use teaclave_rpc::{Code, Status};
 use thiserror::Error;
+
 #[derive(Error, Debug)]
 pub(crate) enum ManagementServiceError {
     #[error("service internal error")]

@@ -769,6 +769,13 @@ class GetTaskRequest(Request):
         self.message = fe.GetTaskRequest(task_id=task_id)
 
 
+class QueryAuditLogsRequest(Request):
+
+    def __init__(self, metadata: Metadata, message: str, limit: int):
+        super().__init__("QueryAuditLogs", fe.QueryAuditLogsResponse, metadata)
+        self.message = fe.QueryAuditLogsReqeust(message=message, limit=limit)
+
+
 class FrontendService(TeaclaveService):
     """Establish trusted channel with the frontend service and provide
     clients to send request through RPC.
@@ -1044,3 +1051,16 @@ class FrontendService(TeaclaveService):
                                  preserving_proto_field_name=True,
                                  use_integers_for_enums=True)
         return base64.b64decode(response["result"]["Ok"]["tags_map"][tag])
+
+    def query_audit_logs(self, message: str, limit: int):
+        self.check_metadata()
+        self.check_channel()
+        request = QueryAuditLogsRequest(self.metadata, message, limit)
+        try:
+            response = self.call_method(request)
+            return MessageToDict(response,
+                                 preserving_proto_field_name=True,
+                                 use_integers_for_enums=True)
+        except Exception as e:
+            reason = str(e)
+            raise TeaclaveException(f"Failed to get audit logs ({reason})")

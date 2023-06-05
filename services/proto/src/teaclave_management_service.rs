@@ -22,6 +22,8 @@ pub use proto::teaclave_management_client::TeaclaveManagementClient;
 pub use proto::teaclave_management_server::TeaclaveManagement;
 pub use proto::teaclave_management_server::TeaclaveManagementServer;
 
+use teaclave_types::Entry;
+
 pub type RegisterInputFileRequest = crate::teaclave_frontend_service::RegisterInputFileRequest;
 pub type UpdateInputFileRequest = crate::teaclave_frontend_service::UpdateInputFileRequest;
 pub type RegisterInputFileResponse = crate::teaclave_frontend_service::RegisterInputFileResponse;
@@ -68,3 +70,15 @@ pub type AssignDataRequest = crate::teaclave_frontend_service::AssignDataRequest
 pub type ApproveTaskRequest = crate::teaclave_frontend_service::ApproveTaskRequest;
 pub type InvokeTaskRequest = crate::teaclave_frontend_service::InvokeTaskRequest;
 pub type CancelTaskRequest = crate::teaclave_frontend_service::CancelTaskRequest;
+pub type QueryAuditLogsRequest = crate::teaclave_frontend_service::QueryAuditLogsRequest;
+pub type QueryAuditLogsResponse = crate::teaclave_frontend_service::QueryAuditLogsResponse;
+
+impl SaveLogsRequest {
+    pub fn new(entries: Vec<Entry>) -> Self {
+        let logs: Vec<crate::teaclave_common_proto::Entry> = entries
+            .into_iter()
+            .map(crate::teaclave_common_proto::Entry::from)
+            .collect();
+        Self { logs }
+    }
+}
