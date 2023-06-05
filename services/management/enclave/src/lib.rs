@@ -15,6 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+#![feature(result_flattening)]
+
 #[macro_use]
 extern crate log;
 extern crate sgx_types;
@@ -37,7 +39,7 @@ mod error;
 mod service;
 
 // Sets the number of worker threads the Runtime will use.
-const N_WORKERS: usize = 8;
+const N_WORKERS: usize = 16;
 
 async fn start_service(config: &RuntimeConfig) -> Result<()> {
     info!("Starting Management...");

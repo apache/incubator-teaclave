@@ -33,11 +33,11 @@ use teaclave_proto::teaclave_frontend_service::{
     GetFunctionResponse, GetFunctionUsageStatsRequest, GetFunctionUsageStatsResponse,
     GetInputFileRequest, GetInputFileResponse, GetOutputFileRequest, GetOutputFileResponse,
     GetTaskRequest, GetTaskResponse, InvokeTaskRequest, ListFunctionsRequest,
-    ListFunctionsResponse, RegisterFunctionRequest, RegisterFunctionResponse,
-    RegisterFusionOutputRequest, RegisterFusionOutputResponse, RegisterInputFileRequest,
-    RegisterInputFileResponse, RegisterInputFromOutputRequest, RegisterInputFromOutputResponse,
-    RegisterOutputFileRequest, RegisterOutputFileResponse, UpdateFunctionRequest,
-    UpdateFunctionResponse, UpdateInputFileRequest, UpdateInputFileResponse,
+    ListFunctionsResponse, QueryAuditLogsRequest, QueryAuditLogsResponse, RegisterFunctionRequest,
+    RegisterFunctionResponse, RegisterFusionOutputRequest, RegisterFusionOutputResponse,
+    RegisterInputFileRequest, RegisterInputFileResponse, RegisterInputFromOutputRequest,
+    RegisterInputFromOutputResponse, RegisterOutputFileRequest, RegisterOutputFileResponse,
+    UpdateFunctionRequest, UpdateFunctionResponse, UpdateInputFileRequest, UpdateInputFileResponse,
     UpdateOutputFileRequest, UpdateOutputFileResponse,
 };
 use teaclave_proto::teaclave_management_service::{SaveLogsRequest, TeaclaveManagement};
@@ -50,6 +50,7 @@ use teaclave_rpc::{Request, Response};
 use teaclave_service_enclave_utils::ensure;
 use teaclave_types::*;
 use tokio::sync::Mutex;
+use tokio::task;
 use url::Url;
 use uuid::Uuid;
 
@@ -933,12 +934,46 @@ impl TeaclaveManagement for TeaclaveManagementService {
             ManagementServiceError::AuditError(err_msg)
         })?;
 
-        self.auditor.add_logs(logs).await.map_err(|e| {
-            let err_msg = format!("failed to save logs {:?}", e);
+        let auditor = self.auditor.clone();
+        task::spawn_blocking(move || auditor.add_logs(logs))
+            .await
+            .map_err(|e| anyhow!("{}", e.to_string()))
+            .flatten()
+            .map_err(|e| {
+                let err_msg = format!("failed to save logs {:?}", e);
+                ManagementServiceError::AuditError(err_msg)
+            })?;
+
+        Ok(Response::new(()))
+    }
+
+    // access_control: only
+    // user_role == admin
+    async fn query_audit_logs(
+        &self,
+        request: Request<QueryAuditLogsRequest>,
+    ) -> TeaclaveServiceResponseResult<QueryAuditLogsResponse> {
+        let role = get_request_role(&request)?;
+        ensure!(
+            role == UserRole::PlatformAdmin,
+            ManagementServiceError::PermissionDenied
+        );
+
+        let request = request.into_inner();
+        let auditor = self.auditor.clone();
+        let logs = task::spawn_blocking(move || {
+            auditor.query_logs(&request.query, request.limit as usize)
+        })
+        .await
+        .map_err(|e| anyhow!("{}", e.to_string()))
+        .flatten()
+        .map_err(|e| {
+            let err_msg = format!("failed to query logs {:?}", e);
             ManagementServiceError::AuditError(err_msg)
         })?;
 
-        Ok(Response::new(()))
+        let response = QueryAuditLogsResponse::new(logs);
+        Ok(Response::new(response))
     }
 }
 
@@ -949,7 +984,8 @@ impl TeaclaveManagementService {
             .await
             .map_err(|e| anyhow!("Failed to connect to storage service, {:?}", e))?;
         let storage_client = Arc::new(Mutex::new(TeaclaveStorageClient::new(channel)));
-        let auditor = Auditor::try_new(storage_client.clone())?;
+        let client_clone = storage_client.clone();
+        let auditor = task::spawn_blocking(move || Auditor::try_new(client_clone)).await??;
         let service = Self {
             storage_client,
             auditor,

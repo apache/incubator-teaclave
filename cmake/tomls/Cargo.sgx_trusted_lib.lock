@@ -2567,7 +2567,6 @@ dependencies = [
  "cfg-if 0.1.10",
  "chrono",
  "log",
- "once_cell",
  "rand",
  "ring",
  "serde",

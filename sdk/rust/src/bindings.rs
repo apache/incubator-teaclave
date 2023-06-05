@@ -15,16 +15,14 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use libc::size_t;
-use std::ffi::CStr;
-use std::ffi::CString;
-use std::fs;
-use std::os::raw::c_char;
-use std::os::raw::c_int;
-use std::ptr;
+use libc::{c_char, c_int, c_void, malloc, size_t};
+
+use std::ffi::{CStr, CString};
+use std::{fs, ptr};
 
 use crate::{
-    AuthenticationClient, AuthenticationService, EnclaveInfo, FrontendClient, FrontendService,
+    AuthenticationClient, AuthenticationService, EnclaveInfo, Entry, FrontendClient,
+    FrontendService,
 };
 
 macro_rules! unwrap_or_return_null {
@@ -384,6 +382,89 @@ pub unsafe extern "C" fn teaclave_get_task_result(
     }
 }
 
+/// Query audit logs according to `query`. `query` is the query statement for tantivy. The result
+/// will be saved in the `log_buffer` buffer with the corresponding `log_len` argument set.
+/// Remember to free the user and message inside c_entry to avoid memory leak.
+///
+/// The function returns 0 for success. On error, the function returns 1.
+///
+/// # Safety
+///
+/// Inconsistent length of allocated buffer may caused overflow.
+#[no_mangle]
+pub unsafe extern "C" fn teaclave_query_audit_logs(
+    client: &mut FrontendClient,
+    query: *const c_char,
+    log_buffer: *mut c_entry,
+    log_len: *mut size_t,
+) -> c_int {
+    if (client as *mut FrontendClient).is_null()
+        || query.is_null()
+        || log_buffer.is_null()
+        || log_len.is_null()
+        || *log_len == 0
+    {
+        return 1;
+    }
+
+    let query = CStr::from_ptr(query).to_string_lossy().into_owned();
+    match client.query_audit_logs(query, *log_len) {
+        Ok(audit_logs) => {
+            let c_logs: Vec<_> = audit_logs.into_iter().map(c_entry::from).collect();
+            let src_logs = c_logs.as_ptr();
+            let len = c_logs.len();
+            if len > *log_len {
+                return 1;
+            }
+
+            unsafe {
+                ptr::copy_nonoverlapping(src_logs, log_buffer, len);
+            }
+
+            *log_len = len;
+            0
+        }
+        Err(_) => 1,
+    }
+}
+
+#[repr(C)]
+pub struct c_entry {
+    microsecond: i64,
+    ip: [u8; 16],
+    user: *mut c_void,
+    message: *mut c_void,
+    result: bool,
+}
+
+impl From<Entry> for c_entry {
+    fn from(entry: Entry) -> Self {
+        let user_bytes = CString::new(entry.user()).unwrap().into_bytes_with_nul();
+        let len = user_bytes.len();
+        let user = unsafe {
+            let user = malloc(len);
+            ptr::copy_nonoverlapping(user_bytes.as_ptr(), user as *mut u8, len);
+            user
+        };
+
+        let message_bytes = CString::new(entry.message()).unwrap().into_bytes_with_nul();
+        let len = message_bytes.len();
+        let message = unsafe {
+            let message = malloc(len);
+            ptr::copy_nonoverlapping(message_bytes.as_ptr(), message as *mut u8, len);
+            message
+        };
+
+        Self {
+            microsecond: entry.datetime().timestamp_micros(),
+            ip: entry.ip().octets(),
+            user,
+            message,
+            result: entry.result(),
+        }
+    }
+}
+
 macro_rules! generate_function_serialized {
     ( $client_type:ident, $c_function_name:ident, $rust_function_name:ident) => {
         /// Send JSON serialized request to the service with the `client` and
@@ -504,4 +585,9 @@ generate_function_serialized!(
     FrontendClient,
     teaclave_get_task_serialized,
     get_task_serialized
+);
+generate_function_serialized!(
+    FrontendClient,
+    teaclave_query_audit_logs_serialized,
+    query_audit_logs_serialized
 );

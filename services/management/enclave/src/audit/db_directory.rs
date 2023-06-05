@@ -46,19 +46,15 @@ struct Cache {
     shared_directory: DbDirectory,
     data: Cursor<Vec<u8>>,
     is_flushed: bool,
-    rt: Runtime,
 }
 
 impl Cache {
     fn new(path_buf: PathBuf, shared_directory: DbDirectory) -> Self {
-        let rt = Builder::new_current_thread().enable_all().build().unwrap();
-
         Cache {
             path: path_buf,
             data: Cursor::new(Vec::new()),
             shared_directory,
             is_flushed: true,
-            rt,
         }
     }
 }
@@ -85,13 +81,10 @@ impl Write for Cache {
     }
 
     fn flush(&mut self) -> io::Result<()> {
+        self.shared_directory
+            .write(&self.path, self.data.get_ref())?;
         self.is_flushed = true;
-        let key = DB_PREFIX.clone() + &self.path.to_string_lossy();
-        let request = PutRequest::new(key.as_bytes(), self.data.get_ref().clone());
 
-        self.rt
-            .block_on(self.shared_directory.db.blocking_lock().put(request))
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
         Ok(())
     }
 }

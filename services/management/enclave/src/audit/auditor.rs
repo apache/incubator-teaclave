@@ -21,8 +21,7 @@ use teaclave_proto::teaclave_storage_service::TeaclaveStorageClient;
 use teaclave_rpc::transport::Channel;
 use teaclave_types::{Entry, EntryBuilder};
 
-use std::sync::Arc;
-use tokio::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use anyhow::{anyhow, Result};
 use tantivy::{
@@ -38,7 +37,9 @@ pub struct Auditor {
 }
 
 impl Auditor {
-    pub fn try_new(storage: Arc<Mutex<TeaclaveStorageClient<Channel>>>) -> Result<Self> {
+    pub fn try_new(
+        storage: Arc<tokio::sync::Mutex<TeaclaveStorageClient<Channel>>>,
+    ) -> Result<Self> {
         let directory = db_directory::DbDirectory::new(storage);
 
         let schema = Self::log_schema();
@@ -74,8 +75,8 @@ impl Auditor {
         })
     }
 
-    pub async fn add_logs(&self, logs: Vec<Entry>) -> Result<()> {
-        let mut writer = self.writer.lock().await;
+    pub fn add_logs(&self, logs: Vec<Entry>) -> Result<()> {
+        let mut writer = self.writer.lock().unwrap();
 
         for log in logs {
             let document = Self::convert_to_doc(log);
@@ -89,12 +90,13 @@ impl Auditor {
 
     /// query: the query for tantivy
     /// limit: maximum number of the returned logs
-    pub async fn query_logs(&self, query: &str, limit: usize) -> Result<Vec<Entry>> {
-        let index = self.index.lock().await;
-        let schema = Self::log_schema();
-
-        let reader = self.reader.lock().await;
+    pub fn query_logs(&self, query: &str, limit: usize) -> Result<Vec<Entry>> {
+        let reader = self.reader.lock().unwrap();
         let searcher = reader.searcher();
+        drop(reader);
+
+        let index = self.index.lock().unwrap();
+        let schema = Self::log_schema();
 
         let message = schema.get_field("message").unwrap();
         let date = schema.get_field("date").unwrap();
@@ -151,7 +153,7 @@ impl Auditor {
 
         let entry = EntryBuilder::new()
             .microsecond(microsecond)
-            .ip(ip.to_ipv4().unwrap())
+            .ip(ip)
             .user(user.to_owned())
             .message(message.to_owned())
             .result(result)
@@ -172,7 +174,7 @@ impl Auditor {
 
         let mut doc = Document::default();
         doc.add_date(date, date_v);
-        doc.add_ip_addr(ip, entry.ip().to_ipv6_compatible());
+        doc.add_ip_addr(ip, entry.ip());
         doc.add_text(user, &entry.user());
         doc.add_text(message, &entry.message());
         doc.add_bool(result, entry.result());

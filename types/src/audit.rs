@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use std::net::Ipv4Addr;
+use std::net::Ipv6Addr;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use chrono::NaiveDateTime;
@@ -26,8 +26,8 @@ pub struct Entry {
     /// Timestamp
     datetime: NaiveDateTime,
     /// Where the request is from.
-    ip: Ipv4Addr,
-    /// Who conducst the request.
+    ip: Ipv6Addr,
+    /// Who conducts the request.
     user: String,
     /// What the user wants.
     message: String,
@@ -39,7 +39,7 @@ pub struct Entry {
 impl Default for Entry {
     fn default() -> Self {
         let datetime = NaiveDateTime::from_timestamp_micros(0).unwrap();
-        let ip = Ipv4Addr::UNSPECIFIED;
+        let ip = Ipv6Addr::UNSPECIFIED;
         let user = String::new();
         let message = String::new();
         let result = false;
@@ -59,7 +59,7 @@ impl Entry {
         self.datetime
     }
 
-    pub fn ip(&self) -> Ipv4Addr {
+    pub fn ip(&self) -> Ipv6Addr {
         self.ip
     }
 
@@ -80,7 +80,7 @@ impl Entry {
 pub struct EntryBuilder {
     /// The microsecond since the UNIX epoch
     microsecond: Option<i64>,
-    ip: Option<Ipv4Addr>,
+    ip: Option<Ipv6Addr>,
     user: Option<String>,
     message: Option<String>,
     result: Option<bool>,
@@ -96,7 +96,7 @@ impl EntryBuilder {
         self
     }
 
-    pub fn ip(mut self, ip: Ipv4Addr) -> Self {
+    pub fn ip(mut self, ip: Ipv6Addr) -> Self {
         self.ip = Some(ip);
         self
     }
@@ -129,7 +129,7 @@ impl EntryBuilder {
 
         Entry {
             datetime,
-            ip: self.ip.unwrap_or(Ipv4Addr::UNSPECIFIED),
+            ip: self.ip.unwrap_or(Ipv6Addr::UNSPECIFIED),
             user: self.user.unwrap_or_default(),
             message: self.message.unwrap_or_default(),
             result: self.result.unwrap_or(false),

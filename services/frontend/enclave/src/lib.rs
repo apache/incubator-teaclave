@@ -19,6 +19,9 @@
 extern crate log;
 extern crate sgx_types;
 use anyhow::{anyhow, Result};
+use tokio::sync::Mutex;
+
+use std::sync::Arc;
 
 use teaclave_attestation::verifier;
 use teaclave_attestation::{AttestationConfig, RemoteAttestation};
@@ -29,13 +32,16 @@ use teaclave_binder::proto::{
 use teaclave_binder::{handle_ecall, register_ecall_handler};
 use teaclave_config::build::AS_ROOT_CA_CERT;
 use teaclave_config::RuntimeConfig;
+use teaclave_proto::teaclave_authentication_service::TeaclaveAuthenticationInternalClient;
 use teaclave_proto::teaclave_frontend_service::TeaclaveFrontendServer;
+use teaclave_proto::teaclave_management_service::TeaclaveManagementClient;
 use teaclave_rpc::{config::SgxTrustedTlsServerConfig, transport::Server};
 use teaclave_service_enclave_utils::{
     create_trusted_authentication_endpoint, create_trusted_management_endpoint, ServiceEnclave,
 };
 use teaclave_types::{TeeServiceError, TeeServiceResult};
 
+mod audit;
 mod error;
 mod service;
 
@@ -67,7 +73,15 @@ async fn start_service(config: &RuntimeConfig) -> Result<()> {
         attested_tls_config.clone(),
     )?;
 
-    info!(" Starting FrontEnd: setup authentication endpoint finished ...");
+    let authentication_channel = authentication_service_endpoint
+        .connect()
+        .await
+        .map_err(|e| anyhow!("Failed to connect to authentication service, retry {:?}", e))?;
+    let authentication_client = Arc::new(Mutex::new(TeaclaveAuthenticationInternalClient::new(
+        authentication_channel,
+    )));
+
+    info!(" Starting FrontEnd: setup authentication client finished ...");
 
     let management_service_endpoint = create_trusted_management_endpoint(
         &config.internal_endpoints.management.advertised_address,
@@ -77,13 +91,25 @@ async fn start_service(config: &RuntimeConfig) -> Result<()> {
         attested_tls_config,
     )?;
 
-    info!(" Starting FrontEnd: setup management endpoint finished ...");
+    let management_channel = management_service_endpoint
+        .connect()
+        .await
+        .map_err(|e| anyhow!("Failed to connect to management service, {:?}", e))?;
+    let management_client = Arc::new(Mutex::new(TeaclaveManagementClient::new(
+        management_channel,
+    )));
 
-    let service = service::TeaclaveFrontendService::new(
-        authentication_service_endpoint,
-        management_service_endpoint,
-    )
-    .await?;
+    info!(" Starting FrontEnd: setup management client finished ...");
+
+    let log_buffer = Arc::new(Mutex::new(Vec::new()));
+    let audit_agent = audit::AuditAgent::new(management_client.clone(), log_buffer.clone());
+    let agent_handle = tokio::spawn(async move {
+        audit_agent.run().await;
+    });
+
+    let service =
+        service::TeaclaveFrontendService::new(authentication_client, management_client, log_buffer)
+            .await?;
 
     info!(" Starting FrontEnd: start listening ...");
     Server::builder()
@@ -92,6 +118,9 @@ async fn start_service(config: &RuntimeConfig) -> Result<()> {
         .add_service(TeaclaveFrontendServer::new(service))
         .serve(listen_address)
         .await?;
+
+    agent_handle.await?;
+
     Ok(())
 }
 

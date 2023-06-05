@@ -1042,6 +1042,7 @@ name = "teaclave_proto"
 version = "0.5.1"
 dependencies = [
  "anyhow",
+ "chrono",
  "prost",
  "serde",
  "serde_json",
@@ -1072,6 +1073,7 @@ name = "teaclave_types"
 version = "0.5.1"
 dependencies = [
  "anyhow",
+ "chrono",
  "hex",
  "log",
  "rand",

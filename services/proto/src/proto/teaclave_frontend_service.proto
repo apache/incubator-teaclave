@@ -252,6 +252,15 @@ message CancelTaskRequest {
   string task_id = 1;
 }
 
+message QueryAuditLogsRequest {
+    string query = 1;
+    uint64 limit = 2;
+}
+
+message QueryAuditLogsResponse {
+    repeated teaclave_common_proto.Entry logs = 1;
+}
+
 service TeaclaveFrontend {
   rpc RegisterInputFile (RegisterInputFileRequest) returns (RegisterInputFileResponse);
   rpc RegisterOutputFile (RegisterOutputFileRequest) returns (RegisterOutputFileResponse);
@@ -274,4 +283,5 @@ service TeaclaveFrontend {
   rpc ApproveTask (ApproveTaskRequest) returns (google.protobuf.Empty);
   rpc InvokeTask (InvokeTaskRequest) returns (google.protobuf.Empty);
   rpc CancelTask (CancelTaskRequest) returns (google.protobuf.Empty);
+  rpc QueryAuditLogs (QueryAuditLogsRequest) returns (QueryAuditLogsResponse);
 }

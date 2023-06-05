@@ -24,7 +24,7 @@ use teaclave_types::{
 };
 
 use std::convert::TryInto;
-use std::net::Ipv4Addr;
+use std::net::Ipv6Addr;
 
 use anyhow::{bail, ensure, Error, Result};
 
@@ -282,11 +282,11 @@ impl std::convert::TryFrom<proto::Entry> for Entry {
     type Error = Error;
 
     fn try_from(proto: crate::teaclave_common_proto::Entry) -> Result<Self> {
-        const IPV4_LENTGH: usize = 4;
+        const IPV6_LENTGH: usize = 16;
 
         let len = proto.ip.len();
-        ensure!(len == IPV4_LENTGH, "invalid ip length: {}", len);
-        let ip = Ipv4Addr::from(<Vec<u8> as TryInto<[u8; 4]>>::try_into(proto.ip).unwrap());
+        ensure!(len == IPV6_LENTGH, "invalid ip length: {}", len);
+        let ip = Ipv6Addr::from(<Vec<u8> as TryInto<[u8; 16]>>::try_into(proto.ip).unwrap());
 
         let builder = EntryBuilder::new();
         let entry = builder
