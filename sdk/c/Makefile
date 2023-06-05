@@ -16,7 +16,9 @@
 # under the License.
 
 
+# It is very slow to use cbindgen crate in sdk/rust/build.rs,
+# so we put the generation separately here.
 RUST_CLIENT_SDK_SOURCE:=$(wildcard ../rust/src/*.rs)
 
 all: $(RUST_CLIENT_SDK_SOURCE)
-	rustup run nightly cbindgen ../rust -c cbindgen.toml -o teaclave_client_sdk.h
+	cbindgen ../rust -c cbindgen.toml -o teaclave_client_sdk.h

@@ -21,7 +21,7 @@
 /* DO NOT MODIFY THIS MANUALLY! This file was generated using cbindgen.
  * To generate this file:
  * 1. Get the latest cbindgen using `cargo install --force cbindgen`
- * 2. Run `rustup run nightly cbindgen ../rust -c cbindgen.toml -o
+ * 2. Run `cbindgen ../rust -c cbindgen.toml -o
      teaclave_client_sdk.h` or `make`.
  */
 
