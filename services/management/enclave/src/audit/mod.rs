@@ -15,47 +15,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
-extern crate sgx_types;
-
-mod attestation;
-mod audit;
-mod crypto;
-mod error;
-mod file;
-mod file_agent;
-mod function;
-mod macros;
-mod staged_file;
-mod staged_function;
-mod staged_task;
-mod storage;
-mod task;
-mod task_state;
-mod user;
-mod worker;
-
-pub use attestation::*;
-pub use audit::*;
-pub use crypto::*;
-pub use error::*;
-pub use file::*;
-pub use file_agent::*;
-pub use function::*;
-pub use macros::*;
-pub use staged_file::*;
-pub use staged_function::*;
-pub use staged_task::*;
-pub use storage::*;
-pub use task::*;
-pub use task_state::*;
-pub use user::*;
-pub use worker::*;
-
+mod auditor;
+mod db_directory;
 #[cfg(feature = "enclave_unit_test")]
-pub mod tests {
-    use super::*;
+pub mod tests;
 
-    pub fn run_tests() -> bool {
-        worker::tests::run_tests()
-    }
-}
+pub use auditor::Auditor;

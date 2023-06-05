@@ -47,6 +47,8 @@ pub(crate) enum ManagementServiceError {
     TaskCancelError(String),
     #[error("function quota has been used up")]
     FunctionQuotaError,
+    #[error("audit log error, reason: {0}")]
+    AuditError(String),
 }
 
 impl From<ManagementServiceError> for Status {

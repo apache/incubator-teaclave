@@ -70,3 +70,11 @@ message TaskResult {
     teaclave_common_proto.TaskFailure Err = 2;
   }
 }
+
+message Entry {
+    int64 microsecond = 1;
+    bytes ip = 2;
+    string user = 3;
+    string message = 4;
+    bool result = 5;
+}
