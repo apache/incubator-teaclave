@@ -29,5 +29,6 @@ anyhow = { version = "1.0.26" }
 pem = "0.7.0"
 
 [patch.crates-io]
+h2                = { git = "https://github.com/hyperium/h2", tag = "v0.3.19" }
 sgx_tprotected_fs = { path = "../../../third_party/rust-sgx-sdk/sgx_protected_fs/tfs" }
 sgx_types         = { path = "../../../third_party/rust-sgx-sdk/sgx_types" }
