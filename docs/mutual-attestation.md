@@ -44,7 +44,7 @@ before serving any requests.
 
 ## In the Repository 
 
-The [keys](https://github.com/apache/incubator-teaclave/tree/master/keys)
+The [keys](https://github.com/apache/incubator-teaclave/tree/master/config/keys)
 directory in the source tree contain the key pairs of three fake auditing
 parties for PoC purposes. Private keys are also included to deliver a smooth
 build and test process. In production, builders of Teaclave should obtain the

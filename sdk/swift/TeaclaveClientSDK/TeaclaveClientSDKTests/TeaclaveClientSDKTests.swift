@@ -26,7 +26,7 @@ class TeaclaveClientSDKTests: XCTestCase {
 
     // Setup enclave info path e.g., /incubator-teaclave/enclave_info.toml
     let enclave_info_path = ""
-    // Setup AS CA certificate path e.g., /incubator-teaclave/keys/ias_root_ca_cert.pem
+    // Setup AS CA certificate path e.g., /incubator-teaclave/config/keys/ias_root_ca_cert.pem
     let as_root_ca_cert_path = ""
 
     func testBuiltinEcho() throws {

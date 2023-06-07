@@ -59,31 +59,6 @@ platform, making computation on privacy-sensitive data safe and simple.
 - [Rust Development Guideline](docs/rust-guideline.md)
 - [Development Tips](docs/development-tips.md)
 
-### Codebase
-
-- [Attestation](attestation)
-- [Binder](binder)
-- [Built-in Functions](function)
-- [Client SDK](sdk)
-- [Command Line Tool](cli)
-- [Common Libraries](common)
-- [Configurations in Teaclave](config)
-- [Crypto Primitives](crypto)
-- [Data Center Attestation Service](dcap)
-- [Dockerfile and Compose File](docker)
-- [Examples](examples)
-- [Executor Runtime](runtime)
-- [File Agent](file_agent)
-- [Function Executors](executor)
-- [Keys and Certificates](keys)
-- [RPC](rpc)
-- [Teaclave Services](services)
-- [Teaclave Worker](worker)
-- [Test Harness and Test Cases](tests)
-- [Third-Party Dependency Vendoring](third_party)
-- [Tools](tools)
-- [Types](types)
-
 ### API References
 
 - [Teaclave SGX SDK](https://teaclave.apache.org/api-docs/sgx-sdk/)
