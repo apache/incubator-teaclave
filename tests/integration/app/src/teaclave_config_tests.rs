@@ -25,8 +25,7 @@ pub fn run_tests() -> bool {
 fn test_runtime_config() {
     env::remove_var("AS_KEY");
     env::remove_var("AS_SPID");
-    let config =
-        teaclave_config::RuntimeConfig::from_toml("./fixtures/runtime.config.toml").unwrap();
+    let config = teaclave_config::RuntimeConfig::from_toml("./runtime.config.toml").unwrap();
     let authentication_config = config.api_endpoints.authentication;
     assert_eq!(
         authentication_config.listen_address,
