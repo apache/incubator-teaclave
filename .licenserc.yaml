@@ -31,7 +31,7 @@ header:
     - '.gitattributes'
     - '.github/ISSUE_TEMPLATE/**'
     - '.gitmodules'
-    - 'DISCLAIMER-WIP'
+    - 'DISCLAIMER*'
     - 'KEYS'
     - 'LICENSE'
     - 'NOTICE'
