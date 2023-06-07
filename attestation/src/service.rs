@@ -35,7 +35,7 @@ use sgx_crypto::ecc::EcPublicKey;
 
 /// Root certification of the DCAP attestation service provider.
 #[cfg(dcap)]
-const DCAP_ROOT_CA_CERT: &str = include_str!("../../keys/dcap_root_ca_cert.pem");
+const DCAP_ROOT_CA_CERT: &str = include_str!("../../config/keys/dcap_root_ca_cert.pem");
 
 /// URL path to get the report from the attestation service.
 const AS_REPORT_URL: &str = "/sgx/dev/attestation/v4/report";

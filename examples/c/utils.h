@@ -22,9 +22,9 @@ const char *authentication_service_address = "https://localhost:7776";
 const char *frontend_service_address = "https://localhost:7777";
 const char *enclave_info_path = "../../release/services/enclave_info.toml";
 #ifdef DCAP
-const char *as_root_ca_cert_path = "../../keys/dcap_root_ca_cert.pem";
+const char *as_root_ca_cert_path = "../../config/keys/dcap_root_ca_cert.pem";
 #else
-const char *as_root_ca_cert_path = "../../keys/ias_root_ca_cert.pem";
+const char *as_root_ca_cert_path = "../../config/keys/ias_root_ca_cert.pem";
 #endif
 
 int user_register(const char* admin_user_id,

@@ -41,11 +41,11 @@ mkdir -p ${TEACLAVE_OUT_DIR} ${TEACLAVE_TARGET_DIR} ${TEACLAVE_SERVICE_INSTALL_D
 if [ "$DCAP" == "ON" ]; then
     mkdir -p ${TEACLAVE_DCAP_INSTALL_DIR}
     cp ${CMAKE_SOURCE_DIR}/dcap/Rocket.toml ${TEACLAVE_DCAP_INSTALL_DIR}/Rocket.toml
-    cp ${CMAKE_SOURCE_DIR}/keys/dcap_server_cert.pem ${TEACLAVE_DCAP_INSTALL_DIR}/
-    cp ${CMAKE_SOURCE_DIR}/keys/dcap_server_key.pem ${TEACLAVE_DCAP_INSTALL_DIR}/
+    cp ${CMAKE_SOURCE_DIR}/config/keys/dcap_server_cert.pem ${TEACLAVE_DCAP_INSTALL_DIR}/
+    cp ${CMAKE_SOURCE_DIR}/config/keys/dcap_server_key.pem ${TEACLAVE_DCAP_INSTALL_DIR}/
 fi
 # copy auditors to install directory to make it easy to package all built things
-cp -RT ${CMAKE_SOURCE_DIR}/keys/auditors/ ${TEACLAVE_AUDITORS_DIR}/
+cp -RT ${CMAKE_SOURCE_DIR}/config/keys/auditors/ ${TEACLAVE_AUDITORS_DIR}/
 cp ${CMAKE_SOURCE_DIR}/config/runtime.config.toml ${TEACLAVE_SERVICE_INSTALL_DIR}
 cp ${CMAKE_SOURCE_DIR}/config/runtime.config.toml ${TEACLAVE_TEST_INSTALL_DIR}
 cp -r ${CMAKE_SOURCE_DIR}/tests/fixtures/ ${TEACLAVE_TEST_INSTALL_DIR}

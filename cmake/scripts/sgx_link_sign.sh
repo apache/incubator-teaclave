@@ -68,7 +68,7 @@ cd ${TEACLAVE_OUT_DIR}
 ${CMAKE_C_COMPILER} "lib${edl_lib_name}.o" -o \
     ${TEACLAVE_OUT_DIR}/${CUR_PKG_NAME}.so ${SGX_COMMON_CFLAGS} \
     ${ENCLAVE_LINK_FLAGS}
-${SGX_ENCLAVE_SIGNER} sign -key ${TEACLAVE_PROJECT_ROOT}/keys/enclave_signing_key.pem \
+${SGX_ENCLAVE_SIGNER} sign -key ${TEACLAVE_PROJECT_ROOT}/config/keys/enclave_signing_key.pem \
     -enclave ${CUR_PKG_NAME}.so \
     -out ${CUR_INSTALL_DIR}/${CUR_PKG_NAME}.signed.so \
     -config ${TEACLAVE_PROJECT_ROOT}/${CUR_PKG_PATH}/Enclave.config.xml \

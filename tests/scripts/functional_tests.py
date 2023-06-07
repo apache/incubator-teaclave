@@ -52,11 +52,11 @@ else:
 
 if os.environ.get('TEACLAVE_PROJECT_ROOT'):
     AS_ROOT_CA_CERT_PATH = os.environ['TEACLAVE_PROJECT_ROOT'] + \
-        "/keys/" + AS_ROOT_CERT_FILENAME
+        "/config/keys/" + AS_ROOT_CERT_FILENAME
     ENCLAVE_INFO_PATH = os.environ['TEACLAVE_PROJECT_ROOT'] + \
         "/release/tests/enclave_info.toml"
 else:
-    AS_ROOT_CA_CERT_PATH = "../../keys/" + AS_ROOT_CERT_FILENAME
+    AS_ROOT_CA_CERT_PATH = "../../config/keys/" + AS_ROOT_CERT_FILENAME
     ENCLAVE_INFO_PATH = "../../release/tests/enclave_info.toml"
 
 

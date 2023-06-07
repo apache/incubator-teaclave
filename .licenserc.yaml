@@ -38,7 +38,7 @@ header:
     - 'build/**'
     - 'cmake/tomls/Cargo.*.lock'
     - 'common/rusty_leveldb_sgx/**'
-    - 'keys'
+    - 'config/keys'
     - 'licenses'
     - 'release/**'
     - 'services/access_control/model.conf'

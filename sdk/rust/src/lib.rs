@@ -583,9 +583,9 @@ mod tests {
 
     const ENCLAVE_INFO_PATH: &str = "../../release/services/enclave_info.toml";
     #[cfg(dcap)]
-    const AS_ROOT_CA_CERT_PATH: &str = "../../keys/dcap_root_ca_cert.pem";
+    const AS_ROOT_CA_CERT_PATH: &str = "../../config/keys/dcap_root_ca_cert.pem";
     #[cfg(not(dcap))]
-    const AS_ROOT_CA_CERT_PATH: &str = "../../keys/ias_root_ca_cert.pem";
+    const AS_ROOT_CA_CERT_PATH: &str = "../../config/keys/ias_root_ca_cert.pem";
     const USER_ID: &str = "rust_client_sdk_test_user";
     const USER_PASSWORD: &str = "test_password";
     const ADMIN_ID: &str = "admin";
