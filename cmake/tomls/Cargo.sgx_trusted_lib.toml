@@ -61,11 +61,11 @@ image             = { git = "https://github.com/apache/incubator-teaclave-crates
 mio               = { git = "https://github.com/apache/incubator-teaclave-crates" }
 num_cpus          = { git = "https://github.com/apache/incubator-teaclave-crates" }
 rand              = { git = "https://github.com/apache/incubator-teaclave-crates" }
-rayon 		      = { git = "https://github.com/mesatee/rayon.git", branch = "teaclave" }
+rayon             = { git = "https://github.com/apache/incubator-teaclave-crates" }
 ring              = { git = "https://github.com/apache/incubator-teaclave-crates" }
 rustface          = { git = "https://github.com/apache/incubator-teaclave-crates" }
 rustls            = { git = "https://github.com/apache/incubator-teaclave-crates" }
 rusty-machine     = { git = "https://github.com/apache/incubator-teaclave-crates" }
-tantivy 		  = { git = "https://github.com/mesatee/tantivy.git", branch = "0.19.2" }
+tantivy           = { git = "https://github.com/apache/incubator-teaclave-crates" }
 tokio             = { git = "https://github.com/tokio-rs/tokio.git", tag = "tokio-1.24.0"}
 yasna             = { git = "https://github.com/sccommunity/yasna.rs", branch = "teaclave-sgx" }
