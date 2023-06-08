@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -17,25 +15,21 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set -e
-# extended cargo build script
+name: Doc-ubuntu-20.04
+on: [push, pull_request, workflow_dispatch]
+defaults:
+  run:
+    shell: bash
 
-# if MT_RUSTC_WRAPPER is not empty, use it as rustc
-RUSTC="${MT_RUSTC_WRAPPER:-${RUSTC}}"
+env:
+    DOC: 1
 
-if [ ! -z "${MUTE_CARGO}" ]; then
-    RUSTC="${RUSTC}" cargo build "$@" >/dev/null 2>&1
-else
-    RUSTC="${RUSTC}" cargo build "$@"
-fi
-
-# if CLP is set, run cargo clippy after cargo build
-# cannot use MT_RUSTC_WRAPPER for cargo clippy
-if [ ! -z "$CLP" ]; then
-    cargo clippy "$@" -- -D warnings
-fi
-
-# if DOC is set, run cargo doc after cargo build
-if [ ! -z "$DOC" ]; then
-    RUSTDOCFLAGS="--enable-index-page -Zunstable-options $RUSTFLAGS" RUSTC="${RUSTC}" cargo doc "$@"
-fi
+jobs:
+  sim-debug-unit:
+    runs-on: ubuntu-20.04
+    container: teaclave/teaclave-build-ubuntu-2004-sgx-2.17.1:0.2.0
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build
+        run: |
+          . cmake/scripts/build_in_ci.sh

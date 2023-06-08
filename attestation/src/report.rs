@@ -17,7 +17,7 @@
 
 //! Types that contain information about attestation report.
 //! The implementation is based on Attestation Service API version 4.
-//! https://api.trustedservices.intel.com/documents/sgx-attestation-api-spec.pdf
+//! <https://api.trustedservices.intel.com/documents/sgx-attestation-api-spec.pdf>
 
 use crate::AttestationError;
 use crate::EndorsedAttestationReport;

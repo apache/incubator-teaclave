@@ -117,7 +117,7 @@ add_custom_target(
   COMMAND
     make DOC=1 all
     && mkdir -p ${TEACLAVE_DOC_INSTALL_DIR}
-    && cp -RT ${TEACLAVE_TARGET_DIR}/trusted/doc ${TEACLAVE_DOC_INSTALL_DIR}/enclave
+    && cp -RT ${TEACLAVE_TARGET_DIR}/trusted/${SGX_LIB_TARGET}/doc ${TEACLAVE_DOC_INSTALL_DIR}/enclave
     && cp -RT ${TEACLAVE_TARGET_DIR}/untrusted/doc ${TEACLAVE_DOC_INSTALL_DIR}/app
     && cp -RT ${TEACLAVE_TARGET_DIR}/unix/doc ${TEACLAVE_DOC_INSTALL_DIR}/unix
   DEPENDS prep)
