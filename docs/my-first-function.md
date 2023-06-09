@@ -72,12 +72,12 @@ Build the Teaclave platform using docker:
 ```
 $ cd incubator-teaclave
 $ docker run --rm -v $(pwd):/teaclave -w /teaclave \
-  -it teaclave/teaclave-build-ubuntu-1804-sgx-2.14:latest \
+  -it teaclave/teaclave-build-ubuntu-1804-sgx-2.17.1:0.2.0 \
    bash -c ". /root/.cargo/env && \
      . /opt/sgxsdk/environment && \
      mkdir -p build && cd build && \
      cmake -DTEST_MODE=ON .. && \
-     make"
+     make -j"
 ```
 
 ## Setup Attestation Service
@@ -130,63 +130,86 @@ Attaching to ...
 
 ## Invoke Function
 
-We provide several examples to demonstrate the platform. Let's get started
-with invoking a built-in function: echo, which is a simple function that takes one
-input message and returns it.
+We provide several examples to demonstrate the platform. Let's get started with
+invoking a built-in function: ordered-set-intersect, which is a function that
+takes two ordered sets and returns the intersection set in the output files.
+This function is a kind of
+[PSI](https://en.wikipedia.org/wiki/Private_set_intersection) implementation
+based on TEE.
 
 This example is written in Python, and some dependencies are needed for the
 remote attestation. They can be installed with `pip`:
 
 ```
-$ pip3 install pyopenssl toml cryptography
+$ pip3 install pyopenssl toml cryptography grpcio grpcio-tools grpclib
 ```
 
 ### Built-in function
 
-Then, run the echo example:
+Then, run the PSI example:
 
 ```
 $ cd examples/python
-$ PYTHONPATH=../../sdk/python python3 builtin_echo.py 'Hello, Teaclave!'
-[+] registering user
-[+] login
-[+] registering function
-[+] creating task
-[+] approving task
-[+] invoking task
-[+] getting result
-[+] done
-[+] function return:  b'Hello, Teaclave!'
+$ PYTHONPATH=../../sdk/python python3 builtin_ordered_set_intersect.py 
+[+] user0 login
+[+] user1 login
+[+] user0 registering function
+[+] user0 creating task
+[+] user0 registering input file
+[+] user0 registering output file
+[+] user0 assigning data to task
+[+] user1 registering input file
+[+] user1 registering output file
+[+] user1 assigning data to task
+[+] user0 approving task
+[+] user1 approving task
+[+] user0 invoking task
+[+] user0 getting task result
+[+] user1 getting task result
+[+] User 0 result: 3 common items
+[+] User 1 result: 3 common items
 ```
 
-If you see above log, this means that the function is successfully invoked in Teaclave.
+If you see above log, this means that the function is successfully invoked in
+Teaclave. The intersection set is stored in the output files that the users registered.
 
 ### Define my own function
 
-The previous example is to demonstrate invoking the built-in echo function. In
-Teaclave, you can also register and invoke a function written by yourself.
-For example, we can implement an echo function in Python like this:
+The previous example is to demonstrate invoking the built-in PSI function. In
+Teaclave, you can also register and invoke a function written by yourself. For
+example, we have implemented a [logistic
+regression](https://en.wikipedia.org/wiki/Logistic_regression) function in
+Python in
+[mesapy_logistic_reg_payload.py](../examples/python/mesapy_logistic_reg_payload.py).
+It can conduct both training and prediction.
 
+Then run the mesapy LR example:
 ```
-$ cat mesapy_echo_payload.py
-def entrypoint(argv):
-    assert argv[0] == 'message'
-    assert argv[1] is not None
-    return argv[1]
-```
-
-Then run the mesapy echo example:
-```
-$ PYTHONPATH=../../sdk/python python3 mesapy_echo.py mesapy_echo_payload.py 'Hello, Teaclave!'
-[+] registering user
-[+] login
-[+] registering function
-[+] creating task
-[+] approving task
-[+] invoking task
-[+] getting result
-[+] done
-[+] function return:  b'Hello, Teaclave!'
+$ PYTHONPATH=../../sdk/python python3 mesapy_logistic_reg.py
+[+] mesapy_logistic_reg_train_task begin!
+[+] admin login
+[+] admin registering function
+[+] admin reading payload file
+[+] admin creating task
+[+] admin registering input file
+[+] admin registering output file
+[+] admin assigning data to task
+[+] admin invoking task
+[+] admin getting task result
+[+] User 0 result: Training is finished!
+[+] mesapy_logistic_reg_predict_task begin!
+[+] admin registering function
+[+] admin reading payload file
+[+] admin creating task
+[+] admin getting task output
+[+] admin getting task output
+[+] admin registering input file
+[+] admin registering output file
+[+] admin assigning data to task
+[+] admin invoking task
+[+] admin getting task result
+[+] Predict result: [1.0 1.0 0.0 0.0 0.0]
+[+] logistic_reg_task end!
 ```
 
 ## Simulation Mode
@@ -201,12 +224,12 @@ SIGKILL: kill" error during the compilation.
 $ git clone https://github.com/apache/incubator-teaclave.git
 $ cd incubator-teaclave
 $ docker run --rm -v $(pwd):/teaclave -w /teaclave \
-  -it teaclave/teaclave-build-ubuntu-1804-sgx-2.14:latest \
+  -it teaclave/teaclave-build-ubuntu-1804-sgx-2.17.1:0.2.0 \
    bash -c ". /root/.cargo/env && \
      . /opt/sgxsdk/environment && \
      mkdir -p build && cd build && \
      cmake -DTEST_MODE=ON -DSGX_SIM_MODE=ON .. && \
-     make"
+     make -j"
 ```
 
 Since the attestation is disabled in the simulation mode, related environment
@@ -225,13 +248,7 @@ At last, launch all services with `docker-compose`:
 $ (cd docker && ./run-teaclave-services.sh -m sim)
 ```
 
-Install dependencies for Python client.
-
-```
-$ pip3 install pyopenssl toml cryptography
-```
-
-In simulation mode, run examples with `SGX_MODE=SW` environment variable.
+In simulation mode, run the echo example with `SGX_MODE=SW` environment variable.
 
 ```
 $ cd examples/python
