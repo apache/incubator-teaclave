@@ -17,7 +17,7 @@
 
 [package]
 name = "teaclave_function"
-version = "0.5.1"
+version = "0.6.0"
 authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
 description = "Teaclave built-in functions."
 license = "Apache-2.0"

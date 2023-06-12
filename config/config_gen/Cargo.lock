@@ -331,7 +331,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_config_gen"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "askama",
  "pem",

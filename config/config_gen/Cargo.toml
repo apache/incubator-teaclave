@@ -17,7 +17,7 @@
 
 [package]
 name = "teaclave_config_gen"
-version = "0.5.1"
+version = "0.6.0"
 authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
 description = "Generating build config."
 license = "Apache-2.0"
