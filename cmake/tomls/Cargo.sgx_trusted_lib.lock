@@ -375,7 +375,7 @@ checksum = "25c7df09945d65ea8d70b3321547ed414bbc540aad5bac6883d021b970f35b04"
 [[package]]
 name = "fastfield_codecs"
 version = "0.3.1"
-source = "git+https://github.com/mesatee/tantivy.git?branch=0.19.2#433372df6a1787f726caefafccc3352b12449ff0"
+source = "git+https://github.com/apache/incubator-teaclave-crates#c979a7afdb748716696ce683a250fbb50a98a23f"
 dependencies = [
  "fastdivide",
  "itertools 0.10.5",
@@ -1222,7 +1222,7 @@ checksum = "b15813163c1d831bf4a13c3610c05c0d03b39feb07f7e09fa234dac9b15aaf39"
 [[package]]
 name = "ownedbytes"
 version = "0.4.0"
-source = "git+https://github.com/mesatee/tantivy.git?branch=0.19.2#433372df6a1787f726caefafccc3352b12449ff0"
+source = "git+https://github.com/apache/incubator-teaclave-crates#c979a7afdb748716696ce683a250fbb50a98a23f"
 dependencies = [
  "stable_deref_trait",
 ]
@@ -1442,7 +1442,7 @@ checksum = "ebac11a9d2e11f2af219b8b8d833b76b1ea0e054aa0e8d8e9e4cbde353bdf019"
 [[package]]
 name = "rayon"
 version = "1.7.0"
-source = "git+https://github.com/mesatee/rayon.git?branch=teaclave#a07ce2e8cbbe76a3cb5abd5e17890ba88afebb60"
+source = "git+https://github.com/apache/incubator-teaclave-crates#c979a7afdb748716696ce683a250fbb50a98a23f"
 dependencies = [
  "either",
  "rayon-core",
@@ -1451,7 +1451,7 @@ dependencies = [
 [[package]]
 name = "rayon-core"
 version = "1.11.0"
-source = "git+https://github.com/mesatee/rayon.git?branch=teaclave#a07ce2e8cbbe76a3cb5abd5e17890ba88afebb60"
+source = "git+https://github.com/apache/incubator-teaclave-crates#c979a7afdb748716696ce683a250fbb50a98a23f"
 dependencies = [
  "crossbeam-channel",
  "crossbeam-deque",
@@ -2146,7 +2146,7 @@ dependencies = [
 [[package]]
 name = "tantivy"
 version = "0.19.2"
-source = "git+https://github.com/mesatee/tantivy.git?branch=0.19.2#433372df6a1787f726caefafccc3352b12449ff0"
+source = "git+https://github.com/apache/incubator-teaclave-crates#c979a7afdb748716696ce683a250fbb50a98a23f"
 dependencies = [
  "aho-corasick 0.7.20",
  "arc-swap",
@@ -2193,12 +2193,12 @@ dependencies = [
 [[package]]
 name = "tantivy-bitpacker"
 version = "0.3.0"
-source = "git+https://github.com/mesatee/tantivy.git?branch=0.19.2#433372df6a1787f726caefafccc3352b12449ff0"
+source = "git+https://github.com/apache/incubator-teaclave-crates#c979a7afdb748716696ce683a250fbb50a98a23f"
 
 [[package]]
 name = "tantivy-common"
 version = "0.4.0"
-source = "git+https://github.com/mesatee/tantivy.git?branch=0.19.2#433372df6a1787f726caefafccc3352b12449ff0"
+source = "git+https://github.com/apache/incubator-teaclave-crates#c979a7afdb748716696ce683a250fbb50a98a23f"
 dependencies = [
  "byteorder",
  "ownedbytes",
@@ -2218,7 +2218,7 @@ dependencies = [
 [[package]]
 name = "tantivy-query-grammar"
 version = "0.19.0"
-source = "git+https://github.com/mesatee/tantivy.git?branch=0.19.2#433372df6a1787f726caefafccc3352b12449ff0"
+source = "git+https://github.com/apache/incubator-teaclave-crates#c979a7afdb748716696ce683a250fbb50a98a23f"
 dependencies = [
  "combine",
  "once_cell",
@@ -2227,7 +2227,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_access_control_service_enclave"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "cfg-if 0.1.10",
@@ -2251,7 +2251,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_attestation"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "base64 0.13.1",
@@ -2284,7 +2284,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_authentication_service_enclave"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "cfg-if 0.1.10",
@@ -2311,7 +2311,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_binder"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "cfg-if 0.1.10",
@@ -2329,7 +2329,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_binder_attribute"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "quote 0.6.13",
  "syn 0.15.44",
@@ -2337,7 +2337,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_config"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "log",
@@ -2348,7 +2348,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_crypto"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "hex",
@@ -2362,7 +2362,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_execution_service_enclave"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "gbdt",
@@ -2390,7 +2390,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_executor"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "gbdt",
@@ -2412,7 +2412,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_executor_context"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "gbdt",
@@ -2432,7 +2432,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_file_agent"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "base64 0.13.1",
@@ -2454,7 +2454,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_frontend_service_enclave"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "cfg-if 0.1.10",
@@ -2478,7 +2478,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_function"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "base64 0.13.1",
@@ -2504,7 +2504,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_functional_tests_enclave"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "futures",
@@ -2531,7 +2531,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_integration_tests_enclave"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "log",
@@ -2550,7 +2550,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_logger"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "log",
@@ -2561,7 +2561,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_management_service_enclave"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "cfg-if 0.1.10",
@@ -2589,7 +2589,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_proto"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -2608,7 +2608,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_rpc"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "log",
@@ -2621,7 +2621,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_runtime"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "log",
@@ -2633,7 +2633,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_scheduler_service_enclave"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "gbdt",
@@ -2657,7 +2657,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_service_enclave_utils"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "env_logger",
@@ -2675,7 +2675,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_sgx_tool_enclave"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "base64 0.13.1",
@@ -2692,7 +2692,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_storage_service_enclave"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "cfg-if 0.1.10",
@@ -2714,7 +2714,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_test_utils"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "futures",
  "inventory",
@@ -2733,7 +2733,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_types"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -2756,7 +2756,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_unit_tests_enclave"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "log",
@@ -2789,7 +2789,7 @@ dependencies = [
 
 [[package]]
 name = "teaclave_worker"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "log",

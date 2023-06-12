@@ -17,7 +17,7 @@
 
 [package]
 name = "teaclave_sgx_tool_enclave"
-version = "0.5.1"
+version = "0.6.0"
 authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
 description = "Teaclave SGX Tool"
 license = "Apache-2.0"

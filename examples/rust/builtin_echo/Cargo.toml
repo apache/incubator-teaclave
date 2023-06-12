@@ -17,7 +17,7 @@
 
 [package]
 name = "builtin_echo"
-version = "0.5.1"
+version = "0.6.0"
 authors = ["Teaclave Contributors <dev@teaclave.apache.org>"]
 description = "builtin_echo function example using Teaclave client SDK."
 license = "Apache-2.0"
