@@ -24,6 +24,9 @@ Currently, we have these built-in functions:
     intersection of their ordered sets without revealing anything except for the
     elements in the intersection. Users should calculate hash values of each item
     and upload them as a sorted list.
+  - `builtin-ordered-set-join`: Allow two parties to combine their CSV files in a unique
+    and sorted column. The CSV files uploaded by users should be sorted by the specified
+    column.
   - `builtin-rsa-sign`: Signing data with RSA key.
   - `builtin-face-detection`: An implementation of Funnel-Structured cascade,
     which is designed for real-time multi-view face detection.

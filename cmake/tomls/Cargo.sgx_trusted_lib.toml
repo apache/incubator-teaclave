@@ -55,6 +55,7 @@ crc               = { git = "https://github.com/mrhooray/crc-rs", rev = "86696be
 simple_asn1       = { git = "https://github.com/acw/simple_asn1", rev = "7db7a48" }
 
 # SGX crates
+csv               = { git = "https://github.com/apache/incubator-teaclave-crates" }
 gbdt              = { git = "https://github.com/apache/incubator-teaclave-crates" }
 getrandom         = { git = "https://github.com/apache/incubator-teaclave-crates" }
 image             = { git = "https://github.com/apache/incubator-teaclave-crates" }
