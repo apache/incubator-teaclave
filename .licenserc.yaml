@@ -21,6 +21,7 @@ header:
     copyright-owner: Apache Software Foundation
 
   paths-ignore:
+    - '**/*.csv'
     - '**/*.txt'
     - '**/*.md'
     - '**/*.pem'

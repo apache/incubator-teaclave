@@ -60,6 +60,7 @@ full_builtin_function = [
   "builtin_logistic_regression_train",
   "builtin_password_check",
   "builtin_online_decrypt",
+  "builtin_ordered_set_join",
   "builtin_ordered_set_intersect",
   "builtin_principal_components_analysis",
   "builtin_private_join_and_compute",
@@ -74,6 +75,7 @@ builtin_logistic_regression_predict = []
 builtin_logistic_regression_train = []
 builtin_password_check = []
 builtin_online_decrypt = []
+builtin_ordered_set_join = []
 builtin_ordered_set_intersect = []
 builtin_principal_components_analysis = []
 builtin_private_join_and_compute = []
