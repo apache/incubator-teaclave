@@ -30,13 +30,9 @@ pub struct FunctionArguments {
     inner: serde_json::Map<String, ArgumentValue>,
 }
 
-impl From<HashMap<String, String>> for FunctionArguments {
-    fn from(map: HashMap<String, String>) -> Self {
-        let inner = map.iter().fold(serde_json::Map::new(), |mut acc, (k, v)| {
-            acc.insert(k.to_owned(), v.to_owned().into());
-            acc
-        });
-
+impl From<HashMap<String, ArgumentValue>> for FunctionArguments {
+    fn from(map: HashMap<String, ArgumentValue>) -> Self {
+        let inner = map.into_iter().collect();
         Self { inner }
     }
 }
@@ -65,8 +61,9 @@ impl FunctionArguments {
         Ok(Self { inner })
     }
 
-    pub fn from_map(map: HashMap<String, String>) -> Self {
-        map.into()
+    pub fn from_map<T: Into<ArgumentValue>>(map: HashMap<String, T>) -> Self {
+        let inner = map.into_iter().map(|(k, v)| (k, v.into())).collect();
+        Self { inner }
     }
 
     pub fn inner(&self) -> &serde_json::Map<String, ArgumentValue> {

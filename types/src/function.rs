@@ -182,6 +182,9 @@ impl Storable for Function {
     }
 }
 
+// FIXME: If the argument type is not a string, 'allow_overwrite' should be
+// set to true when registering a function and the argument value should be
+// provided when creating a task based on the funcion.
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct FunctionArgument {
     pub key: String,

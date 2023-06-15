@@ -275,7 +275,7 @@ pub mod tests {
         let mut args = HashMap::new();
 
         args.insert("input_img".to_string(), "input_img".to_string());
-        let args = FunctionArguments::from(args);
+        let args = FunctionArguments::from_map(args);
 
         let mut file =
             fs::File::open("../../examples/python/wasm_tvm_mnist_payload/mnist.wasm").unwrap();
@@ -310,7 +310,7 @@ pub mod tests {
         args.insert("input_file_id1".to_string(), "pf_in_a".to_string());
         args.insert("input_file_id2".to_string(), "pf_in_b".to_string());
         args.insert("output_file_id".to_string(), "pf_out".to_string());
-        let args = FunctionArguments::from(args);
+        let args = FunctionArguments::from_map(args);
 
         let mut file = fs::File::open(
             "../../examples/python/wasm_c_millionaire_problem_payload/millionaire_problem.wasm",
