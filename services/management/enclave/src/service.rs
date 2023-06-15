@@ -24,10 +24,10 @@ use anyhow::anyhow;
 use std::convert::TryInto;
 use std::sync::Arc;
 use teaclave_proto::teaclave_common::i32_from_task_status;
+use teaclave_proto::teaclave_frontend_service::*;
 use teaclave_proto::teaclave_frontend_service::{
     from_proto_file_ids, from_proto_ownership, to_proto_file_ids, to_proto_ownership,
 };
-use teaclave_proto::teaclave_frontend_service::*;
 use teaclave_proto::teaclave_management_service::{SaveLogsRequest, TeaclaveManagement};
 use teaclave_proto::teaclave_storage_service::{
     DeleteRequest, EnqueueRequest, GetKeysByPrefixRequest, GetRequest, PutRequest,
@@ -161,7 +161,6 @@ impl TeaclaveManagement for TeaclaveManagementService {
         Ok(Response::new(response))
     }
 
-    // access control: user_id in owner_list
     async fn register_fusion_output(
         &self,
         request: Request<RegisterFusionOutputRequest>,
@@ -214,7 +213,6 @@ impl TeaclaveManagement for TeaclaveManagementService {
         Ok(Response::new(response))
     }
 
-    // access control: output_file.owner contains user_id
     async fn get_output_file(
         &self,
         request: Request<GetOutputFileRequest>,
@@ -239,7 +237,6 @@ impl TeaclaveManagement for TeaclaveManagementService {
         Ok(Response::new(response))
     }
 
-    // access control: input_file.owner contains user_id
     async fn get_input_file(
         &self,
         request: Request<GetInputFileRequest>,
@@ -264,7 +261,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
         Ok(Response::new(response))
     }
 
-    // access_control: none
+    // access control: none
     async fn register_function(
         &self,
         request: Request<RegisterFunctionRequest>,
@@ -335,8 +332,24 @@ impl TeaclaveManagement for TeaclaveManagementService {
         request: Request<UpdateFunctionRequest>,
     ) -> TeaclaveServiceResponseResult<UpdateFunctionResponse> {
         let user_id = get_request_user_id(&request)?;
+        let request = request.into_inner();
 
-        let function = FunctionBuilder::try_from(request.into_inner())
+        let function_id = request
+            .function_id
+            .clone()
+            .try_into()
+            .map_err(|_| ManagementServiceError::InvalidFunctionId)?;
+        let function: Function = self
+            .read_from_db(&function_id)
+            .await
+            .map_err(|_| ManagementServiceError::InvalidFunctionId)?;
+
+        ensure!(
+            function.owner == user_id,
+            ManagementServiceError::PermissionDenied
+        );
+
+        let function = FunctionBuilder::try_from(request)
             .map_err(tonic_error)?
             .owner(user_id)
             .build();
@@ -347,9 +360,6 @@ impl TeaclaveManagement for TeaclaveManagementService {
         Ok(Response::new(response))
     }
 
-    // access control:
-    // function.public || function.owner == user_id || request.role == PlatformAdmin ||
-    // requested user_id in the user_allowlist
     async fn get_function(
         &self,
         request: Request<GetFunctionRequest>,
@@ -381,8 +391,6 @@ impl TeaclaveManagement for TeaclaveManagementService {
         }
     }
 
-    // access control:
-    // function.public || request.role == PlatformAdmin || requested user_id in the user_allowlist
     async fn get_function_usage_stats(
         &self,
         request: Request<GetFunctionUsageStatsRequest>,
@@ -423,7 +431,6 @@ impl TeaclaveManagement for TeaclaveManagementService {
         Ok(Response::new(response))
     }
 
-    // access control: function.owner == user_id
     async fn delete_function(
         &self,
         request: Request<DeleteFunctionRequest>,
@@ -450,8 +457,6 @@ impl TeaclaveManagement for TeaclaveManagementService {
         Ok(Response::new(()))
     }
 
-    // access control: function.owner == user_id
-    // disable function
     // 1. `List functions` does not show this function
     // 2. `Create new task` with the function id fails
     async fn disable_function(
@@ -470,12 +475,10 @@ impl TeaclaveManagement for TeaclaveManagementService {
             .await
             .map_err(|_| ManagementServiceError::InvalidFunctionId)?;
 
-        if role != UserRole::PlatformAdmin {
-            ensure!(
-                function.owner == user_id,
-                ManagementServiceError::PermissionDenied
-            );
-        }
+        ensure!(
+            role == UserRole::PlatformAdmin || function.owner == user_id,
+            ManagementServiceError::PermissionDenied
+        );
         let func_id = function.external_id().to_string();
 
         // Updated function owner
@@ -516,26 +519,19 @@ impl TeaclaveManagement for TeaclaveManagementService {
         Ok(Response::new(()))
     }
 
-    // access contro: user_id = request.user_id
     async fn list_functions(
         &self,
         request: Request<ListFunctionsRequest>,
     ) -> TeaclaveServiceResponseResult<ListFunctionsResponse> {
-        let mut request_user_id = request.get_ref().user_id.clone().into();
+        let request_user_id = request.get_ref().user_id.clone().into();
 
         let current_user_id = get_request_user_id(&request)?;
         let role = get_request_role(&request)?;
 
-        if role != UserRole::PlatformAdmin {
-            ensure!(
-                request_user_id == current_user_id,
-                ManagementServiceError::PermissionDenied
-            );
-        }
-
-        if let UserRole::DataOwner(s) = &role {
-            request_user_id = s.into();
-        }
+        ensure!(
+            role == UserRole::PlatformAdmin || request_user_id == current_user_id,
+            ManagementServiceError::PermissionDenied
+        );
 
         let u = User {
             id: request_user_id,
@@ -620,7 +616,6 @@ impl TeaclaveManagement for TeaclaveManagementService {
         Ok(Response::new(response))
     }
 
-    // access control: task.participants.contains(&user_id)
     async fn get_task(
         &self,
         request: Request<GetTaskRequest>,
@@ -661,7 +656,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
         Ok(Response::new(response))
     }
 
-    // access control:
+    // prerequisite:
     // 1) task.participants.contains(user_id)
     // 2) task.status == Created
     // 3) user can use the data:
@@ -723,7 +718,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
         Ok(Response::new(()))
     }
 
-    // access_control:
+    // prerequisite:
     // 1) task status == Ready
     // 2) user_id in task.participants
     async fn approve_task(
@@ -759,7 +754,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
         Ok(Response::new(()))
     }
 
-    // access_control:
+    // prerequisite:
     // 1) task status == Approved
     // 2) user_id == task.creator
     async fn invoke_task(
@@ -829,9 +824,6 @@ impl TeaclaveManagement for TeaclaveManagementService {
         Ok(Response::new(()))
     }
 
-    // access_control:
-    // 1) user_id == task.creator
-    // 2) user_role == admin
     async fn cancel_task(
         &self,
         request: Request<CancelTaskRequest>,
@@ -848,15 +840,10 @@ impl TeaclaveManagement for TeaclaveManagementService {
             .await
             .map_err(|_| ManagementServiceError::InvalidTaskId)?;
 
-        match role {
-            UserRole::PlatformAdmin => {}
-            _ => {
-                ensure!(
-                    ts.has_creator(&user_id),
-                    ManagementServiceError::PermissionDenied
-                );
-            }
-        }
+        ensure!(
+            role == UserRole::PlatformAdmin || ts.has_creator(&user_id),
+            ManagementServiceError::PermissionDenied
+        );
 
         match ts.status {
             // need scheduler to cancel the task
@@ -891,7 +878,7 @@ impl TeaclaveManagement for TeaclaveManagementService {
         Ok(Response::new(()))
     }
 
-    // access_control: none
+    // access control: none
     async fn save_logs(
         &self,
         request: Request<SaveLogsRequest>,
@@ -917,8 +904,6 @@ impl TeaclaveManagement for TeaclaveManagementService {
         Ok(Response::new(()))
     }
 
-    // access_control: only
-    // user_role == admin
     async fn query_audit_logs(
         &self,
         request: Request<QueryAuditLogsRequest>,

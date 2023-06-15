@@ -255,9 +255,19 @@ async fn test_update_function() {
         .build();
 
     let mut client = authorized_client("mock_user").await;
-    let response = client.update_function(request).await;
+    let response = client.update_function(request.clone()).await;
     assert!(response.is_ok());
     assert!(original_id.to_string() == response.unwrap().into_inner().function_id);
+
+    let mock_id = ExternalID::try_from("function-00000000-0000-0000-0000-000000000006").unwrap();
+    let mut request_mock_id = request.clone();
+    request_mock_id.function_id = mock_id.to_string();
+    let response = client.update_function(request_mock_id).await;
+    assert!(response.is_err());
+
+    let mut client = authorized_client("another_mock_user").await;
+    let response = client.update_function(request).await;
+    assert!(response.is_err());
 }
 
 #[async_test_case]
