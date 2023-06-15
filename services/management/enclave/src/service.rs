@@ -27,19 +27,7 @@ use teaclave_proto::teaclave_common::i32_from_task_status;
 use teaclave_proto::teaclave_frontend_service::{
     from_proto_file_ids, from_proto_ownership, to_proto_file_ids, to_proto_ownership,
 };
-use teaclave_proto::teaclave_frontend_service::{
-    ApproveTaskRequest, AssignDataRequest, CancelTaskRequest, CreateTaskRequest,
-    CreateTaskResponse, DeleteFunctionRequest, DisableFunctionRequest, GetFunctionRequest,
-    GetFunctionResponse, GetFunctionUsageStatsRequest, GetFunctionUsageStatsResponse,
-    GetInputFileRequest, GetInputFileResponse, GetOutputFileRequest, GetOutputFileResponse,
-    GetTaskRequest, GetTaskResponse, InvokeTaskRequest, ListFunctionsRequest,
-    ListFunctionsResponse, QueryAuditLogsRequest, QueryAuditLogsResponse, RegisterFunctionRequest,
-    RegisterFunctionResponse, RegisterFusionOutputRequest, RegisterFusionOutputResponse,
-    RegisterInputFileRequest, RegisterInputFileResponse, RegisterInputFromOutputRequest,
-    RegisterInputFromOutputResponse, RegisterOutputFileRequest, RegisterOutputFileResponse,
-    UpdateFunctionRequest, UpdateFunctionResponse, UpdateInputFileRequest, UpdateInputFileResponse,
-    UpdateOutputFileRequest, UpdateOutputFileResponse,
-};
+use teaclave_proto::teaclave_frontend_service::*;
 use teaclave_proto::teaclave_management_service::{SaveLogsRequest, TeaclaveManagement};
 use teaclave_proto::teaclave_storage_service::{
     DeleteRequest, EnqueueRequest, GetKeysByPrefixRequest, GetRequest, PutRequest,
@@ -359,7 +347,9 @@ impl TeaclaveManagement for TeaclaveManagementService {
         Ok(Response::new(response))
     }
 
-    // access control: function.public || function.owner == user_id || request.role == PlatformAdmin
+    // access control:
+    // function.public || function.owner == user_id || request.role == PlatformAdmin ||
+    // requested user_id in the user_allowlist
     async fn get_function(
         &self,
         request: Request<GetFunctionRequest>,
@@ -377,33 +367,13 @@ impl TeaclaveManagement for TeaclaveManagementService {
             .map_err(|_| ManagementServiceError::InvalidFunctionId)?;
 
         if function.public || role == UserRole::PlatformAdmin || function.owner == user_id {
-            let response = GetFunctionResponse {
-                name: function.name,
-                description: function.description,
-                owner: function.owner.to_string(),
-                executor_type: function.executor_type.to_string(),
-                payload: function.payload,
-                public: function.public,
-                arguments: function.arguments.into_iter().map(|x| x.into()).collect(),
-                inputs: function.inputs.into_iter().map(|x| x.into()).collect(),
-                outputs: function.outputs.into_iter().map(|x| x.into()).collect(),
-                user_allowlist: function.user_allowlist,
-            };
+            let response = function.into();
 
             Ok(Response::new(response))
-        } else if !function.public && function.user_allowlist.contains(&user_id.into()) {
-            let response = GetFunctionResponse {
-                name: function.name,
-                description: function.description,
-                owner: function.owner.to_string(),
-                executor_type: function.executor_type.to_string(),
-                payload: vec![],
-                public: function.public,
-                arguments: function.arguments.into_iter().map(|x| x.into()).collect(),
-                inputs: function.inputs.into_iter().map(|x| x.into()).collect(),
-                outputs: function.outputs.into_iter().map(|x| x.into()).collect(),
-                user_allowlist: vec![],
-            };
+        } else if function.user_allowlist.contains(&user_id.into()) {
+            let mut response = GetFunctionResponse::from(function);
+            response.payload = vec![];
+            response.user_allowlist = vec![];
 
             Ok(Response::new(response))
         } else {

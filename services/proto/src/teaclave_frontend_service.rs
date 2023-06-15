@@ -20,7 +20,7 @@ use anyhow::{Error, Result};
 use core::convert::TryInto;
 use std::collections::HashMap;
 use teaclave_types::{
-    Entry, Executor, ExecutorType, ExternalID, FileAuthTag, FileCrypto, FunctionArgument,
+    Entry, Executor, ExecutorType, ExternalID, FileAuthTag, FileCrypto, Function, FunctionArgument,
     FunctionArguments, FunctionBuilder, FunctionInput, FunctionOutput, OwnerList, TaskFileOwners,
 };
 use url::Url;
@@ -611,6 +611,23 @@ impl From<FunctionArgument> for proto::FunctionArgument {
             key: arg.key,
             default_value: arg.default_value,
             allow_overwrite: arg.allow_overwrite,
+        }
+    }
+}
+
+impl From<Function> for GetFunctionResponse {
+    fn from(function: Function) -> Self {
+        Self {
+            name: function.name,
+            description: function.description,
+            owner: function.owner.to_string(),
+            executor_type: function.executor_type.to_string(),
+            payload: function.payload,
+            public: function.public,
+            arguments: function.arguments.into_iter().map(|x| x.into()).collect(),
+            inputs: function.inputs.into_iter().map(|x| x.into()).collect(),
+            outputs: function.outputs.into_iter().map(|x| x.into()).collect(),
+            user_allowlist: function.user_allowlist,
         }
     }
 }
