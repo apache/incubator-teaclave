@@ -41,7 +41,7 @@ platform, making computation on privacy-sensitive data safe and simple.
 - [How to Add Built-in Functions](docs/builtin-functions.md)
 - [Deploying Teaclave on Azure Confidential Computing VM](docs/azure-confidential-computing.md)
 - [Executing WebAssembly in Teaclave](docs/executing-wasm.md)
-- [Inference Task with TVM in Teaclave](docs/inference-with-tvm.md)
+- [Running LibOS in Teaclave](docs/executing-in-occlum.md)
 
 ### Design
 

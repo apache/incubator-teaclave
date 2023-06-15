@@ -30,7 +30,7 @@ crate-type = ['cdylib']
 
 [dependencies]
 teaclave_context = {path = "../../../sdk/payload/wasm/teaclave_context/"}
-image = "0.20"
+image = "0.24"
 ndarray = "0.12"
 csv = "1.1"
 tvm-sys = { path = "/tvm/rust/tvm-sys" }
