@@ -404,7 +404,7 @@ impl FrontendClient {
     pub fn create_task(
         &mut self,
         function_id: &str,
-        function_arguments: Option<HashMap<String, String>>,
+        function_arguments: Option<HashMap<String, serde_json::value::Value>>,
         executor: &str,
         inputs_ownership: Option<HashMap<String, Vec<String>>>,
         outputs_ownership: Option<HashMap<String, Vec<String>>>,

@@ -1324,4 +1324,73 @@ pub mod tests {
         let deserialized_data = StagedTask::from_slice(&value).unwrap();
         debug!("staged task: {:?}", deserialized_data);
     }
+
+    #[derive(serde::Deserialize, Debug)]
+    struct TestFunctionArguments {
+        arg_bool: bool,
+        arg_usize: usize,
+    }
+
+    pub fn deserialize_function_arguments() {
+        let arguments = vec![
+            FunctionArgument::new("arg_bool", "", true),
+            FunctionArgument::new("arg_usize", "", true),
+        ];
+        let function = FunctionBuilder::new()
+            .id(Uuid::new_v4())
+            .name("mock_function")
+            .description("mock function")
+            .arguments(arguments)
+            .public(true)
+            .owner("mock_user")
+            .build();
+        let request = CreateTaskRequest::new()
+            .function_arguments(hashmap!("arg_bool" => true,"arg_usize" => 10))
+            .executor(Executor::Builtin);
+        let task = Task::<Create>::new(
+            "mock_user".into(),
+            request.executor.try_into().unwrap(),
+            request.function_arguments.try_into().unwrap(),
+            from_proto_ownership(request.inputs_ownership),
+            from_proto_ownership(request.outputs_ownership),
+            function,
+        )
+        .unwrap();
+        let ts: TaskState = task.try_into().unwrap();
+        let deserialized_argument: TestFunctionArguments =
+            serde_json::from_str(&ts.function_arguments.into_string()).unwrap();
+        assert!(deserialized_argument.arg_bool);
+        assert_eq!(deserialized_argument.arg_usize, 10);
+
+        let arguments = vec![
+            FunctionArgument::new("arg_bool", "true", true),
+            FunctionArgument::new("arg_usize", "10", false),
+        ];
+        let function = FunctionBuilder::new()
+            .id(Uuid::new_v4())
+            .name("mock_function2")
+            .description("mock function")
+            .arguments(arguments)
+            .public(true)
+            .owner("mock_user")
+            .build();
+        let request = CreateTaskRequest::new()
+            .function_arguments(hashmap!("arg_bool" => false))
+            .executor(Executor::Builtin);
+        let task = Task::<Create>::new(
+            "mock_user".into(),
+            request.executor.try_into().unwrap(),
+            request.function_arguments.try_into().unwrap(),
+            from_proto_ownership(request.inputs_ownership),
+            from_proto_ownership(request.outputs_ownership),
+            function,
+        )
+        .unwrap();
+        let ts: TaskState = task.try_into().unwrap();
+        let result =
+            serde_json::from_str::<TestFunctionArguments>(&ts.function_arguments.into_string());
+        assert!(result.is_err());
+        let err_msg = format!("{:?}", result.unwrap_err());
+        assert!(err_msg.contains("invalid type: string \\\"10\\\", expected usize"));
+    }
 }

@@ -146,6 +146,7 @@ pub mod tests {
             service::tests::handle_output_file,
             service::tests::handle_function,
             service::tests::check_function_quota,
+            service::tests::deserialize_function_arguments,
             service::tests::handle_task,
             service::tests::handle_staged_task,
             audit::tests::test_entry_doc_conversion,
