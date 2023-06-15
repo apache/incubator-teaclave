@@ -45,7 +45,7 @@ permalink: /docs/
 - [Executor Runtime](../runtime/README.md)
 - [File Agent](../file_agent/README.md)
 - [Function Executors](../executor/README.md)
-- [Keys and Certificates](../keys/README.md)
+- [Logger](../logger/README.md)
 - [RPC](../rpc/README.md)
 - [Teaclave Services](../services/README.md)
 - [Teaclave Worker](../worker/README.md)
@@ -56,7 +56,7 @@ permalink: /docs/
 
 ## API References
 
-- [Teaclave SGX SDK](https://teaclave.apache.org/docs/sgx-sdk/)
+- [Teaclave SGX SDK](https://teaclave.apache.org/api-docs/sgx-sdk/)
 - [Teaclave Client SDK (Python)](https://teaclave.apache.org/docs/client-sdk-python/)
 - [Crates in Teaclave (Enclave)](https://teaclave.apache.org/docs/crates-enclave/)
 - [Crates in Teaclave (App)](https://teaclave.apache.org/docs/crates-app/)
