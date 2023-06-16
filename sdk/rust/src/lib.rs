@@ -36,8 +36,10 @@ pub use teaclave_proto::teaclave_frontend_service::{
     CreateTaskResponse, GetFunctionRequest, GetFunctionResponse, GetFunctionUsageStatsRequest,
     GetFunctionUsageStatsResponse, GetTaskRequest, GetTaskResponse, InvokeTaskRequest,
     QueryAuditLogsRequest, QueryAuditLogsResponse, RegisterFunctionRequest,
-    RegisterFunctionRequestBuilder, RegisterFunctionResponse, RegisterInputFileRequest,
-    RegisterInputFileResponse, RegisterOutputFileRequest, RegisterOutputFileResponse,
+    RegisterFunctionRequestBuilder, RegisterFunctionResponse, RegisterFusionOutputRequest,
+    RegisterFusionOutputResponse, RegisterInputFileRequest, RegisterInputFileResponse,
+    RegisterInputFromOutputRequest, RegisterInputFromOutputResponse, RegisterOutputFileRequest,
+    RegisterOutputFileResponse,
 };
 pub use teaclave_types::{
     EnclaveInfo, Entry, Executor, FileCrypto, FunctionArgument, FunctionInput, FunctionOutput,
@@ -382,6 +384,60 @@ impl FrontendClient {
         let url = Url::parse(url)?;
         let request = RegisterOutputFileRequest::new(url, file_crypto);
         let response = self.register_output_file_with_request(request)?;
+
+        Ok(response.data_id)
+    }
+
+    pub fn register_input_from_output_with_request(
+        &mut self,
+        request: RegisterInputFromOutputRequest,
+    ) -> Result<RegisterInputFromOutputResponse> {
+        do_request_with_credential!(self, register_input_from_output, request)
+    }
+
+    pub fn register_input_from_output_serialized(
+        &mut self,
+        serialized_request: &str,
+    ) -> Result<String> {
+        let request = serde_json::from_str(serialized_request)?;
+        let response = self.register_input_from_output_with_request(request)?;
+        let serialized_response = serde_json::to_string(&response)?;
+
+        Ok(serialized_response)
+    }
+
+    pub fn register_input_from_output(&mut self, data_id: &str) -> Result<String> {
+        let data_id = teaclave_types::ExternalID::try_from(data_id)?;
+        let request = RegisterInputFromOutputRequest::new(data_id);
+        let response = self.register_input_from_output_with_request(request)?;
+
+        Ok(response.data_id)
+    }
+
+    pub fn register_fusion_output_with_request(
+        &mut self,
+        request: RegisterFusionOutputRequest,
+    ) -> Result<RegisterFusionOutputResponse> {
+        do_request_with_credential!(self, register_fusion_output, request)
+    }
+
+    pub fn register_fusion_output_serialized(
+        &mut self,
+        serialized_request: &str,
+    ) -> Result<String> {
+        let request = serde_json::from_str(serialized_request)?;
+        let response = self.register_fusion_output_with_request(request)?;
+        let serialized_response = serde_json::to_string(&response)?;
+
+        Ok(serialized_response)
+    }
+
+    pub fn register_fusion_output(
+        &mut self,
+        owners: impl Into<teaclave_types::OwnerList>,
+    ) -> Result<String> {
+        let request = RegisterFusionOutputRequest::new(owners);
+        let response = self.register_fusion_output_with_request(request)?;
 
         Ok(response.data_id)
     }
