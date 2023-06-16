@@ -558,6 +558,16 @@ generate_function_serialized!(
 );
 generate_function_serialized!(
     FrontendClient,
+    teaclave_register_fusion_output_serialized,
+    register_fusion_output_serialized
+);
+generate_function_serialized!(
+    FrontendClient,
+    teaclave_register_input_from_output_serialized,
+    register_input_from_output_serialized
+);
+generate_function_serialized!(
+    FrontendClient,
     teaclave_create_task_serialized,
     create_task_serialized
 );

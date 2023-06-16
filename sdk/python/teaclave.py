@@ -695,6 +695,22 @@ class RegisterOutputFileRequest(Request):
             url=url, crypto_info=crypto_info.message)
 
 
+class RegisterInputFromOutputRequest(Request):
+
+    def __init__(self, metadata: Metadata, data_id: str):
+        super().__init__("RegisterInputFromOutput",
+                         fe.RegisterInputFromOutputResponse, metadata)
+        self.message = fe.RegisterInputFromOutputRequest(data_id=data_id)
+
+
+class RegisterFusionOutputRequest(Request):
+
+    def __init__(self, metadata: Metadata, owner_list: List[str] = []):
+        super().__init__("RegisterFusionOutput",
+                         fe.RegisterFusionOutputResponse, metadata)
+        self.message = fe.RegisterFusionOutputRequest(owner_list=owner_list)
+
+
 class UpdateInputFileRequest(Request):
 
     def __init__(self, metadata: Metadata, data_id: str, url: str):
@@ -935,6 +951,40 @@ class FrontendService(TeaclaveService):
             reason = str(e)
             raise TeaclaveException(
                 f"Failed to register output file ({reason})")
+
+    def register_input_from_output(self, data_id: str):
+        """Register an input data from an output data.
+
+        Args:
+
+            data_id (str): ExternalID of the output data.
+
+        Returns:
+
+            str: ExternalID of input data
+        """
+
+        self.check_metadata()
+        self.check_channel()
+        request = RegisterInputFromOutputRequest(self.metadata, data_id)
+        response = self.call_method(request)
+        return response.data_id
+
+    def register_fusion_output(self, owners: List[str] = []):
+        """Register a fusion output data.
+
+        Args:
+
+            owners (List[OwnerList], optional): Owners of the output data. Defaults to [].
+        
+        Returns:
+
+            str: ExternalID of fusion output data
+        """
+
+        request = RegisterFusionOutputRequest(self.metadata, owners)
+        response = self.call_method(request)
+        return response.data_id
 
     def create_task(self,
                     function_id: str,

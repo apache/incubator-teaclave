@@ -243,6 +243,9 @@ builtin_examples() {
   pushd ./builtin_ordered_set_intersect
   RUSTFLAGS=${RUSTFLAGS} cargo run
   popd
+  pushd ./sequential_functions
+  RUSTFLAGS=${RUSTFLAGS} cargo run
+  popd
   popd
 }
 
