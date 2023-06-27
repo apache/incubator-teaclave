@@ -19,139 +19,32 @@ use crate::utils::*;
 use futures::FutureExt;
 use teaclave_proto::teaclave_access_control_service::*;
 use teaclave_test_utils::async_test_case;
-#[async_test_case]
-async fn test_authorize_data_success() {
+
+async fn test_authorize_api() {
     let mut client = get_access_control_client().await;
-
-    let request = AuthorizeDataRequest::new("mock_user_a", "mock_data");
-    let response_result = client.authorize_data(request).await;
-    assert!(response_result.is_ok());
-    assert!(response_result.unwrap().into_inner().accept);
-}
-
-#[async_test_case]
-async fn test_authorize_data_fail() {
-    let mut client = get_access_control_client().await;
-
-    let request = AuthorizeDataRequest::new("mock_user_d", "mock_data");
-    let response_result = client.authorize_data(request).await;
-    assert!(response_result.is_ok());
-    assert!(!response_result.unwrap().into_inner().accept);
-
-    let request = AuthorizeDataRequest::new("mock_user_a", "mock_data_b");
-    let response_result = client.authorize_data(request).await;
-    assert!(response_result.is_ok());
-    assert!(!response_result.unwrap().into_inner().accept);
-}
-
-#[async_test_case]
-async fn test_authorize_function_success() {
-    let mut client = get_access_control_client().await;
-
-    let request =
-        AuthorizeFunctionRequest::new("mock_public_function_owner", "mock_public_function");
-    let response_result = client.authorize_function(request).await;
-    assert!(response_result.is_ok());
-    assert!(response_result.unwrap().into_inner().accept);
-
-    let request =
-        AuthorizeFunctionRequest::new("mock_private_function_owner", "mock_private_function");
-    let response_result = client.authorize_function(request).await;
-    assert!(response_result.is_ok());
-    assert!(response_result.unwrap().into_inner().accept);
-
-    let request =
-        AuthorizeFunctionRequest::new("mock_private_function_owner", "mock_public_function");
-    let response_result = client.authorize_function(request).await;
-    assert!(response_result.is_ok());
-    assert!(response_result.unwrap().into_inner().accept);
-}
-
-#[async_test_case]
-async fn test_authorize_function_fail() {
-    let mut client = get_access_control_client().await;
-    let request =
-        AuthorizeFunctionRequest::new("mock_public_function_owner", "mock_private_function");
-    let response_result = client.authorize_function(request).await;
-    assert!(response_result.is_ok());
-    assert!(!response_result.unwrap().into_inner().accept);
-}
-
-#[async_test_case]
-async fn test_authorize_task_success() {
-    let mut client = get_access_control_client().await;
-    let request = AuthorizeTaskRequest::new("mock_participant_a", "mock_task");
-    let response_result = client.authorize_task(request).await;
-    assert!(response_result.is_ok());
-    assert!(response_result.unwrap().into_inner().accept);
-
-    let request = AuthorizeTaskRequest::new("mock_participant_b", "mock_task");
-    let response_result = client.authorize_task(request).await;
-    assert!(response_result.is_ok());
-    assert!(response_result.unwrap().into_inner().accept);
-}
-
-#[async_test_case]
-async fn test_authorize_task_fail() {
-    let mut client = get_access_control_client().await;
-    let request = AuthorizeTaskRequest::new("mock_participant_c", "mock_task");
-    let response_result = client.authorize_task(request).await;
-    assert!(response_result.is_ok());
-    assert!(!response_result.unwrap().into_inner().accept);
-}
-
-#[async_test_case]
-async fn test_authorize_staged_task_success() {
-    let mut client = get_access_control_client().await;
-    let request = AuthorizeStagedTaskRequest {
-        subject_task_id: "mock_staged_task".to_string(),
-        object_function_id: "mock_staged_allowed_private_function".to_string(),
-        object_input_data_id_list: vec![
-            "mock_staged_allowed_data1".to_string(),
-            "mock_staged_allowed_data2".to_string(),
-            "mock_staged_allowed_data3".to_string(),
-        ],
-        object_output_data_id_list: vec![
-            "mock_staged_allowed_data1".to_string(),
-            "mock_staged_allowed_data2".to_string(),
-            "mock_staged_allowed_data3".to_string(),
-        ],
+    let request = AuthorizeApiRequest {
+        user_role: "PlatformAdmin".to_owned(),
+        api: "Arbitrary_api".to_owned(),
     };
-    let response_result = client.authorize_staged_task(request).await;
+    let response_result = client.authorize_api(request).await;
     assert!(response_result.is_ok());
     assert!(response_result.unwrap().into_inner().accept);
-}
 
-#[async_test_case]
-async fn test_authorize_staged_task_fail() {
     let mut client = get_access_control_client().await;
-    let request = AuthorizeStagedTaskRequest {
-        subject_task_id: "mock_staged_task".to_string(),
-        object_function_id: "mock_staged_disallowed_private_function".to_string(),
-        object_input_data_id_list: vec![],
-        object_output_data_id_list: vec![],
+    let request = AuthorizeApiRequest {
+        user_role: "DataOwner".to_owned(),
+        api: "get_function".to_owned(),
     };
-    let response_result = client.authorize_staged_task(request).await;
+    let response_result = client.authorize_api(request).await;
     assert!(response_result.is_ok());
-    assert!(!response_result.unwrap().into_inner().accept);
+    assert!(response_result.unwrap().into_inner().accept);
 
-    let request = AuthorizeStagedTaskRequest {
-        subject_task_id: "mock_staged_task".to_string(),
-        object_function_id: "mock_staged_allowed_private_function".to_string(),
-        object_input_data_id_list: vec!["mock_staged_disallowed_data1".to_string()],
-        object_output_data_id_list: vec![],
+    let mut client = get_access_control_client().await;
+    let request = AuthorizeApiRequest {
+        user_role: "FunctionOwner".to_owned(),
+        api: "invoke_task".to_owned(),
     };
-    let response_result = client.authorize_staged_task(request).await;
-    assert!(response_result.is_ok());
-    assert!(!response_result.unwrap().into_inner().accept);
-
-    let request = AuthorizeStagedTaskRequest {
-        subject_task_id: "mock_staged_task".to_string(),
-        object_function_id: "mock_staged_allowed_private_function".to_string(),
-        object_input_data_id_list: vec![],
-        object_output_data_id_list: vec!["mock_staged_disallowed_data2".to_string()],
-    };
-    let response_result = client.authorize_staged_task(request).await;
+    let response_result = client.authorize_api(request).await;
     assert!(response_result.is_ok());
     assert!(!response_result.unwrap().into_inner().accept);
 }
@@ -162,10 +55,7 @@ async fn test_concurrency() {
     for _i in 0..10 {
         let child = std::thread::spawn(move || async {
             for _j in 0..10 {
-                test_authorize_data_fail().await;
-                test_authorize_function_fail().await;
-                test_authorize_task_success().await;
-                test_authorize_staged_task_fail().await;
+                test_authorize_api().await;
             }
         });
         thread_pool.push(child);

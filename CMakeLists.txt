@@ -27,7 +27,7 @@ if (NOT PkgConfig_FOUND)
 endif()
 find_package(Git)
 find_package(OpenSSL)
-check_exe_dependencies(rustup pypy)
+check_exe_dependencies(rustup)
 pkg_check_modules(INTEL_SGX_SDK QUIET libsgx_urts>=2.17.101.1)
 if(NOT INTEL_SGX_SDK_FOUND)
   message(FATAL_ERROR "Intel SGX SDK (version 2.17.1) is not found or version not matched.")
@@ -47,7 +47,7 @@ option(SGX_SIM_MODE "Turn on/off sgx simulation mode" OFF)
 option(DCAP "Turn on/off DCAP attestation" OFF)
 option(GIT_SUBMODULE "Check submodules during build" ON)
 option(EXECUTOR_BUILTIN "Compile with the Builtin executor" ON)
-option(EXECUTOR_MESAPY "Compile with the MesaPy executor" ON)
+option(EXECUTOR_MESAPY "Compile with the MesaPy executor" OFF)
 option(EXECUTOR_WAMR "Compile with the WebAssembly Micro Runtime executor" ON)
 init_submodules()
 
@@ -174,27 +174,11 @@ foreach(_i RANGE ${SGX_APP_LAST_INDEX})
     ${SGX_APPS_DEPENDS})
 endforeach()
 
-set(MESAPY_OUTPUTS
-  ${TEACLAVE_OUT_DIR}/libpypy-c.a
-  ${TEACLAVE_OUT_DIR}/libffi.a
-  ${TEACLAVE_OUT_DIR}/libsgx_tlibc_ext.a
-  ${TEACLAVE_OUT_DIR}/libsgx_ulibc.a
-  ${TEACLAVE_OUT_DIR}/ffi.o
-)
-
 # WAMR library
 
 set(WAMR_OUTPUTS
   ${TEACLAVE_OUT_DIR}/libvmlib.a
 )
-
-add_custom_command(
-  OUTPUT ${MESAPY_OUTPUTS}
-  COMMAND
-    wget -qN https://github.com/mesatee/mesapy/releases/download/${MESAPY_VERSION}/mesapy-${MESAPY_VERSION}.tar.gz &&
-    tar xzf mesapy-${MESAPY_VERSION}.tar.gz
-  DEPENDS prep
-  WORKING_DIRECTORY ${TEACLAVE_OUT_DIR})
 
 ExternalProject_Add(wamr_teaclave
   SOURCE_DIR ${WAMR_TEACLAVE_ROOT_DIR}
@@ -211,27 +195,9 @@ add_custom_command(
   WORKING_DIRECTORY ${WAMR_TEACLAVE_ROOT_DIR}/build
   )
 
-add_custom_target(mesapy
-  DEPENDS ${MESAPY_OUTPUTS}
-  )
-
 add_custom_target(wamr
   DEPENDS ${WAMR_TEACLAVE_ROOT_DIR}/CMakeLists.txt ${WAMR_OUTPUTS}
   )
-
-# mesapy components
-add_library(pycomponent STATIC ${PROJECT_SOURCE_DIR}/services/access_control/python/acs_py_enclave.c)
-set_target_properties(pycomponent PROPERTIES ARCHIVE_OUTPUT_DIRECTORY
-                                             ${TEACLAVE_OUT_DIR})
-target_compile_definitions(pycomponent PUBLIC SGX)
-if(NOT EXISTS "/usr/lib/pypy/include/Python.h")
-  message(
-    FATAL_ERROR
-      "pypy development package not found\nFor Ubuntu, please run `apt-get install pypy-dev`"
-  )
-endif()
-target_compile_options(pycomponent PUBLIC -UWITH_THREAD -O2 -fPIC -Wimplicit
-                                          -I/usr/lib/pypy/include)
 
 # std Aware Cargo
 set(DEFAULT_STD_PATH ${TRUSTED_TARGET_DIR}/default_std/sysroot/lib/rustlib/${SGX_LIB_TARGET}/lib)
@@ -273,7 +239,7 @@ add_custom_target(
 
 # sgx_trusted_lib
 list(LENGTH SGX_LIBS SGX_LIB_LEN)
-set(SGX_LIB_DEPENDS prep mesapy pycomponent)
+set(SGX_LIB_DEPENDS prep)
 math(EXPR SGX_LIB_LAST_INDEX "${SGX_LIB_LEN} - 1")
 foreach(_i RANGE ${SGX_LIB_LAST_INDEX})
   list(GET SGX_LIBS ${_i} _pkg_name)

@@ -43,12 +43,16 @@ mod service;
 const N_WORKERS: usize = 8;
 
 async fn start_service(config: &RuntimeConfig) -> Result<()> {
+    info!("Starting Access control...");
+
     let listen_address = config.internal_endpoints.access_control.listen_address;
     let attestation_config = AttestationConfig::from_teaclave_config(config)?;
     let attested_tls_config = RemoteAttestation::new(attestation_config)
         .generate_and_endorse()?
         .attested_tls_config()
         .ok_or_else(|| anyhow!("cannot get attested TLS config"))?;
+    info!(" Starting Access control: Self attestation finished ...");
+
     let enclave_info = EnclaveInfo::verify_and_new(
         &config.audit.enclave_info_bytes,
         AUDITOR_PUBLIC_KEYS,
@@ -69,10 +73,11 @@ async fn start_service(config: &RuntimeConfig) -> Result<()> {
             verifier::universal_quote_verifier,
         )?
         .into();
-    acs::init_acs()?;
+    info!(" Starting Access control: Server config setup finished ...");
 
-    let service = service::TeaclaveAccessControlService::new();
+    let service = service::TeaclaveAccessControlService::new().await;
 
+    info!("Starting Access control: start listening ...");
     Server::builder()
         .tls_config(server_config)
         .map_err(|_| anyhow::anyhow!("TeaclaveFrontendServer tls config error"))?
@@ -125,15 +130,6 @@ pub mod tests {
     use teaclave_test_utils::*;
 
     pub fn run_tests() -> bool {
-        if crate::acs::init_acs().is_err() {
-            return false;
-        }
-        run_async_tests!(
-            service::tests::user_access_data,
-            service::tests::user_access_function,
-            service::tests::user_access_task,
-            service::tests::task_access_function,
-            service::tests::task_access_data,
-        )
+        run_async_tests!(acs::tests::test_access_api,)
     }
 }

@@ -21,6 +21,9 @@ use crate::error::FrontendServiceError;
 use anyhow::Result;
 use std::net::{IpAddr, Ipv6Addr};
 use std::sync::Arc;
+use teaclave_proto::teaclave_access_control_service::{
+    AuthorizeApiRequest, TeaclaveAccessControlClient,
+};
 use teaclave_proto::teaclave_authentication_service::{
     TeaclaveAuthenticationInternalClient, UserAuthenticateRequest,
 };
@@ -42,13 +45,11 @@ use teaclave_proto::teaclave_management_service::TeaclaveManagementClient;
 use teaclave_rpc::transport::Channel;
 use teaclave_rpc::Request;
 use teaclave_service_enclave_utils::bail;
-use teaclave_types::{
-    Entry, EntryBuilder, TeaclaveServiceResponseResult, UserAuthClaims, UserRole,
-};
+use teaclave_types::{Entry, EntryBuilder, TeaclaveServiceResponseResult, UserAuthClaims};
 use tokio::sync::Mutex;
 
 macro_rules! authentication_and_forward_to_management {
-    ($service: ident, $request: ident, $func: ident, $endpoint: expr) => {{
+    ($service: ident, $request: ident, $func: ident) => {{
         let function_name = stringify!($func).to_owned();
         let ip_option = $request.remote_addr().map(|s| s.ip());
         let ip = match ip_option {
@@ -61,12 +62,17 @@ macro_rules! authentication_and_forward_to_management {
 
         let claims = match $service.authenticate(&$request).await {
             Ok(claims) => {
-                if authorize(&claims, $endpoint) {
+                if $service
+                    .check_api_privilege(
+                        claims.get_role().to_string().split('-').next().unwrap(),
+                        stringify!($func),
+                    )
+                    .await
+                {
                     claims
                 } else {
                     log::debug!(
-                        "User is not authorized to access endpoint: {}, func: {}",
-                        stringify!($endpoint),
+                        "User is not authorized to access func: {}",
                         stringify!($func)
                     );
 
@@ -81,8 +87,7 @@ macro_rules! authentication_and_forward_to_management {
             }
             Err(e) => {
                 log::debug!(
-                    "User is not authenticated to access endpoint: {}, func: {}",
-                    stringify!($endpoint),
+                    "User is not authenticated to access func: {}",
                     stringify!($func)
                 );
 
@@ -130,72 +135,11 @@ macro_rules! authentication_and_forward_to_management {
     }};
 }
 
-// TODO: remove this structure as it is the same with RPC interface
-enum Endpoints {
-    RegisterInputFile,
-    RegisterOutputFile,
-    UpdateInputFile,
-    UpdateOutputFile,
-    RegisterFusionOutput,
-    RegisterInputFromOutput,
-    GetOutputFile,
-    GetInputFile,
-    RegisterFunction,
-    GetFunction,
-    GetFunctionUsageStats,
-    UpdateFunction,
-    ListFunctions,
-    DeleteFunction,
-    DisableFunction,
-    CreateTask,
-    GetTask,
-    AssignData,
-    ApproveTask,
-    InvokeTask,
-    CancelTask,
-    QueryAuditLogs,
-}
-
-fn authorize(claims: &UserAuthClaims, request: Endpoints) -> bool {
-    let role = claims.get_role();
-
-    if role == UserRole::Invalid {
-        return false;
-    }
-    if role == UserRole::PlatformAdmin {
-        return true;
-    }
-
-    match request {
-        Endpoints::RegisterFunction
-        | Endpoints::UpdateFunction
-        | Endpoints::DeleteFunction
-        | Endpoints::DisableFunction => role.is_function_owner(),
-        Endpoints::RegisterInputFile
-        | Endpoints::RegisterOutputFile
-        | Endpoints::UpdateInputFile
-        | Endpoints::UpdateOutputFile
-        | Endpoints::RegisterFusionOutput
-        | Endpoints::RegisterInputFromOutput
-        | Endpoints::GetOutputFile
-        | Endpoints::GetInputFile
-        | Endpoints::CreateTask
-        | Endpoints::GetTask
-        | Endpoints::AssignData
-        | Endpoints::ApproveTask
-        | Endpoints::InvokeTask
-        | Endpoints::CancelTask => role.is_data_owner(),
-        Endpoints::GetFunction | Endpoints::ListFunctions | Endpoints::GetFunctionUsageStats => {
-            role.is_function_owner() || role.is_data_owner()
-        }
-        Endpoints::QueryAuditLogs => false,
-    }
-}
-
 #[derive(Clone)]
 pub(crate) struct TeaclaveFrontendService {
     authentication_client: Arc<Mutex<TeaclaveAuthenticationInternalClient<Channel>>>,
     management_client: Arc<Mutex<TeaclaveManagementClient<Channel>>>,
+    access_control_client: Arc<Mutex<TeaclaveAccessControlClient<Channel>>>,
     audit_log_buffer: Arc<Mutex<Vec<Entry>>>,
 }
 
@@ -203,11 +147,13 @@ impl TeaclaveFrontendService {
     pub(crate) async fn new(
         authentication_client: Arc<Mutex<TeaclaveAuthenticationInternalClient<Channel>>>,
         management_client: Arc<Mutex<TeaclaveManagementClient<Channel>>>,
+        access_control_client: Arc<Mutex<TeaclaveAccessControlClient<Channel>>>,
         audit_log_buffer: Arc<Mutex<Vec<Entry>>>,
     ) -> Result<Self> {
         Ok(Self {
             authentication_client,
             management_client,
+            access_control_client,
             audit_log_buffer,
         })
     }
@@ -215,6 +161,17 @@ impl TeaclaveFrontendService {
     pub async fn push_log(&self, entry: Entry) {
         let mut buffer_lock = self.audit_log_buffer.lock().await;
         buffer_lock.push(entry);
+    }
+
+    async fn check_api_privilege(&self, user_role: &str, api: &str) -> bool {
+        let request = AuthorizeApiRequest {
+            user_role: user_role.to_owned(),
+            api: api.to_owned(),
+        };
+
+        let mut acs_client = self.access_control_client.lock().await;
+        let result = acs_client.authorize_api(request).await;
+        result.map(|r| r.into_inner().accept).unwrap_or(false)
     }
 }
 
@@ -224,239 +181,154 @@ impl TeaclaveFrontend for TeaclaveFrontendService {
         &self,
         request: Request<RegisterInputFileRequest>,
     ) -> TeaclaveServiceResponseResult<RegisterInputFileResponse> {
-        authentication_and_forward_to_management!(
-            self,
-            request,
-            register_input_file,
-            Endpoints::RegisterInputFile
-        )
+        authentication_and_forward_to_management!(self, request, register_input_file)
     }
 
     async fn update_input_file(
         &self,
         request: Request<UpdateInputFileRequest>,
     ) -> TeaclaveServiceResponseResult<UpdateInputFileResponse> {
-        authentication_and_forward_to_management!(
-            self,
-            request,
-            update_input_file,
-            Endpoints::UpdateInputFile
-        )
+        authentication_and_forward_to_management!(self, request, update_input_file)
     }
 
     async fn register_output_file(
         &self,
         request: Request<RegisterOutputFileRequest>,
     ) -> TeaclaveServiceResponseResult<RegisterOutputFileResponse> {
-        authentication_and_forward_to_management!(
-            self,
-            request,
-            register_output_file,
-            Endpoints::RegisterOutputFile
-        )
+        authentication_and_forward_to_management!(self, request, register_output_file)
     }
 
     async fn update_output_file(
         &self,
         request: Request<UpdateOutputFileRequest>,
     ) -> TeaclaveServiceResponseResult<UpdateOutputFileResponse> {
-        authentication_and_forward_to_management!(
-            self,
-            request,
-            update_output_file,
-            Endpoints::UpdateOutputFile
-        )
+        authentication_and_forward_to_management!(self, request, update_output_file)
     }
 
     async fn register_fusion_output(
         &self,
         request: Request<RegisterFusionOutputRequest>,
     ) -> TeaclaveServiceResponseResult<RegisterFusionOutputResponse> {
-        authentication_and_forward_to_management!(
-            self,
-            request,
-            register_fusion_output,
-            Endpoints::RegisterFusionOutput
-        )
+        authentication_and_forward_to_management!(self, request, register_fusion_output)
     }
 
     async fn register_input_from_output(
         &self,
         request: Request<RegisterInputFromOutputRequest>,
     ) -> TeaclaveServiceResponseResult<RegisterInputFromOutputResponse> {
-        authentication_and_forward_to_management!(
-            self,
-            request,
-            register_input_from_output,
-            Endpoints::RegisterInputFromOutput
-        )
+        authentication_and_forward_to_management!(self, request, register_input_from_output)
     }
 
     async fn get_output_file(
         &self,
         request: Request<GetOutputFileRequest>,
     ) -> TeaclaveServiceResponseResult<GetOutputFileResponse> {
-        authentication_and_forward_to_management!(
-            self,
-            request,
-            get_output_file,
-            Endpoints::GetOutputFile
-        )
+        authentication_and_forward_to_management!(self, request, get_output_file)
     }
 
     async fn get_input_file(
         &self,
         request: Request<GetInputFileRequest>,
     ) -> TeaclaveServiceResponseResult<GetInputFileResponse> {
-        authentication_and_forward_to_management!(
-            self,
-            request,
-            get_input_file,
-            Endpoints::GetInputFile
-        )
+        authentication_and_forward_to_management!(self, request, get_input_file)
     }
 
     async fn register_function(
         &self,
         request: Request<RegisterFunctionRequest>,
     ) -> TeaclaveServiceResponseResult<RegisterFunctionResponse> {
-        authentication_and_forward_to_management!(
-            self,
-            request,
-            register_function,
-            Endpoints::RegisterFunction
-        )
+        authentication_and_forward_to_management!(self, request, register_function)
     }
 
     async fn update_function(
         &self,
         request: Request<UpdateFunctionRequest>,
     ) -> TeaclaveServiceResponseResult<UpdateFunctionResponse> {
-        authentication_and_forward_to_management!(
-            self,
-            request,
-            update_function,
-            Endpoints::UpdateFunction
-        )
+        authentication_and_forward_to_management!(self, request, update_function)
     }
 
     async fn get_function(
         &self,
         request: Request<GetFunctionRequest>,
     ) -> TeaclaveServiceResponseResult<GetFunctionResponse> {
-        authentication_and_forward_to_management!(
-            self,
-            request,
-            get_function,
-            Endpoints::GetFunction
-        )
+        authentication_and_forward_to_management!(self, request, get_function)
     }
 
     async fn get_function_usage_stats(
         &self,
         request: Request<GetFunctionUsageStatsRequest>,
     ) -> TeaclaveServiceResponseResult<GetFunctionUsageStatsResponse> {
-        authentication_and_forward_to_management!(
-            self,
-            request,
-            get_function_usage_stats,
-            Endpoints::GetFunctionUsageStats
-        )
+        authentication_and_forward_to_management!(self, request, get_function_usage_stats)
     }
 
     async fn delete_function(
         &self,
         request: Request<DeleteFunctionRequest>,
     ) -> TeaclaveServiceResponseResult<()> {
-        authentication_and_forward_to_management!(
-            self,
-            request,
-            delete_function,
-            Endpoints::DeleteFunction
-        )
+        authentication_and_forward_to_management!(self, request, delete_function)
     }
 
     async fn disable_function(
         &self,
         request: Request<DisableFunctionRequest>,
     ) -> TeaclaveServiceResponseResult<()> {
-        authentication_and_forward_to_management!(
-            self,
-            request,
-            disable_function,
-            Endpoints::DisableFunction
-        )
+        authentication_and_forward_to_management!(self, request, disable_function)
     }
 
     async fn list_functions(
         &self,
         request: Request<ListFunctionsRequest>,
     ) -> TeaclaveServiceResponseResult<ListFunctionsResponse> {
-        authentication_and_forward_to_management!(
-            self,
-            request,
-            list_functions,
-            Endpoints::ListFunctions
-        )
+        authentication_and_forward_to_management!(self, request, list_functions)
     }
 
     async fn create_task(
         &self,
         request: Request<CreateTaskRequest>,
     ) -> TeaclaveServiceResponseResult<CreateTaskResponse> {
-        authentication_and_forward_to_management!(self, request, create_task, Endpoints::CreateTask)
+        authentication_and_forward_to_management!(self, request, create_task)
     }
 
     async fn get_task(
         &self,
         request: Request<GetTaskRequest>,
     ) -> TeaclaveServiceResponseResult<GetTaskResponse> {
-        authentication_and_forward_to_management!(self, request, get_task, Endpoints::GetTask)
+        authentication_and_forward_to_management!(self, request, get_task)
     }
 
     async fn assign_data(
         &self,
         request: Request<AssignDataRequest>,
     ) -> TeaclaveServiceResponseResult<()> {
-        authentication_and_forward_to_management!(self, request, assign_data, Endpoints::AssignData)
+        authentication_and_forward_to_management!(self, request, assign_data)
     }
 
     async fn approve_task(
         &self,
         request: Request<ApproveTaskRequest>,
     ) -> TeaclaveServiceResponseResult<()> {
-        authentication_and_forward_to_management!(
-            self,
-            request,
-            approve_task,
-            Endpoints::ApproveTask
-        )
+        authentication_and_forward_to_management!(self, request, approve_task)
     }
 
     async fn invoke_task(
         &self,
         request: Request<InvokeTaskRequest>,
     ) -> TeaclaveServiceResponseResult<()> {
-        authentication_and_forward_to_management!(self, request, invoke_task, Endpoints::InvokeTask)
+        authentication_and_forward_to_management!(self, request, invoke_task)
     }
 
     async fn cancel_task(
         &self,
         request: Request<CancelTaskRequest>,
     ) -> TeaclaveServiceResponseResult<()> {
-        authentication_and_forward_to_management!(self, request, cancel_task, Endpoints::CancelTask)
+        authentication_and_forward_to_management!(self, request, cancel_task)
     }
 
     async fn query_audit_logs(
         &self,
         request: Request<QueryAuditLogsRequest>,
     ) -> TeaclaveServiceResponseResult<QueryAuditLogsResponse> {
-        authentication_and_forward_to_management!(
-            self,
-            request,
-            query_audit_logs,
-            Endpoints::QueryAuditLogs
-        )
+        authentication_and_forward_to_management!(self, request, query_audit_logs)
     }
 }
 
@@ -491,54 +363,5 @@ impl TeaclaveFrontendService {
             .ok_or(AuthenticationError::IncorrectCredential)?;
 
         Ok(claims)
-    }
-}
-
-#[cfg(feature = "enclave_unit_test")]
-pub mod tests {
-    use super::*;
-
-    pub fn test_authorize_platform_admin() {
-        let claims = UserAuthClaims {
-            role: "PlatformAdmin".to_string(),
-            ..Default::default()
-        };
-        let result = authorize(&claims, Endpoints::GetFunction);
-        assert!(result);
-    }
-
-    pub fn test_authorize_function_owner() {
-        let claims = UserAuthClaims {
-            role: "FunctionOwner".to_string(),
-            ..Default::default()
-        };
-        let result = authorize(&claims, Endpoints::GetFunction);
-        assert!(result);
-        let result = authorize(&claims, Endpoints::RegisterFunction);
-        assert!(result);
-        let result = authorize(&claims, Endpoints::UpdateFunction);
-        assert!(result);
-        let result = authorize(&claims, Endpoints::InvokeTask);
-        assert!(!result);
-    }
-
-    pub fn test_authorize_data_owner() {
-        let claims = UserAuthClaims {
-            role: "DataOwnerManager-Attribute".to_string(),
-            ..Default::default()
-        };
-        let result = authorize(&claims, Endpoints::GetFunction);
-        assert!(result);
-        let result = authorize(&claims, Endpoints::InvokeTask);
-        assert!(result);
-
-        let claims = UserAuthClaims {
-            role: "DataOwner-Attribute".to_string(),
-            ..Default::default()
-        };
-        let result = authorize(&claims, Endpoints::GetFunction);
-        assert!(result);
-        let result = authorize(&claims, Endpoints::InvokeTask);
-        assert!(result);
     }
 }

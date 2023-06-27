@@ -115,13 +115,13 @@ run_functional_tests() {
   pushd ${TEACLAVE_SERVICE_INSTALL_DIR}
   ./teaclave_authentication_service &
   ./teaclave_storage_service &
-  wait_port 7776 17776 17778 # wait for authentication and storage service
+  ./teaclave_access_control_service &
+  wait_port 7776 17776 17778 17779 # wait for access control, authentication, storage service
   ./teaclave_management_service &
   ./teaclave_scheduler_service &
   wait_port 17777 17780 # wait for management service and scheduler_service
-  ./teaclave_access_control_service &
   ./teaclave_frontend_service &
-  wait_port 17779 7777 # wait for other services
+  wait_port 7777 # wait for other services
   popd
 
   pushd ${TEACLAVE_TEST_INSTALL_DIR}
@@ -185,13 +185,13 @@ run_sdk_tests() {
   pushd ${TEACLAVE_SERVICE_INSTALL_DIR}
   ./teaclave_authentication_service &
   ./teaclave_storage_service &
-  wait_port 7776 17776 17778 # wait for authentication and storage service
+  ./teaclave_access_control_service &
+  wait_port 7776 17776 17778 17779 # wait for access control, authentication, storage service
   ./teaclave_management_service &
   ./teaclave_scheduler_service &
   wait_port 17777 17780 # wait for management service and scheduler_service
-  ./teaclave_access_control_service &
   ./teaclave_frontend_service &
-  wait_port 17779 7777 # wait for other services
+  wait_port 7777 # wait for other services
 
   start_storage_server
 
@@ -281,13 +281,13 @@ run_examples() {
   pushd ${TEACLAVE_SERVICE_INSTALL_DIR}
   ./teaclave_authentication_service &
   ./teaclave_storage_service &
-  wait_port 7776 17776 17778 # wait for authentication and storage service
+  ./teaclave_access_control_service &
+  wait_port 7776 17776 17778 17779 # wait for access control, authentication, storage service
   ./teaclave_management_service &
   ./teaclave_scheduler_service &
   wait_port 17777 17780 # wait for management service and scheduler_service
-  ./teaclave_access_control_service &
   ./teaclave_frontend_service &
-  wait_port 17779 7777 # wait for other services
+  wait_port 7777 # wait for other services
 
   start_storage_server
 
@@ -300,9 +300,6 @@ run_examples() {
 
   # run builtin examples
   builtin_examples
-
-  # run mesapy examples
-  mesapy_examples
 
   # run wasm examples
   wasm_examples
@@ -324,13 +321,13 @@ run_libos_examples() {
   pushd ${TEACLAVE_SERVICE_INSTALL_DIR}
   ./teaclave_authentication_service &
   ./teaclave_storage_service &
-  wait_port 7776 17776 17778 # wait for authentication and storage service
+  ./teaclave_access_control_service &
+  wait_port 7776 17776 17778 17779 # wait for access control, authentication, storage service
   ./teaclave_management_service &
   ./teaclave_scheduler_service &
   wait_port 17777 17780 # wait for management service and scheduler_service
-  ./teaclave_access_control_service &
   ./teaclave_frontend_service &
-  wait_port 17779 7777 # wait for other services
+  wait_port 7777 # wait for other services
 
   start_storage_server
 
@@ -372,13 +369,13 @@ run_cancel_test() {
   pushd ${TEACLAVE_SERVICE_INSTALL_DIR}
   ./teaclave_authentication_service &
   ./teaclave_storage_service &
-  wait_port 7776 17776 17778 # wait for authentication and storage service
+  ./teaclave_access_control_service &
+  wait_port 7776 17776 17778 17779 # wait for access control, authentication, storage service
   ./teaclave_management_service &
   ./teaclave_scheduler_service &
   wait_port 17777 17780 # wait for management service and scheduler_service
-  ./teaclave_access_control_service &
   ./teaclave_frontend_service &
-  wait_port 17779 7777 # wait for other services
+  wait_port 7777 # wait for other services
 
   start_storage_server
 
@@ -450,7 +447,6 @@ case "$1" in
         run_functional_tests
         run_sdk_tests
         run_examples
-        run_cancel_test
         run_libos_examples
         ;;
 esac

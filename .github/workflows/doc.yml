@@ -16,7 +16,7 @@
 # under the License.
 
 name: Doc-ubuntu-20.04
-on: [push, pull_request, workflow_dispatch]
+on: [push, workflow_dispatch]
 defaults:
   run:
     shell: bash
@@ -25,7 +25,7 @@ env:
     DOC: 1
 
 jobs:
-  sim-debug-unit:
+  doc:
     runs-on: ubuntu-20.04
     container: teaclave/teaclave-build-ubuntu-2004-sgx-2.17.1:0.2.0
     steps:

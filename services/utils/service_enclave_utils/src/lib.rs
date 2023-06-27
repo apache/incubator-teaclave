@@ -166,3 +166,7 @@ impl_create_trusted_endpoint_fn!(
     create_trusted_scheduler_endpoint,
     "teaclave_scheduler_service"
 );
+impl_create_trusted_endpoint_fn!(
+    create_trusted_access_control_endpoint,
+    "teaclave_access_control_service"
+);
