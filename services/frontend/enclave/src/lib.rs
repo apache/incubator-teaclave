@@ -32,12 +32,14 @@ use teaclave_binder::proto::{
 use teaclave_binder::{handle_ecall, register_ecall_handler};
 use teaclave_config::build::AS_ROOT_CA_CERT;
 use teaclave_config::RuntimeConfig;
+use teaclave_proto::teaclave_access_control_service::TeaclaveAccessControlClient;
 use teaclave_proto::teaclave_authentication_service::TeaclaveAuthenticationInternalClient;
 use teaclave_proto::teaclave_frontend_service::TeaclaveFrontendServer;
 use teaclave_proto::teaclave_management_service::TeaclaveManagementClient;
 use teaclave_rpc::{config::SgxTrustedTlsServerConfig, transport::Server};
 use teaclave_service_enclave_utils::{
-    create_trusted_authentication_endpoint, create_trusted_management_endpoint, ServiceEnclave,
+    create_trusted_access_control_endpoint, create_trusted_authentication_endpoint,
+    create_trusted_management_endpoint, ServiceEnclave,
 };
 use teaclave_types::{TeeServiceError, TeeServiceResult};
 
@@ -88,7 +90,7 @@ async fn start_service(config: &RuntimeConfig) -> Result<()> {
         &enclave_info,
         AS_ROOT_CA_CERT,
         verifier::universal_quote_verifier,
-        attested_tls_config,
+        attested_tls_config.clone(),
     )?;
 
     let management_channel = management_service_endpoint
@@ -101,15 +103,37 @@ async fn start_service(config: &RuntimeConfig) -> Result<()> {
 
     info!(" Starting FrontEnd: setup management client finished ...");
 
+    let access_control_service_endpoint = create_trusted_access_control_endpoint(
+        &config.internal_endpoints.access_control.advertised_address,
+        &enclave_info,
+        AS_ROOT_CA_CERT,
+        verifier::universal_quote_verifier,
+        attested_tls_config.clone(),
+    )?;
+
+    let access_control_channel = access_control_service_endpoint
+        .connect()
+        .await
+        .map_err(|e| anyhow!("Failed to connect to access_control service, retry {:?}", e))?;
+    let access_control_client = Arc::new(Mutex::new(TeaclaveAccessControlClient::new(
+        access_control_channel,
+    )));
+
+    info!(" Starting FrontEnd: setup access_control client finished ...");
+
     let log_buffer = Arc::new(Mutex::new(Vec::new()));
     let audit_agent = audit::AuditAgent::new(management_client.clone(), log_buffer.clone());
     let agent_handle = tokio::spawn(async move {
         audit_agent.run().await;
     });
 
-    let service =
-        service::TeaclaveFrontendService::new(authentication_client, management_client, log_buffer)
-            .await?;
+    let service = service::TeaclaveFrontendService::new(
+        authentication_client,
+        management_client,
+        access_control_client,
+        log_buffer,
+    )
+    .await?;
 
     info!(" Starting FrontEnd: start listening ...");
     Server::builder()
@@ -163,14 +187,7 @@ register_ecall_handler!(
 
 #[cfg(feature = "enclave_unit_test")]
 pub mod tests {
-    use super::*;
-    use teaclave_test_utils::*;
-
     pub fn run_tests() -> bool {
-        run_tests!(
-            service::tests::test_authorize_platform_admin,
-            service::tests::test_authorize_function_owner,
-            service::tests::test_authorize_data_owner,
-        )
+        true
     }
 }

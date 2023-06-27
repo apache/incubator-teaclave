@@ -15,336 +15,112 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use anyhow::{anyhow, Result};
-use std::collections::HashSet;
-use std::ffi::CString;
-use std::os::raw::c_char;
-use std::sync::{Arc, Mutex};
+use anyhow::{bail, Result};
+use casbin::prelude::*;
+use csv::{ReaderBuilder, StringRecord};
 
-const MODEL_TEXT: &str = include_str!("../../model.conf");
-extern "C" {
-    fn acs_setup_model(model_text: *const c_char) -> i32;
-    fn acs_enforce_request(request_type: *const c_char, request_content: *const c_char) -> i32;
-}
-#[cfg(test_mode)]
-extern "C" {
-    fn acs_announce_fact(fact_type: *const c_char, fact_vals: *const c_char) -> i32;
-}
+pub async fn init_memory_enforcer() -> Result<Enforcer> {
+    const MODEL_TEXT: &str = include_str!("../../model.conf");
+    const POLICY_TEXT: &str = include_str!("../../policy.csv");
 
-pub(crate) enum EnforceRequest {
-    // user_access_data = usr, data
-    UserAccessData(String, String),
-    // user_access_function = usr, function
-    UserAccessFunction(String, String),
-    // user_access_task= usr, task
-    UserAccessTask(String, String),
-    // task_access_function = task, function
-    TaskAccessFunction(String, String),
-    // task_access_data = task, data
-    TaskAccessData(String, String),
+    let model = DefaultModel::from_str(MODEL_TEXT).await?;
+    let adapter = MemoryAdapter::default();
+    let mut enforcer = Enforcer::new(model, adapter).await?;
+
+    let (general, grouping) = parse_policy_str(POLICY_TEXT)?;
+    enforcer.add_policies(general).await?;
+    enforcer.add_grouping_policies(grouping).await?;
+
+    Ok(enforcer)
 }
 
-#[cfg(test_mode)]
-pub(crate) enum AccessControlTerms {
-    // data_owner = data, usr
-    DataOwner(String, String),
-    // function_owner = functoin, usr
-    FunctionOwner(String, String),
-    // is_public_function = function
-    IsPublicFunction(String),
-    // task_participant = task, usr
-    TaskParticipant(String, String),
-}
+type Policy = Vec<String>;
 
-pub trait PyMarshallable {
-    fn marshal(&self, buffer: &mut String);
-}
+/// Parse casbin polices in bytes to general and grouping policies
+fn parse_policy_str(polices: &str) -> Result<(Vec<Policy>, Vec<Policy>)> {
+    let mut general = Vec::new();
+    let mut grouping = Vec::new();
 
-impl<T> PyMarshallable for (T,)
-where
-    T: PyMarshallable,
-{
-    fn marshal(&self, buffer: &mut String) {
-        buffer.push('[');
-        self.0.marshal(buffer);
-        buffer.push(']');
-    }
-}
+    let mut rdr = ReaderBuilder::new()
+        .has_headers(false)
+        .from_reader(polices.as_bytes());
+    for result in rdr.records() {
+        let policy = result?;
+        let policy_type = policy.get(0);
 
-impl<U, V> PyMarshallable for (U, V)
-where
-    U: PyMarshallable,
-    V: PyMarshallable,
-{
-    fn marshal(&self, buffer: &mut String) {
-        buffer.push('[');
-        self.0.marshal(buffer);
-        buffer.push(',');
-        self.1.marshal(buffer);
-        buffer.push(']');
-    }
-}
-
-impl<X, Y, Z> PyMarshallable for (X, Y, Z)
-where
-    X: PyMarshallable,
-    Y: PyMarshallable,
-    Z: PyMarshallable,
-{
-    fn marshal(&self, buffer: &mut String) {
-        buffer.push('[');
-        self.0.marshal(buffer);
-        buffer.push(',');
-        self.1.marshal(buffer);
-        buffer.push(',');
-        self.2.marshal(buffer);
-        buffer.push(']');
-    }
-}
-
-impl<T> PyMarshallable for [T]
-where
-    T: PyMarshallable,
-{
-    fn marshal(&self, buffer: &mut String) {
-        buffer.push('[');
-        for t in self {
-            t.marshal(buffer);
-            buffer.push(',');
-        }
-        buffer.push(']');
-    }
-}
-
-impl<T: PyMarshallable> PyMarshallable for &HashSet<T> {
-    fn marshal(&self, buffer: &mut String) {
-        buffer.push_str("set([");
-        for t in *self {
-            t.marshal(buffer);
-            buffer.push(',');
-        }
-        buffer.push_str("])");
-    }
-}
-
-impl PyMarshallable for String {
-    fn marshal(&self, buffer: &mut String) {
-        buffer.push('\'');
-        buffer.push_str(self);
-        buffer.push('\'');
-    }
-}
-
-impl PyMarshallable for &String {
-    fn marshal(&self, buffer: &mut String) {
-        buffer.push('\'');
-        buffer.push_str(self);
-        buffer.push('\'');
-    }
-}
-
-#[cfg(test_mode)]
-pub(crate) fn init_mock_data() -> Result<()> {
-    // mock data for AuthorizeData
-    let term = AccessControlTerms::DataOwner("mock_data".to_string(), "mock_user_a".to_string());
-    announce_fact(term)?;
-    let term = AccessControlTerms::DataOwner("mock_data".to_string(), "mock_user_b".to_string());
-    announce_fact(term)?;
-    let term = AccessControlTerms::DataOwner("mock_data".to_string(), "mock_user_c".to_string());
-    announce_fact(term)?;
-
-    // mock data for AuthorizeFunction
-    let term = AccessControlTerms::FunctionOwner(
-        "mock_private_function".to_string(),
-        "mock_private_function_owner".to_string(),
-    );
-    announce_fact(term)?;
-    let term = AccessControlTerms::FunctionOwner(
-        "mock_public_function".to_string(),
-        "mock_public_function_owner".to_string(),
-    );
-    announce_fact(term)?;
-    let term = AccessControlTerms::IsPublicFunction("mock_public_function".to_string());
-    announce_fact(term)?;
-
-    // mock data for AuthorizeTask
-    let term = AccessControlTerms::TaskParticipant(
-        "mock_task".to_string(),
-        "mock_participant_a".to_string(),
-    );
-    announce_fact(term)?;
-    let term = AccessControlTerms::TaskParticipant(
-        "mock_task".to_string(),
-        "mock_participant_b".to_string(),
-    );
-    announce_fact(term)?;
-
-    // mock data for AuthorizeStagedTask
-    let term = AccessControlTerms::TaskParticipant(
-        "mock_staged_task".to_string(),
-        "mock_staged_participant_a".to_string(),
-    );
-    announce_fact(term)?;
-    let term = AccessControlTerms::TaskParticipant(
-        "mock_staged_task".to_string(),
-        "mock_staged_participant_b".to_string(),
-    );
-    announce_fact(term)?;
-    let term = AccessControlTerms::FunctionOwner(
-        "mock_staged_allowed_private_function".to_string(),
-        "mock_staged_participant_a".to_string(),
-    );
-    announce_fact(term)?;
-    let term = AccessControlTerms::FunctionOwner(
-        "mock_staged_disallowed_private_function".to_string(),
-        "mock_staged_non_participant".to_string(),
-    );
-    announce_fact(term)?;
-    let term = AccessControlTerms::IsPublicFunction("mock_staged_public_function".to_string());
-    announce_fact(term)?;
-
-    let term = AccessControlTerms::DataOwner(
-        "mock_staged_allowed_data1".to_string(),
-        "mock_staged_participant_a".to_string(),
-    );
-    announce_fact(term)?;
-    let term = AccessControlTerms::DataOwner(
-        "mock_staged_allowed_data2".to_string(),
-        "mock_staged_participant_b".to_string(),
-    );
-    announce_fact(term)?;
-    let term = AccessControlTerms::DataOwner(
-        "mock_staged_allowed_data3".to_string(),
-        "mock_staged_participant_a".to_string(),
-    );
-    announce_fact(term)?;
-    let term = AccessControlTerms::DataOwner(
-        "mock_staged_allowed_data3".to_string(),
-        "mock_staged_participant_b".to_string(),
-    );
-    announce_fact(term)?;
-
-    let term = AccessControlTerms::DataOwner(
-        "mock_staged_disallowed_data1".to_string(),
-        "mock_staged_non_participant".to_string(),
-    );
-    announce_fact(term)?;
-    let term = AccessControlTerms::DataOwner(
-        "mock_staged_disallowed_data2".to_string(),
-        "mock_staged_participant_a".to_string(),
-    );
-    announce_fact(term)?;
-    let term = AccessControlTerms::DataOwner(
-        "mock_staged_disallowed_data2".to_string(),
-        "mock_staged_non_participant".to_string(),
-    );
-    announce_fact(term)?;
-
-    Ok(())
-}
-
-#[derive(Clone)]
-pub(crate) struct AccessControlModule {
-    lock: Arc<Mutex<u32>>,
-}
-
-impl AccessControlModule {
-    pub(crate) fn new() -> Self {
-        AccessControlModule {
-            lock: Arc::new(Mutex::new(0)),
-        }
-    }
-
-    pub(crate) fn enforce_request(&self, request: EnforceRequest) -> Result<bool> {
-        let (request_type, request_content) = match request {
-            EnforceRequest::UserAccessData(usr, data) => {
-                let mut buffer = String::new();
-                (usr, data).marshal(&mut buffer);
-                ("user_access_data", buffer)
+        match policy_type {
+            Some("p") => {
+                let rule = strip_first_element(policy);
+                general.push(rule);
             }
-            EnforceRequest::UserAccessFunction(usr, function) => {
-                let mut buffer = String::new();
-                (usr, function).marshal(&mut buffer);
-                ("user_access_function", buffer)
+            Some("g") => {
+                let rule = strip_first_element(policy);
+                grouping.push(rule);
             }
-            EnforceRequest::UserAccessTask(usr, task) => {
-                let mut buffer = String::new();
-                (usr, task).marshal(&mut buffer);
-                ("user_access_task", buffer)
-            }
-            EnforceRequest::TaskAccessFunction(task, function) => {
-                let mut buffer = String::new();
-                (task, function).marshal(&mut buffer);
-                ("task_access_function", buffer)
-            }
-            EnforceRequest::TaskAccessData(task, data) => {
-                let mut buffer = String::new();
-                (task, data).marshal(&mut buffer);
-                ("task_access_data", buffer)
-            }
-        };
-
-        let c_request_type = CString::new(request_type.to_string())?;
-        let c_request_content = CString::new(request_content)?;
-        let _lock = self
-            .lock
-            .lock()
-            .map_err(|_| anyhow!("failed to accquire lock"))?;
-        let py_ret =
-            unsafe { acs_enforce_request(c_request_type.as_ptr(), c_request_content.as_ptr()) };
-
-        match py_ret {
-            0 => Ok(false),
-            1 => Ok(true),
-            _ => Err(anyhow!("mesapy error")),
+            _ => bail!("invalid policy type: {:?}", policy_type),
         }
     }
-}
-pub(crate) fn init_acs() -> Result<()> {
-    let model_conf = CString::new(MODEL_TEXT).unwrap();
-    let ec = unsafe { acs_setup_model(model_conf.as_ptr()) };
 
-    if ec != 0 {
-        Err(anyhow!("failed to init mesapy"))
-    } else {
-        #[cfg(test_mode)]
-        init_mock_data()?;
-        Ok(())
-    }
+    Ok((general, grouping))
 }
 
-#[cfg(test_mode)]
-fn announce_fact(term: AccessControlTerms) -> Result<()> {
-    let (term_type, term_fact) = match term {
-        AccessControlTerms::DataOwner(data, usr) => {
-            let mut buffer = String::new();
-            (data, usr).marshal(&mut buffer);
-            ("data_owner", buffer)
-        }
-        AccessControlTerms::FunctionOwner(function, usr) => {
-            let mut buffer = String::new();
-            (function, usr).marshal(&mut buffer);
-            ("function_owner", buffer)
-        }
-        AccessControlTerms::IsPublicFunction(function) => {
-            let mut buffer = String::new();
-            (function,).marshal(&mut buffer);
-            ("is_public_function", buffer)
-        }
-        AccessControlTerms::TaskParticipant(task, usr) => {
-            let mut buffer = String::new();
-            (task, usr).marshal(&mut buffer);
-            ("task_participant", buffer)
-        }
-    };
-    let c_term_type = CString::new(term_type.to_string())?;
-    let c_term_fact = CString::new(term_fact)?;
+fn strip_first_element(record: StringRecord) -> Vec<String> {
+    record
+        .into_iter()
+        .skip(1)
+        .map(|s| s.trim().to_owned())
+        .collect()
+}
 
-    let py_ret = unsafe { acs_announce_fact(c_term_type.as_ptr(), c_term_fact.as_ptr()) };
+#[cfg(feature = "enclave_unit_test")]
+pub mod tests {
+    use super::*;
 
-    if py_ret != 0 {
-        Err(anyhow!("mesapy error"))
-    } else {
-        Ok(())
+    pub async fn test_access_api() {
+        let e = init_memory_enforcer().await.unwrap();
+
+        assert!(e.enforce(("PlatformAdmin", "arbitrary_api")).unwrap());
+        assert!(e.enforce(("PlatformAdmin", "query_audit_logs")).unwrap());
+
+        assert!(!e.enforce(("Invalid", "register_function")).unwrap());
+        assert!(!e.enforce(("Invalid", "register_input_file")).unwrap());
+        assert!(!e.enforce(("Invalid", "get_function")).unwrap());
+        assert!(!e.enforce(("Invalid", "query_audit_logs")).unwrap());
+
+        assert!(e.enforce(("FunctionOwner", "register_function")).unwrap());
+        assert!(e.enforce(("FunctionOwner", "update_function")).unwrap());
+        assert!(e.enforce(("FunctionOwner", "delete_function")).unwrap());
+        assert!(e.enforce(("FunctionOwner", "disable_function")).unwrap());
+        assert!(e.enforce(("FunctionOwner", "get_function")).unwrap());
+        assert!(e.enforce(("FunctionOwner", "list_functions")).unwrap());
+        assert!(e
+            .enforce(("FunctionOwner", "get_function_usage_stats"))
+            .unwrap());
+        assert!(!e.enforce(("FunctionOwner", "get_task")).unwrap());
+        assert!(!e.enforce(("FunctionOwner", "query_audit_logs")).unwrap());
+
+        assert!(e.enforce(("DataOwner", "register_input_file")).unwrap());
+        assert!(e.enforce(("DataOwner", "register_output_file")).unwrap());
+        assert!(e.enforce(("DataOwner", "update_input_file")).unwrap());
+        assert!(e.enforce(("DataOwner", "update_output_file")).unwrap());
+        assert!(e.enforce(("DataOwner", "register_fusion_output")).unwrap());
+        assert!(e
+            .enforce(("DataOwner", "register_input_from_output"))
+            .unwrap());
+        assert!(e.enforce(("DataOwner", "get_input_file")).unwrap());
+        assert!(e.enforce(("DataOwner", "get_output_file")).unwrap());
+        assert!(e.enforce(("DataOwner", "create_task")).unwrap());
+        assert!(e.enforce(("DataOwnerManager", "get_task")).unwrap());
+        assert!(e.enforce(("DataOwnerManager", "assign_data")).unwrap());
+        assert!(e.enforce(("DataOwnerManager", "approve_task")).unwrap());
+        assert!(e.enforce(("DataOwnerManager", "invoke_task")).unwrap());
+        assert!(e.enforce(("DataOwnerManager", "cancel_task")).unwrap());
+        assert!(e.enforce(("DataOwnerManager", "get_function")).unwrap());
+        assert!(e.enforce(("DataOwnerManager", "list_functions")).unwrap());
+        assert!(e
+            .enforce(("DataOwnerManager", "get_function_usage_stats"))
+            .unwrap());
+        assert!(!e.enforce(("DataOwner", "register_function")).unwrap());
+        assert!(!e.enforce(("DataOwnerManager", "query_audit_logs")).unwrap());
     }
 }

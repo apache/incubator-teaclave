@@ -22,47 +22,15 @@ syntax = "proto3";
 
 package teaclave_access_control_service_proto;
 
-message AuthorizeDataRequest {
-  string subject_user_id = 1;
-  string object_data_id = 2;
+message AuthorizeApiRequest {
+  string user_role = 1;
+  string api = 2;
 }
 
-message AuthorizeDataResponse {
-  bool accept = 1;
-}
-
-message AuthorizeFunctionRequest {
-  string subject_user_id = 1;
-  string object_function_id = 2;
-}
-
-message AuthorizeFunctionResponse {
-  bool accept = 1;
-}
-
-message AuthorizeTaskRequest {
-  string subject_user_id = 1;
-  string object_task_id = 2;
-}
-
-message AuthorizeTaskResponse {
-  bool accept = 1;
-}
-
-message AuthorizeStagedTaskRequest {
-  string subject_task_id = 1;
-  string object_function_id = 2;
-  repeated string object_input_data_id_list = 3;
-  repeated string object_output_data_id_list = 4;
-}
-
-message AuthorizeStagedTaskResponse {
+message AuthorizeApiResponse {
   bool accept = 1;
 }
 
 service TeaclaveAccessControl {
-  rpc AuthorizeData (AuthorizeDataRequest) returns (AuthorizeDataResponse);
-  rpc AuthorizeFunction (AuthorizeFunctionRequest) returns (AuthorizeFunctionResponse);
-  rpc AuthorizeTask (AuthorizeTaskRequest) returns (AuthorizeTaskResponse);
-  rpc AuthorizeStagedTask (AuthorizeStagedTaskRequest) returns (AuthorizeStagedTaskResponse);
+  rpc AuthorizeApi (AuthorizeApiRequest) returns (AuthorizeApiResponse);
 }

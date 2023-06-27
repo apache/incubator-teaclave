@@ -44,7 +44,7 @@ if [ ! "$LIBENCLAVE_PATH" -nt "$SIGNED_PATH" ] \
     exit 0
 fi
 
-TEACLAVE_LINK_FLAGS="-L${TEACLAVE_OUT_DIR} -lpycomponent ffi.o -lpypy-c -lsgx_tlibc_ext -lffi"
+TEACLAVE_LINK_FLAGS="-L${TEACLAVE_OUT_DIR}"
 if [ "$TEACLAVE_EXECUTOR_WAMR" == "ON" ]; then
     TEACLAVE_LINK_FLAGS+=" -lvmlib"
 fi

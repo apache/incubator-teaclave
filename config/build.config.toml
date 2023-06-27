@@ -35,19 +35,9 @@ rpc_max_message_size = 409600
 # Validity in seconds for a remote attestation report and endorsed attested TLS config
 attestation_validity_secs = 3600
 
-# Specify accepted inbound services to enforce incoming connections via mutual
-# attestation. Below figure illustrates current topology of Teaclave services.
-#
-# clients => authentication <-+       +----> storage <----+
-#                             |       |                   |
-# clients => frontend ----------> management            scheduler <-- execution
-#                                     |
-#                                     +--> access_control
-#
-#                                                   =>      api endpoint connections
-#                                                   -> internal endpoint connections
+# Refer to docs/service-internals.md for the service topology
 [inbound]
-access_control = ["teaclave_management_service"]
+access_control = ["teaclave_frontend_service", "teaclave_management_service"]
 authentication = ["teaclave_frontend_service"]
 storage        = ["teaclave_management_service", "teaclave_scheduler_service"]
 management     = ["teaclave_frontend_service"]

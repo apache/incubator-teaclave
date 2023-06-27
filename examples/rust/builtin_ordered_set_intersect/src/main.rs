@@ -215,10 +215,10 @@ impl Client {
 fn main() -> Result<()> {
     let mut admin = PlatformAdmin::new("admin", "teaclave")?;
     // Ignore registering errors
-    let _ = admin.register_user("user0", "password", "PlatformAdmin", "");
+    let _ = admin.register_user("user_dataowner", "password", "DataOwner", "")?;
     let _ = admin.register_user("user1", "password", "PlatformAdmin", "");
-    let user0_data = UserData {
-        user_id: "user0".to_string(),
+    let user_dataowner_data = UserData {
+        user_id: "user_dataowner".to_string(),
         user_password: "password".to_string(),
         input_url: "http://localhost:6789/fixtures/functions/ordered_set_intersect/psi0.txt.enc"
             .to_string(),
@@ -252,30 +252,33 @@ fn main() -> Result<()> {
             0xdd, 0x66,
         ],
         key: vec![0; 16],
-        peer_id: "user0".to_string(),
+        peer_id: "user_dataowner".to_string(),
         peer_input_label: "input_data1".to_string(),
         peer_output_label: "output_result1".to_string(),
     };
 
-    let mut user0 = Client::new(user0_data)?;
+    let mut user_dataowner = Client::new(user_dataowner_data)?;
     let mut user1 = Client::new(user1_data)?;
 
-    let task_id = user0.set_task()?;
+    // dataowner does not have the privilege to register_function
+    assert!(user_dataowner.set_task().is_err());
 
-    user0.register_data(&task_id)?;
+    let task_id = user1.set_task()?;
+
+    user_dataowner.register_data(&task_id)?;
     user1.register_data(&task_id)?;
 
-    user0.approve_task(&task_id)?;
+    user_dataowner.approve_task(&task_id)?;
     user1.approve_task(&task_id)?;
 
-    user0.run_task(&task_id)?;
+    user1.run_task(&task_id)?;
 
-    let result_user0 = user0.get_task_result(&task_id)?;
+    let result_user_dataowner = user_dataowner.get_task_result(&task_id)?;
 
     println!(
-        "[+] User 0 result: {:?} log: {:?} ",
-        String::from_utf8(result_user0.0),
-        result_user0.1
+        "[+] User dataowner result: {:?} log: {:?} ",
+        String::from_utf8(result_user_dataowner.0),
+        result_user_dataowner.1
     );
 
     let result_user1 = user1.get_task_result(&task_id)?;

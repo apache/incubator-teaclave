@@ -128,8 +128,8 @@ topological graph illustrating connections between services.
 clients => authentication <-+       +----> storage <----+
                             |       |                   |
 clients => frontend ----------> management            scheduler <-- execution
-                                    |
-                                    +--> access_control
+             |                      |
+             +--> access_control <--+
 
 
                                                   =>      api endpoint connections

@@ -22,8 +22,6 @@ use teaclave_types::*;
 use url::Url;
 mod builtin_echo;
 mod builtin_gbdt_train;
-mod mesapy_data_fusion;
-mod mesapy_echo;
 use teaclave_rpc::CredentialService;
 
 async fn get_task(
