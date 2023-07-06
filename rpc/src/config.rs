@@ -41,10 +41,51 @@ pub struct SgxTrustedTlsServerConfig {
     validity: std::time::Duration,
 }
 
+// Refer to `rustls/src/server/handy.rs` in rustls 0.21.2
+// Something which always resolves to the same cert chain.
+struct AlwaysResolvesChain(Arc<rustls::sign::CertifiedKey>);
+
+impl AlwaysResolvesChain {
+    pub(super) fn new(
+        chain: Vec<rustls::Certificate>,
+        priv_key: &rustls::PrivateKey,
+    ) -> Result<Self, rustls::Error> {
+        let key = rustls::sign::any_supported_type(priv_key)
+            .map_err(|_| rustls::Error::General("invalid private key".into()))?;
+        Ok(Self(Arc::new(rustls::sign::CertifiedKey::new(chain, key))))
+    }
+}
+
+impl rustls::server::ResolvesServerCert for AlwaysResolvesChain {
+    fn resolve(
+        &self,
+        _client_hello: rustls::server::ClientHello,
+    ) -> Option<Arc<rustls::sign::CertifiedKey>> {
+        Some(Arc::clone(&self.0))
+    }
+}
+
+// Refer to `rustls/src/client/handy.rs` in rustls 0.21.2
+impl rustls::client::ResolvesClientCert for AlwaysResolvesChain {
+    fn resolve(
+        &self,
+        _acceptable_issuers: &[&[u8]],
+        _sigschemes: &[rustls::SignatureScheme],
+    ) -> Option<Arc<rustls::sign::CertifiedKey>> {
+        Some(Arc::clone(&self.0))
+    }
+
+    fn has_certs(&self) -> bool {
+        true
+    }
+}
+
 impl Default for SgxTrustedTlsServerConfig {
     fn default() -> Self {
-        let client_cert_verifier = rustls::NoClientAuth::new();
-        let server_config = rustls::ServerConfig::new(client_cert_verifier);
+        let server_config = rustls::ServerConfig::builder()
+            .with_safe_defaults()
+            .with_no_client_auth()
+            .with_cert_resolver(Arc::new(rustls::server::ResolvesServerCertUsingSni::new()));
         let time = SystemTime::now();
         let validity = std::time::Duration::from_secs(u64::max_value());
 
@@ -65,7 +106,8 @@ impl SgxTrustedTlsServerConfig {
     pub fn server_cert(mut self, cert: &[u8], key_der: &[u8]) -> Result<Self> {
         let cert_chain = vec![rustls::Certificate(cert.to_vec())];
         let key_der = rustls::PrivateKey(key_der.to_vec());
-        self.server_config.set_single_cert(cert_chain, key_der)?;
+        let resolver = AlwaysResolvesChain::new(cert_chain, &key_der)?;
+        self.server_config.cert_resolver = Arc::new(resolver);
 
         Ok(Self { ..self })
     }
@@ -85,7 +127,7 @@ impl SgxTrustedTlsServerConfig {
     // Disable this function for non-SGX targets.
     #[cfg(any(feature = "mesalock_sgx", feature = "libos"))]
     pub fn attestation_report_verifier(
-        mut self,
+        self,
         accepted_enclave_attrs: Vec<EnclaveAttr>,
         root_ca: &[u8],
         verifier: fn(&AttestationReport) -> bool,
@@ -95,9 +137,15 @@ impl SgxTrustedTlsServerConfig {
             root_ca,
             verifier,
         ));
+        let server_config = rustls::ServerConfig::builder()
+            .with_safe_defaults()
+            .with_client_cert_verifier(verifier)
+            .with_cert_resolver(self.server_config.cert_resolver);
 
-        self.server_config.set_client_certificate_verifier(verifier);
-        Ok(Self { ..self })
+        Ok(Self {
+            server_config,
+            ..self
+        })
     }
 
     pub fn server_config(&self) -> Arc<rustls::ServerConfig> {
@@ -126,10 +174,9 @@ impl SgxTrustedTlsServerConfig {
         let cert_chain = vec![rustls::Certificate(attested_tls_config.cert.to_vec())];
         let key_der = rustls::PrivateKey(attested_tls_config.private_key.to_vec());
 
-        let mut new_server_config = self.server_config.clone();
-        new_server_config.set_single_cert(cert_chain, key_der)?;
+        let resolver = AlwaysResolvesChain::new(cert_chain, &key_der)?;
+        self.server_config.cert_resolver = Arc::new(resolver);
 
-        self.server_config = new_server_config;
         self.time = attested_tls_config.time;
         self.validity = attested_tls_config.validity;
 
@@ -140,7 +187,7 @@ impl SgxTrustedTlsServerConfig {
 impl From<SgxTrustedTlsServerConfig> for ServerTlsConfig {
     fn from(config: SgxTrustedTlsServerConfig) -> Self {
         let mut config_service = config.server_config;
-        config_service.set_protocols(&[ALPN_H2.as_bytes().to_vec()]);
+        config_service.alpn_protocols = vec![ALPN_H2.as_bytes().to_vec()];
         let mut tls_config = ServerTlsConfig::new();
         let tls_config = tls_config.rustls_server_config(config_service);
         tls_config.to_owned()
@@ -159,34 +206,34 @@ impl NoServerAuth {
     // Allow new_ret_no_self, make it consistent with rustls definition of
     // `NoClientAuth::new()`.
     #[allow(clippy::new_ret_no_self)]
-    pub fn new() -> Arc<dyn rustls::ServerCertVerifier> {
+    pub fn new() -> Arc<dyn rustls::client::ServerCertVerifier> {
         Arc::new(NoServerAuth)
     }
 }
 
-impl rustls::ServerCertVerifier for NoServerAuth {
+impl rustls::client::ServerCertVerifier for NoServerAuth {
     fn verify_server_cert(
         &self,
-        _roots: &rustls::RootCertStore,
-        _certs: &[rustls::Certificate],
-        _hostname: webpki::DNSNameRef<'_>,
+        _end_entity: &rustls::Certificate,
+        _intermediates: &[rustls::Certificate],
+        _server_name: &rustls::ServerName,
+        _scts: &mut dyn Iterator<Item = &[u8]>,
         _ocsp: &[u8],
-    ) -> Result<rustls::ServerCertVerified, rustls::TLSError> {
-        Ok(rustls::ServerCertVerified::assertion())
+        _now: SystemTime,
+    ) -> Result<rustls::client::ServerCertVerified, rustls::Error> {
+        Ok(rustls::client::ServerCertVerified::assertion())
     }
 }
 
 impl Default for SgxTrustedTlsClientConfig {
     fn default() -> Self {
-        let mut client_config = rustls::ClientConfig::new();
-
-        client_config
-            .dangerous()
-            .set_certificate_verifier(NoServerAuth::new());
-        client_config.versions.clear();
-        client_config
-            .versions
-            .push(rustls::ProtocolVersion::TLSv1_2);
+        let client_config = rustls::ClientConfig::builder()
+            .with_safe_default_cipher_suites()
+            .with_safe_default_kx_groups()
+            .with_protocol_versions(&[&rustls::version::TLS12])
+            .unwrap()
+            .with_custom_certificate_verifier(NoServerAuth::new())
+            .with_no_client_auth();
 
         Self {
             client_config,
@@ -222,8 +269,8 @@ impl SgxTrustedTlsClientConfig {
     pub fn client_cert(mut self, cert: &[u8], key_der: &[u8]) -> Result<Self> {
         let cert_chain = vec![rustls::Certificate(cert.to_vec())];
         let key_der = rustls::PrivateKey(key_der.to_vec());
-        self.client_config
-            .set_single_client_cert(cert_chain, key_der)?;
+        let resolver = AlwaysResolvesChain::new(cert_chain, &key_der)?;
+        self.client_config.client_auth_cert_resolver = Arc::new(resolver);
 
         Ok(Self { ..self })
     }
@@ -243,7 +290,7 @@ impl From<SgxTrustedTlsClientConfig> for ClientTlsConfig {
     fn from(config: SgxTrustedTlsClientConfig) -> Self {
         let mut client_config = config.client_config;
         // Yout must set the 'h2' negotiation flag.
-        client_config.set_protocols(&[ALPN_H2.as_bytes().to_vec()]);
+        client_config.alpn_protocols = vec![ALPN_H2.as_bytes().to_vec()];
         ClientTlsConfig::new().rustls_client_config(client_config)
     }
 }

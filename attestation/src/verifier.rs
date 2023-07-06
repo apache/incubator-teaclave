@@ -102,57 +102,52 @@ impl AttestationReportVerifier {
     }
 }
 
-impl rustls::ServerCertVerifier for AttestationReportVerifier {
+impl rustls::client::ServerCertVerifier for AttestationReportVerifier {
     fn verify_server_cert(
         &self,
-        _roots: &rustls::RootCertStore,
-        certs: &[rustls::Certificate],
-        _hostname: webpki::DNSNameRef,
+        end_entity: &rustls::Certificate,
+        _intermediates: &[rustls::Certificate],
+        _server_name: &rustls::ServerName,
+        _scts: &mut dyn Iterator<Item = &[u8]>,
         _ocsp: &[u8],
-    ) -> std::result::Result<rustls::ServerCertVerified, rustls::TLSError> {
+        _now: std::time::SystemTime,
+    ) -> std::result::Result<rustls::client::ServerCertVerified, rustls::Error> {
         // This call automatically verifies certificate signature
         debug!("verify server cert");
-        if certs.len() != 1 {
-            return Err(rustls::TLSError::NoCertificatesPresented);
-        }
-        if self.verify_cert(certs) {
-            Ok(rustls::ServerCertVerified::assertion())
+        if self.verify_cert(&[end_entity.to_owned()]) {
+            Ok(rustls::client::ServerCertVerified::assertion())
         } else {
-            Err(rustls::TLSError::WebPKIError(
-                webpki::Error::ExtensionValueInvalid,
+            Err(rustls::Error::InvalidCertificate(
+                rustls::CertificateError::UnhandledCriticalExtension,
             ))
         }
     }
 }
 
-impl rustls::ClientCertVerifier for AttestationReportVerifier {
+impl rustls::server::ClientCertVerifier for AttestationReportVerifier {
     fn offer_client_auth(&self) -> bool {
         // If test_mode is on, then disable TLS client authentication.
         !cfg!(test_mode)
     }
 
-    fn client_auth_root_subjects(
-        &self,
-        _sni: Option<&webpki::DNSName>,
-    ) -> Option<rustls::DistinguishedNames> {
-        Some(rustls::DistinguishedNames::new())
+    fn client_auth_root_subjects(&self) -> &[rustls::DistinguishedName] {
+        &[]
     }
 
     fn verify_client_cert(
         &self,
-        certs: &[rustls::Certificate],
-        _sni: Option<&webpki::DNSName>,
-    ) -> std::result::Result<rustls::ClientCertVerified, rustls::TLSError> {
+        end_entity: &rustls::Certificate,
+        _intermediates: &[rustls::Certificate],
+        _now: std::time::SystemTime,
+    ) -> std::result::Result<rustls::server::ClientCertVerified, rustls::Error> {
         // This call automatically verifies certificate signature
         debug!("verify client cert");
-        if certs.len() != 1 {
-            return Err(rustls::TLSError::NoCertificatesPresented);
-        }
-        if self.verify_cert(certs) {
-            Ok(rustls::ClientCertVerified::assertion())
+
+        if self.verify_cert(&[end_entity.to_owned()]) {
+            Ok(rustls::server::ClientCertVerified::assertion())
         } else {
-            Err(rustls::TLSError::WebPKIError(
-                webpki::Error::ExtensionValueInvalid,
+            Err(rustls::Error::InvalidCertificate(
+                rustls::CertificateError::UnhandledCriticalExtension,
             ))
         }
     }

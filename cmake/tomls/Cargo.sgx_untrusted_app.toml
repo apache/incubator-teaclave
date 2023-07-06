@@ -48,3 +48,4 @@ sgx_urts          = { path = "../../../third_party/rust-sgx-sdk/sgx_urts" }
 
 rustface          = { git = "https://github.com/apache/incubator-teaclave-crates" }
 rusty-machine     = { git = "https://github.com/apache/incubator-teaclave-crates" }
+tonic             = { git = "https://github.com/apache/incubator-teaclave-crates" }
