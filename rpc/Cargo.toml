@@ -39,11 +39,11 @@ libos = [
 ]
 
 [dependencies]
-anyhow     = { version = "1.0.26" }
-log        = { version = "0.4.17", features = ["release_max_level_info"] }
-rustls     = { version = "0.19.0", features = ["dangerous_configuration"] }
-tonic      = { version = "0.6.1", features = ["tls", "compression"] }
-webpki     = { version = "0.21.0" }
+anyhow            = { version = "1.0.26" }
+log               = { version = "0.4.17", features = ["release_max_level_info"] }
+rustls            = { version = "0.21.1", features = ["dangerous_configuration"] }
+rustls-webpki     = { version = "0.100.0" }
+tonic             = { version = "0.9.2", features = ["tls", "gzip"] }
 
 teaclave_types       = { path = "../types" }
 teaclave_attestation = { path = "../attestation" }

@@ -30,6 +30,7 @@ exclude = [
 ]
 
 [patch.crates-io]
+tonic             = { git = "https://github.com/apache/incubator-teaclave-crates" }
 
 sgx_cov           = { path = "../../../third_party/rust-sgx-sdk/sgx_tests/cov" }
 sgx_crypto        = { path = "../../../third_party/rust-sgx-sdk/sgx_crypto" }

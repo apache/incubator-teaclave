@@ -117,21 +117,34 @@ impl EndorsedAttestationReport {
     }
 }
 
-fn new_tls_stream(url: &url::Url) -> Result<rustls::StreamOwned<rustls::ClientSession, TcpStream>> {
+fn new_tls_stream(
+    url: &url::Url,
+) -> Result<rustls::StreamOwned<rustls::client::ClientConnection, TcpStream>> {
     let host_str = url
         .host_str()
         .ok_or(AttestationServiceError::InvalidAddress)?;
-    let dns_name = webpki::DNSNameRef::try_from_ascii_str(host_str)?;
-    let mut config = rustls::ClientConfig::new();
+    let mut root_certs = rustls::RootCertStore::empty();
     #[cfg(dcap)]
-    config
-        .root_store
-        .add_pem_file(&mut DCAP_ROOT_CA_CERT.to_string().as_bytes())
-        .map_err(|_| AttestationServiceError::TlsError)?;
-    config
-        .root_store
-        .add_server_trust_anchors(&webpki_roots::TLS_SERVER_ROOTS);
-    let client = rustls::ClientSession::new(&Arc::new(config), dns_name);
+    {
+        let certs = rustls_pemfile::certs(&mut DCAP_ROOT_CA_CERT.to_string().as_bytes())
+            .map_err(|_| AttestationServiceError::TlsError)?;
+        let (valid_count, _) = root_certs.add_parsable_certificates(&certs);
+        anyhow::ensure!(valid_count >= 1, "DCAP_ROOT_CA_CERT error");
+    }
+    root_certs.add_server_trust_anchors(webpki_roots::TLS_SERVER_ROOTS.0.iter().map(
+        |trust_anchor| {
+            rustls::OwnedTrustAnchor::from_subject_spki_name_constraints(
+                trust_anchor.subject,
+                trust_anchor.spki,
+                trust_anchor.name_constraints,
+            )
+        },
+    ));
+    let config = rustls::ClientConfig::builder()
+        .with_safe_defaults()
+        .with_root_certificates(root_certs)
+        .with_no_client_auth();
+    let client = rustls::client::ClientConnection::new(Arc::new(config), host_str.try_into()?)?;
     let addrs = url.socket_addrs(|| match url.scheme() {
         "https" => Some(443),
         _ => None,
@@ -268,9 +281,9 @@ pub(crate) fn get_report(
             AttestationServiceError::MissingHeader(signing_cert_header.to_string())
         })?;
         let decoded_cert = percent_encoding::percent_decode_str(cert_str).decode_utf8()?;
-        let certs = rustls::internal::pemfile::certs(&mut decoded_cert.as_bytes())
+        let certs = rustls_pemfile::certs(&mut decoded_cert.as_bytes())
             .map_err(|_| anyhow!("pemfile error"))?;
-        certs.iter().map(|c| c.0.clone()).collect()
+        certs
     };
 
     debug!("return_report");

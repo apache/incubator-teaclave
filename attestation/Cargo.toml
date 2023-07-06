@@ -58,14 +58,15 @@ libc             = { version = "0.2.66", optional = true }
 log              = { version = "0.4.17", features = ["release_max_level_info"] }
 num-bigint       = { version = "0.2.2" }
 percent-encoding = { version = "2.1.0" }
-rustls           = { version = "0.19.0", features = ["dangerous_configuration"] }
+rustls           = { version = "0.21.1", features = ["dangerous_configuration"] }
+rustls-pemfile   = { version = "1" }
+rustls-webpki    = { version = "0.100.0" }
 serde            = { version = "1.0.92", features = ["derive"] }
 serde_json       = { version = "1.0.39" }
 thiserror        = { version = "1.0.9" }
 url              = { version = "2.1.1" }
 uuid             = { version = "0.8.1", features = ["v4"] }
-webpki           = { version = "0.21.0" }
-webpki-roots     = { version = "0.21.0" }
+webpki-roots     = { version = "0.23.0" }
 yasna            = { version = "0.3.0", features = ["bit-vec", "num-bigint", "chrono"] }
 
 teaclave_types  = { path = "../types" }
