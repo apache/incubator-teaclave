@@ -65,7 +65,7 @@ async fn start_internal_endpoint(
     Server::builder()
         .tls_config(server_config)
         .map_err(|_| anyhow!("TeaclaveFrontendServer tls config error"))?
-        .add_service(TeaclaveAuthenticationInternalServer::new(service))
+        .add_service(TeaclaveAuthenticationInternalServer::new_with_builtin_config(service))
         .serve(addr)
         .await?;
     Ok(())
@@ -84,7 +84,9 @@ async fn start_api_endpoint(
     Server::builder()
         .tls_config(tls_config)
         .map_err(|_| anyhow!("TeaclaveAuthenticationApiServer tls config error"))?
-        .add_service(TeaclaveAuthenticationApiServer::new(service))
+        .add_service(TeaclaveAuthenticationApiServer::new_with_builtin_config(
+            service,
+        ))
         .serve(addr)
         .await?;
     Ok(())

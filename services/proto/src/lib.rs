@@ -17,6 +17,9 @@
 
 extern crate sgx_types;
 
+#[macro_use]
+mod macros;
+
 pub mod teaclave_access_control_service;
 pub mod teaclave_authentication_service;
 pub mod teaclave_common;
@@ -24,12 +27,6 @@ pub mod teaclave_frontend_service;
 pub mod teaclave_management_service;
 pub mod teaclave_scheduler_service;
 pub mod teaclave_storage_service;
-
-macro_rules! include_proto {
-    ($package: tt) => {
-        include!(concat!(env!("OUT_DIR"), concat!("/", $package, ".rs")));
-    };
-}
 
 pub mod teaclave_authentication_service_proto {
     include_proto!("teaclave_authentication_service_proto");

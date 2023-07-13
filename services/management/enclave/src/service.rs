@@ -938,7 +938,9 @@ impl TeaclaveManagementService {
             .connect()
             .await
             .map_err(|e| anyhow!("Failed to connect to storage service, {:?}", e))?;
-        let storage_client = Arc::new(Mutex::new(TeaclaveStorageClient::new(channel)));
+        let storage_client = Arc::new(Mutex::new(TeaclaveStorageClient::new_with_builtin_config(
+            channel,
+        )));
         let client_clone = storage_client.clone();
         let auditor = task::spawn_blocking(move || Auditor::try_new(client_clone)).await??;
         let service = Self {

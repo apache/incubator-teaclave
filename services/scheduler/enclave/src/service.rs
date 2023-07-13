@@ -25,6 +25,7 @@ use std::time::{Duration, SystemTime};
 use std::untrusted::time::SystemTimeEx;
 use tokio::sync::Mutex;
 
+use anyhow::{anyhow, Result};
 use teaclave_proto::teaclave_common::{ExecutorCommand, ExecutorStatus};
 use teaclave_proto::teaclave_scheduler_service::*;
 use teaclave_proto::teaclave_storage_service::*;
@@ -32,9 +33,6 @@ use teaclave_rpc::transport::{channel::Endpoint, Channel};
 use teaclave_rpc::{Request, Response};
 use teaclave_types::*;
 use uuid::Uuid;
-
-use anyhow::anyhow;
-use anyhow::Result;
 
 const EXECUTOR_TIMEOUT_SECS: u64 = 30;
 
@@ -142,7 +140,9 @@ impl TeaclaveSchedulerResources {
             .connect()
             .await
             .map_err(|e| anyhow!("Failed to connect to storage service.{:?}", e))?;
-        let storage_client = Arc::new(Mutex::new(TeaclaveStorageClient::new(channel)));
+        let storage_client = Arc::new(Mutex::new(TeaclaveStorageClient::new_with_builtin_config(
+            channel,
+        )));
         let task_queue = VecDeque::new();
         let executors_tasks = HashMap::new();
         let executors_status = HashMap::new();

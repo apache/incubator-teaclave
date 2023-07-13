@@ -24,6 +24,9 @@ pub use proto::{
     GetKeysByPrefixResponse, GetRequest, GetResponse, PutRequest,
 };
 
+impl_custom_server!(TeaclaveStorageServer, TeaclaveStorage);
+impl_custom_client!(TeaclaveStorageClient);
+
 impl GetRequest {
     pub fn new(key: impl Into<Vec<u8>>) -> Self {
         Self { key: key.into() }

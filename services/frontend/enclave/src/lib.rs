@@ -79,9 +79,9 @@ async fn start_service(config: &RuntimeConfig) -> Result<()> {
         .connect()
         .await
         .map_err(|e| anyhow!("Failed to connect to authentication service, retry {:?}", e))?;
-    let authentication_client = Arc::new(Mutex::new(TeaclaveAuthenticationInternalClient::new(
-        authentication_channel,
-    )));
+    let authentication_client = Arc::new(Mutex::new(
+        TeaclaveAuthenticationInternalClient::new_with_builtin_config(authentication_channel),
+    ));
 
     info!(" Starting FrontEnd: setup authentication client finished ...");
 
@@ -97,9 +97,9 @@ async fn start_service(config: &RuntimeConfig) -> Result<()> {
         .connect()
         .await
         .map_err(|e| anyhow!("Failed to connect to management service, {:?}", e))?;
-    let management_client = Arc::new(Mutex::new(TeaclaveManagementClient::new(
-        management_channel,
-    )));
+    let management_client = Arc::new(Mutex::new(
+        TeaclaveManagementClient::new_with_builtin_config(management_channel),
+    ));
 
     info!(" Starting FrontEnd: setup management client finished ...");
 
@@ -139,7 +139,7 @@ async fn start_service(config: &RuntimeConfig) -> Result<()> {
     Server::builder()
         .tls_config(server_config)
         .map_err(|_| anyhow!("TeaclaveFrontendServer tls config error"))?
-        .add_service(TeaclaveFrontendServer::new(service))
+        .add_service(TeaclaveFrontendServer::new_with_builtin_config(service))
         .serve(listen_address)
         .await?;
 

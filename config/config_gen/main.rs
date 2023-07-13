@@ -29,7 +29,7 @@ use structopt::StructOpt;
 struct BuildConfigToml {
     as_root_ca_cert: ConfigSource,
     auditor_public_keys: Vec<ConfigSource>,
-    rpc_max_message_size: u64,
+    grpc_config: GrpcConfig,
     attestation_validity_secs: u64,
     inbound: Inbound,
 }
@@ -41,6 +41,13 @@ struct Inbound {
     management: Vec<String>,
     storage: Vec<String>,
     scheduler: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all(serialize = "snake_case", deserialize = "snake_case"))]
+struct GrpcConfig {
+    max_encoding_message_size: usize,
+    max_decoding_message_size: usize,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -74,7 +81,7 @@ fn display_config_source(config: &ConfigSource) -> String {
 struct ConfigTemplate {
     as_root_ca_cert: String,
     auditor_public_keys: Vec<String>,
-    rpc_max_message_size: u64,
+    grpc_config: GrpcConfig,
     attestation_validity_secs: u64,
     inbound: Inbound,
 }
@@ -93,7 +100,7 @@ fn generate_build_config(toml: &Path, out: &Path) {
     let config_template = ConfigTemplate {
         as_root_ca_cert,
         auditor_public_keys,
-        rpc_max_message_size: config.rpc_max_message_size,
+        grpc_config: config.grpc_config,
         attestation_validity_secs: config.attestation_validity_secs,
         inbound: config.inbound,
     };

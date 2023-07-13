@@ -46,10 +46,14 @@ impl PublisherService {
         scheduler_service_endpoint: Endpoint,
     ) -> Result<Self> {
         let channel = storage_service_endpoint.connect().await?;
-        let storage_client = Arc::new(Mutex::new(TeaclaveStorageClient::new(channel)));
+        let storage_client = Arc::new(Mutex::new(TeaclaveStorageClient::new_with_builtin_config(
+            channel,
+        )));
         let channel = scheduler_service_endpoint.connect().await?;
 
-        let scheduler_client = Arc::new(Mutex::new(TeaclaveSchedulerClient::new(channel)));
+        let scheduler_client = Arc::new(Mutex::new(
+            TeaclaveSchedulerClient::new_with_builtin_config(channel),
+        ));
 
         let service = Self {
             storage_client,

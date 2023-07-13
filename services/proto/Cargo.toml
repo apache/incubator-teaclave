@@ -28,10 +28,13 @@ default = []
 app = [
     "teaclave_types/app",
     "teaclave_crypto/app",
+    "teaclave_config/build_config"
 ]
 mesalock_sgx = [
     "teaclave_types/mesalock_sgx",
     "teaclave_crypto/mesalock_sgx",
+    "teaclave_config/mesalock_sgx",
+    "teaclave_config/build_config",
 ]
 cov = ["sgx_cov"]
 
@@ -44,8 +47,10 @@ serde_json      = { version = "1.0.39" }
 tonic           = { version = "0.9.2", features = ["tls", "gzip"]}
 url             = { version = "2.1.1" }
 uuid            = { version = "0.8.1", features = ["v4"] }
-teaclave_types  = { path = "../../types" }
+
+teaclave_config = { path = "../../config" }
 teaclave_crypto = { path = "../../crypto" }
+teaclave_types  = { path = "../../types" }
 
 sgx_cov         = { version = "2.0.0", optional = true }
 
