@@ -2864,6 +2864,7 @@ dependencies = [
  "serde_json",
  "sgx_cov",
  "sgx_types",
+ "teaclave_config",
  "teaclave_crypto",
  "teaclave_types",
  "tonic",

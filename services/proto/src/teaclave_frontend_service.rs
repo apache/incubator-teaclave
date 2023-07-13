@@ -30,6 +30,9 @@ pub use proto::teaclave_frontend_server::TeaclaveFrontend;
 pub use proto::teaclave_frontend_server::TeaclaveFrontendServer;
 pub use proto::*;
 
+impl_custom_server!(TeaclaveFrontendServer, TeaclaveFrontend);
+impl_custom_client!(TeaclaveFrontendClient);
+
 impl RegisterInputFileRequest {
     pub fn new(url: Url, cmac: FileAuthTag, crypto: impl Into<FileCrypto>) -> Self {
         Self {

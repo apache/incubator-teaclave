@@ -21,9 +21,15 @@ under the License.
 pub struct BuildConfig {
     pub as_root_ca_cert: &'static [u8],
     pub auditor_public_keys: &'static [&'static [u8]; {{ auditor_public_keys.len() }}],
-    pub rpc_max_message_size: u64,
+    pub grpc_config: GrpcConfig,
     pub attestation_validity_secs: u64,
     pub inbound: Inbounds,
+}
+
+#[derive(Debug)]
+pub struct GrpcConfig {
+    pub max_encoding_message_size: usize,
+    pub max_decoding_message_size: usize,
 }
 
 #[derive(Debug)]
@@ -42,7 +48,10 @@ pub const BUILD_CONFIG: BuildConfig = BuildConfig {
         &{{ k }},
         {%- endfor %}
     ],
-    rpc_max_message_size: {{ rpc_max_message_size }},
+    grpc_config:  GrpcConfig {
+        max_encoding_message_size: {{ grpc_config.max_encoding_message_size }},
+        max_decoding_message_size: {{ grpc_config.max_decoding_message_size }},
+    },
     attestation_validity_secs: {{ attestation_validity_secs }},
     inbound: Inbounds {
         access_control: &[

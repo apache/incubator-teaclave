@@ -21,3 +21,6 @@ pub use proto::teaclave_access_control_server::{
     TeaclaveAccessControl, TeaclaveAccessControlServer,
 };
 pub use proto::*;
+
+impl_custom_server!(TeaclaveAccessControlServer, TeaclaveAccessControl);
+impl_custom_client!(TeaclaveAccessControlClient);

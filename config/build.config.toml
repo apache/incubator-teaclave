@@ -29,11 +29,14 @@ auditor_public_keys = [
     { path = "config/keys/auditors/albus_dumbledore/albus_dumbledore.public.pem"},
 ]
 
-# RPC max message size
-rpc_max_message_size = 409600
-
 # Validity in seconds for a remote attestation report and endorsed attested TLS config
 attestation_validity_secs = 3600
+
+# gRPC configuration
+[grpc_config]
+# Limits the maximum size of an encoded/decoded message.
+max_encoding_message_size = 4194304
+max_decoding_message_size = 4194304
 
 # Refer to docs/service-internals.md for the service topology
 [inbound]

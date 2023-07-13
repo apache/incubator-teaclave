@@ -82,3 +82,6 @@ impl SaveLogsRequest {
         Self { logs }
     }
 }
+
+impl_custom_server!(TeaclaveManagementServer, TeaclaveManagement);
+impl_custom_client!(TeaclaveManagementClient);

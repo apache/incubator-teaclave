@@ -30,6 +30,9 @@ pub const AUDITOR_PUBLIC_KEYS: &[&[u8]; AUDITOR_PUBLIC_KEYS_LEN] = BUILD_CONFIG.
 /// The valid duration of one attestation report in seconds.
 pub const ATTESTATION_VALIDITY_SECS: u64 = BUILD_CONFIG.attestation_validity_secs;
 
+/// gRPC configuration
+pub const GRPC_CONFIG: GrpcConfig = BUILD_CONFIG.grpc_config;
+
 macro_rules! def_inbound_services {
     ($name: tt, $service: tt) => {
         /// Array of predefined inbound services, usually used for validate

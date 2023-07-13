@@ -30,7 +30,7 @@ crate-type = ["lib", "cdylib", "staticlib"]
 teaclave_types        = { path = "../../types", features = ["app"] }
 teaclave_attestation  = { path = "../../attestation" }
 teaclave_rpc          = { path = "../../rpc" }
-teaclave_proto        = { path = "../../services/proto" }
+teaclave_proto        = { path = "../../services/proto", features = ["app"]  }
 anyhow                = { version = "1.0.26" }
 url                   = { version = "2.1.1" }
 serde_json            = { version = "1.0.39" }
