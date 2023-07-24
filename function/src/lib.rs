@@ -27,6 +27,7 @@ mod online_decrypt;
 mod ordered_set_intersect;
 mod ordered_set_join;
 mod password_check;
+mod policy_enforcement;
 mod principal_components_analysis;
 mod private_join_and_compute;
 mod rsa_sign;
@@ -41,6 +42,7 @@ pub use online_decrypt::OnlineDecrypt;
 pub use ordered_set_intersect::OrderedSetIntersect;
 pub use ordered_set_join::OrderedSetJoin;
 pub use password_check::PasswordCheck;
+pub use policy_enforcement::PolicyEnforcement;
 pub use principal_components_analysis::PrincipalComponentsAnalysis;
 pub use private_join_and_compute::PrivateJoinAndCompute;
 pub use rsa_sign::RsaSign;
@@ -62,6 +64,7 @@ pub mod tests {
             online_decrypt::tests::run_tests(),
             ordered_set_join::tests::run_tests(),
             ordered_set_intersect::tests::run_tests(),
+            policy_enforcement::tests::run_tests(),
             principal_components_analysis::tests::run_tests(),
             private_join_and_compute::tests::run_tests(),
             rsa_sign::tests::run_tests(),
