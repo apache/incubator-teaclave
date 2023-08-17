@@ -27,8 +27,8 @@ pub struct PolicyEnforcement;
 
 #[derive(serde::Deserialize)]
 struct PolicyEnforcementArguments {
-    id: usize,
-    schema: Schema,
+    _id: usize,
+    _schema: Schema,
 }
 
 impl TryFrom<FunctionArguments> for PolicyEnforcementArguments {
@@ -52,8 +52,6 @@ impl PolicyEnforcement {
         arguments: FunctionArguments,
         _runtime: FunctionRuntime,
     ) -> anyhow::Result<String> {
-        // let _args = PolicyEnforcementArguments::try_from(arguments)?;
-
         // Create a new context for data analysis.
         let mut ctx = AnalysisContext::new();
         let df = pcd! {

@@ -70,7 +70,7 @@ teaclave_test_utils = { path = "../tests/utils", optional = true }
 teaclave_executor_context = { path = "../executor/context" }
 
 policy_core = { path = "../third_party/pcd/policy_core" }
-policy_carrying_data = { path = "../third_party/pcd/policy_carrying_data" }
+policy_carrying_data = { path = "../third_party/pcd/policy_carrying_data", default-features = false }
 policy_execution = { path = "../third_party/pcd/policy_execution" }
 
 sgx_cov       = { version = "2.0.0", optional = true }

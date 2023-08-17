@@ -1,0 +1,20 @@
+[package]
+name = "policy_core"
+version = "0.1.0"
+edition = "2021"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = []
+ast-serde = []
+
+[dependencies]
+num-traits = "0.2.15"
+num_enum = "0.6.1"
+ordered-float = "3.7.0"
+serde = { version = "1.0.164", features = ["derive", "rc"] }
+serde_json = "1.0.99"
+typetag = "0.2.8"
+
+[lib]
+doctest = false

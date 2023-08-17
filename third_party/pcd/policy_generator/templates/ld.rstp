@@ -1,0 +1,40 @@
+// A demo. In productive platforms, this data should be fetched from the persistent layer and should be
+// stored in encrypted form to ensure optimal security.
+static DATA: OnceLock<Arc<DataFrame>> = OnceLock::new();
+/// A privacy manager.
+static PRIVACY_MANAGER: OnceLock<Arc<PrivacyMananger>> = OnceLock::new();
+
+/// Ensuring the version string matches; this content is read from build script.
+static RUSTC_VERSION: &str = env!("RUSTC_VERSION");
+
+/// Gets the version string as a pointer in C-style.
+#[no_mangle]
+extern "C" fn rustc_version(buf: *mut u8, len: *mut usize) {
+    unsafe {
+        std::ptr::copy_nonoverlapping(RUSTC_VERSION.as_ptr(), buf, RUSTC_VERSION.len());
+        *len = RUSTC_VERSION.len();
+    }
+}
+
+/// Some prelimiary tasks to be done.
+#[no_mangle]
+extern "C" fn on_load(_args: *const u8, _args_len: usize) -> StatusCode {
+    StatusCode::Ok
+}
+
+#[no_mangle]
+extern "C" fn load_data(args: *const u8, args_len: usize) -> StatusCode {
+    let args = pcd_ffi_try!(args_from_raw(args, args_len));
+
+    let df = pcd_ffi_try!(DataFrame::try_from(args));
+    pcd_ffi_try!(DATA
+        .set(df.into())
+        .map_err(|_| PolicyCarryingError::Unknown));
+
+    StatusCode::Ok
+}
+
+#[no_mangle]
+extern "C" fn on_unload(_args: *const u8, _args_len: usize) -> StatusCode {
+    StatusCode::Ok
+}

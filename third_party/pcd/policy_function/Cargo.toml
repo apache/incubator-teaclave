@@ -1,0 +1,14 @@
+[package]
+name = "policy_function"
+version = "0.1.0"
+edition = "2021"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# The feature `use-openssl` will introduce a bug that makes the trait object lose its information.
+opendp = { version = "0.7.0", default-features = false, features = [
+  "untrusted",
+  "use-mpfr",
+] }
+policy_carrying_data = { path = "../policy_carrying_data" }
+policy_core = { path = "../policy_core" }

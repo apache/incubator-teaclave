@@ -1,0 +1,18 @@
+[package]
+name = "executor_user"
+version = "0.1.0"
+edition = "2021"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = ["modular"]
+static = ["policy_execution/static"]
+modular = ["policy_execution/modular"]
+
+[dependencies]
+# env_logger = "0.10.0"
+policy_carrying_data = { path = "../../../policy_carrying_data" }
+policy_core = { path = "../../../policy_core" }
+policy_execution = { path = "../../../policy_execution", features = ["read-fs"] }
+serde_json = "1.0.99"
+simple_logger = "4.2.0"

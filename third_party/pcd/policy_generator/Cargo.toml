@@ -1,0 +1,17 @@
+[package]
+name = "policy_parser"
+version = "0.1.0"
+edition = "2021"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = { version = "4.3.5", features = ["derive"] }
+codegen = "0.2.0"
+env_logger = "0.10.0"
+log = "0.4.19"
+policy_core = { path = "../policy_core" }
+lalrpop-util = "0.20.0"
+lalrpop = "0.20.0"
+
+[build-dependencies]
+lalrpop = "0.20.0"

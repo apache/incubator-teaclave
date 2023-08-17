@@ -19,3 +19,4 @@ Basically, we have these submodules:
     SGX libraries.
   - `webassembly-micro-runtime`: A sandboxed runtime to execute(interpret)
     WebAssembly bytecode.
+  - `pcd`: A working-in-progress data analysis framework for privacy policy compliance. Its documentation can be found under `pcd` directory.

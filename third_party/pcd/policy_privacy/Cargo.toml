@@ -1,0 +1,14 @@
+[package]
+name = "policy_privacy"
+version = "0.1.0"
+edition = "2021"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+opendp = { version = "0.7.0", features = ["contrib"] }
+policy_carrying_data = { path = "../policy_carrying_data" }
+policy_core = { path = "../policy_core" }
+policy_function = { path = "../policy_function" }
+
+[dev-dependencies]
+csv = "*"

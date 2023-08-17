@@ -1,0 +1,151 @@
+//! This `lalrpop` file defines the syntax of the Policy Definition Language (PDL) which is used to
+//! generate a parser that can be used to convert human-readable policies into a Rust struct.
+
+// (id) => single-column policy; (id_1, id_2, ...) = cross-column policy.
+
+use core::str::FromStr;
+
+// Import all the AST types.
+use policy_core::ast;
+
+grammar;
+
+// Match between keywords and identifiers.
+match {
+    r"(?i)(allow)",
+    r"(?i)(and)",
+    r"(?i)(or)",
+    r"(?i)(attribute)",
+    r"(?i)(deny)",
+    r"(?i)(scheme)",
+    r"(?i)(filter)",
+    r"(?i)(row)",
+    r"((?i)(dp))|((?i)(differential_privacy))",
+    r"((?i)(k_anon))|((?i)(k_anonymity))",
+    r"((?i)(t_closeness))|((?i)(t_close))",
+    r"((?i)(l_diversity))|((?i)(l_div))",
+    r"i8",
+    r"i16",
+    r"i32",
+    r"i64",
+    r"u8",
+    r"u16",
+    r"u32",
+    r"u64",
+    r"f32",
+    r"f64",
+    r"(bool)|(boolean)",
+    r"(str)|([sS]tring)",
+} else {
+    r"[a-zA-Z_][a-zA-Z0-9_]*" => Identifier,
+} else {
+    _,
+}
+
+#[inline]
+Comma<T>: Vec<T> = { // (1)
+    <mut v:(<T> ",")*> <e:T?> => match e { // (2)
+        None => v,
+        Some(e) => {
+            v.push(e);
+            v
+        }
+    }
+};
+
+/// The policy itself.
+pub Policy: ast::Policy = {
+    <name: Identifier> <list: AttributeList> ":" "(" <clause_list: Comma<Clause>> ")" =>
+        ast::Policy::new(name.into(), list, clause_list),
+}
+
+/// The policy clauses.
+pub Clause: ast::Clause = {
+    <allow: Allow> <list: AttributeNameList> => ast::Clause::Allow {
+        attribute_list: list,
+        scheme: Vec::new(),
+    },
+    <allow: Allow> <list: AttributeNameList> <and: And> <scheme: Scheme> => ast::Clause::Allow {
+        attribute_list: list,
+        scheme: Vec::new(),
+    },
+    <deny: Deny> <list: AttributeNameList> => ast::Clause::Deny(list),
+}
+
+pub Num: f64 = {
+    <f: Float> => f,
+    "(" <n: Num> ")" => n,
+}
+
+pub Keyword: String = {
+    <allow: Allow> => allow,
+    <attribute: Attribute> => attribute,
+    <deny: Deny> => deny,
+    <scheme: PrivacyScheme> => scheme,
+    <filter: Filter> => filter,
+    // Row-based control.
+    <row: Row> => row,
+}
+
+pub Scheme: policy_core::policy::PrivacyScheme = {
+    <dp: DifferentialPrivacy> "(" <num: Float>  ")"=>
+        policy_core::policy::PrivacyScheme::DifferentialPrivacy((num, 0.0)),
+    <dp: DifferentialPrivacy> "(" <epsilon: Float> "," <delta: Float>  ")" =>
+        policy_core::policy::PrivacyScheme::DifferentialPrivacy((epsilon, delta)),
+    <tclose: TCloseness> "(" <t: Float> ")" => policy_core::policy::PrivacyScheme::TCloseness(t),
+    <l_div: LDiversity> "(" <l: Float> ")" => policy_core::policy::PrivacyScheme::LDiversity(l),
+    <k_anon: KAnon> "(" <k: Float> ")" => policy_core::policy::PrivacyScheme::KAnonymity(k),
+    "(" <scheme: Scheme> ")" => scheme,
+}
+
+pub DataType: policy_core::types::DataType = {
+    r"i8" => policy_core::types::DataType::Int8,
+    r"i16" => policy_core::types::DataType::Int16,
+    r"i32" => policy_core::types::DataType::Int32,
+    r"i64" => policy_core::types::DataType::Int64,
+    r"u8" => policy_core::types::DataType::UInt8,
+    r"u16" => policy_core::types::DataType::UInt16,
+    r"u32" => policy_core::types::DataType::UInt32,
+    r"u64" => policy_core::types::DataType::UInt64,
+    r"f32" => policy_core::types::DataType::Float32,
+    r"f64" => policy_core::types::DataType::Float64,
+    r"(bool)|(boolean)" => policy_core::types::DataType::Boolean,
+    r"(str)|([sS]tring)" => policy_core::types::DataType::Utf8Str,
+}
+
+/// The attribute list: Attribute(id_1: type_1, id_2: type_2, ...)
+pub AttributeList: Vec<(String, policy_core::types::DataType)> = {
+    <attribute: Attribute> "(" <list: Comma<AttributeDeclaration>> ")" => list,
+    "(" <list: AttributeList> ")" => list,
+}
+
+/// The attribute name list: Attribute(id_1, id_2, ...)
+pub AttributeNameList: Vec<String> = {
+    "(" <list: Comma<Identifier>> ")" => list.into_iter().map(|s| s.to_string()).collect(),
+    "(" <list: AttributeNameList> ")" => list.into_iter().map(|s| s.to_string()).collect(),
+}
+
+/// The attribute.
+pub AttributeDeclaration: (String, policy_core::types::DataType) = {
+    <id: Identifier> ":" <ty: DataType> => (id.to_string(), ty),
+    "(" <attribute: AttributeDeclaration> ")" => attribute,
+}
+
+/// Numbers (floating by default)
+Float: f64 = <s:r"[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)"> => f64::from_str(s).unwrap();
+
+// Keywords.
+Allow: String = <s:r"(?i)(allow)"> => s.into();
+And: String = <s:r"(?i)(and)"> => s.into();
+Or: String = <s:r"(?i)(or)"> => s.into();
+Attribute: String = <s:r"(?i)(attribute)"> => s.into();
+Deny: String = <s:r"(?i)(deny)"> => s.into();
+PrivacyScheme: String = <s:r"(?i)(scheme)"> => s.into();
+Filter: String = <s:r"(?i)(filter)"> => s.into();
+Row: String = <s:r"(?i)(row)"> => s.into();
+
+// Scheme types.
+DifferentialPrivacy: String = <s:r"((?i)(dp))|((?i)(differential_privacy))"> => s.into();
+KAnon: String = <s:r"((?i)(k_anon))|((?i)(k_anonymity))"> => s.into();
+TCloseness: String = <s:r"((?i)(t_closeness))|((?i)(t_close))"> => s.into();
+LDiversity: String = <s:r"((?i)(l_diversity))|((?i)(l_div))"> => s.into();

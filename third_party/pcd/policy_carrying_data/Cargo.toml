@@ -1,0 +1,24 @@
+[package]
+name = "policy_carrying_data"
+version = "0.1.0"
+edition = "2021"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = ["prettyprint"]
+read-fs = []
+prettyprint = ["tabled"]
+# Enable the generation of FFI-safe Rust-to-Rust trait objects.
+load_module = []
+
+[dependencies]
+csv = { version = "1.2.2" }
+hashbrown = { version = "0.14.0", features = ["serde"] }
+policy_core = { path = "../policy_core" }
+roaring = { version = "0.10.1", features = ["serde"] }
+serde = { version = "1.0.164", features = ["derive", "rc"] }
+serde_json = "1.0.99"
+tabled = { version = "0.12.2", optional = true }
+
+[lib]
+doctest = false
