@@ -523,18 +523,9 @@ impl AttestationReport {
         log::debug!("endorsed attestation report: {:?}", &report);
 
         // Verify report's signature
-        let signing_cert = webpki::EndEntityCert::from(&report.certs[0])?;
-        let root_store = {
-            let mut root_store = rustls::RootCertStore::empty();
-            root_store.add(&rustls::Certificate(report_ca_cert.to_vec()))?;
-            root_store
-        };
-        let trust_anchors: Vec<webpki::TrustAnchor> = root_store
-            .roots
-            .iter()
-            .map(|cert| cert.to_trust_anchor())
-            .collect();
+        let signing_cert = webpki::EndEntityCert::try_from(report.certs[0].as_ref())?;
 
+        let trust_anchors = vec![webpki::TrustAnchor::try_from_cert_der(report_ca_cert)?];
         let chain: Vec<&[u8]> = if report.certs.len() > 1 {
             let mut c = report.certs[1..]
                 .iter()
@@ -549,7 +540,7 @@ impl AttestationReport {
             .map_err(|_| anyhow!("Cannot convert time."))?;
         signing_cert.verify_is_valid_tls_server_cert(
             SUPPORTED_SIG_ALGS,
-            &webpki::TLSServerTrustAnchors(&trust_anchors),
+            &webpki::TlsServerTrustAnchors(&trust_anchors),
             &chain,
             time,
         )?;

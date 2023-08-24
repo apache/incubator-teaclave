@@ -81,7 +81,9 @@ async fn start_service(config: &RuntimeConfig) -> Result<()> {
     Server::builder()
         .tls_config(server_config)
         .map_err(|_| anyhow::anyhow!("TeaclaveFrontendServer tls config error"))?
-        .add_service(TeaclaveAccessControlServer::new(service))
+        .add_service(TeaclaveAccessControlServer::new_with_builtin_config(
+            service,
+        ))
         .serve(listen_address)
         .await?;
     Ok(())

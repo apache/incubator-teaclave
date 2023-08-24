@@ -29,6 +29,14 @@ pub use proto::teaclave_authentication_internal_server::{
 pub use proto::*;
 use teaclave_types::UserAuthClaims;
 
+impl_custom_server!(TeaclaveAuthenticationApiServer, TeaclaveAuthenticationApi);
+impl_custom_client!(TeaclaveAuthenticationApiClient);
+impl_custom_server!(
+    TeaclaveAuthenticationInternalServer,
+    TeaclaveAuthenticationInternal
+);
+impl_custom_client!(TeaclaveAuthenticationInternalClient);
+
 impl UserRegisterRequest {
     pub fn new(
         id: impl Into<String>,

@@ -22,13 +22,12 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 
 use crate::task_file_manager::TaskFileManager;
+use anyhow::Result;
 use teaclave_proto::teaclave_common::{ExecutorCommand, ExecutorStatus};
 use teaclave_proto::teaclave_scheduler_service::*;
 use teaclave_rpc::transport::{channel::Endpoint, Channel};
 use teaclave_types::*;
 use teaclave_worker::Worker;
-
-use anyhow::Result;
 use uuid::Uuid;
 
 static WORKER_BASE_DIR: &str = "/tmp/teaclave_agent/";
@@ -49,7 +48,7 @@ impl TeaclaveExecutionService {
         fusion_base: impl AsRef<Path>,
     ) -> Result<Self> {
         let channel = scheduler_service_endpoint.connect().await?;
-        let scheduler_client = TeaclaveSchedulerClient::new(channel);
+        let scheduler_client = TeaclaveSchedulerClient::new_with_builtin_config(channel);
 
         Ok(TeaclaveExecutionService {
             worker: Arc::new(Worker::default()),

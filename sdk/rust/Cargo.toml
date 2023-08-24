@@ -30,7 +30,7 @@ crate-type = ["lib", "cdylib", "staticlib"]
 teaclave_types        = { path = "../../types", features = ["app"] }
 teaclave_attestation  = { path = "../../attestation" }
 teaclave_rpc          = { path = "../../rpc" }
-teaclave_proto        = { path = "../../services/proto" }
+teaclave_proto        = { path = "../../services/proto", features = ["app"]  }
 anyhow                = { version = "1.0.26" }
 url                   = { version = "2.1.1" }
 serde_json            = { version = "1.0.39" }
@@ -41,5 +41,7 @@ tokio                 = { version = "1.0", features = ["rt-multi-thread", "time"
 
 [patch.crates-io]
 h2                = { git = "https://github.com/hyperium/h2", tag = "v0.3.19" }
+tonic             = { git = "https://github.com/apache/incubator-teaclave-crates" }
+
 sgx_tprotected_fs = { path = "../../third_party/rust-sgx-sdk/sgx_protected_fs/tfs" }
 sgx_types         = { path = "../../third_party/rust-sgx-sdk/sgx_types" }

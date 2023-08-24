@@ -221,23 +221,22 @@ impl TeaclaveServerCertVerifier {
     }
 }
 
-impl rustls::ServerCertVerifier for TeaclaveServerCertVerifier {
+impl rustls::client::ServerCertVerifier for TeaclaveServerCertVerifier {
     fn verify_server_cert(
         &self,
-        _roots: &rustls::RootCertStore,
-        certs: &[rustls::Certificate],
-        _hostname: webpki::DNSNameRef,
+        end_entity: &rustls::Certificate,
+        _intermediates: &[rustls::Certificate],
+        _server_name: &rustls::ServerName,
+        _scts: &mut dyn Iterator<Item = &[u8]>,
         _ocsp: &[u8],
-    ) -> std::result::Result<rustls::ServerCertVerified, rustls::TLSError> {
+        _now: std::time::SystemTime,
+    ) -> std::result::Result<rustls::client::ServerCertVerified, rustls::Error> {
         // This call automatically verifies certificate signature
-        if certs.len() != 1 {
-            return Err(rustls::TLSError::NoCertificatesPresented);
-        }
-        if self.display_attestation_report(certs) {
-            Ok(rustls::ServerCertVerified::assertion())
+        if self.display_attestation_report(&[end_entity.to_owned()]) {
+            Ok(rustls::client::ServerCertVerified::assertion())
         } else {
-            Err(rustls::TLSError::WebPKIError(
-                webpki::Error::ExtensionValueInvalid,
+            Err(rustls::Error::InvalidCertificate(
+                rustls::CertificateError::UnhandledCriticalExtension,
             ))
         }
     }
@@ -247,18 +246,18 @@ fn attest(opt: AttestOpt) -> Result<()> {
     let uri = opt.address.parse::<Uri>()?;
     let hostname = uri.host().ok_or_else(|| anyhow!("Invalid hostname."))?;
     let mut stream = std::net::TcpStream::connect(opt.address)?;
-    let hostname = webpki::DNSNameRef::try_from_ascii_str(hostname)?;
     let content = fs::read(opt.as_ca_cert)?;
     let pem = pem::parse(content)?;
     let verifier = Arc::new(TeaclaveServerCertVerifier::new(&pem.contents));
-    let mut config = rustls::ClientConfig::new();
-    config.dangerous().set_certificate_verifier(verifier);
-    config.versions.clear();
-    config.enable_sni = false;
-    config.versions.push(rustls::ProtocolVersion::TLSv1_2);
-    let rc_config = Arc::new(config);
-
-    let mut session = rustls::ClientSession::new(&rc_config, hostname);
+    let config = rustls::ClientConfig::builder()
+        .with_safe_default_cipher_suites()
+        .with_safe_default_kx_groups()
+        .with_protocol_versions(&[&rustls::version::TLS12])
+        .unwrap()
+        .with_custom_certificate_verifier(verifier)
+        .with_no_client_auth();
+    let mut session =
+        rustls::client::ClientConnection::new(Arc::new(config), hostname.try_into()?)?;
     let mut tls_stream = rustls::Stream::new(&mut session, &mut stream);
     tls_stream.write_all(&[0]).unwrap();
 

@@ -30,6 +30,9 @@ use teaclave_types::Storable;
 use teaclave_types::{StagedTask, TaskFailure, TaskOutputs, TaskResult, TaskStatus};
 use uuid::Uuid;
 
+impl_custom_server!(TeaclaveSchedulerServer, TeaclaveScheduler);
+impl_custom_client!(TeaclaveSchedulerClient);
+
 impl HeartbeatRequest {
     pub fn new(executor_id: Uuid, status: ExecutorStatus) -> Self {
         Self {
