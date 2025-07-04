@@ -1,8 +1,0 @@
-pyopenssl
-toml
-cryptography
-requests
-Pillow
-grpclib
-grpcio 
-grpcio-tools

@@ -1,7 +1,0 @@
-[submodule "third_party/rust-sgx-sdk"]
-    path = third_party/rust-sgx-sdk
-    url = https://github.com/apache/incubator-teaclave-sgx-sdk.git
-[submodule "third_party/wasm-micro-runtime"]
-    path = third_party/wasm-micro-runtime
-    url = https://github.com/bytecodealliance/wasm-micro-runtime
-    ignore = dirty

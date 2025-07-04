@@ -1,32 +1,44 @@
 ---
-permalink: /contributing
+permalink: /community
+sidebar: false
 ---
 
-# Contributing to Teaclave
+# Community
 
-As an open-source community, we welcome all kinds of contributions. You can
-contribute to Teaclave in many ways: reporting issues, requesting new features,
-proposing better designs, fixing bugs, implementing functions, improving
-documents, trying novel research ideas or even by simply using and promoting
-this project.
+Welcome to the Teaclave community. Here are several ways that you can get involved.
 
-## Submit Issues
+## Mailing Lists
 
-We prefer to use GitHub issues for almost everything about the project
-development such as issues tracking, features, design proposals, announcements,
-community communications, etc. Free feel to open an issue if you meet bugs or
-want to propose features.
+We have a few mailing lists hosted by Apache:
 
-## Send Pull Requests
+- `dev@teaclave.apache.org`: A list for discussion on Teaclave development including design proposal, release
+announcements, meetup schedules, and commnity voting, etc.
+ [[Subscribe](mailto:dev-subscribe@teaclave.apache.org?subject=Subscribe) | [Unsubscribe](mailto:dev-unsubscribe@teaclave.apache.org?subject=Unsubscribe) | [Archive](https://lists.apache.org/list.html?dev@teaclave.apache.org)]
+- `commits@teaclave.apache.org`: Commit activities for all projects.
+ [[Subscribe](mailto:commits-subscribe@teaclave.apache.org?subject=Subscribe) | [Unsubscribe](mailto:commits-unsubscribe@teaclave.apache.org?subject=Unsubscribe) | [Archive](https://lists.apache.org/list.html?commits@teaclave.apache.org)]
 
-This is a basic instruction to send a pull request to Teaclave.
+To subscribe or unsubscribe a mailing list, just send a blank email with any subject to one of
+above address with the `-subscribe` or `-unsubscribe` suffix. For example, send
+an email to `dev-subscribe@teaclave.apache.org` (or
+`dev-unsubscribe@teaclave.apache.org`) to subscribe (or unsubscribe) the dev
+mailing list.
 
-1. Fork the repository on GitHub.
-2. Create a new branch for the feature or bugfix.
-3. Make changes.
-4. Test. The `make run-tests` command will run all test case.
-5. Make sure to format and lint the code. You can use `make format` to format
-   code inplace, and `make CLI=1` to lint Rust code with Rust clippy.
-6. Commit/push the changes and send a pull request on GitHub. Please kindly
-   write some background and details for this PR (we also provide a PR template
-   to guild you with writing a high-quality pull request).
+## GitHub Issues
+
+You can also ask questions, propose features, and report bugs in Teaclave's
+[GitHub issues](https://github.com/apache/incubator-teaclave/issues). Watch the
+project on GitHub to receive latest updates.
+
+## Contributing
+
+Teaclave is open source in [The Apache Way](https://www.apache.org/theapacheway/),
+we aim to create a project that is maintained and owned by the community. All
+kinds of contributions are welcome. Read this [contributing document](/contributing/) to
+learn more about how to contribute. Huge thanks to our [contributors](/contributors/).
+
+## Reporting a Vulnerability
+
+We take a very active stance in eliminating security problems in Teaclave. We
+strongly encourage folks to report such problems to our private mailing list
+first ([private@teaclave.apache.org](mailto:private@teaclave.apache.org)),
+before disclosing them in a public forum.
