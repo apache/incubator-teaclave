@@ -5,6 +5,10 @@
 [![Coverage Status](https://coveralls.io/repos/github/apache/incubator-teaclave/badge.svg?branch=master)](https://coveralls.io/github/apache/incubator-teaclave?branch=master)
 [![Homepage](https://img.shields.io/badge/site-homepage-blue)](https://teaclave.apache.org/)
 
+**Note**: The `master` branch has been renamed to `legacy` and is deprecated. 
+The Teaclave FaaS framework is no longer actively maintained as the community's focus has shifted to SDK development. 
+The legacy codebase remains available for historical reference and to recognize early contributions.
+
 Apache Teaclave (incubating) is an open source ***universal secure computing***
 platform, making computation on privacy-sensitive data safe and simple.
 
@@ -58,14 +62,6 @@ platform, making computation on privacy-sensitive data safe and simple.
 - [Release Guide](docs/release-guide.md)
 - [Rust Development Guideline](docs/rust-guideline.md)
 - [Development Tips](docs/development-tips.md)
-
-### API References
-
-- [Teaclave SGX SDK](https://teaclave.apache.org/api-docs/sgx-sdk/)
-- [Teaclave Client SDK (Python)](https://teaclave.apache.org/api-docs/client-sdk-python/)
-- [Teaclave Client SDK (Rust)](https://teaclave.apache.org/api-docs/client-sdk-rust/)
-- [Crates in Teaclave (Enclave)](https://teaclave.apache.org/api-docs/crates-enclave/)
-- [Crates in Teaclave (App)](https://teaclave.apache.org/api-docs/crates-app/)
 
 ## Teaclave Projects
 
